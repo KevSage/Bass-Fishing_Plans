@@ -3,23 +3,28 @@ import asyncio
 from datetime import date
 from pathlib import Path
 from time import perf_counter
-from typing import Optional
-
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
+from typing import Any, Dict, List, Optional
 from app.services.geo import resolve_zip
 from app.services.weather import get_weather_snapshot
-
+from fastapi import Depends, Header, HTTPException
 # ----------------------------------------
 # ENV (single, explicit .env location)
 # ----------------------------------------
 ENV_PATH = Path(__file__).resolve().parents[1] / ".env"  # apps/api/.env
 load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-
+def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
+    expected = (os.getenv("BFP_API_KEY") or "").strip()
+    if not expected:
+        # If you forgot to set it, fail closed (safer)
+        raise HTTPException(status_code=500, detail="Server auth not configured")
+    if not x_api_key or x_api_key.strip() != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
 def should_rewrite() -> bool:
     return str(os.getenv("LLM_REWRITE", "")).strip().lower() in (
         "1", "true", "yes", "on"
@@ -48,58 +53,68 @@ class PreviewRequest(BaseModel):
     trip_date: Optional[date] = None
 
 
-@app.post("/plan/preview")
+class GeoOut(BaseModel):
+    zip: str
+    lat: float
+    lon: float
+    name: Optional[str] = None
+
+class TimingOut(BaseModel):
+    total_ms: int
+    rewrite_ms: Optional[int] = None
+
+class PreviewResponse(BaseModel):
+    geo: GeoOut
+    plan: Dict[str, Any]            # keep flexible for now
+    markdown: str
+    rewritten: bool
+    day_progression: List[str]
+    timing: TimingOut
+
+
+@app.post("/plan/preview", response_model=PreviewResponse, dependencies=[Depends(require_api_key)])
 async def plan_preview(body: PreviewRequest):
     t0 = perf_counter()
 
-    # ----------------------------------------
-    # Resolve location
-    # ----------------------------------------
     geo = await resolve_zip(body.zip)
+
+    # ✅ NEW: effective date (preview defaults to today)
+    trip_date = body.trip_date or date.today()
 
     from .patterns.pattern_logic import build_pro_pattern
     from .patterns.schemas import ProPatternRequest
     from .render.plan_markdown import render_plan_markdown
     from .render.day_progression import build_day_progression
 
-    # ----------------------------------------
-    # Build pattern request
-    # ----------------------------------------
     req = ProPatternRequest(
         latitude=geo["lat"],
         longitude=geo["lon"],
         location_name=geo["name"] or f"ZIP {geo['zip']}",
         weather_snapshot=await get_weather_snapshot(geo["lat"], geo["lon"]),
+        month=trip_date.month,  # ✅ NEW
     )
 
-    # ----------------------------------------
-    # Deterministic pattern logic
-    # ----------------------------------------
     result = build_pro_pattern(req)
     payload = result.model_dump()
 
-    # ----------------------------------------
-    # Day progression (rules-based)
-    # ----------------------------------------
+    # ✅ NEW: store trip_date for transparency
+    payload.setdefault("conditions", {})
+    payload["conditions"]["trip_date"] = trip_date.isoformat()
+
     day_prog = build_day_progression(payload)
 
-    # ----------------------------------------
-    # Optional OpenAI rewrite layer
-    # ----------------------------------------
     rewritten = False
     rewrite_ms = None
 
     if should_rewrite():
         try:
             from .services.openai_rewrite import rewrite_day_progression
-
             t_rewrite = perf_counter()
 
             maybe = await asyncio.wait_for(
                 rewrite_day_progression(payload, day_prog),
                 timeout=8.0,
             )
-
             rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
 
             if maybe:
@@ -108,16 +123,10 @@ async def plan_preview(body: PreviewRequest):
 
         except asyncio.TimeoutError:
             rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
-            rewritten = False
-
         except Exception as e:
             rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
             print("OPENAI REWRITE ERROR(main.py):", repr(e))
-            rewritten = False
 
-    # ----------------------------------------
-    # Attach progression + render output
-    # ----------------------------------------
     payload["day_progression"] = day_prog
     markdown = render_plan_markdown(payload)
 
@@ -129,8 +138,5 @@ async def plan_preview(body: PreviewRequest):
         "markdown": markdown,
         "rewritten": rewritten,
         "day_progression": day_prog,
-        "timing": {
-            "total_ms": total_ms,
-            "rewrite_ms": rewrite_ms,
-        },
+        "timing": {"total_ms": total_ms, "rewrite_ms": rewrite_ms},
     }
