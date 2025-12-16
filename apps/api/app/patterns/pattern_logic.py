@@ -1,12 +1,10 @@
 from datetime import datetime
-from typing import Any, Dict, List
-
+from typing import Any, Dict, List, Optional
+from datetime import date as date_type
 
 from .schemas import ProPatternRequest, ProPatternResponse, LureSetup
 from .context import WeatherContext
 from app.services.snapshot_hash import SnapshotHashConfig, snapshot_hash
-from app.patterns.schemas import ProPatternRequest, ProPatternResponse, LureSetup
-from app.patterns.context import WeatherContext
 
 """
 WEATHER CONTRACT (V1 – LOCKED)
@@ -17,6 +15,40 @@ WEATHER CONTRACT (V1 – LOCKED)
 - No background refresh logic lives here
 - Snapshot update cadence is handled upstream (app/session layer)
 """
+
+# Internal-only; never printed literally to users
+PRESENTATION_FAMILIES = [
+    "surface_chase",        # plopper, buzzbait, prop (steady on top)
+    "surface_ambush",       # frog, walking bait, popper (pause/cadence)
+    "horizontal_moving",    # crank, spinnerbait, chatterbait, underspin, swimbait
+    "slow_roll_glide",      # glidebait, slow swimbait, weightless fluke swim
+    "bottom_dragging",      # texas rig drag, football jig drag, carolina drag
+    "bottom_lift_drop",     # jig hop, shaky, neko, blade yo-yo
+    "vertical_hover",       # dropshot, damiki, ned deadstick
+]
+
+# Enforces Pattern 2 validity: must be different "behavior / water" than Pattern 1
+BEHAVIOR_GROUP = {
+    "surface_chase": "roaming_top",
+    "surface_ambush": "precision_top",
+    "horizontal_moving": "roaming_mid",
+    "slow_roll_glide": "roaming_subtle",
+    "bottom_dragging": "holding_bottom",
+    "bottom_lift_drop": "bottom_trigger",
+    "vertical_hover": "holding_vertical",
+}
+
+# Canonical swatches (user-facing strings)
+COLOR_SWATCHES = {
+    "green_pumpkin": "green pumpkin",
+    "bream": "bream/bluegill",
+    "black_blue": "black/blue",
+    "shad": "shad",
+    "shad_chart": "shad w/chartreuse",
+    "red_craw": "red craw",
+    "white": "white",
+    "chart_white": "white/chartreuse",
+}
 
 
 def _stub_weather_context() -> WeatherContext:
@@ -40,9 +72,7 @@ def _get_weather_from_request(req: ProPatternRequest) -> WeatherContext:
     2) Legacy fields: temp_f, wind_speed, sky_condition (old tests only)
     3) Stub fallback
     """
-
-    # 1) Preferred: upstream-provided snapshot (session-layer resolved)
-    snap = getattr(req, "weather_snapshot", None) or getattr(req, "weather", None)
+    snap = getattr(req, "weather_snapshot", None)
     if isinstance(snap, dict):
         temp_f = snap.get("temp_f")
         wind = snap.get("wind_mph", None)
@@ -62,7 +92,7 @@ def _get_weather_from_request(req: ProPatternRequest) -> WeatherContext:
                 timestamp=datetime.utcnow(),  # runtime timestamp OK; NOT part of deterministic hash
             )
 
-    # 2) Legacy fallback for old tests only
+    # Legacy fallback for old tests only
     if hasattr(req, "temp_f") and hasattr(req, "wind_speed") and hasattr(req, "sky_condition"):
         return WeatherContext(
             temp_f=getattr(req, "temp_f"),
@@ -71,7 +101,6 @@ def _get_weather_from_request(req: ProPatternRequest) -> WeatherContext:
             timestamp=datetime.utcnow(),
         )
 
-    # 3) Stub fallback
     return _stub_weather_context()
 
 
@@ -91,9 +120,8 @@ def _weather_for_hash(weather: WeatherContext) -> Dict[str, Any]:
 
 
 # -----------------------------
-# Pattern logic (rules engine)
+# Season / phase (unchanged)
 # -----------------------------
-
 
 def _classify_phase(temp_f: float, month: int) -> str:
     if month in (12, 1, 2):
@@ -126,6 +154,7 @@ def _classify_phase(temp_f: float, month: int) -> str:
             return "summer"
         return "late-summer"
 
+    # fall
     if temp_f >= 60:
         return "late-summer"
     if 50 <= temp_f < 60:
@@ -136,288 +165,558 @@ def _classify_phase(temp_f: float, month: int) -> str:
     return "post-spawn"
 
 
-def _classify_depth_zone(depth_ft: float) -> str:
-    if depth_ft <= 2:
+def _resolve_month(req: ProPatternRequest, weather: WeatherContext) -> int:
+    """
+    Priority:
+    1) trip_date.month
+    2) req.month
+    3) weather.timestamp.month
+    """
+    trip_date: Optional[date_type] = getattr(req, "trip_date", None)
+    if isinstance(trip_date, date_type):
+        return int(trip_date.month)
+
+    m = getattr(req, "month", None)
+    if m is not None:
+        try:
+            return int(m)
+        except Exception:
+            pass
+
+    return int(weather.timestamp.month)
+
+
+# -----------------------------
+# Presentation-family selection
+# -----------------------------
+
+def _signals(temp_f: float, wind_speed: float, sky_condition: str, month: int) -> Dict[str, Any]:
+    sky = (sky_condition or "").lower().replace("_", " ")
+
+    is_cold = isinstance(temp_f, (int, float)) and temp_f <= 50
+    is_hot = isinstance(temp_f, (int, float)) and temp_f >= 80
+    is_windy = float(wind_speed) >= 12
+    is_calm = float(wind_speed) <= 3
+
+    is_low_light = any(k in sky for k in ["cloud", "overcast", "rain", "storm", "fog"])
+    is_winter = month in (12, 1, 2)
+    is_spring = month in (3, 4, 5)
+    is_summer = month in (6, 7, 8)
+    is_fall = month in (9, 10, 11)
+
+    return {
+        "temp_f": temp_f,
+        "wind_speed": wind_speed,
+        "sky": sky,
+        "month": month,
+        "is_cold": is_cold,
+        "is_hot": is_hot,
+        "is_windy": is_windy,
+        "is_calm": is_calm,
+        "is_low_light": is_low_light,
+        "is_winter": is_winter,
+        "is_spring": is_spring,
+        "is_summer": is_summer,
+        "is_fall": is_fall,
+    }
+
+
+def _score_families(sig: Dict[str, Any]) -> Dict[str, int]:
+    score = {fam: 0 for fam in PRESENTATION_FAMILIES}
+
+    # Year-round anchors
+    score["bottom_dragging"] += 2
+    score["bottom_lift_drop"] += 1
+
+    # Season shaping
+    if sig["is_winter"]:
+        score["vertical_hover"] += 4
+        score["bottom_dragging"] += 2
+        score["horizontal_moving"] -= 2
+        score["surface_chase"] -= 99
+        score["surface_ambush"] -= 99
+
+    if sig["is_spring"]:
+        score["horizontal_moving"] += 2
+        score["bottom_lift_drop"] += 2
+        score["bottom_dragging"] += 1
+        score["surface_ambush"] += 1
+
+    if sig["is_summer"]:
+        score["horizontal_moving"] += 2
+        score["bottom_dragging"] += 1
+        score["vertical_hover"] += 2
+        score["surface_chase"] += 1
+
+    if sig["is_fall"]:
+        score["horizontal_moving"] += 3
+        score["surface_chase"] += 2
+        score["bottom_dragging"] += 1
+
+    # Wind / calm shaping
+    if sig["is_windy"]:
+        score["horizontal_moving"] += 2
+        score["surface_chase"] += 1
+        score["bottom_dragging"] += 1
+
+    if sig["is_calm"]:
+        score["vertical_hover"] += 2
+        score["slow_roll_glide"] += 2
+        score["horizontal_moving"] -= 1
+
+    # Light shaping
+    if sig["is_low_light"]:
+        score["horizontal_moving"] += 1
+        score["surface_chase"] += 1
+    else:
+        score["slow_roll_glide"] += 1
+
+    # Temperature shaping
+    if sig["is_cold"]:
+        score["vertical_hover"] += 3
+        score["bottom_dragging"] += 2
+        score["surface_chase"] -= 99
+        score["surface_ambush"] -= 99
+
+    if sig["is_hot"]:
+        score["vertical_hover"] += 2
+        score["bottom_dragging"] += 1
+
+    return score
+
+
+def _pick_primary_family(sig: Dict[str, Any]) -> str:
+    score = _score_families(sig)
+    # deterministic tie-break: PRESENTATION_FAMILIES order
+    return max(PRESENTATION_FAMILIES, key=lambda f: (score[f], -PRESENTATION_FAMILIES.index(f)))
+
+
+def _pick_counter_family(sig: Dict[str, Any], primary: str) -> str:
+    score = _score_families(sig)
+    primary_group = BEHAVIOR_GROUP[primary]
+
+    eligible = [f for f in PRESENTATION_FAMILIES if f != primary and BEHAVIOR_GROUP[f] != primary_group]
+    if not eligible:
+        eligible = [f for f in PRESENTATION_FAMILIES if f != primary]
+
+    return max(eligible, key=lambda f: (score[f], -PRESENTATION_FAMILIES.index(f)))
+
+
+def _depth_zone_for_family(family: str, phase: str) -> str:
+    """
+    Depth zone here is a simple bucket (not “water column feet”).
+    It exists for continuity + light downstream filtering.
+    """
+    if family in ("surface_chase", "surface_ambush"):
         return "ultra_shallow"
-    if depth_ft <= 6:
+
+    if family in ("horizontal_moving", "slow_roll_glide"):
+        # spring/fall tends to live shallow-to-mid; summer can be mid
+        if phase in ("summer", "late-summer"):
+            return "mid_depth"
         return "mid_shallow"
-    if depth_ft <= 12:
-        return "mid_depth"
-    if depth_ft <= 20:
+
+    if family in ("bottom_dragging", "bottom_lift_drop"):
+        if phase == "winter":
+            return "deep"
+        if phase in ("summer", "late-summer"):
+            return "mid_depth"
+        return "mid_shallow"
+
+    if family == "vertical_hover":
         return "deep"
-    return "offshore"
+
+    return "mid_depth"
 
 
-def _pick_lures_and_colors(
-    phase: str,
-    depth_zone: str,
-    clarity: str,
-    bottom_composition: str,
-    forage: List[str],
-) -> (List[str], List[str]):
-    lures: List[str] = []
-    colors: List[str] = []
+# -----------------------------
+# Lures/colors as expression of family
+# -----------------------------
 
-    if phase in ("pre-spawn", "post-spawn"):
-        lures.append("jig")
-        lures.append("mid-depth crankbait")
-    elif phase == "spawn":
-        lures.append("texas-rigged creature bait")
-        lures.append("finesse worm")
-    elif phase == "summer":
-        lures.append("deep diving crankbait")
-        lures.append("carolina rig")
-    else:
-        lures.append("spinnerbait")
-        lures.append("lipless crankbait")
-
-    if clarity == "clear":
-        colors.append("green pumpkin")
-        colors.append("natural shad")
-    elif clarity == "stained":
-        colors.append("chartreuse/blue")
-        colors.append("white")
-    elif clarity == "dirty":
-        colors.append("black/blue")
-        colors.append("firetiger")
-    else:
-        colors.append("green pumpkin")
-        colors.append("white")
-
-    return lures, colors
+def _default_colors(sig: Dict[str, Any]) -> List[str]:
+    """
+    Default color expresses optimal visibility given sky/wind/low-light.
+    (Not claiming true clarity.)
+    """
+    if sig["is_low_light"] or sig["is_windy"]:
+        return [
+            COLOR_SWATCHES["black_blue"],
+            COLOR_SWATCHES["chart_white"],
+            COLOR_SWATCHES["shad_chart"],
+        ]
+    return [
+        COLOR_SWATCHES["green_pumpkin"],
+        COLOR_SWATCHES["shad"],
+        COLOR_SWATCHES["bream"],
+    ]
 
 
-def _build_lure_setups(
-    lures: List[str],
-    depth_zone: str,
-    clarity: str,
-) -> List[LureSetup]:
-    setups: List[LureSetup] = []
-    for lure in lures:
-        setups.append(
-            LureSetup(
-                lure=lure,
-                technique="casting",
-                rod='7\'0" medium-heavy',
-                reel="7.1:1 baitcaster",
-                line="15 lb fluorocarbon",
-                hook_or_leader="3/0 EWG hook",
-                lure_size="3/8 oz",
-            )
-        )
-    return setups
+def _family_to_lures(primary_family: str, phase: str) -> List[str]:
+    """
+    Canon strings only (must match your taxonomy / UI labels).
+    Returns 2–3 lures max (deterministic ordering).
+    """
+    # Hard seasonal constraint: no true topwater in winter
+    winter_block_top = (phase == "winter")
+
+    if primary_family == "surface_chase":
+        if winter_block_top:
+            # surface chase is invalid in winter; fall back to safe movers
+            return ["lipless crankbait", "spinnerbait", "chatterbait"]
+        return ["buzzbait", "whopper plopper", "prop bait"]
+
+    if primary_family == "surface_ambush":
+        if winter_block_top:
+            # surface ambush invalid in winter; use cold-window “pause/cadence” substitutes
+            return ["suspending jerkbait", "soft jerkbait", "finesse swimbait"]
+        return ["frog", "walking bait", "popper"]
+
+    if primary_family == "horizontal_moving":
+        # Moving/search — depth nuance via crank/jerk labels
+        if phase in ("pre-spawn", "fall", "late-fall"):
+            return ["chatterbait", "spinnerbait", "lipless crankbait"]
+        if phase in ("summer", "late-summer"):
+            return ["deep crankbait", "underspin", "swimbait"]
+        if phase == "winter":
+            # keep it season-sane: no “burn”; prioritize mid + suspend style movers
+            return ["suspending jerkbait", "mid-depth crankbait", "chatterbait"]
+        # spring/spawn/post-spawn default
+        return ["squarebill", "spinnerbait", "chatterbait"]
+
+    if primary_family == "slow_roll_glide":
+        # Subtle horizontal / non-chase look
+        if phase == "winter":
+            return ["glide bait", "soft jerkbait", "finesse swimbait"]
+        return ["glide bait", "soft jerkbait", "swimbait"]
+
+    if primary_family == "bottom_dragging":
+        # Year-round anchor
+        if phase in ("summer", "late-summer"):
+            return ["carolina rig", "football jig", "texas-rig worm"]
+        if phase == "winter":
+            return ["football jig", "texas-rig worm", "finesse jig"]
+        return ["texas-rig worm", "football jig", "casting jig"]
+
+    if primary_family == "bottom_lift_drop":
+        # Hop/yo-yo/lift-drop / bottom-trigger
+        if phase == "winter":
+            return ["blade bait", "shaky head", "neko rig"]
+        return ["casting jig", "shaky head", "neko rig"]
+
+    if primary_family == "vertical_hover":
+        # True vertical / hold-in-place
+        return ["dropshot", "damiki rig", "ned rig"]
+
+    # safe fallback
+    return ["spinnerbait", "casting jig", "shaky head"]
 
 
-def _build_targets_for(
-    phase: str,
-    depth_zone: str,
-    bottom_composition: str,
-) -> List[str]:
+
+def _family_targets(primary_family: str, phase: str, bottom_composition: str) -> List[str]:
     targets: List[str] = []
 
-    if phase in ("pre-spawn", "post-spawn"):
-        targets.append("secondary points leading into spawning pockets")
-        targets.append("channel swings close to flats")
-    elif phase == "spawn":
-        targets.append("protected pockets with hard bottom")
-        targets.append("inside edges of grass and shallow flats")
-    elif phase in ("summer", "late-summer"):
-        targets.append("main-lake points with access to deep water")
-        targets.append("humps, ledges, and offshore structure")
-    elif phase in ("fall", "late-fall"):
-        targets.append("backs of creeks with visible baitfish")
-        targets.append("transition banks where rock meets clay or sand")
-    elif phase == "winter":
-        targets.append("steep channel swings near main-lake basins")
-        targets.append("vertical structure close to deep water")
-    else:
-        targets.append("high-percentage structure near bait and depth changes")
+    if primary_family in ("surface_chase", "surface_ambush"):
+        targets += [
+            "shade lines and calm pockets near cover",
+            "shallow cover lanes (docks, laydowns, grass edges) where fish can ambush",
+        ]
+        if phase in ("summer", "late-summer"):
+            targets.append("early/late low-light stretches and wind-blown surface zones")
+
+    elif primary_family in ("horizontal_moving", "slow_roll_glide"):
+        targets += [
+            "secondary points and channel swings that intersect flats",
+            "wind-blown banks and long stretches that concentrate bait",
+        ]
+        if phase in ("fall", "late-fall"):
+            targets.append("backs of creeks and pockets with visible baitfish")
+
+    elif primary_family in ("bottom_dragging", "bottom_lift_drop"):
+        targets += [
+            "breaks, edges, and staging structure near spawning pockets",
+            "bottom-oriented cover (wood/rock/grass edges) where fish hold",
+        ]
+        if phase == "winter":
+            targets.append("steeper swings and deeper edges close to basin access")
+
+    elif primary_family == "vertical_hover":
+        targets += [
+            "vertical structure near deep water access (timber, docks, steep breaks)",
+            "areas where contour, cover, and bait intersect",
+        ]
 
     if bottom_composition in ("rock", "gravel"):
         targets.append("rock transitions, riprap, and isolated hard spots")
     elif bottom_composition in ("sand", "clay"):
-        targets.append("subtle contour changes and edges where bottom composition shifts")
-
-    if depth_zone in ("ultra_shallow", "mid_shallow"):
-        targets.append("shallow cover such as laydowns, docks, and grass edges")
-    elif depth_zone in ("deep", "offshore"):
-        targets.append("offshore structure where contour, cover, and bait intersect")
+        targets.append("subtle contour changes and edges where bottom shifts")
 
     seen = set()
-    unique_targets: List[str] = []
+    out: List[str] = []
     for t in targets:
         if t not in seen:
-            unique_targets.append(t)
+            out.append(t)
             seen.add(t)
+    return out
 
-    return unique_targets
 
-
-def _build_strategy_tips(
-    phase: str,
-    depth_zone: str,
-    clarity: str,
-    wind_speed: float,
-    sky_condition: str,
-) -> List[str]:
+def _strategy_tips(primary_family: str, phase: str, sig: Dict[str, Any]) -> List[str]:
     tips: List[str] = []
 
-    if phase in ("pre-spawn", "post-spawn"):
-        tips.append(
-            "Rotate between staging areas and nearby feeding flats, making multiple passes before leaving a good zone."
-        )
-    elif phase == "spawn":
-        tips.append(
-            "Cover water until you see signs of spawning, then slow down and make precise presentations to high-percentage spots."
-        )
-    elif phase in ("summer", "late-summer"):
-        tips.append(
-            "Use your first hour to cover shallow or shade-related targets, then spend time probing deeper structure."
-        )
-    elif phase in ("fall", "late-fall"):
-        tips.append("Follow the bait into creeks and pockets and keep moving until you intersect active fish.")
-    elif phase == "winter":
-        tips.append("Fish slower and closer to the bottom, focusing on areas where contour, cover, and bait intersect.")
+    if primary_family == "horizontal_moving":
+        tips.append("Cover water until you intersect active fish, then make repeated passes through the best stretch.")
+    elif primary_family == "bottom_dragging":
+        tips.append("Stay in contact with bottom—small pauses and angle changes often trigger the bite.")
+    elif primary_family == "bottom_lift_drop":
+        tips.append("Hop/raise it over cover and let it fall back on semi-slack line to trigger reaction.")
+    elif primary_family == "vertical_hover":
+        tips.append("Keep the bait in place longer than feels natural—vertical wins by time-in-zone, not distance.")
+    elif primary_family in ("surface_chase", "surface_ambush"):
+        tips.append("Treat surface strikes as timing windows—work the best lanes and give fish a clean target near cover.")
 
-    if clarity == "clear":
-        tips.append("In clear water, keep off the target, make longer casts, and lean on natural, subtle presentations.")
-    elif clarity == "stained":
-        tips.append("In stained water, use bolder colors and moderate vibration to help fish find the bait.")
-    elif clarity == "dirty":
-        tips.append("In dirty water, prioritize big profiles, strong vibration, and high-contrast colors close to cover.")
+    if sig["is_windy"]:
+        tips.append("Use the wind: focus on wind-blown banks/points where bait is pushed and fish are more willing to chase.")
+    if sig["is_calm"]:
+        tips.append("On calm water, extend cast distance and tighten cadence—subtle presentations often outperform noise.")
+    if sig["is_low_light"]:
+        tips.append("Low light extends roaming windows—keep moving until you find the most active water.")
+    else:
+        tips.append("Bright conditions: prioritize shade/edges and make your best casts count before cycling targets.")
 
-    if wind_speed >= 12.0:
-        tips.append("Use the wind: focus on wind-blown banks and points where bait is pushed and bass are more aggressive.")
-    elif wind_speed <= 3.0:
-        tips.append("On calm days, downsize and make quieter, more precise presentations.")
-
-    if sky_condition in ("clear",):
-        tips.append("With bright skies, prioritize shade, deeper water, and low-light windows at dawn and dusk.")
-    elif sky_condition in ("rain", "cloudy", "partly_cloudy"):
-        tips.append("Cloud cover lets bass roam—cover water efficiently with moving baits to locate active fish.")
-
-    tips.append("If the pattern stalls, change only one variable at a time—location, depth, or lure profile.")
-
+    tips.append("If the pattern stalls, change one variable at a time—angle, cadence, or a similar lure within the same presentation.")
     return tips
 
 
-# NOTE: Caller is responsible for snapshot cadence.
-# This function assumes weather is stable for the session.
+def _build_lure_setups(lures: List[str], primary_family: str) -> List[LureSetup]:
+    """
+    Minimal, deterministic setups by family (schema requires reel/line etc).
+    """
+    setups: List[LureSetup] = []
+
+    def add(
+        lure: str,
+        rod: str,
+        reel: str,
+        line: str,
+        hook_or_leader: str,
+        lure_size: str,
+        technique: str = "casting",
+    ):
+        setups.append(
+            LureSetup(
+                lure=lure,
+                technique=technique,
+                rod=rod,
+                reel=reel,
+                line=line,
+                hook_or_leader=hook_or_leader,
+                lure_size=lure_size,
+            )
+        )
+
+    for lure in lures:
+        lu = (lure or "").lower()
+
+        # Spinning-leaning
+        if primary_family == "vertical_hover" or lu in ("dropshot", "damiki rig", "ned rig", "shaky head", "neko rig"):
+            add(
+                lure=lure,
+                rod='7\'0" medium spinning',
+                reel="2500 spinning",
+                line="10 lb braid to 8 lb fluorocarbon leader",
+                hook_or_leader="finesse hook / dropshot hook as needed",
+                lure_size="1/8–3/8 oz",
+                technique="spinning",
+            )
+            continue
+
+        # Bottom contact
+        if primary_family in ("bottom_dragging", "bottom_lift_drop") or "jig" in lu or "carolina" in lu or "texas" in lu:
+            add(
+                lure=lure,
+                rod='7\'1" medium-heavy casting',
+                reel="7.3:1 baitcaster",
+                line="15–17 lb fluorocarbon",
+                hook_or_leader="3/0–4/0 EWG or jig trailer hook as needed",
+                lure_size="3/8–3/4 oz",
+                technique="casting",
+            )
+            continue
+
+        # Topwater
+        if primary_family in ("surface_chase", "surface_ambush"):
+            add(
+                lure=lure,
+                rod='7\'0" medium-heavy casting',
+                reel="7.3–8.1:1 baitcaster",
+                line="30–50 lb braid",
+                hook_or_leader="factory trebles or frog hooks",
+                lure_size="standard",
+                technique="casting",
+            )
+            continue
+
+        # Moving/horizontal default
+        add(
+            lure=lure,
+            rod='7\'0" medium-heavy casting',
+            reel="7.1:1 baitcaster",
+            line="15 lb fluorocarbon",
+            hook_or_leader="stock hardware / snaps as needed",
+            lure_size="standard",
+            technique="casting",
+        )
+
+    return setups
+
+
+def _family_label_for_user(family: str) -> str:
+    return {
+        "surface_chase": "Surface chase",
+        "surface_ambush": "Surface ambush",
+        "horizontal_moving": "Horizontal moving",
+        "slow_roll_glide": "Slow-roll / glide",
+        "bottom_dragging": "Bottom-contact dragging",
+        "bottom_lift_drop": "Bottom lift-drop",
+        "vertical_hover": "Vertical hover",
+    }.get(family, "Primary pattern")
+
+
+def _pattern_summary(family: str, phase: str, sig: Dict[str, Any]) -> str:
+    light_phrase = "lower light" if bool(sig.get("is_low_light")) else "brighter skies"
+    wind_phrase = "wind-driven activity" if sig.get("is_windy") else ("calm conditions" if sig.get("is_calm") else "steady conditions")
+
+    if family == "bottom_dragging":
+        return (
+            f"Today’s {wind_phrase} and {phase} timing favor a bottom-contact plan that stays in the strike zone. "
+            "Work it methodically along breaks, edges, and bottom-oriented cover instead of relying on pure chase."
+        )
+
+    if family == "horizontal_moving":
+        return (
+            f"With {light_phrase} and {wind_phrase}, bass are more likely to roam and react. "
+            "Cover water efficiently along points, banks, and edges until you intersect active fish."
+        )
+
+    if family == "vertical_hover":
+        return (
+            f"In {phase} conditions, a slower hold can outperform chase. "
+            "Keep the bait in place longer around steep edges, isolated cover, and depth-access areas."
+        )
+
+    if family in ("surface_chase", "surface_ambush"):
+        return (
+            f"When surface windows open (especially with {light_phrase}), top presentations can produce the cleanest bites. "
+            "Commit to the best lanes and give fish a clear target near cover and shade."
+        )
+
+    if family == "bottom_lift_drop":
+        return (
+            f"With {wind_phrase} and {phase} timing, a lift-drop plan can trigger fish that won’t track a steady retrieve. "
+            "Use contact and controlled falls to create reaction near cover and edges."
+        )
+
+    if family == "slow_roll_glide":
+        return (
+            f"Under {light_phrase} and {wind_phrase}, a subtler horizontal look often draws better commitment. "
+            "Keep it smooth and believable around edges, transitions, and roaming fish lanes."
+        )
+
+    return "Today’s conditions favor a focused presentation that keeps your plan simple and repeatable."
+
+
+# -----------------------------
+# Main builder
+# -----------------------------
+
 def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
     weather = _get_weather_from_request(req)
 
-    # Deterministic snapshot hash (V1)
-    # - Uses canonical rounding and stable JSON encoding
-    # - Timestamp is intentionally excluded
     latitude = getattr(req, "latitude", None)
     longitude = getattr(req, "longitude", None)
 
     weather_hash_input = _weather_for_hash(weather)
     env_snapshot_hash = snapshot_hash(
         weather=weather_hash_input,
-        config=SnapshotHashConfig(),  # defaults: temp/wind to 0.1; lat/lon to 5 decimals
+        config=SnapshotHashConfig(),
         lat=float(latitude) if latitude is not None else None,
         lon=float(longitude) if longitude is not None else None,
-        time_bucket=None,  # keep out unless you explicitly add normalized buckets upstream
-        water_view_id=None,  # keep out unless you have a stable identifier
+        time_bucket=None,
+        water_view_id=None,
     )
 
-    if hasattr(req, "month"):
-        month = int(getattr(req, "month"))
-    else:
-        month = weather.timestamp.month
+    month = _resolve_month(req, weather)
+    phase = _classify_phase(weather.temp_f, month)
 
-    clarity = getattr(req, "clarity", None) or "stained"
     bottom_composition = getattr(req, "bottom_composition", None) or "mixed"
     forage = getattr(req, "forage", None) or ["shad"]
 
-    phase = _classify_phase(weather.temp_f, month)
+    # Keep clarity in schema, but treat as optional hint only (not used as “truth”)
+    clarity_hint = getattr(req, "clarity", None)
 
-    depth_ft = getattr(req, "depth_ft", None)
-    if depth_ft is not None:
-        depth_zone = _classify_depth_zone(depth_ft)
-    else:
-        if phase in ("spawn", "pre-spawn", "post-spawn"):
-            depth_zone = "mid_shallow"
-        elif phase in ("summer", "late-summer"):
-            depth_zone = "mid_depth"
-        elif phase in ("fall", "late-fall"):
-            depth_zone = "mid_depth"
-        elif phase == "winter":
-            depth_zone = "deep"
-        else:
-            depth_zone = "mid_depth"
+    sig = _signals(weather.temp_f, weather.wind_speed, weather.sky_condition, month)
+    
+    primary_family = _pick_primary_family(sig)
+    counter_family = _pick_counter_family(sig, primary_family)
 
-    recommended_lures, color_recommendations = _pick_lures_and_colors(
-        phase=phase,
-        depth_zone=depth_zone,
-        clarity=clarity,
-        bottom_composition=bottom_composition,
-        forage=forage,
-    )
+    depth_zone = _depth_zone_for_family(primary_family, phase)
 
-    lure_setups = _build_lure_setups(
-        lures=recommended_lures,
-        depth_zone=depth_zone,
-        clarity=clarity,
-    )
+    primary_lures = _family_to_lures(primary_family, phase)
+    colors = _default_colors(sig)
 
-    recommended_targets = _build_targets_for(
-        phase=phase,
-        depth_zone=depth_zone,
-        bottom_composition=bottom_composition,
-    )
+    counter_lures = _family_to_lures(counter_family, phase)
+    counter_colors = _default_colors(sig)
 
-    strategy_tips = _build_strategy_tips(
-        phase=phase,
-        depth_zone=depth_zone,
-        clarity=clarity,
-        wind_speed=weather.wind_speed,
-        sky_condition=weather.sky_condition,
-    )
+    recommended_targets = _family_targets(primary_family, phase, bottom_composition)
+    strategy_tips = _strategy_tips(primary_family, phase, sig)
+
+    lure_setups = _build_lure_setups(primary_lures[:2], primary_family)
 
     conditions: Dict[str, Any] = {
-        "tier": "pro",
         "location_name": getattr(req, "location_name", None),
         "latitude": latitude,
         "longitude": longitude,
         "temp_f": weather.temp_f,
         "wind_speed": weather.wind_speed,
         "sky_condition": weather.sky_condition,
-        "timestamp": weather.timestamp.isoformat(),  # stored, but NOT used in hash
+        "timestamp": weather.timestamp.isoformat(),
         "month": month,
-        "clarity": clarity,
+        "clarity": clarity_hint,  # optional hint only
         "bottom_composition": bottom_composition,
-        "depth_ft": depth_ft,
         "forage": forage,
-        # Deterministic snapshot identity
+        "depth_ft": getattr(req, "depth_ft", None),
         "snapshot_hash": env_snapshot_hash,
-        # Optional debug: what we hashed (still deterministic)
         "snapshot_weather": weather_hash_input,
+        "primary_presentation_family": primary_family,
+        "counter_presentation_family": counter_family,
+        "pattern_2": {
+            "presentation_family": counter_family,
+            "recommended_lures": counter_lures[:2],
+            "color_recommendations": counter_colors[:2],
+            "recommended_targets": _family_targets(counter_family, phase, bottom_composition),
+        },
     }
 
     notes = (
-        "Pro pattern generated using rules-based logic, current weather, and basic "
-        "environmental context for this location."
+        "Pattern generated using rules-based logic and a lake-centered weather snapshot. "
+        "Selection is presentation-first; lures are chosen as expressions of the presentation."
     )
 
-    # --- V1 UI-friendly summary fields (kept deterministic) ---
-    primary_technique = "Bottom-Contact Dragging"
-    featured_lure_name = "Texas-rigged finesse worm"
-    featured_lure_family = "texas_rig"
+    primary_technique = _family_label_for_user(primary_family)
+    featured_lure_name = primary_lures[0] if primary_lures else "spinnerbait"
+    featured_lure_family = primary_family  # internal id is fine to store
+    pattern_summary = _pattern_summary(primary_family, phase, sig)
 
-    pattern_summary = (
-        "Today’s stable conditions and moderate clarity favor a bottom-contact dragging presentation. "
-        "A Texas-rigged finesse worm keeps the bait in the strike zone without overpowering pressured fish."
-    )
+    if counter_family == primary_family:
+        # should never happen, but protects future edits
+        counter_family = "bottom_dragging" if primary_family == "horizontal_moving" else "horizontal_moving"
 
     return ProPatternResponse(
         phase=phase,
         depth_zone=depth_zone,
-        recommended_lures=recommended_lures,
-        recommended_targets=recommended_targets,
-        strategy_tips=strategy_tips,
-        color_recommendations=color_recommendations,
+        recommended_lures=primary_lures[:2],
+        recommended_targets=recommended_targets[:4],
+        strategy_tips=strategy_tips[:6],
+        color_recommendations=colors[:2],
         lure_setups=lure_setups,
         conditions=conditions,
         notes=notes,
