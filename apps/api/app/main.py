@@ -1,6 +1,7 @@
 import os
 import asyncio
-from datetime import date
+from datetime import datetime, date as dt_date
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from time import perf_counter
 from dotenv import load_dotenv
@@ -11,12 +12,16 @@ from typing import Any, Dict, List, Optional
 from app.services.geo import resolve_zip
 from app.services.weather import get_weather_snapshot
 from fastapi import Depends, Header, HTTPException
-from datetime import date as dt_date
 # ----------------------------------------
 # ENV (single, explicit .env location)
 # ----------------------------------------
 ENV_PATH = Path(__file__).resolve().parents[1] / ".env"  # apps/api/.env
 load_dotenv(dotenv_path=ENV_PATH, override=True)
+
+ET = ZoneInfo("America/New_York")
+
+def et_today() -> dt_date:
+    return datetime.now(ET).date()
 
 def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
     expected = (os.getenv("BFP_API_KEY") or "").strip()
@@ -51,7 +56,7 @@ def health():
 class PreviewRequest(BaseModel):
     zip: str
     email: Optional[str] = None
-    trip_date: Optional[date] = None
+    trip_date: Optional[dt_date] = None
     is_preview: bool = True   # ✅ default for /plan/preview
 
 class GeoOut(BaseModel):
@@ -76,7 +81,6 @@ class PreviewResponse(BaseModel):
 @app.post("/plan/preview", response_model=PreviewResponse, dependencies=[Depends(require_api_key)])
 async def plan_preview(body: PreviewRequest):
     t0 = perf_counter()
-
     geo = await resolve_zip(body.zip)
 
     from .patterns.pattern_logic import build_pro_pattern
@@ -84,27 +88,31 @@ async def plan_preview(body: PreviewRequest):
     from .render.plan_markdown import render_plan_markdown
     from .render.day_progression import build_day_progression
 
-    # ✅ effective date (preview defaults to today)
-    effective_date = body.trip_date or dt_date.today()
-
+    # ✅ Capture "today" once per request (prevents drift)
+    effective_date = body.trip_date or et_today()   
     req = ProPatternRequest(
         latitude=geo["lat"],
         longitude=geo["lon"],
         location_name=geo["name"] or f"ZIP {geo['zip']}",
         weather_snapshot=await get_weather_snapshot(geo["lat"], geo["lon"]),
-        month=effective_date.month,  # ✅ drives seasonal phase
+        month=effective_date.month,
+        trip_date=effective_date,  # optional pass-through
     )
 
     result = build_pro_pattern(req)
     payload = result.model_dump()
 
+
+    # Preview-only flags live here (not in pattern_logic)
     if "conditions" not in payload or not isinstance(payload["conditions"], dict):
         raise RuntimeError("Pattern engine did not return conditions")
 
     payload["conditions"]["trip_date"] = effective_date.isoformat()
-    payload["conditions"]["is_future_trip"] = (effective_date != dt_date.today())
-    payload["conditions"]["is_preview"] = True  # because this endpoint is preview
+    payload["conditions"]["is_future_trip"] = (effective_date > et_today())
+    payload["conditions"]["is_preview"] = True
+
     day_prog = build_day_progression(payload)
+    
 
     rewritten = False
     rewrite_ms = None

@@ -31,7 +31,7 @@ You are rewriting 3 short timeline suggestions for a bass fishing plan.
 
 Rules:
 - Do NOT change facts.
-- Do NOT introduce new lures, colors, targets, depths, or conditions.
+- You MAY add small tactical adjustments (cadence, speed, pauses, angle, profile/downsizing) if consistent with the conditions and the recommended lure. Do NOT add new lures/colors/targets/conditions/depths.
 - Use only the provided details.
 - Output EXACTLY 3 lines, each starting with: "Morning:", "Midday:", "Late:"
 - Each line: EXACTLY 1 SENTENCE. Crisp, premium, non-encyclopedia tone.
