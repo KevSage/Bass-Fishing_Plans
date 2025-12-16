@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
-
+from datetime import date
 # --- existing Basic + LureSetup stay as-is ---
 
 class BasicPatternRequest(BaseModel):
@@ -51,7 +51,12 @@ class ProPatternRequest(BaseModel):
     bottom_composition: Optional[str] = None  # "rock", "sand", "mud", etc.
     depth_ft: Optional[float] = None
     forage: Optional[List[str]] = None
+   # ✅ NEW: upstream-provided weather snapshot (session layer)
 
+    # ✅ NEW: date controls season/phase without changing weather contract
+    trip_date: Optional[date] = None
+    weather_snapshot: Optional[Dict[str, Any]] = None
+    month: Optional[int] = None
 
 class ProPatternResponse(BaseModel):
     phase: str

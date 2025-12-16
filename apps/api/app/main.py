@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 from app.services.geo import resolve_zip
 from app.services.weather import get_weather_snapshot
 from fastapi import Depends, Header, HTTPException
+from datetime import date as dt_date
 # ----------------------------------------
 # ENV (single, explicit .env location)
 # ----------------------------------------
@@ -51,7 +52,7 @@ class PreviewRequest(BaseModel):
     zip: str
     email: Optional[str] = None
     trip_date: Optional[date] = None
-
+    is_preview: bool = True   # ✅ default for /plan/preview
 
 class GeoOut(BaseModel):
     zip: str
@@ -78,29 +79,31 @@ async def plan_preview(body: PreviewRequest):
 
     geo = await resolve_zip(body.zip)
 
-    # ✅ NEW: effective date (preview defaults to today)
-    trip_date = body.trip_date or date.today()
-
     from .patterns.pattern_logic import build_pro_pattern
     from .patterns.schemas import ProPatternRequest
     from .render.plan_markdown import render_plan_markdown
     from .render.day_progression import build_day_progression
+
+    # ✅ effective date (preview defaults to today)
+    effective_date = body.trip_date or dt_date.today()
 
     req = ProPatternRequest(
         latitude=geo["lat"],
         longitude=geo["lon"],
         location_name=geo["name"] or f"ZIP {geo['zip']}",
         weather_snapshot=await get_weather_snapshot(geo["lat"], geo["lon"]),
-        month=trip_date.month,  # ✅ NEW
+        month=effective_date.month,  # ✅ drives seasonal phase
     )
 
     result = build_pro_pattern(req)
     payload = result.model_dump()
 
-    # ✅ NEW: store trip_date for transparency
-    payload.setdefault("conditions", {})
-    payload["conditions"]["trip_date"] = trip_date.isoformat()
+    if "conditions" not in payload or not isinstance(payload["conditions"], dict):
+        raise RuntimeError("Pattern engine did not return conditions")
 
+    payload["conditions"]["trip_date"] = effective_date.isoformat()
+    payload["conditions"]["is_future_trip"] = (effective_date != dt_date.today())
+    payload["conditions"]["is_preview"] = True  # because this endpoint is preview
     day_prog = build_day_progression(payload)
 
     rewritten = False
