@@ -1,0 +1,100 @@
+{
+  "geo": {
+    "lat": 33.7525,
+    "lon": -84.3888,
+    "name": "Atlanta GA",
+    "zip": "30303"
+  },
+  "plan": {
+    "color_recommendations": [
+      "green pumpkin",
+      "shad"
+    ],
+    "conditions": {
+      "bottom_composition": "mixed",
+      "clarity": null,
+      "counter_presentation_family": "bottom_dragging",
+      "depth_ft": null,
+      "forage": [
+        "shad"
+      ],
+      "is_future_trip": false,
+      "is_preview": true,
+      "latitude": 33.7525,
+      "location_name": "Atlanta GA",
+      "longitude": -84.3888,
+      "month": 12,
+      "pattern_2": {
+        "color_recommendations": [
+          "green pumpkin",
+          "shad"
+        ],
+        "presentation_family": "bottom_dragging",
+        "recommended_lures": [
+          "football jig",
+          "texas-rig worm"
+        ],
+        "recommended_targets": [
+          "breaks, edges, and staging structure near spawning pockets",
+          "bottom-oriented cover (wood/rock/grass edges) where fish hold",
+          "steeper swings and deeper edges close to basin access"
+        ]
+      },
+      "primary_presentation_family": "vertical_hover",
+      "sky_condition": "clear",
+      "snapshot_hash": "d593f982251f19a387e1dd73034a8e01c4eadaa9550e4d237f5539f3387521ae",
+      "snapshot_weather": {
+        "clarity_estimate": null,
+        "cloud_cover": "clear",
+        "season_phase": null,
+        "temp_f": 39.02,
+        "wind_mph": 0.0
+      },
+      "temp_f": 39.02,
+      "trip_date": "2025-12-15",
+      "wind_speed": 0.0
+    },
+    "depth_zone": "deep",
+    "featured_lure_family": "vertical_hover",
+    "featured_lure_name": "dropshot",
+    "lure_setups": [
+      {
+        "hook_or_leader": "finesse hook / dropshot hook as needed",
+        "line": "10 lb braid to 8 lb fluorocarbon leader",
+        "lure": "dropshot",
+        "lure_size": "1/8–3/8 oz",
+        "reel": "2500 spinning",
+        "rod": "7'0\" medium spinning",
+        "technique": "spinning"
+      },
+      {
+        "hook_or_leader": "finesse hook / dropshot hook as needed",
+        "line": "10 lb braid to 8 lb fluorocarbon leader",
+        "lure": "damiki rig",
+        "lure_size": "1/8–3/8 oz",
+        "reel": "2500 spinning",
+        "rod": "7'0\" medium spinning",
+        "technique": "spinning"
+      }
+    ],
+    "notes": "Pattern generated using rules-based logic and a lake-centered weather snapshot. Selection is presentation-first; lures are chosen as expressions of the presentation.",
+    "pattern_summary": "In winter conditions, a slower hold can outperform chase. Keep the bait in place longer around steep edges, isolated cover, and depth-access areas.",
+    "phase": "winter",
+    "primary_technique": "Vertical hover",
+    "recommended_lures": [
+      "dropshot",
+      "damiki rig"
+    ],
+    "recommended_targets": [
+      "vertical structure near deep water access (timber, docks, steep breaks)",
+      "areas where contour, cover, and bait intersect"
+    ],
+    "strategy_tips": [
+      "Keep the bait in place longer than feels natural—vertical wins by time-in-zone, not distance.",
+      "On calm water, extend cast distance and tighten cadence—subtle presentations often outperform noise.",
+      "Bright conditions: prioritize shade/edges and make your best casts count before cycling targets.",
+      "If the pattern stalls, change one variable at a time—angle, cadence, or a similar lure within the same presentation."
+    ]
+  },
+  "rewritten": true
+}
