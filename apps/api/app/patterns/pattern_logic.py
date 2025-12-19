@@ -5,6 +5,12 @@ from datetime import date as date_type
 from .schemas import ProPatternRequest, ProPatternResponse, LureSetup
 from .context import WeatherContext
 from app.services.snapshot_hash import SnapshotHashConfig, snapshot_hash
+# NEW IMPORTS (add near the top of your build_pro_pattern module)
+from app.render.lure_specs import (
+    build_primary_and_alternate_lure_specs,
+    trailer_notes_for_lures,
+)
+
 
 """
 WEATHER CONTRACT (V1 – LOCKED)
@@ -351,10 +357,18 @@ def _default_colors(sig: Dict[str, Any]) -> List[str]:
     ]
 
 
+
+
 def _family_to_lures(primary_family: str, phase: str) -> List[str]:
     """
     Canon strings only (must match your taxonomy / UI labels).
     Returns 2–3 lures max (deterministic ordering).
+
+    V1 updates (locked, additive):
+    - Add "wacky rig" as the simple, high-confidence finesse option (esp. as a drop-shot-adjacent fallback)
+      without introducing a new presentation family.
+    - Keep rigs as *lure strings* here; the hero image + plastics mapping is handled downstream
+      (lure_specs/build_primary_and_alternate_lure_specs).
     """
     # Hard seasonal constraint: no true topwater in winter
     winter_block_top = (phase == "winter")
@@ -384,10 +398,10 @@ def _family_to_lures(primary_family: str, phase: str) -> List[str]:
         return ["squarebill", "spinnerbait", "chatterbait"]
 
     if primary_family == "slow_roll_glide":
-        # Subtle horizontal / non-chase look
+        # Subtle horizontal / non-chase look + slow-fall finesse option
         if phase == "winter":
-            return ["glide bait", "soft jerkbait", "finesse swimbait"]
-        return ["glide bait", "soft jerkbait", "swimbait"]
+            return ["wacky rig", "soft jerkbait", "finesse swimbait"]
+        return ["wacky rig", "soft jerkbait", "swimbait"]
 
     if primary_family == "bottom_dragging":
         # Year-round anchor
@@ -409,8 +423,6 @@ def _family_to_lures(primary_family: str, phase: str) -> List[str]:
 
     # safe fallback
     return ["spinnerbait", "casting jig", "shaky head"]
-
-
 
 def _family_targets(primary_family: str, phase: str, bottom_composition: str) -> List[str]:
     targets: List[str] = []
@@ -628,13 +640,19 @@ def _pattern_summary(family: str, phase: str, sig: Dict[str, Any]) -> str:
 # Main builder
 # -----------------------------
 
+
+# REFACTORED DROP: replace your existing build_pro_pattern with this version.
+# (Everything else in the file can remain as-is.)
+
 def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
     weather = _get_weather_from_request(req)
 
     latitude = getattr(req, "latitude", None)
     longitude = getattr(req, "longitude", None)
 
+    # Deterministic hash input shape (do NOT include runtime timestamp in hash)
     weather_hash_input = _weather_for_hash(weather)
+
     env_snapshot_hash = snapshot_hash(
         weather=weather_hash_input,
         config=SnapshotHashConfig(),
@@ -649,17 +667,16 @@ def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
 
     bottom_composition = getattr(req, "bottom_composition", None) or "mixed"
     forage = getattr(req, "forage", None) or ["shad"]
-
-    # Keep clarity in schema, but treat as optional hint only (not used as “truth”)
-    clarity_hint = getattr(req, "clarity", None)
+    clarity_hint = getattr(req, "clarity", None)  # optional hint only
 
     sig = _signals(weather.temp_f, weather.wind_speed, weather.sky_condition, month)
-    
+
     primary_family = _pick_primary_family(sig)
     counter_family = _pick_counter_family(sig, primary_family)
 
     depth_zone = _depth_zone_for_family(primary_family, phase)
 
+    # --- Lures/colors remain presentation-family driven ---
     primary_lures = _family_to_lures(primary_family, phase)
     colors = _default_colors(sig)
 
@@ -671,6 +688,27 @@ def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
 
     lure_setups = _build_lure_setups(primary_lures[:2], primary_family)
 
+    # --- NEW: presentation enrichment (no logic changes) ---
+    primary_lure_spec, alternate_lure_specs = build_primary_and_alternate_lure_specs(
+        primary_lures=primary_lures[:3],
+        color_recommendations=colors[:2],
+        primary_presentation_family=primary_family,
+        phase=phase,
+    )
+    trailer_notes = trailer_notes_for_lures(primary_lures[:2])
+
+    # Counter pattern can also expose a spec (optional; safe)
+    counter_lure_spec, counter_alt_specs = build_primary_and_alternate_lure_specs(
+        primary_lures=counter_lures[:3],
+        color_recommendations=counter_colors[:2],
+        primary_presentation_family=counter_family,
+        phase=phase,
+    )
+
+    # Safety invariant
+    if counter_family == primary_family:
+        counter_family = "bottom_dragging" if primary_family == "horizontal_moving" else "horizontal_moving"
+
     conditions: Dict[str, Any] = {
         "location_name": getattr(req, "location_name", None),
         "latitude": latitude,
@@ -680,19 +718,31 @@ def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
         "sky_condition": weather.sky_condition,
         "timestamp": weather.timestamp.isoformat(),
         "month": month,
-        "clarity": clarity_hint,  # optional hint only
+        "clarity": clarity_hint,
         "bottom_composition": bottom_composition,
         "forage": forage,
         "depth_ft": getattr(req, "depth_ft", None),
         "snapshot_hash": env_snapshot_hash,
         "snapshot_weather": weather_hash_input,
+
         "primary_presentation_family": primary_family,
         "counter_presentation_family": counter_family,
+
+        # ✅ NEW: UI/art drivers (additive; no schema break because `conditions` is Dict[str,Any])
+        "primary_lure_spec": primary_lure_spec,
+        "alternate_lure_specs": alternate_lure_specs,
+        "trailer_notes": trailer_notes,
+
         "pattern_2": {
             "presentation_family": counter_family,
             "recommended_lures": counter_lures[:2],
             "color_recommendations": counter_colors[:2],
             "recommended_targets": _family_targets(counter_family, phase, bottom_composition),
+
+            # optional, but useful for 2nd card render
+            "primary_lure_spec": counter_lure_spec,
+            "alternate_lure_specs": counter_alt_specs,
+            "trailer_notes": trailer_notes_for_lures(counter_lures[:2]),
         },
     }
 
@@ -702,13 +752,14 @@ def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
     )
 
     primary_technique = _family_label_for_user(primary_family)
-    featured_lure_name = primary_lures[0] if primary_lures else "spinnerbait"
-    featured_lure_family = primary_family  # internal id is fine to store
-    pattern_summary = _pattern_summary(primary_family, phase, sig)
 
-    if counter_family == primary_family:
-        # should never happen, but protects future edits
-        counter_family = "bottom_dragging" if primary_family == "horizontal_moving" else "horizontal_moving"
+    # Featured lure name should match the hero “display_name” if present
+    featured_lure_name = (
+        (primary_lure_spec.get("display_name") if isinstance(primary_lure_spec, dict) else None)
+        or (primary_lures[0] if primary_lures else "spinnerbait")
+    )
+    featured_lure_family = primary_family
+    pattern_summary = _pattern_summary(primary_family, phase, sig)
 
     return ProPatternResponse(
         phase=phase,
