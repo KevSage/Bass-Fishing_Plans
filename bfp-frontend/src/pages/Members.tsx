@@ -1,9 +1,8 @@
-// src/pages/Members.tsx
 import React, { useState } from "react";
-import { generateMemberPlan } from "../lib/api";
-import type { PlanResponse } from "../features/plan/types";
-import { PlanDownloads } from "../features/plan/PlanDownloads";
-import { PlanScreen } from "../features/plan/PlanScreen";
+import { generateMemberPlan } from "@/lib/api";
+import type { PlanResponse } from "@/features/plan/types";
+import { PlanDownloads } from "@/features/plan/PlanDownloads";
+import { PlanScreen } from "@/features/plan/PlanScreen";
 
 /**
  * Members Generate Page (locked contract)
@@ -15,7 +14,7 @@ export function Members() {
   const [waterName, setWaterName] = useState("");
   const [lat, setLat] = useState("");
   const [lon, setLon] = useState("");
-  const [response, setResponse] = useState<PlanResponse | null>(null);
+  const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -25,17 +24,10 @@ export function Members() {
     try {
       const payload = {
         email,
-        water: {
-          name: waterName,
-          lat: Number(lat),
-          lon: Number(lon),
-        },
-        // trip_date optional; omit for now (defaults to today ET per backend)
+        water: { name: waterName, lat: Number(lat), lon: Number(lon) },
       };
-
-      const res = await generateMemberPlan(payload);
-      // IMPORTANT: store FULL response envelope (geo + plan + markdown + day_progression...)
-      setResponse(res);
+      const p = await generateMemberPlan(payload);
+      setPlan(p);
     } catch (e: any) {
       setErr(e?.message ?? "Failed to generate plan.");
     } finally {
@@ -83,7 +75,6 @@ export function Members() {
               placeholder="Lake Lanier"
             />
           </div>
-
           <div
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
@@ -94,7 +85,6 @@ export function Members() {
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
                 placeholder="34.188"
-                inputMode="decimal"
               />
             </div>
             <div>
@@ -104,7 +94,6 @@ export function Members() {
                 value={lon}
                 onChange={(e) => setLon(e.target.value)}
                 placeholder="-84.073"
-                inputMode="decimal"
               />
             </div>
           </div>
@@ -126,12 +115,11 @@ export function Members() {
         ) : null}
       </div>
 
-      {response ? (
+      {plan ? (
         <div style={{ marginTop: 18 }}>
-          {/* Pass FULL response into both components (Option A contract) */}
-          <PlanDownloads plan={response} />
+          <PlanDownloads plan={plan} />
           <div style={{ height: 18 }} />
-          <PlanScreen plan={response} />
+          <PlanScreen plan={plan} />
         </div>
       ) : null}
     </div>

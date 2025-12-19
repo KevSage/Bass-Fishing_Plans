@@ -1,14 +1,13 @@
-// src/pages/Preview.tsx
 import React, { useState } from "react";
-import { generatePreview } from "../lib/api";
-import type { PlanResponse } from "../features/plan/types";
-import { PlanDownloads } from "../features/plan/PlanDownloads";
-import { PlanScreen } from "../features/plan/PlanScreen";
+import { generatePreview } from "@/lib/api";
+import type { PlanResponse } from "@/features/plan/types";
+import { PlanDownloads } from "@/features/plan/PlanDownloads";
+import { PlanScreen } from "@/features/plan/PlanScreen";
 
 export function Preview() {
   const [email, setEmail] = useState("");
   const [zip, setZip] = useState("");
-  const [response, setResponse] = useState<PlanResponse | null>(null);
+  const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -16,12 +15,12 @@ export function Preview() {
     setErr(null);
     setLoading(true);
     try {
-      // Backend preview contract: { email, zip } (zip optional if you later add geolocation)
-      const payload = { email, zip: zip || undefined };
+      const payload = { email, zip }; // adjust to your backend's preview contract
+      const p = await generatePreview(payload);
+      setPlan(p);
       const res = await generatePreview(payload);
-
-      // IMPORTANT: store FULL response envelope (geo + plan + markdown + day_progression...)
-      setResponse(res);
+      console.log("preview response:", res);
+      setPlan(res);
     } catch (e: any) {
       setErr(e?.message ?? "Failed to generate preview.");
     } finally {
@@ -55,9 +54,7 @@ export function Preview() {
           className="input"
           value={zip}
           onChange={(e) => setZip(e.target.value)}
-          placeholder="30303"
-          inputMode="numeric"
-          autoComplete="postal-code"
+          placeholder="30309"
         />
 
         <button
@@ -76,12 +73,11 @@ export function Preview() {
         ) : null}
       </div>
 
-      {response ? (
+      {plan ? (
         <div style={{ marginTop: 18 }}>
-          {/* Pass FULL response into both components (Option A contract) */}
-          <PlanDownloads plan={response} />
+          <PlanDownloads plan={plan} />
           <div style={{ height: 18 }} />
-          <PlanScreen plan={response} />
+          <PlanScreen plan={plan} />
         </div>
       ) : null}
     </div>
