@@ -1,5 +1,5 @@
 // src/lib/api.ts
-import type { PlanResponse } from "@/features/plan/types";
+import type { PlanResponse } from "../features/plan/types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 const API_KEY = import.meta.env.VITE_API_KEY;
