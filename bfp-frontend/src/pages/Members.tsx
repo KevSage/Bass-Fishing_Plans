@@ -1,7 +1,7 @@
 // src/pages/Members.tsx
 import React, { useState } from "react";
 import { generateMemberPlan } from "../lib/api";
-import type { PlanResponse } from "@/features/plan/types";
+import type { PlanResponse } from "../features/plan/types";
 import { PlanDownloads } from "../features/plan/PlanDownloads";
 import { PlanScreen } from "../features/plan/PlanScreen";
 
