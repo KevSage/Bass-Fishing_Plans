@@ -1,64 +1,177 @@
-from typing import Dict, Any, List
+# apps/api/app/render/plan_markdown.py
+
+from typing import Dict, Any, List, Optional
+
 from app.render.retrieve_rules import build_retrieve_bullets
+from app.render.elite_refinements import build_elite_refinements
+
+
+# ----------------------------
+# helpers
+# ----------------------------
 
 def _pick(items: List[str], n: int) -> List[str]:
     return [x for x in items if x][:n]
 
 
-def build_elite_refinements(data: Dict[str, Any]) -> List[str]:
-    """
-    Elite-only optional tuning knobs.
-    Deterministic, capped to 2–4 bullets. No new lures introduced.
-    """
-    c = data.get("conditions") or {}
+def _lower(s: Optional[str]) -> str:
+    return (s or "").strip().lower()
 
-    temp = c.get("temp_f")
-    wind = c.get("wind_speed") or 0
-    sky = (c.get("sky_condition") or "").lower().replace("_", " ")
 
-    lures = data.get("recommended_lures") or []
-    lure0 = (lures[0].lower() if lures else "")
+def _preview_subscribe_footer() -> str:
+    return (
+        "\n"
+        "---\n"
+        "**This is a preview plan.**\n"
+        "Full plans include additional execution detail, expanded targets, gear setup guidance, and day-progression notes — all built specifically for your water.\n"
+        "\n"
+        "Subscribers can request a fresh, complete plan anytime they fish.\n"
+        "\n"
+        "**[Get unlimited full plans →]**\n"
+    )
 
-    bullets: List[str] = []
 
-    # Profile / pace bias (safe, general)
-    if isinstance(temp, (int, float)) and temp <= 52:
-        bullets.append("If the bite feels tough, trim bulk (shorter skirt / smaller trailer) and extend pauses to keep it in the strike zone.")
-    elif isinstance(temp, (int, float)) and temp >= 72:
-        bullets.append("If fish are active, keep a fuller profile and speed up slightly to trigger reaction bites—then slow down if you miss them.")
+# ----------------------------
+# trailer logic (NOT alternates)
+# ----------------------------
 
-    # Wind / visibility bias
-    if float(wind) >= 12:
-        bullets.append("Wind is your friend: lean into more vibration/pressure and make repeated passes on the windiest high-percentage stretches.")
-    elif float(wind) <= 3:
-        bullets.append("Calm water: downshift cadence, make longer casts, and hit the cleanest lanes with quieter presentations.")
+def _trailer_notes_for_lure(lure_family: str) -> List[str]:
+    lf = _lower(lure_family)
 
-    # Sky / silhouette bias
-    if "clear" in sky:
-        bullets.append("Bright skies: tighten the profile and target shade/edges; subtle movement often outperforms aggressive action.")
-    else:
-        bullets.append("Low light/cloud cover: a stronger silhouette and steadier cadence can help fish track the bait while they roam.")
+    if "chatterbait" in lf:
+        return [
+            "Trailer (optional): minnow/fluke-style for a tighter baitfish look; craw-style for added lift and bulk.",
+        ]
 
-    # Lure-specific knobs (only for the lure we already recommended)
-    if "spinnerbait" in lure0:
-        bullets.append("Blade cue: clearer/brighter → willow for tighter flash; stained/overcast → Colorado/Indiana for more thump.")
-    if "jig" in lure0:
-        bullets.append("Jig cue: tough bite → trim the skirt slightly; roaming/windy → keep it fuller for presence.")
-    if "crankbait" in lure0:
-        bullets.append("Crank cue: if you’re ticking cover, pause briefly after contact; if you’re not contacting anything, adjust depth/angle before changing baits.")
+    if "jig" in lf:
+        if "swim" in lf:
+            return [
+                "Trailer: small swimbait/minnow-style to keep the jig tracking straight.",
+            ]
+        return [
+            "Trailer: craw-style is the default profile; downsize for tougher bites, upsize for a bigger presence.",
+            "Deeper water → heavier jig for quicker fall and bottom contact.",
+            "Heavy vegetation → heavier jig to penetrate and stay efficient.",
+        ]
 
-    # Keep deterministic + short
-    # Prefer 3 bullets; allow 2–4
-    if len(bullets) > 4:
-        bullets = bullets[:4]
-    if len(bullets) < 2:
-        return []
+    if "spinnerbait" in lf:
+        return [
+            "Trailer (optional): preference only — add a small swimbait/grub for bulk or skip it for max flash.",
+        ]
 
-    return bullets
+    if "buzzbait" in lf:
+        return [
+            "Trailer (optional): preference only — add a toad/swimbait for lift or skip it for a cleaner surface profile.",
+        ]
 
+    return []
+
+
+# ----------------------------
+# soft-plastic alternates (same technique only)
+# ----------------------------
+
+def _soft_plastic_alts_for_rig(lure_family: str) -> List[str]:
+    lf = _lower(lure_family)
+
+    if "dropshot" in lf:
+        return ["Small minnow (nose-hooked)", "Finesse worm"]
+
+    if "wacky" in lf:
+        return ["Stick bait", "Finesse worm (wacky)"]
+
+    if "shaky" in lf:
+        return ["Finesse worm", "Compact stick bait"]
+
+    if "neko" in lf:
+        return ["Stick bait (neko)", "Finesse worm"]
+
+    if "texas" in lf:
+        return ["Craw", "Ribbon-tail worm"]
+
+    if "carolina" in lf:
+        return ["Ribbon-tail worm", "Craw"]
+
+    if "ned" in lf:
+        return ["Ned stick bait"]
+
+    return []
+
+
+# ----------------------------
+# rendering blocks
+# ----------------------------
+
+def _gear_line(data: Dict[str, Any]) -> str:
+    setups = data.get("lure_setups") or []
+    gear = setups[0] if setups else {}
+    return " • ".join(
+        [
+            x
+            for x in [
+                gear.get("rod"),
+                gear.get("reel"),
+                gear.get("line"),
+                gear.get("hook_or_leader"),
+                gear.get("lure_size"),
+            ]
+            if x
+        ]
+    )
+
+
+def _render_pattern(
+    *,
+    title: str,
+    lure_name: str,
+    lure_family: str,
+    color: str,
+    targets: List[str],
+    work_it: List[str],
+    gear_line: str,
+    why: Optional[str],
+    alternates: List[str],
+    reduce: bool,
+) -> List[str]:
+    md: List[str] = []
+    md.append(f"### {title}")
+
+    if why:
+        md.append(f"**Why:** {why}")
+        md.append("")
+
+    md.append(f"**Throw:** **{lure_name}** — **{color}**")
+    md.append("")
+
+    md.append("**Target:**")
+    for t in _pick(targets, 2 if reduce else 3):
+        md.append(f"- {t}")
+
+    md.append("")
+    md.append("**Work it:**")
+    for w in _pick(work_it, 3 if reduce else 6):
+        md.append(f"- {w}")
+
+    if gear_line:
+        md.append("")
+        md.append(f"**Gear:** {gear_line}")
+
+    if alternates:
+        md.append("")
+        md.append("**Alternates (same presentation):**")
+        for a in _pick(alternates, 2 if reduce else 3):
+            md.append(f"- {a}")
+
+    return md
+
+
+# ----------------------------
+# main renderer
+# ----------------------------
 
 def render_plan_markdown(data: Dict[str, Any]) -> str:
     c = data.get("conditions") or {}
+
     loc = c.get("location_name") or "Your Area"
     temp = c.get("temp_f")
     wind = c.get("wind_speed")
@@ -67,65 +180,90 @@ def render_plan_markdown(data: Dict[str, Any]) -> str:
     lures = data.get("recommended_lures") or []
     colors = data.get("color_recommendations") or []
     targets = data.get("recommended_targets") or []
-    tips = data.get("strategy_tips") or []
-    setups = data.get("lure_setups") or []
 
-    lure = lures[0] if lures else "spinnerbait"
-    color = colors[0] if colors else "white"
+    lure1_name = data.get("featured_lure_name") or (lures[0] if lures else "spinnerbait")
+    lure1_family = data.get("featured_lure_family") or lure1_name
+    color1 = colors[0] if colors else "white"
 
-    # use first setup for gear line
-    gear = setups[0] if setups else {}
-    gear_line = " • ".join([x for x in [
-        gear.get("rod"),
-        gear.get("reel"),
-        gear.get("line"),
-        gear.get("hook_or_leader"),
-        gear.get("lure_size"),
-    ] if x])
+    work_it_1 = list(build_retrieve_bullets(data) or [])
+    work_it_1.extend(_trailer_notes_for_lure(lure1_family))
+
+    alternates_1 = _soft_plastic_alts_for_rig(lure1_family)
+
     elite_refinements = build_elite_refinements(data)
-    work_it = build_retrieve_bullets(data)
 
-    # placeholder day progression (V1)
-    day_prog = data.get("day_progression") or []    
-    trip_date = c.get("trip_date")    
+    day_prog = data.get("day_progression") or []
+    trip_date = c.get("trip_date")
     date_line = f"Date: **{trip_date}**" if trip_date else ""
+
     pattern_name = data.get("primary_technique") or "Primary Pattern"
     summary = (data.get("pattern_summary") or "").strip()
     if summary.count(".") >= 2:
         summary = summary.split(".")[0].strip() + "."
 
-    md = []
+    is_preview = bool(c.get("is_preview") is True)
+
+    md: List[str] = []
     md.append(f"**TODAY’S BASS PLAN — {loc}**")
     if date_line:
-       md.append(date_line)
+        md.append(date_line)
     md.append(f"Conditions: **{temp}°F**, **{wind} mph wind**, **{sky}**")
     md.append("")
-    md.append(f"### Pattern 1 — {pattern_name}")
-    if summary:
-        md.append(f"**Why:** {summary}")
-        md.append("")
-    md.append(f"**Throw:** **{lure}** — **{color}**")
-    md.append("")
-    md.append("**Target:**")
-    for t in _pick(targets, 3):
-        md.append(f"- {t}")
-    md.append("")
-    md.append("**Work it:**")
-    for w in work_it:
-        md.append(f"- {w}")
-    if gear_line:
-        md.append("")
-        md.append(f"**Gear:** {gear_line}")
 
-    is_preview = bool((c.get("is_preview") is True))
+    md.extend(
+        _render_pattern(
+            title=f"Pattern 1 — {pattern_name}",
+            lure_name=lure1_name,
+            lure_family=lure1_family,
+            color=color1,
+            targets=targets,
+            work_it=work_it_1,
+            gear_line=_gear_line(data),
+            why=summary,
+            alternates=alternates_1,
+            reduce=False,
+        )
+    )
+
     if elite_refinements and not is_preview:
         md.append("")
         md.append("### Optional refinements")
-        for b in elite_refinements:
-            md.append(f"- {b}")
+        for r in _pick(elite_refinements, 4):
+            md.append(f"- {r}")
 
-    md.append("")
-    md.append("### As the day progresses")
-    for line in day_prog:
-        md.append(f"- {line}")
+    p2 = data.get("pattern_2") or {}
+    if p2:
+        lure2 = p2.get("primary_lure_spec", {}).get("display_name") or (p2.get("recommended_lures") or [""])[0]
+        family2 = p2.get("presentation_family") or lure2
+        color2 = (p2.get("color_recommendations") or colors or ["white"])[0]
+
+        work_it_2 = list(build_retrieve_bullets({"conditions": c, "recommended_lures": [lure2]}) or [])
+        work_it_2.extend(_trailer_notes_for_lure(family2))
+        alternates_2 = _soft_plastic_alts_for_rig(family2)
+
+        md.append("")
+        md.extend(
+            _render_pattern(
+                title="Pattern 2 — Counter-condition",
+                lure_name=lure2,
+                lure_family=family2,
+                color=color2,
+                targets=p2.get("recommended_targets") or [],
+                work_it=work_it_2,
+                gear_line="",
+                why=None,
+                alternates=alternates_2,
+                reduce=True,
+            )
+        )
+
+    if (not is_preview) or (is_preview and day_prog):
+        md.append("")
+        md.append("### As the day progresses")
+        for d in _pick(day_prog, 6):
+            md.append(f"- {d}")
+
+    if is_preview:
+        md.append(_preview_subscribe_footer())
+
     return "\n".join(md).strip() + "\n"
