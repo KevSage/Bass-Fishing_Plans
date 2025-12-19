@@ -1,0 +1,31 @@
+:root{
+  /* Replace with AnglerIQ Style Tokens V1 values once pasted. */
+  --bg:#0b0f14;
+  --surface:#0f1520;
+  --surface-2:#121a27;
+  --fg:#eef2f6;
+  --muted:rgba(238,242,246,.70);
+  --border:rgba(238,242,246,.10);
+  --accent:#62d7b6; /* <8% usage */
+
+  --radius-1:12px;
+  --radius-2:18px;
+
+  --space-1:6px;
+  --space-2:10px;
+  --space-3:14px;
+  --space-4:18px;
+  --space-5:24px;
+  --space-6:32px;
+  --space-7:44px;
+  --space-8:60px;
+
+  --text-xs:12px;
+  --text-sm:13px;
+  --text-md:15px;
+  --text-lg:18px;
+  --text-xl:22px;
+  --text-2xl:28px;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+}

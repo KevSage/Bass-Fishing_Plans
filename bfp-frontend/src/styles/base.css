@@ -1,0 +1,21 @@
+@import "./tokens.css";
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--fg);
+}
+a{color:inherit}
+.container{
+  max-width:980px;
+  margin:0 auto;
+  padding:0 var(--space-5);
+}
+hr{
+  border:0;
+  border-top:1px solid var(--border);
+  margin:var(--space-6) 0;
+}
