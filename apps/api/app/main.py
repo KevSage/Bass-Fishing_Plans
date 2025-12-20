@@ -5,19 +5,21 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 from time import perf_counter
 from dotenv import load_dotenv
-from fastapi import FastAPI
+
+from fastapi import FastAPI, Depends, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
+
 from app.services.geo import resolve_zip
 from app.services.weather import get_weather_snapshot
-from fastapi import Depends, Header, HTTPException, Request
 from app.services.subscribers import SubscriberStore
 from app.services.stripe_billing import (
     create_checkout_session,
     verify_webhook_and_parse_event,
     extract_subscription_state,
 )
+
 # ----------------------------------------
 # ENV (single, explicit .env location)
 # ----------------------------------------
@@ -26,8 +28,10 @@ load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 ET = ZoneInfo("America/New_York")
 
+
 def et_today() -> dt_date:
     return datetime.now(ET).date()
+
 
 def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
     expected = (os.getenv("BFP_API_KEY") or "").strip()
@@ -36,11 +40,16 @@ def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
         raise HTTPException(status_code=500, detail="Server auth not configured")
     if not x_api_key or x_api_key.strip() != expected:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
+
+
 def should_rewrite() -> bool:
     return str(os.getenv("LLM_REWRITE", "")).strip().lower() in (
-        "1", "true", "yes", "on"
+        "1",
+        "true",
+        "yes",
+        "on",
     )
+
 
 def require_dev_key(x_dev_key: Optional[str] = Header(default=None)) -> None:
     expected = (os.getenv("BFP_DEV_KEY") or "").strip()
@@ -48,9 +57,11 @@ def require_dev_key(x_dev_key: Optional[str] = Header(default=None)) -> None:
         raise HTTPException(status_code=500, detail="Dev key not configured")
     if not x_dev_key or x_dev_key.strip() != expected:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    
+
+
 app = FastAPI(title="Bass Fishing Plans API")
 subs = SubscriberStore()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -68,7 +79,6 @@ def health():
 # ----------------------------
 # Requests
 # ----------------------------
-
 class PreviewRequest(BaseModel):
     zip: str
     email: Optional[str] = None
@@ -93,7 +103,6 @@ class MemberPlanRequest(BaseModel):
 # ----------------------------
 # Shared Outputs
 # ----------------------------
-
 class GeoOut(BaseModel):
     zip: str
     lat: float
@@ -104,7 +113,6 @@ class GeoOut(BaseModel):
 # ----------------------------
 # Timing (LOCKED)
 # ----------------------------
-
 class TimingOut(BaseModel):
     generated_at: str
     build_ms: Optional[int] = None
@@ -119,7 +127,6 @@ class PreviewTimingOut(BaseModel):
 # ----------------------------
 # Responses
 # ----------------------------
-
 class PreviewResponse(BaseModel):
     geo: GeoOut
     plan: Dict[str, Any]
@@ -144,7 +151,6 @@ class SubscribeRequest(BaseModel):
 
 class SubscribeResponse(BaseModel):
     checkout_url: str
-
 
 
 # --- DEV MEMBERS (bypass sub + allow primary_index) ---
@@ -189,6 +195,10 @@ async def plan_members(
 
     effective_date = body.trip_date or et_today()
 
+    weather_snapshot = None
+    if body.latitude is not None and body.longitude is not None:
+        weather_snapshot = await get_weather_snapshot(body.latitude, body.longitude)
+
     req = ProPatternRequest(
         latitude=body.latitude,
         longitude=body.longitude,
@@ -197,9 +207,7 @@ async def plan_members(
         bottom_composition=body.bottom_composition,
         depth_ft=body.depth_ft,
         forage=body.forage,
-        weather_snapshot=await get_weather_snapshot(body.latitude, body.longitude)
-        if (body.latitude and body.longitude)
-        else None,
+        weather_snapshot=weather_snapshot,
         month=effective_date.month,
         trip_date=effective_date,
     )
@@ -238,7 +246,6 @@ async def plan_members(
         payload["lure_setups"] = ls
 
     markdown = render_plan_markdown(payload)
-
     total_ms = int((perf_counter() - t0) * 1000)
 
     return {
@@ -255,7 +262,11 @@ async def plan_members(
     }
 
 
-@app.post("/plan/preview", response_model=PreviewResponse, dependencies=[Depends(require_api_key)])
+@app.post(
+    "/plan/preview",
+    response_model=PreviewResponse,
+    dependencies=[Depends(require_api_key)],
+)
 async def plan_preview(body: PreviewRequest):
     t0 = perf_counter()
     geo = await resolve_zip(body.zip)
@@ -266,9 +277,10 @@ async def plan_preview(body: PreviewRequest):
     from .render.day_progression import build_day_progression
 
     # ✅ Capture "today" once per request (prevents drift)
-    effective_date = body.trip_date or et_today()   
+    effective_date = body.trip_date or et_today()
 
-    weather=await get_weather_snapshot(geo["lat"], geo["lon"]),
+    # ✅ FIX: no trailing comma (was turning this into a tuple)
+    weather = await get_weather_snapshot(geo["lat"], geo["lon"])
 
     req = ProPatternRequest(
         latitude=geo["lat"],
@@ -276,22 +288,20 @@ async def plan_preview(body: PreviewRequest):
         location_name=geo["name"] or f"ZIP {geo['zip']}",
         weather_snapshot=weather,
         month=effective_date.month,
-        trip_date=effective_date,  # optional pass-through
+        trip_date=effective_date,
     )
 
     result = build_pro_pattern(req)
     payload = result.model_dump()
 
-
-    # Preview-only flags live here (not in pattern_logic)
     if "conditions" not in payload or not isinstance(payload["conditions"], dict):
         raise RuntimeError("Pattern engine did not return conditions")
 
     payload["conditions"]["trip_date"] = effective_date.isoformat()
+    payload["conditions"]["is_future_trip"] = (effective_date > et_today())
     payload["conditions"]["is_preview"] = True
 
     day_prog = build_day_progression(payload)
-    
 
     rewritten = False
     rewrite_ms = None
@@ -307,7 +317,11 @@ async def plan_preview(body: PreviewRequest):
             )
             rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
 
-            if isinstance(maybe, list) and len(maybe) == 3 and all(isinstance(x, str) for x in maybe):
+            if (
+                isinstance(maybe, list)
+                and len(maybe) == 3
+                and all(isinstance(x, str) for x in maybe)
+            ):
                 day_prog = maybe
                 rewritten = True
 
@@ -332,91 +346,6 @@ async def plan_preview(body: PreviewRequest):
     }
 
 
-@app.post("/plan/members", response_model=MemberPlanResponse)
-async def plan_members(body: MemberPlanRequest, bypass_sub_check: bool = False):
-    email = body.email.strip().lower()
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="Invalid email")
-
-    # ✅ Gate by subscriber status (MVP) — but bypassable for /dev
-    if (not bypass_sub_check) and (not subs.is_active(email)):
-        raise HTTPException(status_code=403, detail="Subscription required")
-
-    t0 = perf_counter()
-
-    from .patterns.pattern_logic import build_pro_pattern
-    from .patterns.schemas import ProPatternRequest
-    from .render.plan_markdown import render_plan_markdown
-    from .render.day_progression import build_day_progression
-
-    geo = {
-        "name": body.location_name or "Subscriber plan",
-        "lat": body.latitude,
-        "lon": body.longitude,
-    }
-
-    effective_date = body.trip_date or et_today()
-
-    req = ProPatternRequest(
-        latitude=body.latitude,
-        longitude=body.longitude,
-        location_name=body.location_name,
-        clarity=body.clarity,
-        bottom_composition=body.bottom_composition,
-        depth_ft=body.depth_ft,
-        forage=body.forage,
-        weather_snapshot=await get_weather_snapshot(body.latitude, body.longitude)
-        if (body.latitude is not None and body.longitude is not None)
-        else None,
-        month=effective_date.month,
-        trip_date=effective_date,
-    )
-
-    result = build_pro_pattern(req)
-    payload = result.model_dump()
-
-    if "conditions" not in payload or not isinstance(payload["conditions"], dict):
-        raise RuntimeError("Pattern engine did not return conditions")
-
-    payload["conditions"]["trip_date"] = effective_date.isoformat()
-    payload["conditions"]["is_future_trip"] = (effective_date > et_today())
-    payload["conditions"]["is_preview"] = False
-    payload["conditions"]["subscriber_email"] = email
-
-    day_prog = build_day_progression(payload)
-
-    rewritten = False
-    rewrite_ms = None
-    if should_rewrite():
-        try:
-            from .services.openai_rewrite import rewrite_day_progression
-            t_rewrite = perf_counter()
-            maybe = await asyncio.wait_for(
-                rewrite_day_progression(payload, day_prog),
-                timeout=8.0
-            )
-            rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
-            if maybe:
-                day_prog = maybe
-                rewritten = True
-        except Exception:
-            rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
-
-    payload["day_progression"] = day_prog
-    markdown = render_plan_markdown(payload)
-
-    total_ms = int((perf_counter() - t0) * 1000)
-
-    return {
-        "geo": geo,
-        "plan": payload,
-        "markdown": markdown,
-        "rewritten": rewritten,
-        "day_progression": day_prog,
-        "timing": {"generated_at": datetime.utcnow().isoformat(), "build_ms": total_ms, "snapshot_hash": payload["conditions"].get("snapshot_hash")},
-    }
-
-
 @app.post("/billing/subscribe", response_model=SubscribeResponse)
 def billing_subscribe(body: SubscribeRequest):
     email = body.email.strip().lower()
@@ -424,15 +353,16 @@ def billing_subscribe(body: SubscribeRequest):
         raise HTTPException(status_code=400, detail="Invalid email")
 
     url = create_checkout_session(email=email)
-
     return {"checkout_url": url}
+
 
 @app.post("/webhooks/stripe")
 async def stripe_webhook(request: Request):
     payload = await request.body()
 
-    # Stripe sends "Stripe-Signature" header, but Starlette normalizes access.
-    sig = request.headers.get("stripe-signature") or request.headers.get("Stripe-Signature")
+    sig = request.headers.get("stripe-signature") or request.headers.get(
+        "Stripe-Signature"
+    )
 
     try:
         event = verify_webhook_and_parse_event(payload=payload, stripe_signature=sig)
@@ -441,7 +371,6 @@ async def stripe_webhook(request: Request):
 
     update = extract_subscription_state(event)
 
-    # Print only meaningful lifecycle events (keeps logs clean)
     etype = event.get("type")
     if etype in (
         "checkout.session.completed",

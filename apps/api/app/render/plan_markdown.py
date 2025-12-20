@@ -1,6 +1,7 @@
 # apps/api/app/render/plan_markdown.py
 
 from typing import Dict, Any, List, Optional
+import re
 
 from app.render.retrieve_rules import build_retrieve_bullets
 from app.render.elite_refinements import build_elite_refinements
@@ -10,12 +11,61 @@ from app.render.elite_refinements import build_elite_refinements
 # helpers
 # ----------------------------
 
+_STATE_RE = re.compile(r"^(.+?),?\s+([A-Z]{2})$")
+
+
 def _pick(items: List[str], n: int) -> List[str]:
     return [x for x in items if x][:n]
 
 
 def _lower(s: Optional[str]) -> str:
     return (s or "").strip().lower()
+
+
+def _fmt_city_state(raw: Optional[str]) -> str:
+    s = (raw or "").strip()
+    if not s:
+        return "Your Area"
+
+    # Already "City, ST"
+    if "," in s:
+        parts = [p.strip() for p in s.split(",")]
+        if len(parts) >= 2 and len(parts[-1]) == 2:
+            return f"{', '.join(parts[:-1])}, {parts[-1].upper()}"
+        return s
+
+    # "City ST"
+    m = _STATE_RE.match(s)
+    if m:
+        city = m.group(1).strip()
+        st = m.group(2).strip().upper()
+        return f"{city}, {st}"
+
+    return s
+
+
+def _title_line(geo: Dict[str, Any], conditions: Dict[str, Any]) -> str:
+    """
+    Deterministic title line:
+
+    Always: City, ST
+    If lake known: City, ST — Lake Name
+
+    Sources:
+      - geo.title_line (if you later choose to precompute)
+      - geo.name (preferred)
+      - conditions.location_name fallback
+      - optional geo.lake_name
+    """
+    pre = (geo.get("title_line") or "").strip()
+    if pre:
+        return pre
+
+    base_name = geo.get("name") or conditions.get("location_name") or "Your Area"
+    city_state = _fmt_city_state(base_name)
+
+    lake = (geo.get("lake_name") or "").strip()
+    return f"{city_state} — {lake}" if lake else city_state
 
 
 def _preview_subscribe_footer() -> str:
@@ -29,6 +79,29 @@ def _preview_subscribe_footer() -> str:
         "\n"
         "**[Get unlimited full plans →]**\n"
     )
+
+
+def _format_conditions_line(c: Dict[str, Any]) -> str:
+    """
+    Keep existing behavior, but avoid 'None°F' etc.
+    Only uses values already present in payload.
+    """
+    temp = c.get("temp_f")
+    wind = c.get("wind_speed")
+    sky = c.get("sky_condition")
+
+    parts: List[str] = []
+    if temp is not None:
+        parts.append(f"**{temp}°F**")
+    if wind is not None:
+        parts.append(f"**{wind} mph wind**")
+    if sky:
+        parts.append(f"**{sky}**")
+
+    if not parts:
+        return "Conditions: —"
+
+    return "Conditions: " + ", ".join(parts)
 
 
 # ----------------------------
@@ -171,11 +244,10 @@ def _render_pattern(
 
 def render_plan_markdown(data: Dict[str, Any]) -> str:
     c = data.get("conditions") or {}
+    geo = data.get("geo") or {}
 
-    loc = c.get("location_name") or "Your Area"
-    temp = c.get("temp_f")
-    wind = c.get("wind_speed")
-    sky = c.get("sky_condition")
+    # Deterministic title line (City, ST — Lake Name if present)
+    title_line = _title_line(geo, c)
 
     lures = data.get("recommended_lures") or []
     colors = data.get("color_recommendations") or []
@@ -201,13 +273,20 @@ def render_plan_markdown(data: Dict[str, Any]) -> str:
     if summary.count(".") >= 2:
         summary = summary.split(".")[0].strip() + "."
 
+    # NEW (LLM, constrained, commentary-only). Fail-soft: only render if present.
+    outlook = (data.get("outlook_blurb") or "").strip()
+
     is_preview = bool(c.get("is_preview") is True)
 
     md: List[str] = []
-    md.append(f"**TODAY’S BASS PLAN — {loc}**")
+    md.append(f"**TODAY’S BASS PLAN — {title_line}**")
     if date_line:
         md.append(date_line)
-    md.append(f"Conditions: **{temp}°F**, **{wind} mph wind**, **{sky}**")
+    md.append(_format_conditions_line(c))
+
+    if outlook:
+        md.append(f"Outlook: {outlook}")
+
     md.append("")
 
     md.extend(
