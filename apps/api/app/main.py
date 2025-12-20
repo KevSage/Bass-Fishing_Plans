@@ -20,6 +20,10 @@ from app.services.stripe_billing import (
     extract_subscription_state,
 )
 
+
+from app.services.open_ai_plan_generator import llm_plan_enabled, generate_plan_via_openai
+from app.canon.pools import LURE_POOL, COLOR_POOL, CANONICAL_TARGETS
+
 # ----------------------------------------
 # ENV (single, explicit .env location)
 # ----------------------------------------
@@ -199,6 +203,9 @@ async def plan_members(
     if body.latitude is not None and body.longitude is not None:
         weather_snapshot = await get_weather_snapshot(body.latitude, body.longitude)
 
+
+
+    
     req = ProPatternRequest(
         latitude=body.latitude,
         longitude=body.longitude,
@@ -212,9 +219,48 @@ async def plan_members(
         trip_date=effective_date,
     )
 
+
     result = build_pro_pattern(req)
     payload = result.model_dump()
 
+
+    llm_plan: Optional[Dict[str, Any]] = None
+    if llm_plan_enabled() and weather_snapshot:
+        geo_for_llm = {
+            "name": body.location_name or "Subscriber plan",
+            "lat": body.latitude,
+            "lon": body.longitude,
+        }
+
+        llm_plan = await generate_plan_via_openai(
+            geo=geo_for_llm,
+            weather_snapshot=weather_snapshot,
+            trip_date_iso=effective_date.isoformat(),
+            clarity=body.clarity,
+            bottom_composition=body.bottom_composition,
+            depth_ft=body.depth_ft,
+            forage=body.forage,
+            allowed_lures=list(LURE_POOL),
+            allowed_colors=list(COLOR_POOL),
+            canonical_targets=list(CANONICAL_TARGETS),
+            is_preview=False,                    # members endpoint
+            subscriber_email=email,              # your normalized email var
+        )
+
+    # If LLM succeeded, it becomes the plan payload — but we KEEP deterministic conditions
+    if llm_plan:
+        llm_plan["conditions"] = payload.get("conditions", {})
+        payload = llm_plan
+
+
+    if not payload.get("day_progression"):
+        day_prog = build_day_progression(payload)
+        payload["day_progression"] = day_prog
+    else:
+        day_prog = payload["day_progression"]
+
+
+        # --- conditions must exist before we do anything else ---
     if "conditions" not in payload or not isinstance(payload["conditions"], dict):
         raise RuntimeError("Pattern engine did not return conditions")
 
@@ -223,11 +269,19 @@ async def plan_members(
     payload["conditions"]["is_preview"] = False
     payload["conditions"]["subscriber_email"] = email
 
-    day_prog = build_day_progression(payload)
-    payload["day_progression"] = day_prog
+    # --- day progression: use LLM-provided if present, else deterministic build ---
+    day_prog = payload.get("day_progression")
+    if not (isinstance(day_prog, list) and all(isinstance(x, str) for x in day_prog) and len(day_prog) >= 3):
+        day_prog = build_day_progression(payload)
+        payload["day_progression"] = day_prog
+    else:
+        # keep payload canonical if it already exists
+        payload["day_progression"] = day_prog
 
     # -----------------------------
     # DEV-ONLY: force primary lure
+    # IMPORTANT: do this BEFORE markdown render
+    # NOTE: if you swap lures/colors/setups, you probably want to rebuild day_prog
     # -----------------------------
     if bypass_sub_check and primary_index == 1:
         rl = payload.get("recommended_lures") or []
@@ -244,6 +298,10 @@ async def plan_members(
         payload["recommended_lures"] = rl
         payload["color_recommendations"] = cr
         payload["lure_setups"] = ls
+
+        # rebuild deterministic day progression so it matches the swapped primary lure
+        day_prog = build_day_progression(payload)
+        payload["day_progression"] = day_prog
 
     markdown = render_plan_markdown(payload)
     total_ms = int((perf_counter() - t0) * 1000)
