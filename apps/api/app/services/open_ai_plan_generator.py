@@ -28,7 +28,6 @@ from app.canon.pools import (
 )
 
 from app.canon.validate import (
-    validate_colors,
     validate_colors_for_lure,
     validate_targets,
 )
@@ -45,9 +44,10 @@ Generate a highly-specific, weather-aware bass fishing plan for the user’s pro
 
 IMPORTANT
 - The plan must NOT be random.
-- It must be generated using real bass fishing knowledge that considers season, location, and current conditions.
-- You MUST choose ONLY from the provided canonical buckets (allowed lures / allowed colors / canonical targets).
+- Use real bass fishing knowledge that considers season and current conditions.
+- You MUST choose ONLY from the provided canonical buckets (allowed_lures / allowed_colors / canonical_targets).
 - Do not invent anything outside those buckets.
+- Strings MUST match canonical values exactly (no renaming, no paraphrasing).
 
 OUTPUT FORMAT (STRICT)
 Return ONE JSON object matching the PlanOnly schema provided.
@@ -56,34 +56,58 @@ Do not include any extra keys. Do not include markdown. Do not include geo. Do n
 STYLE
 - Crisp, practical, “do this next” tone.
 - No hype, no jokes, no filler.
-- No generic fishing encyclopedia content.
+- No encyclopedia content.
 - Everything must be consistent with the provided inputs.
 
 HARD RULES
-1) Use the provided weather snapshot and location details. The plan must reflect temp/wind/sky/clarity/depth signals when present.
+1) Use the provided weather snapshot and location details. Reflect temp/wind/sky/clarity/depth signals when present.
 2) Never invent lakes, ramps, or named spots.
-3) Never invent lures outside allowed_lures.
-4) Colors must be chosen from allowed_colors only.
-5) Targets must be chosen from canonical_targets only. 3–5 targets.
-6) Pattern 2 (if included) must be meaningfully different from Pattern 1:
+3) Lures:
+   - recommended_lures MUST be selected from allowed_lures ONLY.
+   - recommended_lures values MUST match allowed_lures strings EXACTLY (no variants like "texas-rig worm").
+4) Colors:
+   - color_recommendations MUST be selected from allowed_colors ONLY.
+   - color strings MUST match allowed_colors EXACTLY (no blends like "white/chartreuse" unless it exists in allowed_colors).
+   - HARDBAIT-ONLY colors (gold/bronze/silver/firetiger): only allowed if the chosen lure is a hard bait in the catalog.
+   - "black/blue" is NOT allowed for jerkbaits/hardbaits.
+   - For spinnerbait: color refers to skirt color only (do not use metallic blade colors as the color).
+5) Targets:
+   - recommended_targets MUST be selected from canonical_targets ONLY.
+   - Target strings MUST match canonical_targets EXACTLY (no punctuation swaps, no combining, no paraphrasing).
+   - 3–5 targets.
+6) Terminal + trailer discipline:
+   - If the chosen lure is terminal tackle (texas rig, carolina rig, shaky head, neko rig, wacky rig, ned rig, dropshot):
+     - featured_lure_name MUST be a technique display name with a plastic choice in the name (example: "Texas Rig — Creature Bait").
+     - The plastic choice MUST be legal for that technique based on the provided terminal buckets.
+     - Dropshot plastics are STRICTLY: finesse worm OR small minnow.
+   - If the chosen lure requires a trailer (chatterbait, swim jig, casting jig, football jig):
+     - Include trailer guidance ONLY in Work It (not as an alternate lure).
+     - Chunk is jig-only (casting jig / football jig only).
+     - Baitfish plastics (soft jerkbait / small minnow / paddle tail swimbait) are NOT allowed on bottom jigs.
+7) Pattern 2 (if included) must be meaningfully different from Pattern 1:
    - different fish positioning AND different presentation family.
-7) Day progression is a 3-line timeline (Morning/Midday/Late) and must use at most 2 lures total:
-   - Lure #1 = featured lure (Pattern 1).
-   - Lure #2 = Pattern 2 lure if present.
-   - Each line must explicitly name exactly ONE lure/rig near the start of the line.
+   - It is a counter-condition option, not a “backup lure”.
+8) Day progression (UPDATED RULE):
+   - Exactly 3 lines: Morning/Midday/Late.
+   - Use at most 2 lures total across all 3 lines (featured lure + optional Pattern 2 lure).
+   - Morning line MUST start with: "Morning: <FEATURED_LURE_PHRASE>" and must include the lure phrase exactly once.
+   - Midday/Late lines MUST start with "Midday:" / "Late:".
+     - Do NOT repeat the featured lure phrase on Midday/Late if you are still fishing the same lure.
+     - Only mention a lure again if you are explicitly changing to Pattern 2; in that case put the Pattern 2 lure phrase immediately after the colon for that line.
    - Do NOT write “switch to / then switch / transition to / rotate to / or …”.
-   - Do NOT include any color in Day Progression.
-8) Outlook blurb (if present):
+   - Do NOT include any color in Day Progression (no parentheses, no "in <color>").
+9) Outlook blurb (if present):
    - 1–2 sentences, max ~35 words
    - no lure names
    - no new numbers beyond the provided weather values
    - commentary only; must not change any decisions
 
 VALIDATION CHECK BEFORE RETURNING JSON
-- All lures are from allowed_lures.
-- All colors are from allowed_colors.
-- All targets are from canonical_targets.
-- Day Progression has no colors and uses at most 2 lures.
+- All lures are from allowed_lures and match exactly.
+- All colors are from allowed_colors and match exactly.
+- All targets are from canonical_targets and match exactly.
+- Day Progression has no colors, uses at most 2 lures total, and does not repeat lure names unless changing lures.
+- Terminal/plastic + trailer constraints are satisfied (no illegal plastics; no chunk misuse).
 """.strip()
 
 
@@ -163,15 +187,10 @@ def _pick_allowed_color(raw: str, allowed_set: set) -> Optional[str]:
 
 
 def _normalize_colors_in_plan(plan: Dict[str, Any], allowed_colors: Optional[List[str]]) -> None:
-    """
-    Force plan.color_recommendations into canonical allowed values.
-    Clamps to allowed_colors (preferred).
-    """
     cols = plan.get("color_recommendations")
     if not isinstance(cols, list) or not cols:
         return
 
-    # flatten candidates
     candidates: List[str] = []
     for c in cols:
         if c is None:
@@ -179,7 +198,6 @@ def _normalize_colors_in_plan(plan: Dict[str, Any], allowed_colors: Optional[Lis
         token = _normalize_color_key(c)
         if not token:
             continue
-        # split a/b
         parts = [token] + ([p.strip() for p in token.split("/") if p.strip()] if "/" in token else [])
         for p in parts:
             if p and p not in candidates:
@@ -198,22 +216,14 @@ def _normalize_colors_in_plan(plan: Dict[str, Any], allowed_colors: Optional[Lis
             if len(chosen) == 2:
                 break
         if not chosen:
-            # deterministic fallback to first allowed
             fallback = _normalize_color_key(allowed_colors[0]) if allowed_colors else ""
             chosen = [fallback] if fallback else []
         plan["color_recommendations"] = chosen[:2]
     else:
-        # soft normalize only
         plan["color_recommendations"] = candidates[:2]
 
 
 def _strip_colors_from_day_progression(plan: Dict[str, Any]) -> None:
-    """
-    Remove color mentions from ALL day_progression lines (no exceptions).
-    Handles:
-      - "(green pumpkin blue)"
-      - "in green pumpkin blue"
-    """
     dp = plan.get("day_progression")
     if not (isinstance(dp, list) and dp):
         return
@@ -223,17 +233,13 @@ def _strip_colors_from_day_progression(plan: Dict[str, Any]) -> None:
         if not isinstance(line, str) or not line.strip():
             continue
 
-        # remove parenthetical tokens
         line = re.sub(r"\s*\([^)]{1,40}\)\s*", " ", line)
-
-        # remove "in <color...>" phrases
         line = re.sub(
             r"\s+\bin\b\s+[a-z0-9][a-z0-9 /_-]{1,40}(?=\s*(—|--|-|,|;|:|\.|\s))",
             " ",
             line,
             flags=re.IGNORECASE,
         )
-
         line = re.sub(r"\s+", " ", line).strip()
         dp[i] = line
 
@@ -241,10 +247,6 @@ def _strip_colors_from_day_progression(plan: Dict[str, Any]) -> None:
 
 
 def _build_featured_phrase(plan: Dict[str, Any]) -> str:
-    """
-    Phrase that MUST appear in the Morning line.
-    Prefer conditions.primary_lure_spec.display_name if present, else featured_lure_name.
-    """
     c = plan.get("conditions")
     if isinstance(c, dict):
         pls = c.get("primary_lure_spec")
@@ -252,9 +254,34 @@ def _build_featured_phrase(plan: Dict[str, Any]) -> str:
             dn = str(pls.get("display_name") or "").strip()
             if dn:
                 return dn
+    return str(plan.get("featured_lure_name") or "").strip()
 
-    featured = str(plan.get("featured_lure_name") or "").strip()
-    return featured
+
+def _build_secondary_phrase(plan: Dict[str, Any]) -> Optional[str]:
+    """
+    Pattern 2 lure phrase (for DP only). Prefer conditions.pattern_2.primary_lure_spec.display_name.
+    Falls back to first pattern_2 recommended_lure string.
+    """
+    c = plan.get("conditions") or {}
+    if not isinstance(c, dict):
+        return None
+    p2 = c.get("pattern_2")
+    if not isinstance(p2, dict):
+        return None
+
+    pls = p2.get("primary_lure_spec")
+    if isinstance(pls, dict):
+        dn = str(pls.get("display_name") or "").strip()
+        if dn:
+            return dn
+
+    recs = p2.get("recommended_lures") or []
+    if isinstance(recs, list) and recs:
+        s = str(recs[0] or "").strip()
+        return s or None
+
+    lure = str(p2.get("lure") or "").strip()
+    return lure or None
 
 
 def _norm_text(s: Any) -> str:
@@ -277,15 +304,10 @@ def _validate_featured_lure_in_morning(plan: Dict[str, Any]) -> Tuple[bool, Opti
     count = _norm_text(morning).count(_norm_text(expected))
     if count != 1:
         return False, f"Morning line must contain '{expected}' exactly once (found {count})"
-
     return True, None
 
 
 def _force_morning_must_phrase(plan: Dict[str, Any]) -> None:
-    """
-    Enforce Morning line contains EXACTLY ONE '{featured_display}' (NO color).
-    Also ensures lure is immediately after "Morning:".
-    """
     dp = plan.get("day_progression")
     if not (isinstance(dp, list) and dp and isinstance(dp[0], str)):
         return
@@ -295,14 +317,12 @@ def _force_morning_must_phrase(plan: Dict[str, Any]) -> None:
         return
 
     morning_raw = dp[0].strip()
-
     if not morning_raw.lower().startswith("morning:"):
         morning_raw = "Morning: " + morning_raw
 
     prefix, _, rest = morning_raw.partition(":")
     rest = rest.strip()
 
-    # strip any existing must phrase (dash tolerant) + optional parenthetical right after
     must_rx = re.compile(
         re.escape(_norm_text(must)).replace("-", r"[-—–]") + r"(\s*\([^)]*\))?",
         re.IGNORECASE,
@@ -320,29 +340,12 @@ def _force_morning_must_phrase(plan: Dict[str, Any]) -> None:
 
 def _clamp_day_progression_to_two_lures(plan: Dict[str, Any]) -> None:
     """
-    Enforce: Day progression uses at most 2 lures total.
-    - Lure #1: featured (Pattern 1)
-    - Lure #2: Pattern 2 first recommended lure (if present)
-    Also removes "or <lure>" forks + disallowed 'switch/transition' phrasing.
+    Only removes forbidden 'switch/transition' phrasing + "or <lure>" forks.
+    The actual "don't repeat lure unless changing" rule is enforced separately.
     """
     dp = plan.get("day_progression")
     if not (isinstance(dp, list) and len(dp) >= 3):
         return
-
-    featured_phrase = _build_featured_phrase(plan).strip()
-    if not featured_phrase:
-        return
-
-    # pattern_2 lure (optional)
-    secondary: Optional[str] = None
-    c = plan.get("conditions") or {}
-    p2 = c.get("pattern_2") if isinstance(c, dict) else None
-    if isinstance(p2, dict):
-        recs = p2.get("recommended_lures") or []
-        if isinstance(recs, list) and recs:
-            secondary = str(recs[0]).strip()
-        elif p2.get("lure"):
-            secondary = str(p2["lure"]).strip()
 
     forbidden = re.compile(r"\b(switch to|then switch|transition to|rotate to)\b", re.IGNORECASE)
 
@@ -352,11 +355,101 @@ def _clamp_day_progression_to_two_lures(plan: Dict[str, Any]) -> None:
         line = re.sub(r"\s+", " ", line).strip()
         return line
 
-    for i in (1, 2):
-        line = dp[i]
-        if not isinstance(line, str):
-            continue
-        dp[i] = cleanup(line)
+    for i in range(0, len(dp)):
+        if isinstance(dp[i], str):
+            dp[i] = cleanup(dp[i])
+
+    plan["day_progression"] = dp
+
+
+def _enforce_day_progression_lure_mentions(plan: Dict[str, Any]) -> None:
+    """
+    Kevin rule:
+    - Morning: must include featured lure phrase exactly once (already forced separately).
+    - Midday/Late: do NOT include featured lure phrase unless changing lures.
+      If changing to pattern 2, the line may be "Midday: <P2_PHRASE> — ...".
+      Otherwise Midday/Late must be "Midday: ..." / "Late: ..." with NO lure phrase.
+
+    Also strips lure repeats in the body of lines (only allowed right after colon when changing).
+    """
+    dp = plan.get("day_progression")
+    if not (isinstance(dp, list) and len(dp) >= 3 and all(isinstance(x, str) for x in dp[:3])):
+        return
+
+    featured = _build_featured_phrase(plan).strip()
+    secondary = (_build_secondary_phrase(plan) or "").strip() or None
+
+    def strip_phrase_anywhere(text: str, phrase: str) -> str:
+        if not phrase:
+            return text
+        rx = re.compile(re.escape(phrase), re.IGNORECASE)
+        return rx.sub("", text)
+
+    def normalize_prefix(line: str, prefix: str) -> Tuple[str, str]:
+        ln = line.strip()
+        if not ln.lower().startswith(prefix.lower()):
+            # salvage: force the prefix and treat whole line as body
+            return prefix, ln
+        pfx, _, rest = ln.partition(":")
+        return pfx.strip().title() + ":", rest.strip()
+
+    def clean_midlate(prefix: str, line: str) -> str:
+        pfx, rest = normalize_prefix(line, prefix)
+
+        # If rest begins with featured, remove it (no repeats)
+        if featured:
+            feat_head = re.compile(rf"^\s*{re.escape(featured)}\b\s*(—|-|--|:)?\s*", re.IGNORECASE)
+            rest = feat_head.sub("", rest).strip()
+
+        # If rest begins with secondary, keep it (this indicates a change)
+        used_secondary = False
+        if secondary:
+            sec_head = re.compile(rf"^\s*{re.escape(secondary)}\b", re.IGNORECASE)
+            used_secondary = bool(sec_head.search(rest))
+
+        # Now strip any lure phrases from the body (only allow secondary at head when used)
+        body = rest
+        if featured:
+            body = strip_phrase_anywhere(body, featured)
+
+        if secondary:
+            if used_secondary:
+                # keep one head occurrence; strip the rest
+                # Split once on the first occurrence (case-insensitive) by using a regex match
+                m = re.search(re.escape(secondary), body, flags=re.IGNORECASE)
+                if m:
+                    head = body[: m.end()]
+                    tail = body[m.end() :]
+                    tail = strip_phrase_anywhere(tail, secondary)
+                    body = head + tail
+            else:
+                body = strip_phrase_anywhere(body, secondary)
+
+        # Clean punctuation spacing
+        body = re.sub(r"\s+", " ", body).strip()
+        body = body.strip("—- ").strip()
+
+        # Rebuild:
+        # - If changing lures (secondary at head), keep "Midday: <secondary> — body"
+        # - Otherwise "Midday: body" (no lure)
+        if secondary:
+            m = re.match(rf"^{re.escape(secondary)}\b(.*)$", body, flags=re.IGNORECASE)
+            if m:
+                tail = m.group(1).strip()
+                tail = tail.strip("—- ").strip()
+                if tail:
+                    return f"{pfx} {secondary} — {tail}"
+                return f"{pfx} {secondary}"
+
+        return f"{pfx} {body}".rstrip()
+
+    # Morning: ensure correct prefix casing and keep as-is after force
+    mpfx, mrest = normalize_prefix(dp[0], "Morning:")
+    dp[0] = f"{mpfx} {mrest}".strip()
+
+    # Midday/Late enforce
+    dp[1] = clean_midlate("Midday:", dp[1])
+    dp[2] = clean_midlate("Late:", dp[2])
 
     plan["day_progression"] = dp
 
@@ -375,13 +468,10 @@ def _validate_plan_only_shape(plan: Any) -> Tuple[bool, str]:
 
     if not isinstance(plan.get("conditions"), dict):
         return False, "conditions must be an object"
-
     if not isinstance(plan.get("recommended_lures"), list):
         return False, "recommended_lures must be a list"
-
     if not isinstance(plan.get("recommended_targets"), list):
         return False, "recommended_targets must be a list"
-
     if not isinstance(plan.get("day_progression"), list):
         return False, "day_progression must be a list"
 
@@ -422,8 +512,6 @@ def _validate_allowed_colors(plan: Dict[str, Any], allowed_colors: List[str]) ->
         if not picked:
             return False, f"color '{c}' not in allowed_colors"
 
-    # also enforce lure-specific color rules
-    # (we validate against the *base lure* = first recommended lure when present)
     base_lure = None
     recs = plan.get("recommended_lures") or []
     if isinstance(recs, list) and recs:
@@ -446,19 +534,18 @@ def _validate_allowed_targets(plan: Dict[str, Any]) -> Tuple[bool, str]:
 
 
 def _normalize_plan(plan: Dict[str, Any], *, allowed_colors: Optional[List[str]] = None) -> Dict[str, Any]:
-    # normalize colors
     _normalize_colors_in_plan(plan, allowed_colors)
 
-    # enforce no colors in DP
+    # DP cleanup order matters:
+    _strip_colors_from_day_progression(plan)
+    _clamp_day_progression_to_two_lures(plan)
+    _force_morning_must_phrase(plan)
     _strip_colors_from_day_progression(plan)
 
-    # enforce Morning lure phrase (format drift resistant)
-    _force_morning_must_phrase(plan)
+    # Kevin rule: do not repeat lure names in DP unless changing lures
+    _enforce_day_progression_lure_mentions(plan)
 
-    # DP clamp: at most 2 lures and no switch language
-    _clamp_day_progression_to_two_lures(plan)
-
-    # strip colors again (in case force/clamp reintroduced tokens)
+    # final defensive strip (colors sometimes sneak back via punctuation)
     _strip_colors_from_day_progression(plan)
 
     return plan
@@ -497,7 +584,6 @@ async def generate_plan_via_openai(
 
     model = (os.getenv("OPENAI_MODEL") or "gpt-5-mini").strip() or "gpt-5-mini"
 
-    # defaults to canonical pools if caller didn’t pass lists
     allowed_lures = allowed_lures or list(LURE_POOL)
     allowed_colors = allowed_colors or list(COLOR_POOL)
     canonical_targets = canonical_targets or list(CANONICAL_TARGETS)
@@ -528,9 +614,9 @@ async def generate_plan_via_openai(
             "phase": "string",
             "depth_zone": "string",
             "recommended_lures": ["string", "string"],
-            "recommended_targets": ["string", "..."],  # MUST be from canonical_targets, 3-5
+            "recommended_targets": ["string", "..."],
             "strategy_tips": ["string", "..."],
-            "color_recommendations": ["string", "string"],  # MUST be from allowed_colors
+            "color_recommendations": ["string", "string"],
             "lure_setups": ["object", "..."],
             "conditions": {"...": "...", "pattern_2": {"...": "..."}},
             "notes": "string",
@@ -576,7 +662,6 @@ async def generate_plan_via_openai(
         raw = _strip_code_fences(text_out)
         plan = json.loads(raw)
 
-        # Normalize BEFORE validating
         if not isinstance(plan, dict):
             print("OPENAI PLAN ERROR: output is not an object")
             return None
@@ -588,25 +673,21 @@ async def generate_plan_via_openai(
             print("OPENAI PLAN SHAPE INVALID:", msg)
             return None
 
-        # Validate lures
         ok, msg = _validate_allowed_lures(plan, allowed_lures)
         if not ok:
             print("OPENAI PLAN VALIDATION FAILED:", msg)
             return None
 
-        # Validate targets
         ok, msg = _validate_allowed_targets(plan)
         if not ok:
             print("OPENAI PLAN VALIDATION FAILED:", msg)
             return None
 
-        # Validate colors + lure-specific restrictions
         ok, msg = _validate_allowed_colors(plan, allowed_colors)
         if not ok:
             print("OPENAI PLAN VALIDATION FAILED:", msg)
             return None
 
-        # Validate DP Morning lure phrase (post-force)
         ok, msg = _validate_featured_lure_in_morning(plan)
         if not ok:
             print("OPENAI PLAN VALIDATION FAILED:", msg)
