@@ -8,7 +8,6 @@ from .pools import (
     COLOR_POOL,
     HARDBAIT_ONLY_COLORS,
     HARDBAIT_LURES,
-    CANONICAL_TARGETS,
     LURE_POOL,
     LURE_TO_PRESENTATION,
     TERMINAL_PLASTIC_MAP,
@@ -21,6 +20,7 @@ from .pools import (
     BOTTOM_JIGS,
     BAITFISH_SET,
 )
+from .targets import CANONICAL_TARGETS  # ✅ Import from targets.py
 
 # ----------------------------------------
 # CORE VALIDATORS

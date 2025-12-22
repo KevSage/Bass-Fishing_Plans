@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { generateMemberPlan } from "@/lib/api";
-import type { PlanResponse } from "@/features/plan/types";
+import type { PlanGenerateResponse, PlanResponse } from "@/features/plan/types";
 import { PlanDownloads } from "@/features/plan/PlanDownloads";
 import { PlanScreen } from "@/features/plan/PlanScreen";
 
@@ -14,7 +14,7 @@ export function Members() {
   const [waterName, setWaterName] = useState("");
   const [lat, setLat] = useState("");
   const [lon, setLon] = useState("");
-  const [plan, setPlan] = useState<PlanResponse | null>(null);
+  const [plan, setPlan] = useState<PlanGenerateResponse | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -117,9 +117,9 @@ export function Members() {
 
       {plan ? (
         <div style={{ marginTop: 18 }}>
-          <PlanDownloads plan={plan} />
+          <PlanDownloads response={plan} />
           <div style={{ height: 18 }} />
-          <PlanScreen plan={plan} />
+          <PlanScreen response={plan} />
         </div>
       ) : null}
     </div>
