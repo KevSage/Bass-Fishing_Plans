@@ -1,34 +1,48 @@
-import React from "react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import type { PlanResponse } from "./types";
-import { MobileFieldPlanPDF } from "./pdf/MobileFieldPlanPDF";
-import { PrintablePlanPDF } from "./pdf/PrintablePlanPDF";
-
 // src/features/plan/PlanDownloads.tsx
+// Updated to use new backend download URLs
 
-export function PlanDownloads({ plan }: { plan: PlanResponse }) {
-  const geo = plan?.geo;
-  const p = plan?.plan;
-  const conditions = p?.conditions;
+import React from "react";
+import type { PlanGenerateResponse } from "./types";
 
-  const waterName =
-    geo?.name ??
-    conditions?.location_name ??
-    (plan as any)?.geo?.name ??
-    "Your Area";
-
-  // TODO: wire to your real artifact fields
-  // const artifacts = plan.artifacts ?? {};
-  // const mobileUrl = artifacts.mobile_pdf_url ?? artifacts.mobile?.url ?? null;
-  // const printUrl  = artifacts.print_pdf_url  ?? artifacts.printable?.url ?? null;
+export function PlanDownloads({ response }: { response: PlanGenerateResponse }) {
+  const { token } = response;
+  
+  // Download URLs from backend
+  const mobileUrl = `${import.meta.env.VITE_API_BASE ?? "http://localhost:8000"}/plan/download/${token}/mobile`;
+  const a4Url = `${import.meta.env.VITE_API_BASE ?? "http://localhost:8000"}/plan/download/${token}/a4`;
 
   return (
     <div className="card">
-      <div className="label">Downloads</div>
-      <div className="p" style={{ marginTop: 6 }}>
-        {waterName}
+      <div className="kicker">Downloads</div>
+      <h3 className="h3" style={{ marginTop: 8 }}>
+        Save Your Plan
+      </h3>
+      <p className="p" style={{ marginTop: 8, opacity: 0.8 }}>
+        Download your plan for offline viewing or printing.
+      </p>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+        <a
+          href={mobileUrl}
+          download
+          className="btn secondary"
+          style={{ textDecoration: "none", textAlign: "center" }}
+        >
+          📱 Mobile Dark
+        </a>
+        <a
+          href={a4Url}
+          download
+          className="btn secondary"
+          style={{ textDecoration: "none", textAlign: "center" }}
+        >
+          🖨️ A4 Printable
+        </a>
       </div>
-      {/* buttons here */}
+
+      <p style={{ marginTop: 12, fontSize: "0.85em", opacity: 0.6 }}>
+        Mobile version optimized for on-the-water viewing. A4 version for printing and tackle box storage.
+      </p>
     </div>
   );
 }

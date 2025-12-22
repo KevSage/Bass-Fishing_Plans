@@ -1,450 +1,394 @@
+# apps/api/app/main.py
+"""
+Bass Fishing Plans API - Complete Backend
+Unified plan generation with LLM, rate limiting, emails, and downloads.
+"""
+from __future__ import annotations
+
 import os
-import asyncio
-from datetime import datetime, date as dt_date
-from zoneinfo import ZoneInfo
-from pathlib import Path
-from time import perf_counter
+from datetime import datetime
+from typing import Any, Dict, Optional
+
+# Load environment variables from .env file
 from dotenv import load_dotenv
+load_dotenv()
 
-from fastapi import FastAPI, Depends, Header, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Any, Dict, List, Optional
+from fastapi.responses import FileResponse, HTMLResponse
+from pydantic import BaseModel, EmailStr
 
-from app.services.geo import resolve_zip
-from app.services.weather import get_weather_snapshot
+# Services
 from app.services.subscribers import SubscriberStore
+from app.services.rate_limits import RateLimitStore
+from app.services.plan_links import PlanLinkStore
+from app.services.weather import get_weather_snapshot
+from app.services.phase_logic import determine_phase
+from app.services.llm_plan_service import generate_llm_plan_with_retries
+from app.services.email_service import (
+    send_preview_plan_email,
+    send_welcome_email,
+    add_to_audience,
+)
+from app.services.pdf_generator import (
+    generate_mobile_dark_html,
+    generate_a4_printable_html,
+)
 from app.services.stripe_billing import (
     create_checkout_session,
     verify_webhook_and_parse_event,
     extract_subscription_state,
 )
 
-
-from app.services.open_ai_plan_generator import llm_plan_enabled, generate_plan_via_openai
-from app.canon.pools import LURE_POOL, COLOR_POOL, CANONICAL_TARGETS
-
-# ----------------------------------------
-# ENV (single, explicit .env location)
-# ----------------------------------------
-ENV_PATH = Path(__file__).resolve().parents[1] / ".env"  # apps/api/.env
-load_dotenv(dotenv_path=ENV_PATH, override=True)
-
-ET = ZoneInfo("America/New_York")
-
-
-def et_today() -> dt_date:
-    return datetime.now(ET).date()
-
-
-def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
-    expected = (os.getenv("BFP_API_KEY") or "").strip()
-    if not expected:
-        # If you forgot to set it, fail closed (safer)
-        raise HTTPException(status_code=500, detail="Server auth not configured")
-    if not x_api_key or x_api_key.strip() != expected:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-
-def should_rewrite() -> bool:
-    return str(os.getenv("LLM_REWRITE", "")).strip().lower() in (
-        "1",
-        "true",
-        "yes",
-        "on",
-    )
-
-
-def require_dev_key(x_dev_key: Optional[str] = Header(default=None)) -> None:
-    expected = (os.getenv("BFP_DEV_KEY") or "").strip()
-    if not expected:
-        raise HTTPException(status_code=500, detail="Dev key not configured")
-    if not x_dev_key or x_dev_key.strip() != expected:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
-
-app = FastAPI(title="Bass Fishing Plans API")
+# Initialize stores
 subs = SubscriberStore()
+rate_limits = RateLimitStore()
+plan_links = PlanLinkStore()
 
+# FastAPI app
+app = FastAPI(title="Bass Fishing Plans API")
+
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # Configure appropriately for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-@app.get("/health")
-def health():
-    return {"ok": True}
+# Environment
+WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassfishingplans.com")
 
 
-# ----------------------------
-# Requests
-# ----------------------------
-class PreviewRequest(BaseModel):
-    zip: str
-    email: Optional[str] = None
-    trip_date: Optional[dt_date] = None
-    is_preview: bool = True
+# ========================================
+# REQUEST MODELS
+# ========================================
 
-
-class MemberPlanRequest(BaseModel):
-    email: str
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
-    location_name: Optional[str] = None
-    trip_date: Optional[dt_date] = None
-
-    # optional hints (non-dominant)
-    clarity: Optional[str] = None
-    bottom_composition: Optional[str] = None
-    depth_ft: Optional[float] = None
-    forage: Optional[List[str]] = None
-
-
-# ----------------------------
-# Shared Outputs
-# ----------------------------
-class GeoOut(BaseModel):
-    zip: str
-    lat: float
-    lon: float
-    name: Optional[str] = None
-
-
-# ----------------------------
-# Timing (LOCKED)
-# ----------------------------
-class TimingOut(BaseModel):
-    generated_at: str
-    build_ms: Optional[int] = None
-    snapshot_hash: Optional[str] = None
-
-
-class PreviewTimingOut(BaseModel):
-    total_ms: int
-    rewrite_ms: Optional[int] = None
-
-
-# ----------------------------
-# Responses
-# ----------------------------
-class PreviewResponse(BaseModel):
-    geo: GeoOut
-    plan: Dict[str, Any]
-    markdown: str
-    rewritten: bool
-    day_progression: List[str]
-    timing: PreviewTimingOut
-
-
-class MemberPlanResponse(BaseModel):
-    geo: Dict[str, Any]
-    plan: Dict[str, Any]
-    markdown: str
-    rewritten: bool
-    day_progression: List[str]
-    timing: TimingOut
+class PlanGenerateRequest(BaseModel):
+    email: EmailStr
+    latitude: float
+    longitude: float
+    location_name: str
 
 
 class SubscribeRequest(BaseModel):
-    email: str
+    email: EmailStr
 
 
-class SubscribeResponse(BaseModel):
-    checkout_url: str
+# ========================================
+# PLAN GENERATION (UNIFIED ENDPOINT)
+# ========================================
 
-
-# --- DEV MEMBERS (bypass sub + allow primary_index) ---
-@app.post("/plan/members/dev", dependencies=[Depends(require_dev_key)])
-async def plan_members_dev(
-    body: MemberPlanRequest,
-    primary_index: int = 0,
-):
-    return await plan_members(
-        body=body,
-        bypass_sub_check=True,
-        primary_index=primary_index,
-    )
-
-
-# --- REAL MEMBERS ---
-@app.post("/plan/members", response_model=MemberPlanResponse)
-async def plan_members(
-    body: MemberPlanRequest,
-    bypass_sub_check: bool = False,
-    primary_index: int = 0,
-):
-    email = body.email.strip().lower()
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="Invalid email")
-
-    if (not bypass_sub_check) and (not subs.is_active(email)):
-        raise HTTPException(status_code=403, detail="Subscription required")
-
-    t0 = perf_counter()
-
-    from .patterns.pattern_logic import build_pro_pattern
-    from .patterns.schemas import ProPatternRequest
-    from .render.plan_markdown import render_plan_markdown
-    from .render.day_progression import build_day_progression
-
-    geo = {
-        "name": body.location_name or "Subscriber plan",
-        "lat": body.latitude,
-        "lon": body.longitude,
-    }
-
-    effective_date = body.trip_date or et_today()
-
-    weather_snapshot = None
-    if body.latitude is not None and body.longitude is not None:
-        weather_snapshot = await get_weather_snapshot(body.latitude, body.longitude)
-
-
-
+@app.post("/plan/generate")
+async def plan_generate(body: PlanGenerateRequest):
+    """
+    Unified plan generation endpoint.
     
-    req = ProPatternRequest(
-        latitude=body.latitude,
-        longitude=body.longitude,
-        location_name=body.location_name,
-        clarity=body.clarity,
-        bottom_composition=body.bottom_composition,
-        depth_ft=body.depth_ft,
-        forage=body.forage,
-        weather_snapshot=weather_snapshot,
-        month=effective_date.month,
-        trip_date=effective_date,
-    )
-
-
-    result = build_pro_pattern(req)
-    payload = result.model_dump()
-
-
-    llm_plan: Optional[Dict[str, Any]] = None
-    if llm_plan_enabled() and weather_snapshot:
-        geo_for_llm = {
-            "name": body.location_name or "Subscriber plan",
-            "lat": body.latitude,
-            "lon": body.longitude,
-        }
-
-        llm_plan = await generate_plan_via_openai(
-            geo=geo_for_llm,
-            weather_snapshot=weather_snapshot,
-            trip_date_iso=effective_date.isoformat(),
-            clarity=body.clarity,
-            bottom_composition=body.bottom_composition,
-            depth_ft=body.depth_ft,
-            forage=body.forage,
-            allowed_lures=list(LURE_POOL),
-            allowed_colors=list(COLOR_POOL),
-            canonical_targets=list(CANONICAL_TARGETS),
-            is_preview=False,                    # members endpoint
-            subscriber_email=email,              # your normalized email var
-        )
-
-    # If LLM succeeded, it becomes the plan payload — but we KEEP deterministic conditions
-    if llm_plan:
-        llm_plan["conditions"] = payload.get("conditions", {})
-        payload = llm_plan
-
-
-    if not payload.get("day_progression"):
-        day_prog = build_day_progression(payload)
-        payload["day_progression"] = day_prog
-    else:
-        day_prog = payload["day_progression"]
-
-
-        # --- conditions must exist before we do anything else ---
-    if "conditions" not in payload or not isinstance(payload["conditions"], dict):
-        raise RuntimeError("Pattern engine did not return conditions")
-
-    payload["conditions"]["trip_date"] = effective_date.isoformat()
-    payload["conditions"]["is_future_trip"] = (effective_date > et_today())
-    payload["conditions"]["is_preview"] = False
-    payload["conditions"]["subscriber_email"] = email
-
-    # --- day progression: use LLM-provided if present, else deterministic build ---
-    day_prog = payload.get("day_progression")
-    if not (isinstance(day_prog, list) and all(isinstance(x, str) for x in day_prog) and len(day_prog) >= 3):
-        day_prog = build_day_progression(payload)
-        payload["day_progression"] = day_prog
-    else:
-        # keep payload canonical if it already exists
-        payload["day_progression"] = day_prog
-
-    # -----------------------------
-    # DEV-ONLY: force primary lure
-    # IMPORTANT: do this BEFORE markdown render
-    # NOTE: if you swap lures/colors/setups, you probably want to rebuild day_prog
-    # -----------------------------
-    if bypass_sub_check and primary_index == 1:
-        rl = payload.get("recommended_lures") or []
-        cr = payload.get("color_recommendations") or []
-        ls = payload.get("lure_setups") or []
-
-        if len(rl) > 1:
-            rl[0], rl[1] = rl[1], rl[0]
-        if len(cr) > 1:
-            cr[0], cr[1] = cr[1], cr[0]
-        if len(ls) > 1:
-            ls[0], ls[1] = ls[1], ls[0]
-
-        payload["recommended_lures"] = rl
-        payload["color_recommendations"] = cr
-        payload["lure_setups"] = ls
-
-        # rebuild deterministic day progression so it matches the swapped primary lure
-        day_prog = build_day_progression(payload)
-        payload["day_progression"] = day_prog
-
-    markdown = render_plan_markdown(payload)
-    total_ms = int((perf_counter() - t0) * 1000)
-
-    return {
-        "geo": geo,
-        "plan": payload,
-        "markdown": markdown,
-        "rewritten": False,
-        "day_progression": day_prog,
-        "timing": {
-            "generated_at": datetime.utcnow().isoformat(),
-            "build_ms": total_ms,
-            "snapshot_hash": payload["conditions"].get("snapshot_hash"),
-        },
-    }
-
-
-@app.post(
-    "/plan/preview",
-    response_model=PreviewResponse,
-    dependencies=[Depends(require_api_key)],
-)
-async def plan_preview(body: PreviewRequest):
-    t0 = perf_counter()
-    geo = await resolve_zip(body.zip)
-
-    from .patterns.pattern_logic import build_pro_pattern
-    from .patterns.schemas import ProPatternRequest
-    from .render.plan_markdown import render_plan_markdown
-    from .render.day_progression import build_day_progression
-
-    # ✅ Capture "today" once per request (prevents drift)
-    effective_date = body.trip_date or et_today()
-
-    # ✅ FIX: no trailing comma (was turning this into a tuple)
-    weather = await get_weather_snapshot(geo["lat"], geo["lon"])
-
-    req = ProPatternRequest(
-        latitude=geo["lat"],
-        longitude=geo["lon"],
-        location_name=geo["name"] or f"ZIP {geo['zip']}",
-        weather_snapshot=weather,
-        month=effective_date.month,
-        trip_date=effective_date,
-    )
-
-    result = build_pro_pattern(req)
-    payload = result.model_dump()
-
-    if "conditions" not in payload or not isinstance(payload["conditions"], dict):
-        raise RuntimeError("Pattern engine did not return conditions")
-
-    payload["conditions"]["trip_date"] = effective_date.isoformat()
-    payload["conditions"]["is_future_trip"] = (effective_date > et_today())
-    payload["conditions"]["is_preview"] = True
-
-    day_prog = build_day_progression(payload)
-
-    rewritten = False
-    rewrite_ms = None
-
-    if should_rewrite():
-        t_rewrite = perf_counter()
-        try:
-            from .services.openai_rewrite import rewrite_day_progression
-
-            maybe = await asyncio.wait_for(
-                rewrite_day_progression(payload, day_prog),
-                timeout=8.0,
+    Flow:
+    1. Check if user is subscriber
+    2. Check rate limits (30-day preview OR 3-hour member cooldown)
+    3. Get weather + determine phase
+    4. Generate plan (LLM with Pattern 2 for members)
+    5. Save plan link
+    6. Send email (preview only)
+    7. Return plan URL + data
+    """
+    email = body.email.lower().strip()
+    
+    # 1. Check subscription status
+    is_member = subs.is_active(email)
+    
+    # 2. Rate limiting
+    if is_member:
+        # Members: 3-hour cooldown
+        allowed, seconds_remaining = rate_limits.check_member_cooldown(email)
+        if not allowed:
+            hours = seconds_remaining / 3600
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "rate_limit_member",
+                    "message": f"Please wait {hours:.1f} hours between plan requests",
+                    "seconds_remaining": seconds_remaining,
+                }
             )
-            rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
-
-            if (
-                isinstance(maybe, list)
-                and len(maybe) == 3
-                and all(isinstance(x, str) for x in maybe)
-            ):
-                day_prog = maybe
-                rewritten = True
-
-        except asyncio.TimeoutError:
-            rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
+    else:
+        # Non-members: 30-day preview limit
+        allowed, seconds_remaining = rate_limits.check_preview_limit(email)
+        if not allowed:
+            days = seconds_remaining / (24 * 3600)
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "rate_limit_preview",
+                    "message": f"You can request one preview every 30 days. Next available in {days:.1f} days.",
+                    "seconds_remaining": seconds_remaining,
+                    "upgrade_url": f"{WEB_BASE_URL}/subscribe?email={email}"
+                }
+            )
+    
+    # 3. Get weather and determine phase
+    try:
+        weather = await get_weather_snapshot(body.latitude, body.longitude)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Weather service error: {e}")
+    
+    # Determine phase using regional logic
+    current_month = datetime.now().month
+    phase = determine_phase(
+        temp_f=weather["temp_f"],
+        month=current_month,
+        latitude=body.latitude,
+    )
+    
+    # 4. Generate plan (LLM with retries)
+    trip_date = datetime.now().strftime("%B %d, %Y")
+    
+    try:
+        plan = await generate_llm_plan_with_retries(
+            weather=weather,
+            location=body.location_name,
+            trip_date=trip_date,
+            phase=phase,
+            is_member=is_member,
+            max_retries=2,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Plan generation error: {e}")
+    
+    if not plan:
+        raise HTTPException(
+            status_code=503,
+            detail="Plan generation temporarily unavailable. Please try again."
+        )
+    
+    # Add conditions to plan
+    plan["conditions"] = {
+        "location_name": body.location_name,
+        "latitude": body.latitude,
+        "longitude": body.longitude,
+        "trip_date": trip_date,
+        "phase": phase,
+        "temp_f": weather["temp_f"],
+        "temp_high": weather["temp_high"],
+        "temp_low": weather["temp_low"],
+        "wind_speed": weather["wind_mph"],
+        "sky_condition": weather["cloud_cover"],
+        "subscriber_email": email if is_member else None,
+    }
+    
+    # 5. Save plan link
+    token = plan_links.save_plan(
+        email=email,
+        is_member=is_member,
+        plan_data=plan,
+    )
+    
+    plan_url = f"{WEB_BASE_URL}/plan/view/{token}"
+    
+    # 6. Record request and send email (preview only)
+    email_sent = False
+    
+    if is_member:
+        # Record member request
+        rate_limits.record_member_request(email)
+    else:
+        # Record preview request
+        rate_limits.record_preview(email)
+        
+        # Send preview email
+        try:
+            send_preview_plan_email(
+                to_email=email,
+                plan_url=plan_url,
+                location_name=body.location_name,
+                date=trip_date,
+            )
+            email_sent = True
+            
+            # Add to marketing audience
+            add_to_audience(
+                email=email,
+                tags=["preview_user", "not_subscribed"],
+                is_member=False,
+            )
         except Exception as e:
-            rewrite_ms = int((perf_counter() - t_rewrite) * 1000)
-            print("OPENAI REWRITE ERROR(main.py):", repr(e))
-
-    payload["day_progression"] = day_prog
-    markdown = render_plan_markdown(payload)
-
-    total_ms = int((perf_counter() - t0) * 1000)
-
+            print(f"Email send failed: {e}")
+            # Don't fail the request if email fails
+    
+    # 7. Return response
     return {
-        "geo": geo,
-        "plan": payload,
-        "markdown": markdown,
-        "rewritten": rewritten,
-        "day_progression": day_prog,
-        "timing": {"total_ms": total_ms, "rewrite_ms": rewrite_ms},
+        "plan_url": plan_url,
+        "token": token,
+        "is_member": is_member,
+        "email_sent": email_sent,
+        "plan": plan,
     }
 
 
-@app.post("/billing/subscribe", response_model=SubscribeResponse)
-def billing_subscribe(body: SubscribeRequest):
-    email = body.email.strip().lower()
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="Invalid email")
+# ========================================
+# PLAN VIEWING
+# ========================================
 
-    url = create_checkout_session(email=email)
-    return {"checkout_url": url}
+@app.get("/plan/view/{token}")
+async def plan_view(token: str):
+    """
+    View a saved plan by token.
+    Anyone with the link can view.
+    """
+    plan_data = plan_links.get_plan(token)
+    
+    if not plan_data:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    return {
+        "plan": plan_data["plan"],
+        "is_member": plan_data["is_member"],
+        "created_at": plan_data["created_at"],
+        "views": plan_data["views"],
+        "download_urls": {
+            "mobile_dark": f"/plan/download/{token}/mobile",
+            "a4_printable": f"/plan/download/{token}/a4",
+        }
+    }
+
+
+# ========================================
+# PLAN DOWNLOADS
+# ========================================
+
+@app.get("/plan/download/{token}/mobile")
+async def plan_download_mobile(token: str):
+    """
+    Download mobile-optimized dark theme HTML.
+    Can be converted to PDF client-side or served as HTML.
+    """
+    plan_data = plan_links.get_plan(token)
+    
+    if not plan_data:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    html = generate_mobile_dark_html(plan_data["plan"])
+    
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Content-Disposition": f'attachment; filename="fishing_plan_mobile_{token[:8]}.html"'
+        }
+    )
+
+
+@app.get("/plan/download/{token}/a4")
+async def plan_download_a4(token: str):
+    """
+    Download A4 printable HTML.
+    Can be converted to PDF client-side or printed directly.
+    """
+    plan_data = plan_links.get_plan(token)
+    
+    if not plan_data:
+        raise HTTPException(status_code=404, detail="Plan not found")
+    
+    html = generate_a4_printable_html(plan_data["plan"])
+    
+    return HTMLResponse(
+        content=html,
+        headers={
+            "Content-Disposition": f'attachment; filename="fishing_plan_a4_{token[:8]}.html"'
+        }
+    )
+
+
+# ========================================
+# BILLING / STRIPE
+# ========================================
+
+@app.post("/billing/subscribe")
+def billing_subscribe(body: SubscribeRequest):
+    """
+    Create Stripe checkout session for subscription.
+    """
+    email = body.email.strip().lower()
+    
+    try:
+        checkout_url = create_checkout_session(email=email)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Billing error: {e}")
+    
+    return {"checkout_url": checkout_url}
 
 
 @app.post("/webhooks/stripe")
 async def stripe_webhook(request: Request):
+    """
+    Handle Stripe webhooks for subscription events.
+    """
     payload = await request.body()
-
-    sig = request.headers.get("stripe-signature") or request.headers.get(
-        "Stripe-Signature"
-    )
-
+    sig = request.headers.get("stripe-signature")
+    
     try:
         event = verify_webhook_and_parse_event(payload=payload, stripe_signature=sig)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid webhook")
-
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Webhook verification failed: {e}")
+    
+    # Extract subscription state
     update = extract_subscription_state(event)
-
-    etype = event.get("type")
-    if etype in (
-        "checkout.session.completed",
-        "customer.subscription.created",
-        "customer.subscription.updated",
-        "customer.subscription.deleted",
-    ):
-        print("STRIPE EVENT:", etype, "UPDATE:", update)
-
+    
     if update:
         email, active, customer_id, subscription_id = update
+        
+        # Update subscriber status
         subs.upsert_active(
-            email,
+            email=email,
             active=active,
             stripe_customer_id=customer_id,
             stripe_subscription_id=subscription_id,
         )
-
+        
+        # Send welcome email for new subscribers
+        if active and event.get("type") == "checkout.session.completed":
+            try:
+                send_welcome_email(email)
+            except Exception as e:
+                print(f"Welcome email failed for {email}: {e}")
+    
     return {"ok": True}
+
+
+# ========================================
+# HEALTH CHECK
+# ========================================
+
+@app.get("/health")
+def health_check():
+    """
+    Simple health check endpoint.
+    """
+    return {
+        "status": "healthy",
+        "services": {
+            "subscribers": "ok",
+            "rate_limits": "ok",
+            "plan_links": "ok",
+        }
+    }
+
+
+@app.get("/")
+def root():
+    """
+    Root endpoint.
+    """
+    return {
+        "service": "Bass Fishing Plans API",
+        "version": "2.0",
+        "endpoints": {
+            "generate_plan": "POST /plan/generate",
+            "view_plan": "GET /plan/view/{token}",
+            "download_mobile": "GET /plan/download/{token}/mobile",
+            "download_a4": "GET /plan/download/{token}/a4",
+            "subscribe": "POST /billing/subscribe",
+            "health": "GET /health",
+        }
+    }
