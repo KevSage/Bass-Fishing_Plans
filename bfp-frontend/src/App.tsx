@@ -4,11 +4,14 @@ import { Navigation } from "./components/Navigation";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
 import { Subscribe } from "./pages/Subscribe";
-import { Preview } from "./pages/Preview";
+import { PreviewEnhanced } from "./pages/Preview";
 import { Members } from "./pages/Members";
 import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
 import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
+import "./styles.css";
+// import "./enhanced-styles.css";
+import { PlanPage } from "./pages/PlanPage";
 
 function TopBar() {
   return (
@@ -58,7 +61,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/subscribe" element={<Subscribe />} />
-        <Route path="/preview" element={<Preview />} />
+        <Route path="/preview" element={<PreviewEnhanced />} />
         <Route path="/members" element={<Members />} />
         <Route
           path="/what-your-plan-includes"
@@ -66,7 +69,7 @@ export default function App() {
         />
         <Route path="/how-to-use" element={<HowToUse />} />
         <Route path="/faq" element={<FAQ />} />
-        <Route path="/preview" element={<Preview />} />
+        <Route path="/plan" element={<PlanPage />} />
       </Routes>
     </>
   );

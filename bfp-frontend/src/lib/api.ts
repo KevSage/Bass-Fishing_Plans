@@ -1,7 +1,9 @@
 // src/lib/api.ts
 // Updated to use new backend /plan/generate endpoint
-
-import type { PlanGenerateResponse, PlanViewResponse, RateLimitError } from "../features/plan/types";
+import type {
+  PlanGenerateResponse,
+  PlanViewResponse,
+} from "../features/plan/types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8000";
 const API_KEY = import.meta.env.VITE_API_KEY;
@@ -19,14 +21,14 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   if (!res.ok) {
     // Handle rate limit errors specially
     if (res.status === 429) {
-      const errorData = await res.json() as RateLimitError;
+      const errorData = (await res.json()) as RateLimitError;
       throw new RateLimitError(errorData);
     }
-    
+
     const text = await res.text().catch(() => "");
     throw new Error(`${res.status} ${text || res.statusText}`);
   }
-  
+
   return (await res.json()) as T;
 }
 
@@ -42,7 +44,7 @@ export async function apiGet<T>(path: string): Promise<T> {
     const text = await res.text().catch(() => "");
     throw new Error(`${res.status} ${text || res.statusText}`);
   }
-  
+
   return (await res.json()) as T;
 }
 
@@ -89,20 +91,27 @@ export async function viewPlan(token: string): Promise<PlanViewResponse> {
 }
 
 // Subscribe (Stripe checkout)
-export async function createCheckoutSession(email: string): Promise<{ checkout_url: string }> {
-  return await apiPost<{ checkout_url: string }>("/billing/subscribe", { email });
+export async function createCheckoutSession(
+  email: string
+): Promise<{ checkout_url: string }> {
+  return await apiPost<{ checkout_url: string }>("/billing/subscribe", {
+    email,
+  });
 }
 
 // Legacy functions for backward compatibility
-export async function generatePreview(payload: any): Promise<PlanGenerateResponse> {
+export async function generatePreview(
+  payload: any
+): Promise<PlanGenerateResponse> {
   // Convert old payload format to new format
   const newPayload: GeneratePlanRequest = {
     email: payload.email,
     latitude: payload.lat ?? payload.latitude ?? 0,
     longitude: payload.lon ?? payload.longitude ?? 0,
-    location_name: payload.water?.name ?? payload.location_name ?? "Unknown Lake",
+    location_name:
+      payload.water?.name ?? payload.location_name ?? "Unknown Lake",
   };
-  
+
   return await generatePlan(newPayload);
 }
 
@@ -122,6 +131,6 @@ export async function generateMemberPlan(
     longitude: payload.water.lon,
     location_name: payload.water.name,
   };
-  
+
   return await generatePlan(newPayload);
 }

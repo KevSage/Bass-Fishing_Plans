@@ -5,11 +5,10 @@ import App from "./App";
 import "./styles/base.css";
 import "./styles/ui.css";
 import "mapbox-gl/dist/mapbox-gl.css";
+// import "./enhanced-styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
 );
