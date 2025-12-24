@@ -40,6 +40,9 @@ from app.services.stripe_billing import (
     extract_subscription_state,
 )
 
+# Routes
+from app.routes import clerk_webhooks, members
+
 # Initialize stores
 subs = SubscriberStore()
 rate_limits = RateLimitStore()
@@ -373,6 +376,14 @@ def health_check():
             "plan_links": "ok",
         }
     }
+
+
+# ========================================
+# CLERK & MEMBER ROUTES
+# ========================================
+
+app.include_router(clerk_webhooks.router, tags=["clerk"])
+app.include_router(members.router, tags=["members"])
 
 
 @app.get("/")
