@@ -12,6 +12,7 @@ import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
 import SignInPage from "./pages/signIn";
 import SignUpPage from "./pages/signUp";
+import { Admin } from "./pages/Admin";
 // import "./styles.css";
 // import "./enhanced-styles.css";
 import "./complete-styles.css";
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/preview" element={<PreviewEnhanced />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/admin" element={<Admin />} />
         <Route
           path="/members"
           element={

@@ -1,37 +1,101 @@
 // src/pages/PlanPage.tsx
 // Fixed version with mount guard to prevent duplicate rendering
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import type { PlanGenerateResponse } from "@/features/plan/types";
 import { PlanDownloads } from "@/features/plan/PlanDownloads";
 import { PlanScreen } from "@/features/plan/PlanScreen";
 
 export function PlanPage() {
-  const mounted = useRef(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const hasFetched = useRef(false);
+
   const planResponse = location.state?.planResponse as
     | PlanGenerateResponse
     | undefined;
 
-  // Guard against duplicate mounting
-  useEffect(() => {
-    if (mounted.current) {
-      console.warn("⚠️ PlanPage mounted TWICE - this should not happen!");
-      return;
-    }
-    mounted.current = true;
-    console.log("✓ PlanPage mounted");
+  // Check if we have a token in URL
+  const token = React.useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("token");
+  }, [location.search]);
 
-    return () => {
-      console.log("PlanPage unmounting");
-      mounted.current = false;
-    };
+  const [tokenPlan, setTokenPlan] = React.useState<PlanGenerateResponse | null>(
+    null
+  );
+  const [loading, setLoading] = React.useState(!!token && !planResponse);
+  const [error, setError] = React.useState<string | null>(null);
+
+  // Memoized fetch function
+  const fetchPlan = useCallback(async (tokenValue: string) => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/plan/view/${tokenValue}`
+      );
+      const data = await res.json();
+
+      // Add plan_url if missing
+      if (!data.plan_url) {
+        data.plan_url = `${window.location.origin}/plan/view/${tokenValue}`;
+      }
+
+      setTokenPlan(data);
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+      hasFetched.current = false; // Allow retry on error
+    }
   }, []);
 
+  // Load plan by token - only once
+  useEffect(() => {
+    if (token && !planResponse) {
+      fetchPlan(token);
+    }
+  }, []); // Empty deps - only run on mount
+
+  const plan = planResponse || tokenPlan;
+
   // If no plan data, redirect back
-  if (!planResponse) {
+  if (loading) {
+    return (
+      <div
+        className="container"
+        style={{ paddingTop: 80, textAlign: "center" }}
+      >
+        <h2 className="h2">Loading Plan...</h2>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        className="container"
+        style={{ paddingTop: 80, textAlign: "center" }}
+      >
+        <h2 className="h2">Error Loading Plan</h2>
+        <p className="p" style={{ marginTop: 16, opacity: 0.7 }}>
+          {error}
+        </p>
+        <Link
+          to="/preview"
+          className="btn primary"
+          style={{ marginTop: 24, display: "inline-block" }}
+        >
+          Generate a New Plan
+        </Link>
+      </div>
+    );
+  }
+
+  if (!plan) {
     return (
       <div
         className="container"
@@ -54,42 +118,14 @@ export function PlanPage() {
 
   return (
     <div className="container" style={{ paddingTop: 44, paddingBottom: 80 }}>
-      {/* Header Actions */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-          flexWrap: "wrap",
-          gap: 12,
-        }}
-      >
-        <button
-          onClick={() => navigate("/preview")}
-          className="btn"
-          style={{ display: "flex", alignItems: "center", gap: 8 }}
-        >
-          ← Generate Another Plan
-        </button>
-
-        {!planResponse.is_member && (
-          <Link to="/subscribe" className="btn primary">
-            Get Full Plans
-          </Link>
-        )}
-      </div>
-
-      {/* Downloads Section */}
-      <PlanDownloads response={planResponse} />
-
-      <div style={{ height: 24 }} />
-
       {/* Plan Display */}
-      <PlanScreen response={planResponse} />
+      <PlanScreen response={plan} />
+
+      {/* Downloads Section - MOVED TO BOTTOM */}
+      <PlanDownloads response={plan} />
 
       {/* Share Section */}
-      {planResponse.plan_url && (
+      {plan.plan_url && (
         <div className="card" style={{ marginTop: 32, textAlign: "center" }}>
           <h3 style={{ marginBottom: 12 }}>Share This Plan</h3>
           <div
@@ -105,7 +141,7 @@ export function PlanPage() {
           >
             <input
               type="text"
-              value={planResponse.plan_url}
+              value={plan.plan_url}
               readOnly
               style={{
                 flex: 1,
@@ -120,7 +156,7 @@ export function PlanPage() {
             <button
               className="btn secondary"
               onClick={() => {
-                navigator.clipboard.writeText(planResponse.plan_url);
+                navigator.clipboard.writeText(plan.plan_url);
                 alert("Link copied!");
               }}
             >

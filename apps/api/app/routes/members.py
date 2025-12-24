@@ -8,6 +8,7 @@ import os
 from typing import Dict, Optional
 
 import httpx
+import jwt
 from fastapi import APIRouter, HTTPException, Header
 
 from app.services.subscribers import SubscriberStore

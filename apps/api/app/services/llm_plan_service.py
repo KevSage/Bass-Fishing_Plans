@@ -179,15 +179,24 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    - NO colors in day progression (no parentheses, no "in green pumpkin")
    - Be specific and tactical about what to do, not just "fish here"
 
-10. OUTLOOK BLURB:
-   - 2-3 sentences explaining conditions and expected fish behavior
-   - Use DESCRIPTIVE weather language (e.g., "cool water temperatures and overcast skies")
-   - DO NOT repeat exact numbers shown in conditions (e.g., NOT "With 48°F and 8 mph wind...")
-   - Reference the phase and what that means for bass activity
-   - Max ~60 words
-   - NO lure names in outlook
+10. WEATHER FORECAST (outlook_blurb):
+   - 3-4 sentences describing the WEATHER FORECAST for the fishing day
+   - Focus ONLY on weather conditions - NO bass behavior, NO fishing strategy, NO lure advice
+   - Include: current conditions, how they might change throughout the day, and any factors that affect fishing
+   - Use descriptive weather language but DO NOT repeat exact numbers from conditions
+   - Mention things like: cloud cover changes, wind shifts, temperature trends, precipitation, pressure changes
+   - Max ~80 words
    
-   Example: "Cool water temperatures and overcast skies have bass in deep winter mode. Fish will be lethargic and grouped on main-lake structure. Expect slow, methodical fishing with subtle bites - patience is key today."
+   GOOD Examples:
+   ✅ "Expect overcast skies throughout the morning with cloud cover gradually breaking up by early afternoon. Temperatures will climb from the low 50s to upper 60s as the day progresses. Light winds from the south will pick up to moderate speeds around midday. A warming trend is in effect, making afternoon conditions noticeably milder than morning."
+   ✅ "Clear skies and bright sun dominate the forecast with minimal cloud cover expected. Temperatures remain stable in the mid-70s throughout the day. Calm morning conditions will give way to a steady southerly breeze by late morning. No precipitation expected, with high pressure keeping conditions stable."
+   ✅ "Cloudy conditions persist all day with occasional breaks of filtered sunlight. A cold front passed overnight, leaving cooler temperatures and shifting winds. Morning starts calm but expect northwest winds to build through midday. Temperatures drop slightly as the day progresses - cooler afternoon than morning."
+   
+   BAD Examples (DO NOT DO THIS):
+   ❌ "Bass will be active in these conditions" - NO bass behavior
+   ❌ "Perfect for moving baits" - NO fishing strategy
+   ❌ "With 55°F and 8 mph winds..." - NO exact numbers
+   ❌ "Fish will be on points" - NO location advice
 
 11. WORK IT / HOW TO FISH:
    - Include SPECIFIC target names from your chosen targets

@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { generatePlan, RateLimitError } from "@/lib/api";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -20,6 +21,10 @@ export function PreviewEnhanced() {
   const initialized = useRef(false);
   const navigate = useNavigate();
 
+  // Clerk auth
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
+
   const [showSearch, setShowSearch] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [hoveredWater, setHoveredWater] = useState(false);
@@ -34,6 +39,13 @@ export function PreviewEnhanced() {
 
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill email for signed-in users
+  useEffect(() => {
+    if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+      setEmail(user.primaryEmailAddress.emailAddress);
+    }
+  }, [isSignedIn, user]);
 
   // Initialize map
   useEffect(() => {
@@ -320,7 +332,22 @@ export function PreviewEnhanced() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                readOnly={isSignedIn}
+                style={
+                  isSignedIn
+                    ? {
+                        opacity: 0.7,
+                        cursor: "not-allowed",
+                        background: "rgba(255,255,255,0.05)",
+                      }
+                    : {}
+                }
               />
+              {isSignedIn && (
+                <div style={{ fontSize: "0.85em", opacity: 0.6, marginTop: 6 }}>
+                  ✓ Using your account email
+                </div>
+              )}
             </div>
 
             {err && (

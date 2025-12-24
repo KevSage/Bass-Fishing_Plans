@@ -4,15 +4,75 @@
 import React from "react";
 import type { PlanGenerateResponse } from "./types";
 
-export function PlanDownloads({ response }: { response: PlanGenerateResponse }) {
-  const { token } = response;
-  
-  // Download URLs from backend
-  const mobileUrl = `${import.meta.env.VITE_API_BASE ?? "http://localhost:8000"}/plan/download/${token}/mobile`;
-  const a4Url = `${import.meta.env.VITE_API_BASE ?? "http://localhost:8000"}/plan/download/${token}/a4`;
+export function PlanDownloads({
+  response,
+}: {
+  response: PlanGenerateResponse | any;
+}) {
+  // Handle both PlanGenerateResponse (has token) and PlanViewResponse (has download_urls)
+  const token = response.token;
+  const downloadUrls = response.download_urls;
+
+  // If we have download_urls, use them directly
+  if (downloadUrls) {
+    return (
+      <div className="card" style={{ marginTop: 32 }}>
+        <div className="kicker">Downloads</div>
+        <h3 className="h3" style={{ marginTop: 8 }}>
+          Save Your Plan
+        </h3>
+        <p className="p" style={{ marginTop: 8, opacity: 0.8 }}>
+          Download your plan for offline viewing or printing.
+        </p>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12,
+            marginTop: 16,
+          }}
+        >
+          <a
+            href={downloadUrls.mobile_dark}
+            download
+            className="btn secondary"
+            style={{ textDecoration: "none", textAlign: "center" }}
+          >
+            📱 Mobile Dark
+          </a>
+          <a
+            href={downloadUrls.a4_printable}
+            download
+            className="btn secondary"
+            style={{ textDecoration: "none", textAlign: "center" }}
+          >
+            🖨️ A4 Printable
+          </a>
+        </div>
+
+        <p style={{ marginTop: 12, fontSize: "0.85em", opacity: 0.6 }}>
+          Mobile version optimized for on-the-water viewing. A4 version for
+          printing and tackle box storage.
+        </p>
+      </div>
+    );
+  }
+
+  // If we have token, build URLs
+  if (!token) {
+    return null; // No token, no downloads
+  }
+
+  const mobileUrl = `${
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+  }/plan/download/${token}/mobile`;
+  const a4Url = `${
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+  }/plan/download/${token}/a4`;
 
   return (
-    <div className="card">
+    <div className="card" style={{ marginTop: 32 }}>
       <div className="kicker">Downloads</div>
       <h3 className="h3" style={{ marginTop: 8 }}>
         Save Your Plan
@@ -21,7 +81,14 @@ export function PlanDownloads({ response }: { response: PlanGenerateResponse }) 
         Download your plan for offline viewing or printing.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 12,
+          marginTop: 16,
+        }}
+      >
         <a
           href={mobileUrl}
           download
@@ -41,7 +108,8 @@ export function PlanDownloads({ response }: { response: PlanGenerateResponse }) 
       </div>
 
       <p style={{ marginTop: 12, fontSize: "0.85em", opacity: 0.6 }}>
-        Mobile version optimized for on-the-water viewing. A4 version for printing and tackle box storage.
+        Mobile version optimized for on-the-water viewing. A4 version for
+        printing and tackle box storage.
       </p>
     </div>
   );

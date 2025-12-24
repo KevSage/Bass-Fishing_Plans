@@ -260,6 +260,11 @@ HARDBAIT_LURES = {
     "jerkbait",
     "walking bait",
     "whopper plopper",
+    "blade bait",  # Metal lure - can use metallic colors
+    "spinnerbait",  # Metal blades - can use metallic colors
+    "chatterbait",  # Metal blade - can use metallic colors
+    "buzzbait",  # Metal blade - can use metallic colors
+    "underspin",  # Metal blade - can use metallic colors
 }
 
 # ----------------------------------------
@@ -533,42 +538,26 @@ def generate_asset_key(lure: str, zones: dict) -> str:
     """
     Generate filename for pre-rendered lure image.
     
-    Format: {lure}__{primary}__{accent}.png
+    Since we only have one image per lure type (no color variations),
+    just use the lure name.
+    
+    Format: {lure}.png
     
     Examples:
-        spinnerbait__chartreuse_white__gold.png
-        texas_rig__green_pumpkin__watermelon_red.png
-        popper__white__null.png
+        spinnerbait.png
+        texas_rig.png
+        popper.png
     
     Args:
         lure: Base lure name
-        zones: Expanded zone dict
+        zones: Expanded zone dict (unused but kept for compatibility)
     
     Returns:
         Asset filename (no path, just name.png)
     """
-    # Normalize color names for filenames (replace / and spaces with _)
-    def normalize(color):
-        if not color:
-            return "null"
-        return color.replace("/", "_").replace(" ", "_")
-    
-    primary = normalize(zones["primary_color"])
-    secondary = normalize(zones.get("secondary_color"))
-    accent = normalize(zones.get("accent_color"))
-    
-    # Build key based on what zones are populated
-    if accent and accent != "null":
-        # Has accent (blade finish)
-        key = f"{lure}__{primary}__{accent}"
-    elif secondary and secondary != "null":
-        # Has secondary (back/flake on soft plastic)
-        key = f"{lure}__{primary}__{secondary}"
-    else:
-        # Primary only
-        key = f"{lure}__{primary}"
-    
-    return f"{key}.png"
+    # Normalize lure name for filename (replace spaces with underscores)
+    normalized_lure = lure.replace(" ", "_")
+    return f"{normalized_lure}.png"
 
 
 def validate_color_zones(lure: str, zones: dict) -> list[str]:
@@ -632,4 +621,3 @@ def validate_color_zones(lure: str, zones: dict) -> list[str]:
     # Accent can be metallic (hardware finishes) - no restriction
     
     return errors
-
