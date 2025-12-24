@@ -1,19 +1,20 @@
 // src/features/plan/lures/LureImage.tsx
-// Displays lure image using asset_key from backend
+// Displays lure image using lure name from backend
 
 import React, { useState } from "react";
+import { getLureImagePath } from "@/config/lureImageMap";
 
 type LureImageProps = {
-  assetKey: string;
-  lureName: string;
+  assetKey: string; // Kept for backward compatibility but not used
+  lureName: string; // This is what we actually use
   size?: "small" | "medium" | "large";
 };
 
-export function LureImage({ assetKey, lureName, size = "medium" }: LureImageProps) {
+export function LureImage({ lureName, size = "medium" }: LureImageProps) {
   const [imageError, setImageError] = useState(false);
 
-  // Image path - adjust this to match where your lure images are hosted
-  const imagePath = `/lures/${assetKey}`;
+  // Get image path from mapping
+  const imagePath = getLureImagePath(lureName);
 
   const sizeMap = {
     small: 120,
@@ -23,7 +24,8 @@ export function LureImage({ assetKey, lureName, size = "medium" }: LureImageProp
 
   const imageSize = sizeMap[size];
 
-  if (imageError) {
+  // If no mapping found or image error, show placeholder
+  if (!imagePath || imageError) {
     // Fallback if image doesn't exist yet
     return (
       <div
@@ -42,9 +44,7 @@ export function LureImage({ assetKey, lureName, size = "medium" }: LureImageProp
         }}
       >
         <div>
-          <div style={{ fontSize: "0.9em", opacity: 0.7 }}>
-            {lureName}
-          </div>
+          <div style={{ fontSize: "0.9em", opacity: 0.7 }}>{lureName}</div>
           <div style={{ fontSize: "0.7em", opacity: 0.5, marginTop: 4 }}>
             Image coming soon
           </div>
