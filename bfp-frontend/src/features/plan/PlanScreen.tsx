@@ -1,7 +1,7 @@
 // src/features/plan/PlanScreen.tsx
 // Complete plan display: consolidated weather, per-pattern gear/strategy, downloads at bottom
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Plan, PlanGenerateResponse, Pattern } from "./types";
 import { isMemberPlan } from "./types";
 import {
@@ -19,9 +19,12 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   const { plan, is_member } = response;
   const conditions = plan.conditions;
   const [locationState, setLocationState] = useState<string>("");
+  const hasGeocodedRef = useRef(false);
 
-  // Reverse geocode to get state
+  // Reverse geocode to get state - only once
   useEffect(() => {
+    if (hasGeocodedRef.current) return; // Already geocoded
+
     async function getState() {
       if (!MAPBOX_TOKEN) return;
 
@@ -40,6 +43,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
             const state =
               region.text || region.short_code?.replace("US-", "") || "";
             setLocationState(state);
+            hasGeocodedRef.current = true; // Mark as geocoded
           }
         }
       } catch (error) {
@@ -632,7 +636,7 @@ function PatternCard({
       </div>
 
       {/* Primary Color */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
           Primary Color
         </div>
@@ -660,6 +664,37 @@ function PatternCard({
           </span>
         </div>
       </div>
+
+      {/* Gear Setup - Moved here to be near the bait info */}
+      {pattern.gear && (
+        <div
+          style={{
+            marginBottom: 24,
+            padding: 16,
+            background: "rgba(255,255,255,0.02)",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
+            Gear Setup
+          </h4>
+          <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ opacity: 0.7 }}>Rod:</span>
+              <span style={{ fontWeight: 500 }}>{pattern.gear.rod}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ opacity: 0.7 }}>Reel:</span>
+              <span style={{ fontWeight: 500 }}>{pattern.gear.reel}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ opacity: 0.7 }}>Line:</span>
+              <span style={{ fontWeight: 500 }}>{pattern.gear.line}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Why This Works */}
       {pattern.why_this_works && (
@@ -766,37 +801,6 @@ function PatternCard({
         </div>
       )}
 
-      {/* Gear Setup */}
-      {pattern.gear && (
-        <div
-          style={{
-            marginTop: 24,
-            padding: 16,
-            background: "rgba(255,255,255,0.02)",
-            borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
-            Gear Setup
-          </h4>
-          <div style={{ display: "grid", gap: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.7 }}>Rod:</span>
-              <span style={{ fontWeight: 500 }}>{pattern.gear.rod}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.7 }}>Reel:</span>
-              <span style={{ fontWeight: 500 }}>{pattern.gear.reel}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.7 }}>Line:</span>
-              <span style={{ fontWeight: 500 }}>{pattern.gear.line}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Strategy */}
       {pattern.strategy && pattern.strategy.length > 0 && (
         <div style={{ marginTop: 24 }}>
@@ -841,37 +845,46 @@ function PatternCard({
 // Helper function to map color names to hex values
 function getColorHex(colorName: string): string {
   const colorMap: Record<string, string> = {
-    // Greens
+    // Natural / Clear Water
     "green pumpkin": "#4a5a3a",
     watermelon: "#8fbc8f",
-    junebug: "#2d1b2e",
+    "watermelon red": "#c97777",
+    smoke: "#9e9e9e",
+    "natural shad": "#d4d4d4",
+    "ghost shad": "#e8e8e8",
+    baitfish: "#c9c9c9",
 
-    // Browns/Naturals
-    brown: "#8b4513",
-    "peanut butter": "#c4a15c",
-    craw: "#8b4726",
-
-    // Whites/Clears
+    // Shad / Pelagic
+    shad: "#c0c0c0",
     white: "#f5f5f5",
     pearl: "#f0f0e8",
-    clear: "rgba(255,255,255,0.3)",
+    bone: "#e3dac9",
 
-    // Darks
+    // Craw / Bluegill
+    "black/blue": "#1a1a2e",
+    "green pumpkin blue": "#3d5a4a",
+    bluegill: "#6b8e7f",
+    brown: "#8b4513",
+    "orange belly": "#ff8c42",
+
+    // High-Contrast / Dirty Water
+    chartreuse: "#dfff00",
+    "chartreuse/white": "#dfff00", // Display as chartreuse
+    firetiger: "#ff6b35",
+
+    // Metallic / Blade Context
+    gold: "#ffd700",
+    bronze: "#cd7f32",
+    silver: "#c0c0c0",
+
+    // Legacy/Fallback (remove these if not in pools.py)
+    junebug: "#2d1b2e",
+    "peanut butter": "#c4a15c",
+    craw: "#8b4726",
+    clear: "rgba(255,255,255,0.3)",
     black: "#1a1a1a",
     blue: "#2c5aa0",
     purple: "#663399",
-
-    // Chartreuse
-    chartreuse: "#dfff00",
-
-    // Shad colors
-    "natural shad": "#d4d4d4",
-    "ghost shad": "#e8e8e8",
-    shad: "#c0c0c0",
-
-    // Metallics
-    gold: "#ffd700",
-    silver: "#c0c0c0",
     copper: "#b87333",
 
     // Default
