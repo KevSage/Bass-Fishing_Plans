@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { generatePlan, RateLimitError } from "@/lib/api";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -19,18 +20,32 @@ export function PreviewEnhanced() {
   const map = useRef<mapboxgl.Map | null>(null);
   const initialized = useRef(false);
   const navigate = useNavigate();
-  
+
+  // Clerk auth
+  const { isSignedIn } = useAuth();
+  const { user } = useUser();
+
   const [showSearch, setShowSearch] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [hoveredWater, setHoveredWater] = useState(false);
-  
+
   // Modal form state
   const [waterName, setWaterName] = useState("");
   const [email, setEmail] = useState("");
-  const [selectedCoords, setSelectedCoords] = useState<{lat: number; lng: number} | null>(null);
-  
+  const [selectedCoords, setSelectedCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill email for signed-in users
+  useEffect(() => {
+    if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
+      setEmail(user.primaryEmailAddress.emailAddress);
+    }
+  }, [isSignedIn, user]);
 
   // Initialize map
   useEffect(() => {
@@ -69,7 +84,7 @@ export function PreviewEnhanced() {
     // Click water → show modal
     map.current.on("click", async (e) => {
       if (!map.current) return;
-      
+
       const features = map.current.queryRenderedFeatures(e.point);
       const waterFeature = features.find(isWaterFeature);
 
@@ -83,12 +98,18 @@ export function PreviewEnhanced() {
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
           );
           const data = await response.json();
-          
+
           if (data.features?.[0]?.context) {
             const context = data.features[0].context;
-            const city = context.find((c: any) => c.id.startsWith("place"))?.text || "";
-            const state = context.find((c: any) => c.id.startsWith("region"))?.short_code?.replace("US-", "") || "";
-            setWaterName(`Water body near ${[city, state].filter(Boolean).join(", ")}`);
+            const city =
+              context.find((c: any) => c.id.startsWith("place"))?.text || "";
+            const state =
+              context
+                .find((c: any) => c.id.startsWith("region"))
+                ?.short_code?.replace("US-", "") || "";
+            setWaterName(
+              `Water body near ${[city, state].filter(Boolean).join(", ")}`
+            );
           }
         } catch (err) {
           console.error("Geocode failed:", err);
@@ -108,7 +129,11 @@ export function PreviewEnhanced() {
   }, []);
 
   // Handle search selection
-  function handleSearchSelect(location: {latitude: number; longitude: number; name: string}) {
+  function handleSearchSelect(location: {
+    latitude: number;
+    longitude: number;
+    name: string;
+  }) {
     if (map.current) {
       map.current.flyTo({
         center: [location.longitude, location.latitude],
@@ -154,13 +179,20 @@ export function PreviewEnhanced() {
           left: 0,
           right: 0,
           zIndex: 999,
-          background: "linear-gradient(to bottom, rgba(10,10,10,0.95) 0%, transparent 100%)",
+          background:
+            "linear-gradient(to bottom, rgba(10,10,10,0.95) 0%, transparent 100%)",
           padding: "20px",
           pointerEvents: "none",
         }}
       >
         <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
-          <h1 style={{ fontSize: "clamp(1.5rem, 4vw, 2rem)", fontWeight: 700, marginBottom: 8 }}>
+          <h1
+            style={{
+              fontSize: "clamp(1.5rem, 4vw, 2rem)",
+              fontWeight: 700,
+              marginBottom: 8,
+            }}
+          >
             Find Your Water
           </h1>
           <p style={{ fontSize: "clamp(0.9rem, 2vw, 1rem)", opacity: 0.8 }}>
@@ -208,8 +240,21 @@ export function PreviewEnhanced() {
             width: "calc(100% - 40px)",
           }}
         >
-          <div className="card" style={{ background: "rgba(10, 10, 10, 0.95)", backdropFilter: "blur(20px)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div
+            className="card"
+            style={{
+              background: "rgba(10, 10, 10, 0.95)",
+              backdropFilter: "blur(20px)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
               <div className="label">Search for a lake</div>
               <button
                 onClick={() => setShowSearch(false)}
@@ -226,7 +271,10 @@ export function PreviewEnhanced() {
                 ×
               </button>
             </div>
-            <LocationSearch onSelect={handleSearchSelect} placeholder="Lake Lanier, Lake Fork..." />
+            <LocationSearch
+              onSelect={handleSearchSelect}
+              placeholder="Lake Lanier, Lake Fork..."
+            />
           </div>
         </div>
       )}
@@ -259,7 +307,11 @@ export function PreviewEnhanced() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ fontSize: "1.5em", fontWeight: 700, marginBottom: 20 }}>Name This Water</h2>
+            <h2
+              style={{ fontSize: "1.5em", fontWeight: 700, marginBottom: 20 }}
+            >
+              Name This Water
+            </h2>
 
             <div style={{ marginBottom: 16 }}>
               <div className="label">What do you call this fishing spot?</div>
@@ -280,11 +332,32 @@ export function PreviewEnhanced() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                readOnly={isSignedIn}
+                style={
+                  isSignedIn
+                    ? {
+                        opacity: 0.7,
+                        cursor: "not-allowed",
+                        background: "rgba(255,255,255,0.05)",
+                      }
+                    : {}
+                }
               />
+              {isSignedIn && (
+                <div style={{ fontSize: "0.85em", opacity: 0.6, marginTop: 6 }}>
+                  ✓ Using your account email
+                </div>
+              )}
             </div>
 
             {err && (
-              <div style={{ marginBottom: 16, color: "rgba(255,160,160,0.95)", fontSize: "0.9em" }}>
+              <div
+                style={{
+                  marginBottom: 16,
+                  color: "rgba(255,160,160,0.95)",
+                  fontSize: "0.9em",
+                }}
+              >
                 ⚠️ {err}
               </div>
             )}
@@ -324,12 +397,12 @@ export function PreviewEnhanced() {
           }
         `}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
-        
+
         {hoveredWater && !showModal && (
           <div
             style={{
               position: "absolute",
-              bottom: 32,
+              bottom: "120px",
               left: "50%",
               transform: "translateX(-50%)",
               background: "rgba(10, 10, 10, 0.95)",
