@@ -25,6 +25,8 @@ from app.services.plan_links import PlanLinkStore
 from app.services.weather import get_weather_snapshot
 from app.services.phase_logic import determine_phase
 from app.services.llm_plan_service import generate_llm_plan_with_retries
+from app.services.plan_enrichment import enrich_member_plan
+from app.canon.target_definitions import get_target_definition
 from app.services.email_service import (
     send_preview_plan_email,
     send_welcome_email,
@@ -84,13 +86,13 @@ class SubscribeRequest(BaseModel):
 # ========================================
 
 @app.post("/plan/generate")
-async def plan_generate(body: PlanGenerateRequest):
+async def plan_generate(body: PlanGenerateRequest, request: Request):
     """
     Unified plan generation endpoint.
     
     Flow:
     1. Check if user is subscriber
-    2. Check rate limits (30-day preview OR 3-hour member cooldown)
+    2. Check rate limits (30-day preview OR 3-hour member cooldown) - skipped with X-Admin-Override header
     3. Get weather + determine phase
     4. Generate plan (LLM with Pattern 2 for members)
     5. Save plan link
@@ -99,37 +101,41 @@ async def plan_generate(body: PlanGenerateRequest):
     """
     email = body.email.lower().strip()
     
+    # Check for admin override header
+    admin_override = request.headers.get("X-Admin-Override") == "true"
+    
     # 1. Check subscription status
     is_member = subs.is_active(email)
     
-    # 2. Rate limiting
-    if is_member:
-        # Members: 3-hour cooldown
-        allowed, seconds_remaining = rate_limits.check_member_cooldown(email)
-        if not allowed:
-            hours = seconds_remaining / 3600
-            raise HTTPException(
-                status_code=429,
-                detail={
-                    "error": "rate_limit_member",
-                    "message": f"Please wait {hours:.1f} hours between plan requests",
-                    "seconds_remaining": seconds_remaining,
-                }
-            )
-    else:
-        # Non-members: 30-day preview limit
-        allowed, seconds_remaining = rate_limits.check_preview_limit(email)
-        if not allowed:
-            days = seconds_remaining / (24 * 3600)
-            raise HTTPException(
-                status_code=429,
-                detail={
-                    "error": "rate_limit_preview",
-                    "message": f"You can request one preview every 30 days. Next available in {days:.1f} days.",
-                    "seconds_remaining": seconds_remaining,
-                    "upgrade_url": f"{WEB_BASE_URL}/subscribe?email={email}"
-                }
-            )
+    # 2. Rate limiting (skip if admin override)
+    if not admin_override:
+        if is_member:
+            # Members: 3-hour cooldown
+            allowed, seconds_remaining = rate_limits.check_member_cooldown(email)
+            if not allowed:
+                hours = seconds_remaining / 3600
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": "rate_limit_member",
+                        "message": f"Please wait {hours:.1f} hours between plan requests",
+                        "seconds_remaining": seconds_remaining,
+                    }
+                )
+        else:
+            # Non-members: 30-day preview limit
+            allowed, seconds_remaining = rate_limits.check_preview_limit(email)
+            if not allowed:
+                days = seconds_remaining / (24 * 3600)
+                raise HTTPException(
+                    status_code=429,
+                    detail={
+                        "error": "rate_limit_preview",
+                        "message": f"You can request one preview every 30 days. Next available in {days:.1f} days.",
+                        "seconds_remaining": seconds_remaining,
+                        "upgrade_url": f"{WEB_BASE_URL}/subscribe?email={email}"
+                    }
+                )
     
     # 3. Get weather and determine phase
     try:
@@ -155,7 +161,7 @@ async def plan_generate(body: PlanGenerateRequest):
             trip_date=trip_date,
             phase=phase,
             is_member=is_member,
-            max_retries=2,
+            max_retries=4,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Plan generation error: {e}")
@@ -165,6 +171,31 @@ async def plan_generate(body: PlanGenerateRequest):
             status_code=503,
             detail="Plan generation temporarily unavailable. Please try again."
         )
+    
+    # 4b. Enrich member plans with gear and strategy (deterministic)
+    if is_member:
+        plan = enrich_member_plan(plan, weather, phase)
+    
+    # 4c. Add target definitions to both preview and member plans
+    def add_target_definitions(pattern_dict):
+        """Add definitions to targets in a pattern."""
+        if "targets" in pattern_dict and isinstance(pattern_dict["targets"], list):
+            enriched_targets = []
+            for target in pattern_dict["targets"]:
+                definition = get_target_definition(target)
+                enriched_targets.append({
+                    "name": target,
+                    "definition": definition
+                })
+            pattern_dict["targets"] = enriched_targets
+    
+    # Add definitions based on plan type
+    if is_member and "primary" in plan:
+        add_target_definitions(plan["primary"])
+        if "secondary" in plan:
+            add_target_definitions(plan["secondary"])
+    elif "targets" in plan:
+        add_target_definitions(plan)
     
     # Add conditions to plan
     plan["conditions"] = {

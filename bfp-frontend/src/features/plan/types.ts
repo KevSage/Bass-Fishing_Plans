@@ -32,14 +32,29 @@ export type ColorZones = {
   warnings?: string[];
 };
 
+export type Target =
+  | {
+      name: string;
+      definition?: string;
+    }
+  | string; // Support both new format {name, definition} and legacy string format
+
 export type Pattern = {
   presentation: string;
   base_lure: string;
   color_recommendations: string[];
   colors: ColorZones;
-  targets: string[];
+  targets: Target[];
   why_this_works: string;
   work_it: string[];
+  gear?: {
+    rod: string;
+    reel: string;
+    line: string;
+    technique: string;
+  };
+  strategy?: string[];
+  pattern_summary?: string;
 };
 
 // Preview plan (single pattern)
@@ -48,7 +63,7 @@ export type PreviewPlan = {
   base_lure: string;
   color_recommendations: string[];
   colors: ColorZones;
-  targets: string[];
+  targets: Target[];
   why_this_works?: string;
   work_it: string[];
   day_progression: string[];
@@ -70,7 +85,7 @@ export type Plan = PreviewPlan | MemberPlan;
 
 // Check if plan is member plan
 export function isMemberPlan(plan: Plan): plan is MemberPlan {
-  return 'primary' in plan && 'secondary' in plan;
+  return "primary" in plan && "secondary" in plan;
 }
 
 // API Response from /plan/generate
