@@ -1,0 +1,763 @@
+{
+  "byState": {
+    "FL": [
+      {
+        "name": "Lake Okeechobee",
+        "state": "FL",
+        "city": "Okeechobee",
+        "latitude": 26.9389,
+        "longitude": -80.8247,
+        "acres": 730000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Kissimmee",
+        "state": "FL",
+        "city": "Lake Wales",
+        "latitude": 27.9161,
+        "longitude": -81.1,
+        "acres": 34948,
+        "tier": 1
+      },
+      {
+        "name": "Lake Tohopekaliga",
+        "state": "FL",
+        "city": "Kissimmee",
+        "latitude": 28.2328,
+        "longitude": -81.4081,
+        "acres": 18810,
+        "tier": 1
+      },
+      {
+        "name": "Lake George",
+        "state": "FL",
+        "city": "Palatka",
+        "latitude": 29.3333,
+        "longitude": -81.6167,
+        "acres": 46000,
+        "tier": 2
+      },
+      {
+        "name": "Rodman Reservoir",
+        "state": "FL",
+        "city": "Palatka",
+        "latitude": 29.5833,
+        "longitude": -81.75,
+        "acres": 9500,
+        "tier": 2
+      }
+    ],
+    "TX": [
+      {
+        "name": "Toledo Bend Reservoir",
+        "state": "TX",
+        "city": "Burkeville",
+        "latitude": 31.18,
+        "longitude": -93.58,
+        "acres": 185000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Sam Rayburn",
+        "state": "TX",
+        "city": "Jasper",
+        "latitude": 31.0986,
+        "longitude": -94.1036,
+        "acres": 114500,
+        "tier": 1
+      },
+      {
+        "name": "Lake Fork",
+        "state": "TX",
+        "city": "Alba",
+        "latitude": 32.809,
+        "longitude": -95.6352,
+        "acres": 27690,
+        "tier": 1
+      },
+      {
+        "name": "Lake Amistad",
+        "state": "TX",
+        "city": "Del Rio",
+        "latitude": 29.5181,
+        "longitude": -101.0506,
+        "acres": 65000,
+        "tier": 2
+      },
+      {
+        "name": "Lake Travis",
+        "state": "TX",
+        "city": "Austin",
+        "latitude": 30.3894,
+        "longitude": -97.9172,
+        "acres": 18900,
+        "tier": 2
+      }
+    ],
+    "TN": [
+      {
+        "name": "Kentucky Lake",
+        "state": "TN",
+        "city": "Paris",
+        "latitude": 36.5019,
+        "longitude": -88.0628,
+        "acres": 160000,
+        "tier": 1
+      },
+      {
+        "name": "Chickamauga Lake",
+        "state": "TN",
+        "city": "Chattanooga",
+        "latitude": 35.1264,
+        "longitude": -85.1869,
+        "acres": 36240,
+        "tier": 1
+      },
+      {
+        "name": "Watts Bar Lake",
+        "state": "TN",
+        "city": "Spring City",
+        "latitude": 35.7086,
+        "longitude": -84.8555,
+        "acres": 39090,
+        "tier": 2
+      },
+      {
+        "name": "Cherokee Lake",
+        "state": "TN",
+        "city": "Jefferson City",
+        "latitude": 36.1667,
+        "longitude": -83.5,
+        "acres": 30300,
+        "tier": 2
+      }
+    ],
+    "AL": [
+      {
+        "name": "Lake Guntersville",
+        "state": "AL",
+        "city": "Guntersville",
+        "latitude": 34.3581,
+        "longitude": -86.2944,
+        "acres": 69000,
+        "tier": 1
+      },
+      {
+        "name": "Wheeler Lake",
+        "state": "AL",
+        "city": "Decatur",
+        "latitude": 34.6031,
+        "longitude": -86.9833,
+        "acres": 68300,
+        "tier": 1
+      },
+      {
+        "name": "Lake Eufaula",
+        "state": "AL",
+        "city": "Eufaula",
+        "latitude": 31.89,
+        "longitude": -85.145,
+        "acres": 45000,
+        "tier": 1
+      },
+      {
+        "name": "Pickwick Lake",
+        "state": "AL",
+        "city": "Florence",
+        "latitude": 35.0631,
+        "longitude": -88.2467,
+        "acres": 43100,
+        "tier": 1
+      },
+      {
+        "name": "Wilson Lake",
+        "state": "AL",
+        "city": "Florence",
+        "latitude": 34.8019,
+        "longitude": -87.6261,
+        "acres": 15500,
+        "tier": 2
+      }
+    ],
+    "CA": [
+      {
+        "name": "Clear Lake",
+        "state": "CA",
+        "city": "Clearlake",
+        "latitude": 39.0166,
+        "longitude": -122.8166,
+        "acres": 43800,
+        "tier": 1
+      },
+      {
+        "name": "Lake Shasta",
+        "state": "CA",
+        "city": "Redding",
+        "latitude": 40.7186,
+        "longitude": -122.4178,
+        "acres": 30000,
+        "tier": 2
+      },
+      {
+        "name": "Lake Oroville",
+        "state": "CA",
+        "city": "Oroville",
+        "latitude": 39.5378,
+        "longitude": -121.4808,
+        "acres": 15800,
+        "tier": 2
+      }
+    ],
+    "GA": [
+      {
+        "name": "Lake Lanier",
+        "state": "GA",
+        "city": "Buford",
+        "latitude": 34.1808,
+        "longitude": -84.0766,
+        "acres": 38000,
+        "tier": 1
+      },
+      {
+        "name": "West Point Lake",
+        "state": "GA",
+        "city": "West Point",
+        "latitude": 32.8828,
+        "longitude": -85.1836,
+        "acres": 25900,
+        "tier": 1
+      },
+      {
+        "name": "Lake Allatoona",
+        "state": "GA",
+        "city": "Cartersville",
+        "latitude": 34.1614,
+        "longitude": -84.7074,
+        "acres": 12000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Oconee",
+        "state": "GA",
+        "city": "Greensboro",
+        "latitude": 33.3603,
+        "longitude": -83.2744,
+        "acres": 19000,
+        "tier": 2
+      },
+      {
+        "name": "Lake Sinclair",
+        "state": "GA",
+        "city": "Milledgeville",
+        "latitude": 33.2536,
+        "longitude": -83.2627,
+        "acres": 15330,
+        "tier": 2
+      }
+    ]
+  },
+  "byName": {
+    "L": [
+      {
+        "name": "Lake Okeechobee",
+        "state": "FL",
+        "city": "Okeechobee",
+        "latitude": 26.9389,
+        "longitude": -80.8247,
+        "acres": 730000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Sam Rayburn",
+        "state": "TX",
+        "city": "Jasper",
+        "latitude": 31.0986,
+        "longitude": -94.1036,
+        "acres": 114500,
+        "tier": 1
+      },
+      {
+        "name": "Lake Guntersville",
+        "state": "AL",
+        "city": "Guntersville",
+        "latitude": 34.3581,
+        "longitude": -86.2944,
+        "acres": 69000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Eufaula",
+        "state": "AL",
+        "city": "Eufaula",
+        "latitude": 31.89,
+        "longitude": -85.145,
+        "acres": 45000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Lanier",
+        "state": "GA",
+        "city": "Buford",
+        "latitude": 34.1808,
+        "longitude": -84.0766,
+        "acres": 38000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Kissimmee",
+        "state": "FL",
+        "city": "Lake Wales",
+        "latitude": 27.9161,
+        "longitude": -81.1,
+        "acres": 34948,
+        "tier": 1
+      },
+      {
+        "name": "Lake Fork",
+        "state": "TX",
+        "city": "Alba",
+        "latitude": 32.809,
+        "longitude": -95.6352,
+        "acres": 27690,
+        "tier": 1
+      },
+      {
+        "name": "Lake Tohopekaliga",
+        "state": "FL",
+        "city": "Kissimmee",
+        "latitude": 28.2328,
+        "longitude": -81.4081,
+        "acres": 18810,
+        "tier": 1
+      },
+      {
+        "name": "Lake Allatoona",
+        "state": "GA",
+        "city": "Cartersville",
+        "latitude": 34.1614,
+        "longitude": -84.7074,
+        "acres": 12000,
+        "tier": 1
+      },
+      {
+        "name": "Lake Amistad",
+        "state": "TX",
+        "city": "Del Rio",
+        "latitude": 29.5181,
+        "longitude": -101.0506,
+        "acres": 65000,
+        "tier": 2
+      },
+      {
+        "name": "Lake George",
+        "state": "FL",
+        "city": "Palatka",
+        "latitude": 29.3333,
+        "longitude": -81.6167,
+        "acres": 46000,
+        "tier": 2
+      },
+      {
+        "name": "Lake Shasta",
+        "state": "CA",
+        "city": "Redding",
+        "latitude": 40.7186,
+        "longitude": -122.4178,
+        "acres": 30000,
+        "tier": 2
+      },
+      {
+        "name": "Lake Oconee",
+        "state": "GA",
+        "city": "Greensboro",
+        "latitude": 33.3603,
+        "longitude": -83.2744,
+        "acres": 19000,
+        "tier": 2
+      },
+      {
+        "name": "Lake Travis",
+        "state": "TX",
+        "city": "Austin",
+        "latitude": 30.3894,
+        "longitude": -97.9172,
+        "acres": 18900,
+        "tier": 2
+      },
+      {
+        "name": "Lake Oroville",
+        "state": "CA",
+        "city": "Oroville",
+        "latitude": 39.5378,
+        "longitude": -121.4808,
+        "acres": 15800,
+        "tier": 2
+      },
+      {
+        "name": "Lake Sinclair",
+        "state": "GA",
+        "city": "Milledgeville",
+        "latitude": 33.2536,
+        "longitude": -83.2627,
+        "acres": 15330,
+        "tier": 2
+      }
+    ],
+    "T": [
+      {
+        "name": "Toledo Bend Reservoir",
+        "state": "TX",
+        "city": "Burkeville",
+        "latitude": 31.18,
+        "longitude": -93.58,
+        "acres": 185000,
+        "tier": 1
+      }
+    ],
+    "K": [
+      {
+        "name": "Kentucky Lake",
+        "state": "TN",
+        "city": "Paris",
+        "latitude": 36.5019,
+        "longitude": -88.0628,
+        "acres": 160000,
+        "tier": 1
+      }
+    ],
+    "W": [
+      {
+        "name": "Wheeler Lake",
+        "state": "AL",
+        "city": "Decatur",
+        "latitude": 34.6031,
+        "longitude": -86.9833,
+        "acres": 68300,
+        "tier": 1
+      },
+      {
+        "name": "West Point Lake",
+        "state": "GA",
+        "city": "West Point",
+        "latitude": 32.8828,
+        "longitude": -85.1836,
+        "acres": 25900,
+        "tier": 1
+      },
+      {
+        "name": "Watts Bar Lake",
+        "state": "TN",
+        "city": "Spring City",
+        "latitude": 35.7086,
+        "longitude": -84.8555,
+        "acres": 39090,
+        "tier": 2
+      },
+      {
+        "name": "Wilson Lake",
+        "state": "AL",
+        "city": "Florence",
+        "latitude": 34.8019,
+        "longitude": -87.6261,
+        "acres": 15500,
+        "tier": 2
+      }
+    ],
+    "C": [
+      {
+        "name": "Clear Lake",
+        "state": "CA",
+        "city": "Clearlake",
+        "latitude": 39.0166,
+        "longitude": -122.8166,
+        "acres": 43800,
+        "tier": 1
+      },
+      {
+        "name": "Chickamauga Lake",
+        "state": "TN",
+        "city": "Chattanooga",
+        "latitude": 35.1264,
+        "longitude": -85.1869,
+        "acres": 36240,
+        "tier": 1
+      },
+      {
+        "name": "Cherokee Lake",
+        "state": "TN",
+        "city": "Jefferson City",
+        "latitude": 36.1667,
+        "longitude": -83.5,
+        "acres": 30300,
+        "tier": 2
+      }
+    ],
+    "P": [
+      {
+        "name": "Pickwick Lake",
+        "state": "AL",
+        "city": "Florence",
+        "latitude": 35.0631,
+        "longitude": -88.2467,
+        "acres": 43100,
+        "tier": 1
+      }
+    ],
+    "R": [
+      {
+        "name": "Rodman Reservoir",
+        "state": "FL",
+        "city": "Palatka",
+        "latitude": 29.5833,
+        "longitude": -81.75,
+        "acres": 9500,
+        "tier": 2
+      }
+    ]
+  },
+  "all": [
+    {
+      "name": "Lake Okeechobee",
+      "state": "FL",
+      "city": "Okeechobee",
+      "latitude": 26.9389,
+      "longitude": -80.8247,
+      "acres": 730000,
+      "tier": 1
+    },
+    {
+      "name": "Toledo Bend Reservoir",
+      "state": "TX",
+      "city": "Burkeville",
+      "latitude": 31.18,
+      "longitude": -93.58,
+      "acres": 185000,
+      "tier": 1
+    },
+    {
+      "name": "Kentucky Lake",
+      "state": "TN",
+      "city": "Paris",
+      "latitude": 36.5019,
+      "longitude": -88.0628,
+      "acres": 160000,
+      "tier": 1
+    },
+    {
+      "name": "Lake Sam Rayburn",
+      "state": "TX",
+      "city": "Jasper",
+      "latitude": 31.0986,
+      "longitude": -94.1036,
+      "acres": 114500,
+      "tier": 1
+    },
+    {
+      "name": "Lake Guntersville",
+      "state": "AL",
+      "city": "Guntersville",
+      "latitude": 34.3581,
+      "longitude": -86.2944,
+      "acres": 69000,
+      "tier": 1
+    },
+    {
+      "name": "Wheeler Lake",
+      "state": "AL",
+      "city": "Decatur",
+      "latitude": 34.6031,
+      "longitude": -86.9833,
+      "acres": 68300,
+      "tier": 1
+    },
+    {
+      "name": "Lake Eufaula",
+      "state": "AL",
+      "city": "Eufaula",
+      "latitude": 31.89,
+      "longitude": -85.145,
+      "acres": 45000,
+      "tier": 1
+    },
+    {
+      "name": "Clear Lake",
+      "state": "CA",
+      "city": "Clearlake",
+      "latitude": 39.0166,
+      "longitude": -122.8166,
+      "acres": 43800,
+      "tier": 1
+    },
+    {
+      "name": "Pickwick Lake",
+      "state": "AL",
+      "city": "Florence",
+      "latitude": 35.0631,
+      "longitude": -88.2467,
+      "acres": 43100,
+      "tier": 1
+    },
+    {
+      "name": "Lake Lanier",
+      "state": "GA",
+      "city": "Buford",
+      "latitude": 34.1808,
+      "longitude": -84.0766,
+      "acres": 38000,
+      "tier": 1
+    },
+    {
+      "name": "Chickamauga Lake",
+      "state": "TN",
+      "city": "Chattanooga",
+      "latitude": 35.1264,
+      "longitude": -85.1869,
+      "acres": 36240,
+      "tier": 1
+    },
+    {
+      "name": "Lake Kissimmee",
+      "state": "FL",
+      "city": "Lake Wales",
+      "latitude": 27.9161,
+      "longitude": -81.1,
+      "acres": 34948,
+      "tier": 1
+    },
+    {
+      "name": "Lake Fork",
+      "state": "TX",
+      "city": "Alba",
+      "latitude": 32.809,
+      "longitude": -95.6352,
+      "acres": 27690,
+      "tier": 1
+    },
+    {
+      "name": "West Point Lake",
+      "state": "GA",
+      "city": "West Point",
+      "latitude": 32.8828,
+      "longitude": -85.1836,
+      "acres": 25900,
+      "tier": 1
+    },
+    {
+      "name": "Lake Tohopekaliga",
+      "state": "FL",
+      "city": "Kissimmee",
+      "latitude": 28.2328,
+      "longitude": -81.4081,
+      "acres": 18810,
+      "tier": 1
+    },
+    {
+      "name": "Lake Allatoona",
+      "state": "GA",
+      "city": "Cartersville",
+      "latitude": 34.1614,
+      "longitude": -84.7074,
+      "acres": 12000,
+      "tier": 1
+    },
+    {
+      "name": "Lake Amistad",
+      "state": "TX",
+      "city": "Del Rio",
+      "latitude": 29.5181,
+      "longitude": -101.0506,
+      "acres": 65000,
+      "tier": 2
+    },
+    {
+      "name": "Lake George",
+      "state": "FL",
+      "city": "Palatka",
+      "latitude": 29.3333,
+      "longitude": -81.6167,
+      "acres": 46000,
+      "tier": 2
+    },
+    {
+      "name": "Watts Bar Lake",
+      "state": "TN",
+      "city": "Spring City",
+      "latitude": 35.7086,
+      "longitude": -84.8555,
+      "acres": 39090,
+      "tier": 2
+    },
+    {
+      "name": "Cherokee Lake",
+      "state": "TN",
+      "city": "Jefferson City",
+      "latitude": 36.1667,
+      "longitude": -83.5,
+      "acres": 30300,
+      "tier": 2
+    },
+    {
+      "name": "Lake Shasta",
+      "state": "CA",
+      "city": "Redding",
+      "latitude": 40.7186,
+      "longitude": -122.4178,
+      "acres": 30000,
+      "tier": 2
+    },
+    {
+      "name": "Lake Oconee",
+      "state": "GA",
+      "city": "Greensboro",
+      "latitude": 33.3603,
+      "longitude": -83.2744,
+      "acres": 19000,
+      "tier": 2
+    },
+    {
+      "name": "Lake Travis",
+      "state": "TX",
+      "city": "Austin",
+      "latitude": 30.3894,
+      "longitude": -97.9172,
+      "acres": 18900,
+      "tier": 2
+    },
+    {
+      "name": "Lake Oroville",
+      "state": "CA",
+      "city": "Oroville",
+      "latitude": 39.5378,
+      "longitude": -121.4808,
+      "acres": 15800,
+      "tier": 2
+    },
+    {
+      "name": "Wilson Lake",
+      "state": "AL",
+      "city": "Florence",
+      "latitude": 34.8019,
+      "longitude": -87.6261,
+      "acres": 15500,
+      "tier": 2
+    },
+    {
+      "name": "Lake Sinclair",
+      "state": "GA",
+      "city": "Milledgeville",
+      "latitude": 33.2536,
+      "longitude": -83.2627,
+      "acres": 15330,
+      "tier": 2
+    },
+    {
+      "name": "Rodman Reservoir",
+      "state": "FL",
+      "city": "Palatka",
+      "latitude": 29.5833,
+      "longitude": -81.75,
+      "acres": 9500,
+      "tier": 2
+    }
+  ]
+}

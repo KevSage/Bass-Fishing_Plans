@@ -9,8 +9,10 @@ import { Members } from "./pages/Members";
 import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
 import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
-import "./styles.css";
+// import "./styles.css";
 // import "./enhanced-styles.css";
+import "./complete-styles.css";
+
 import { PlanPage } from "./pages/PlanPage";
 
 function TopBar() {
