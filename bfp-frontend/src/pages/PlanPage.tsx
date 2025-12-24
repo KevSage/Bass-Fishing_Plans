@@ -53,12 +53,12 @@ export function PlanPage() {
     }
   }, []);
 
-  // Load plan by token - only once
+  // Load plan by token - only once per unique token
   useEffect(() => {
-    if (token && !planResponse) {
+    if (token && !planResponse && !hasFetched.current) {
       fetchPlan(token);
     }
-  }, []); // Empty deps - only run on mount
+  }, [token, planResponse, fetchPlan]); // Correct dependencies
 
   const plan = planResponse || tokenPlan;
 
