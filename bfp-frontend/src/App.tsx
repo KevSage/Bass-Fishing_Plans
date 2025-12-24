@@ -1,5 +1,6 @@
 import React from "react";
-import { Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, Navigate } from "react-router-dom";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Navigation } from "./components/Navigation";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
@@ -9,6 +10,8 @@ import { Members } from "./pages/Members";
 import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
 import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
+import SignInPage from "./pages/signIn";
+import SignUpPage from "./pages/signUp";
 // import "./styles.css";
 // import "./enhanced-styles.css";
 import "./complete-styles.css";
@@ -64,7 +67,21 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/subscribe" element={<Subscribe />} />
         <Route path="/preview" element={<PreviewEnhanced />} />
-        <Route path="/members" element={<Members />} />
+        <Route path="/sign-in" element={<SignInPage />} />
+        <Route path="/sign-up" element={<SignUpPage />} />
+        <Route
+          path="/members"
+          element={
+            <>
+              <SignedIn>
+                <Members />
+              </SignedIn>
+              <SignedOut>
+                <Navigate to="/sign-in" replace />
+              </SignedOut>
+            </>
+          }
+        />
         <Route
           path="/what-your-plan-includes"
           element={<WhatYourPlanIncludes />}
