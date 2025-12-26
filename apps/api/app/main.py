@@ -13,7 +13,7 @@ from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, EmailStr
@@ -38,6 +38,7 @@ from app.services.pdf_generator import (
 )
 from app.services.stripe_billing import (
     create_checkout_session,
+    create_portal_session,
     verify_webhook_and_parse_event,
     extract_subscription_state,
 )
@@ -351,6 +352,30 @@ def billing_subscribe(body: SubscribeRequest):
         raise HTTPException(status_code=500, detail=f"Billing error: {e}")
     
     return {"checkout_url": checkout_url}
+
+
+@app.post("/billing/portal")
+async def billing_portal(authorization: Optional[str] = Header(None)):
+    """
+    Create Stripe Customer Portal session for subscription management.
+    Requires authentication.
+    """
+    from app.routes.members import verify_clerk_session
+    
+    # Verify user is authenticated
+    email = await verify_clerk_session(authorization)
+    
+    # Get subscriber to find customer_id
+    subscriber = subs.get(email)
+    if not subscriber or not subscriber.stripe_customer_id:
+        raise HTTPException(status_code=404, detail="No subscription found")
+    
+    try:
+        portal_url = create_portal_session(customer_id=subscriber.stripe_customer_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Portal error: {e}")
+    
+    return {"portal_url": portal_url}
 
 
 @app.post("/webhooks/stripe")

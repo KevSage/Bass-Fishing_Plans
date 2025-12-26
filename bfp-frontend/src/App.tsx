@@ -13,6 +13,9 @@ import { FAQ } from "./pages/FAQ";
 import SignInPage from "./pages/signIn";
 import SignUpPage from "./pages/signUp";
 import { Admin } from "./pages/Admin";
+import { Success } from "./pages/Success";
+import { Account } from "./pages/Account";
+import { NotFound } from "./pages/NotFound";
 // import "./styles.css";
 // import "./enhanced-styles.css";
 import "./complete-styles.css";
@@ -91,6 +94,22 @@ export default function App() {
         <Route path="/how-to-use" element={<HowToUse />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/plan" element={<PlanPage />} />
+        <Route path="/success" element={<Success />} />
+        <Route
+          path="/account"
+          element={
+            <>
+              <SignedIn>
+                <Account />
+              </SignedIn>
+              <SignedOut>
+                <Navigate to="/sign-in" replace />
+              </SignedOut>
+            </>
+          }
+        />
+        {/* 404 Catch-all */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );

@@ -59,5 +59,7 @@ export function useMemberStatus() {
     loading,
     error,
     refetch: fetchStatus,
+    isActive: status?.is_member && status?.has_subscription,
+    isLoading: loading,
   };
 }

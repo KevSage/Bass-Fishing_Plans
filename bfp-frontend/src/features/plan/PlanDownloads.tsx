@@ -36,16 +36,30 @@ export function PlanDownloads({
           <a
             href={downloadUrls.mobile_dark}
             download
-            className="btn secondary"
-            style={{ textDecoration: "none", textAlign: "center" }}
+            className="btn"
+            style={{
+              textDecoration: "none",
+              textAlign: "center",
+              background:
+                "linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%)",
+              border: "1px solid rgba(74, 144, 226, 0.3)",
+              fontWeight: 500,
+            }}
           >
             📱 Mobile Dark
           </a>
           <a
             href={downloadUrls.a4_printable}
             download
-            className="btn secondary"
-            style={{ textDecoration: "none", textAlign: "center" }}
+            className="btn"
+            style={{
+              textDecoration: "none",
+              textAlign: "center",
+              background:
+                "linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%)",
+              border: "1px solid rgba(74, 144, 226, 0.3)",
+              fontWeight: 500,
+            }}
           >
             🖨️ A4 Printable
           </a>
@@ -92,16 +106,30 @@ export function PlanDownloads({
         <a
           href={mobileUrl}
           download
-          className="btn secondary"
-          style={{ textDecoration: "none", textAlign: "center" }}
+          className="btn"
+          style={{
+            textDecoration: "none",
+            textAlign: "center",
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%)",
+            border: "1px solid rgba(74, 144, 226, 0.3)",
+            fontWeight: 500,
+          }}
         >
           📱 Mobile Dark
         </a>
         <a
           href={a4Url}
           download
-          className="btn secondary"
-          style={{ textDecoration: "none", textAlign: "center" }}
+          className="btn"
+          style={{
+            textDecoration: "none",
+            textAlign: "center",
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%)",
+            border: "1px solid rgba(74, 144, 226, 0.3)",
+            fontWeight: 500,
+          }}
         >
           🖨️ A4 Printable
         </a>

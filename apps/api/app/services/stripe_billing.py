@@ -45,6 +45,20 @@ def create_checkout_session(*, email: str) -> str:
     return session.url
 
 
+def create_portal_session(*, customer_id: str) -> str:
+    """
+    Returns Stripe Customer Portal URL for managing subscription.
+    """
+    init_stripe()
+    web_base = _env("WEB_BASE_URL")
+
+    session = stripe.billing_portal.Session.create(
+        customer=customer_id,
+        return_url=f"{web_base}/account",
+    )
+    return session.url
+
+
 def verify_webhook_and_parse_event(
     *,
     payload: bytes,

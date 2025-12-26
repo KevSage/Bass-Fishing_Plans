@@ -63,24 +63,41 @@ def build_system_prompt(include_pattern_2: bool = False) -> str:
 PATTERN 2 (SECONDARY) - THE PIVOT PLAN (MEMBERS ONLY):
 This is NOT a backup lure. This assumes your initial read was slightly off.
 
-Rules:
-- MUST use a different presentation family than Pattern 1
-- MUST assume fish are positioned differently (if P1 assumes bottom, P2 assumes suspended or shallow)
+CRITICAL PATTERN ORDERING RULE:
+When you're choosing a SEARCH/MOVING bait (Horizontal Reaction, Topwater) paired with a BOTTOM CONTACT bait:
+- Pattern 1 MUST be the search/moving bait
+- Pattern 2 MUST be the bottom contact bait
+- This is the classic "search and destroy" → "pick apart" combo
+- In "why_this_works" for Pattern 2, explain: "Once you locate active fish with the [P1 lure], switch to this [P2 lure] to methodically pick apart the area."
+
+Example Search → Pick Apart Combos:
+✅ P1: Lipless crankbait (search) → P2: Texas rig (pick apart)
+✅ P1: Chatterbait (search) → P2: Jig (pick apart)
+✅ P1: Spinnerbait (search) → P2: Carolina rig (pick apart)
+✅ P1: Buzzbait (search) → P2: Texas rig (pick apart)
+
+For OTHER pattern combos (not search → bottom contact):
+- Use normal pivot logic (different assumption about fish position)
 - Explain in "why_this_works" what different assumption you're making
 
-Example logic:
-- If P1 is bottom-dragging (assumes fish on bottom), P2 could be vertical hover (assumes fish suspended)
-- If P1 is horizontal reaction (assumes roaming fish), P2 could be bottom contact (assumes staged fish)
-- If P1 is topwater (assumes surface feeding), P2 could be bottom contact (assumes fish pulled deeper)
+Pattern 2 Rules:
+- MUST use a different presentation family than Pattern 1
+- If it's a search → pick apart combo, explain the sequential relationship
+- If it's a different combo type, explain the pivot assumption
 
 Pattern 2 output format (add to JSON):
 "secondary": {
   "presentation": "<different from primary>",
   "base_lure": "<from LURE_POOL>",
+  "soft_plastic": "<OPTIONAL - only for terminal tackle>",
+  "soft_plastic_why": "<OPTIONAL - 1-2 sentences contextual to phase/temp/clarity>",
+  "trailer": "<OPTIONAL - only for jigs/chatterbait/etc>",
+  "trailer_why": "<OPTIONAL - 1-2 sentences contextual to conditions>",
   "color_recommendations": ["<color1>", "<color2>"],
   "targets": ["<target1>", "<target2>", "<target3>"],
-  "why_this_works": "<explain the pivot - what assumption changed>",
-  "work_it": ["<tactical tip 1 with capitalized targets>", "...", "..."]
+  "why_this_works": "<CONTEXT-DEPENDENT: If search→pick apart combo, explain the sequential relationship. Otherwise, explain the pivot assumption.>",
+  "work_it": ["<target + specific retrieve cadence>", "...", "..."],
+  "strategy": "<2-3 sentence paragraph - NO bullets>"
 }
 """
     
@@ -92,21 +109,31 @@ OUTPUT FORMAT (JSON only - no markdown, no explanation):
   "primary": {
     "presentation": "<one from PRESENTATIONS>",
     "base_lure": "<one from LURE_POOL>",
+    "soft_plastic": "<OPTIONAL - only for terminal tackle: texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head>",
+    "soft_plastic_why": "<OPTIONAL - contextual explanation why THIS plastic for THESE conditions>",
+    "trailer": "<OPTIONAL - only for: chatterbait, swim jig, spinnerbait, casting jig, football jig>",
+    "trailer_why": "<OPTIONAL - contextual explanation why THIS trailer for THESE conditions>",
     "color_recommendations": ["<color1>", "<color2>"],
     "targets": ["<target1>", "<target2>", "<target3>"],
-    "why_this_works": "<1-2 sentences>",
-    "work_it": ["<tactical tip with Capitalized Targets>", "...", "..."]
+    "why_this_works": "<1-2 sentences why THIS lure for these conditions>",
+    "work_it": ["<target + specific retrieve for this lure>", "...", "..."],
+    "strategy": "<2-3 sentence paragraph about positioning/angles/conditions - NO bullets>"
   },
   "secondary": {
     "presentation": "<different from primary>",
     "base_lure": "<from LURE_POOL>",
+    "soft_plastic": "<OPTIONAL>",
+    "soft_plastic_why": "<OPTIONAL>",
+    "trailer": "<OPTIONAL>",
+    "trailer_why": "<OPTIONAL>",
     "color_recommendations": ["<color1>", "<color2>"],
     "targets": ["<target1>", "<target2>", "<target3>"],
     "why_this_works": "<explain the pivot>",
-    "work_it": ["<tactical tip with Capitalized Targets>", "...", "..."]
+    "work_it": ["<target + retrieve>", "...", "..."],
+    "strategy": "<2-3 sentence paragraph - NO bullets>"
   },
   "day_progression": ["Morning: ...", "Midday: ...", "Late: ..."],
-  "outlook_blurb": "<2-3 sentences, descriptive weather, no exact temps/wind>"
+  "outlook_blurb": "<weather forecast only>"
 }
 """
     else:
@@ -115,23 +142,24 @@ OUTPUT FORMAT (JSON only - no markdown, no explanation):
 {
   "presentation": "<one from PRESENTATIONS>",
   "base_lure": "<one from LURE_POOL - must match presentation>",
+  "soft_plastic": "<OPTIONAL - only if terminal tackle>",
+  "soft_plastic_why": "<OPTIONAL - contextual to conditions>",
+  "trailer": "<OPTIONAL - only if needs trailer>",
+  "trailer_why": "<OPTIONAL - contextual to conditions>",
   "color_recommendations": ["<color1>", "<color2>"],
   "targets": ["<target1>", "<target2>", "<target3>"],
-  "why_this_works": "<1-2 sentences explaining why this pattern fits conditions>",
+  "why_this_works": "<1-2 sentences explaining why this lure fits conditions>",
   "work_it": [
-    "<tactical tip 1 - include Capitalized Targets>",
-    "<tactical tip 2>",
-    "<tactical tip 3>",
-    "<tactical tip 4>",
-    "<tactical tip 5>",
-    "<tactical tip 6>"
+    "<target name + specific retrieve cadence for this lure>",
+    "<target name + specific retrieve cadence>",
+    "<target name + specific retrieve cadence>"
   ],
   "day_progression": [
-    "Morning: <tactical sentence>",
-    "Midday: <tactical sentence>",
-    "Late: <tactical sentence>"
+    "Morning: <tactical sentence using same targets from above>",
+    "Midday: <tactical sentence using same targets>",
+    "Late: <tactical sentence using same targets>"
   ],
-  "outlook_blurb": "<2-3 sentences about weather and fish behavior>"
+  "outlook_blurb": "<weather forecast only - NO bass strategy>"
 }
 """
     
@@ -153,22 +181,43 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
 4. ALLOWED COLORS (choose 1-2 from this list ONLY - exact strings):
 {json.dumps(COLOR_POOL, indent=2)}
 
-5. COLOR RESTRICTIONS:
+5. COLOR VARIETY RULE:
+   - When choosing 2 colors, they MUST be from different color families
+   - BAD: "watermelon" + "green pumpkin" (both natural greens)
+   - BAD: "shad" + "natural shad" (both shad colors)
+   - BAD: "chartreuse" + "chartreuse/white" (same base)
+   - GOOD: "watermelon" + "black/blue" (natural + contrast)
+   - GOOD: "shad" + "firetiger" (natural + high-contrast)
+   - GOOD: "green pumpkin" + "white" (natural + pelagic)
+   
+6. COLOR RESTRICTIONS:
    - Metallic/firetiger colors (gold, bronze, silver, firetiger) can ONLY be used on hard baits: {sorted(HARDBAIT_LURES)}
    - black/blue is NOT allowed on hard baits or jerkbaits
    - For spinnerbait, color refers to SKIRT color (not blade finish)
 
-6. TERMINAL TACKLE SOFT PLASTIC RULES:
-   When suggesting soft plastics in "work_it" section for terminal tackle, you can ONLY mention plastics from these lists:
+7. TERMINAL TACKLE SOFT PLASTIC RULES:
+   If you choose terminal tackle (texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head), you MUST include:
+   - soft_plastic: choose from allowed plastics for that lure
+   - soft_plastic_why: 1-2 sentences explaining why THIS plastic for THESE conditions (phase, temp, clarity)
+   
+   Allowed soft plastics by lure:
 {chr(10).join(terminal_rules)}
    
-   Example: For texas rig, you can suggest "creature bait" or "craw" but NOT "chunk" (that's jig-only)
+   IMPORTANT: soft_plastic_why must be CONTEXTUAL, not generic
+   ✅ GOOD: "In late-fall with 68° water, creature baits create maximum displacement in stained conditions where bass locate by feel."
+   ❌ BAD: "Creature baits have lots of appendages" (this is generic knowledge)
 
-7. TRAILER RULES:
-   When suggesting trailers in "work_it" section:
+8. TRAILER RULES:
+   If you choose lures that need trailers (chatterbait, swim jig, spinnerbait, casting jig, football jig), you MUST include:
+   - trailer: choose from allowed trailers for that lure
+   - trailer_why: 1-2 sentences explaining why THIS trailer for THESE conditions
+   
+   Allowed trailers by lure:
 {chr(10).join(trailer_rules)}
    
-   Example: For chatterbait, you can suggest "craw" or "paddle tail swimbait" but NOT "chunk"
+   IMPORTANT: trailer_why must relate to current conditions
+   ✅ GOOD: "With clear skies and calm water, a craw trailer keeps the profile compact for less aggressive fish in 68° water."
+   ❌ BAD: "Craws look like crawfish" (generic)
 
 8. CANONICAL TARGETS (choose 3-5 from this list ONLY - exact strings):
 {json.dumps(CANONICAL_TARGETS, indent=2)}
@@ -199,12 +248,43 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ❌ "Fish will be on points" - NO location advice
 
 11. WORK IT / HOW TO FISH:
-   - Include SPECIFIC target names from your chosen targets
-   - CAPITALIZE targets when mentioning them (e.g., "Focus on Secondary Points and First Depth Break")
-   - Be tactical and actionable
-   - Example: "Start on Secondary Points, dragging slowly along the First Depth Break where bass stage."
+   - 3-5 tactical steps combining target + specific retrieve cadence
+   - Each step should reference a target and explain HOW to fish it with THIS lure
+   - Use specific retrieve instructions (drag-pause timing, twitch patterns, etc.)
+   - Example: "On secondary points, drag 2-3 feet then pause 3-5 seconds - most bites come when the bait settles into the contour."
+   - Example: "Work channel swings with a steady swim and brief stall when you tick cover - the pause triggers followers."
+   - Use natural capitalization (not ALL CAPS)
 
-12. CRITICAL DEPTH RULE:
+12. WHY THIS WORKS:
+   - ONLY explain why THIS SPECIFIC LURE was chosen for these conditions
+   - Focus on: lure characteristics, presentation style
+   - ALWAYS include a brief, casual mention of the two color options and when to use each
+   - Format: End with something like "Go with [color1] in clearer water, [color2] when it's stained."
+   - 2-3 sentences total
+   
+   GOOD Examples:
+   ✅ "A chatterbait's vibration and flash mimics distressed baitfish, triggering reaction strikes from roaming bass in windward zones. Natural shad works in clear conditions, while chartreuse/white shines when visibility drops."
+   ✅ "The carolina rig allows slow bottom contact with a natural presentation, perfect for pressured fish holding on structure. Lean toward watermelon in clear water, black/blue when it's stained."
+   ✅ "Lipless cranks cover water fast and call fish from a distance with rattles—ideal for locating active winter bass. Ghost shad in clearer water, firetiger when visibility is low."
+   
+   BAD Examples:
+   ❌ "Bass are positioning around spawning areas" - this is strategic overview, not lure-specific
+   ❌ No mention of color guidance - MUST casually explain which color for which clarity
+   ❌ "The conditions favor moving baits" - too general, explain why THIS lure specifically
+
+13. STRATEGY PARAGRAPH (MEMBERS ONLY):
+   - MUST be a flowing 2-3 sentence paragraph (NOT bullet points, NOT numbered list)
+   - Cover positioning, wind adaptation, angle considerations, conditions-based adjustments
+   - This is the big-picture tactical approach
+   
+   GOOD Example:
+   ✅ "Start on windward points where bait concentrates and fish position to ambush. Use the wind to drift naturally along depth changes, repositioning for clean casts when you get a cue. In brighter conditions, prioritize shade edges and the first depth break rather than open flats."
+   
+   BAD Examples:
+   ❌ "• Fish windward banks\n• Target points\n• Focus on shade" - These are bullets, not a paragraph
+   ❌ "Fish the points. Then move to banks." - Too choppy, needs to flow
+
+13. CRITICAL DEPTH RULE:
    - NEVER mention specific depths in feet (e.g., "15-30 feet", "8-12 feet")
    - You don't know the depth of the user's water body
    - Use RELATIVE depth language instead:
@@ -416,8 +496,10 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
     if re.search(wind_pattern, outlook):
         errors.append("outlook_blurb contains exact wind speed (use descriptive language instead)")
     
-    # Check for depth mentions anywhere
-    depth_pattern = r'\d+[-–]?\d*\s*(feet|ft|foot)\b'
+    # Check for depth mentions (but allow retrieve distance like "drag 2-3 feet")
+    # Block: "in 10 feet of water", "fish 6 feet deep", "target 15-foot depths"
+    # Allow: "drag 2-3 feet", "hop 3 feet", "swim 5 feet"
+    depth_pattern = r'(?<!drag\s)(?<!hop\s)(?<!swim\s)(?<!move\s)(?<!pull\s)\d+[-–]?\d*\s*[-–]?\s*(feet|ft|foot)\s+(of\s+water|deep|depth|down)'
     all_text_fields = []
     
     if is_member:
@@ -489,7 +571,36 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
     target_errs = validate_targets(targets)
     errors.extend([f"{pattern_name}: {err}" for err in target_errs])
     
-    # Validate work_it mentions valid plastics/trailers
+    # Validate soft_plastic if present
+    if "soft_plastic" in pattern and pattern["soft_plastic"]:
+        if base_lure in TERMINAL_PLASTIC_MAP:
+            allowed_plastics = TERMINAL_PLASTIC_MAP[base_lure]
+            if pattern["soft_plastic"] not in allowed_plastics:
+                errors.append(f"{pattern_name}: soft_plastic '{pattern['soft_plastic']}' not allowed for {base_lure}. Allowed: {allowed_plastics}")
+        else:
+            errors.append(f"{pattern_name}: {base_lure} does not use soft_plastic field")
+    
+    # Validate trailer if present
+    if "trailer" in pattern and pattern["trailer"]:
+        if base_lure in TRAILER_BUCKET_BY_LURE:
+            bucket_name = TRAILER_BUCKET_BY_LURE[base_lure]
+            # Resolve bucket name to actual list
+            if bucket_name == "JIG_TRAILERS":
+                allowed_trailers = JIG_TRAILERS
+            elif bucket_name == "CHATTER_SWIMJIG_TRAILERS":
+                allowed_trailers = CHATTER_SWIMJIG_TRAILERS
+            elif bucket_name == "SPINNER_BUZZ_TRAILERS":
+                allowed_trailers = SPINNER_BUZZ_TRAILERS
+            else:
+                errors.append(f"{pattern_name}: Unknown trailer bucket '{bucket_name}'")
+                allowed_trailers = []
+            
+            if pattern["trailer"] not in allowed_trailers:
+                errors.append(f"{pattern_name}: trailer '{pattern['trailer']}' not allowed for {base_lure}. Allowed: {allowed_trailers}")
+        else:
+            errors.append(f"{pattern_name}: {base_lure} does not use trailer field")
+    
+    # Validate work_it mentions valid plastics/trailers (legacy check)
     work_it = pattern.get("work_it", [])
     if isinstance(work_it, list):
         work_it_text = " ".join(work_it).lower()

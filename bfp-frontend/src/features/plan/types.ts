@@ -32,16 +32,19 @@ export type ColorZones = {
   warnings?: string[];
 };
 
-export type Target =
-  | {
-      name: string;
-      definition?: string;
-    }
-  | string; // Support both new format {name, definition} and legacy string format
+export type Target = {
+  name: string;
+  definition: string;
+  retrieve_cadence: string;
+};
 
 export type Pattern = {
   presentation: string;
   base_lure: string;
+  soft_plastic?: string;
+  soft_plastic_why?: string;
+  trailer?: string;
+  trailer_why?: string;
   color_recommendations: string[];
   colors: ColorZones;
   targets: Target[];
@@ -53,7 +56,7 @@ export type Pattern = {
     line: string;
     technique: string;
   };
-  strategy?: string[];
+  strategy?: string; // Changed from string[] to string (paragraph)
   pattern_summary?: string;
 };
 
@@ -61,6 +64,10 @@ export type Pattern = {
 export type PreviewPlan = {
   presentation: string;
   base_lure: string;
+  soft_plastic?: string;
+  soft_plastic_why?: string;
+  trailer?: string;
+  trailer_why?: string;
   color_recommendations: string[];
   colors: ColorZones;
   targets: Target[];
