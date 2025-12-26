@@ -18,24 +18,34 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   const { plan, is_member } = response;
   const conditions = plan.conditions;
+  const [locationCity, setLocationCity] = useState<string>("");
   const [locationState, setLocationState] = useState<string>("");
   const hasGeocodedRef = useRef(false);
 
-  // Reverse geocode to get state - only once
+  // Reverse geocode to get city + state - only once
   useEffect(() => {
     if (hasGeocodedRef.current) return; // Already geocoded
 
-    async function getState() {
+    async function getCityState() {
       if (!MAPBOX_TOKEN) return;
 
       try {
         const res = await fetch(
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${conditions.longitude},${conditions.latitude}.json?` +
-            `types=region&access_token=${MAPBOX_TOKEN}`
+            `types=place,region&access_token=${MAPBOX_TOKEN}`
         );
         const data = await res.json();
 
         if (data.features && data.features.length > 0) {
+          // Get city (place)
+          const place = data.features.find((f: any) =>
+            f.id.startsWith("place")
+          );
+          if (place) {
+            setLocationCity(place.text || "");
+          }
+
+          // Get state (region)
           const region = data.features.find((f: any) =>
             f.id.startsWith("region")
           );
@@ -43,148 +53,285 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
             const state =
               region.text || region.short_code?.replace("US-", "") || "";
             setLocationState(state);
-            hasGeocodedRef.current = true; // Mark as geocoded
           }
+
+          hasGeocodedRef.current = true; // Mark as geocoded
         }
       } catch (error) {
-        console.error("Failed to get state:", error);
+        console.error("Failed to get location:", error);
       }
     }
 
-    getState();
+    getCityState();
   }, [conditions.latitude, conditions.longitude]);
 
   return (
     <div style={{ marginTop: 18 }}>
-      {/* Weather Forecast Panel - Consolidated location, date, and weather */}
-      <div className="card" style={{ marginTop: 0 }}>
-        {/* Location & Date Header */}
+      {/* Weather Forecast Panel - Premium with blue accents */}
+      <div
+        className="card"
+        style={{
+          marginTop: 0,
+          background:
+            "linear-gradient(145deg, rgba(74, 144, 226, 0.04) 0%, rgba(10, 10, 10, 0.4) 100%)",
+          border: "1px solid rgba(74, 144, 226, 0.12)",
+        }}
+      >
+        {/* Date - Prominent with blue accent */}
         <div
           style={{
-            marginBottom: 20,
-            paddingBottom: 20,
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: 12,
+            fontSize: "0.85rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            color: "#4A90E2",
+            fontWeight: 600,
           }}
         >
-          <div className="kicker">Fishing Plan</div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginTop: 8,
-            }}
-          >
-            <MapPinIcon size={20} />
-            <div>
-              <h2 className="h2" style={{ margin: 0, fontSize: "1.5em" }}>
-                {conditions.location_name}
-                {locationState && (
-                  <span style={{ opacity: 0.6, fontWeight: 400 }}>
-                    , {locationState}
-                  </span>
-                )}
-              </h2>
-            </div>
+          {conditions.trip_date}
+        </div>
+
+        {/* Location - Large with blue pin icon */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 24,
+            paddingBottom: 24,
+            borderBottom: "1px solid rgba(74, 144, 226, 0.15)",
+          }}
+        >
+          <div style={{ color: "#4A90E2" }}>
+            <MapPinIcon size={28} />
           </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginTop: 8,
-              opacity: 0.7,
-            }}
-          >
-            <CalendarIcon size={16} />
-            <span style={{ fontSize: "0.9em" }}>{conditions.trip_date}</span>
+          <div>
+            <h2
+              className="h2"
+              style={{
+                margin: 0,
+                fontSize: "1.85em",
+                fontWeight: 700,
+                color: "rgba(255, 255, 255, 0.95)",
+              }}
+            >
+              {conditions.location_name}
+            </h2>
+            {(locationCity || locationState) && (
+              <div
+                style={{
+                  fontSize: "1.05em",
+                  opacity: 0.7,
+                  marginTop: 4,
+                  color: "rgba(255, 255, 255, 0.75)",
+                }}
+              >
+                {locationCity && locationState
+                  ? `${locationCity}, ${locationState}`
+                  : locationCity || locationState}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Weather Forecast */}
-        <h3 style={{ fontSize: "1.3em", fontWeight: 600, marginBottom: 16 }}>
+        {/* Weather Forecast Header */}
+        <h3
+          style={{
+            fontSize: "1.25em",
+            fontWeight: 600,
+            marginBottom: 18,
+            color: "rgba(255, 255, 255, 0.95)",
+          }}
+        >
           Weather Forecast
         </h3>
 
-        {/* Weather Grid */}
+        {/* Weather Grid - Premium cards with blue accents */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: 16,
-            marginBottom: 20,
-            padding: 20,
-            background: "rgba(255,255,255,0.02)",
-            borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: 24,
           }}
         >
           {/* Temperature Range */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ opacity: 0.7 }}>
-              <ThermometerIcon size={20} />
-            </div>
-            <div>
+          <div
+            style={{
+              padding: 16,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ color: "#4A90E2" }}>
+                <ThermometerIcon size={20} />
+              </div>
               <div
-                style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 2 }}
+                style={{
+                  fontSize: "0.7rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontWeight: 600,
+                }}
               >
                 Temperature
               </div>
-              <div style={{ fontWeight: 600 }}>
-                {Math.round(conditions.temp_low)}° -{" "}
-                {Math.round(conditions.temp_high)}°F
-              </div>
+            </div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "1.15rem",
+                color: "rgba(255, 255, 255, 0.95)",
+              }}
+            >
+              {Math.round(conditions.temp_low)}° -{" "}
+              {Math.round(conditions.temp_high)}
+              °F
             </div>
           </div>
 
           {/* Wind */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ opacity: 0.7 }}>
-              <WindIcon size={20} />
-            </div>
-            <div>
+          <div
+            style={{
+              padding: 16,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ color: "#4A90E2" }}>
+                <WindIcon size={20} />
+              </div>
               <div
-                style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 2 }}
+                style={{
+                  fontSize: "0.7rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontWeight: 600,
+                }}
               >
                 Wind
               </div>
-              <div style={{ fontWeight: 600 }}>
-                {Math.round(conditions.wind_speed)} mph
-              </div>
+            </div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "1.15rem",
+                color: "rgba(255, 255, 255, 0.95)",
+              }}
+            >
+              {Math.round(conditions.wind_speed)} mph
             </div>
           </div>
 
           {/* Sky */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ opacity: 0.7 }}>
-              <CloudIcon size={20} />
-            </div>
-            <div>
+          <div
+            style={{
+              padding: 16,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ color: "#4A90E2" }}>
+                <CloudIcon size={20} />
+              </div>
               <div
-                style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 2 }}
+                style={{
+                  fontSize: "0.7rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontWeight: 600,
+                }}
               >
                 Sky
               </div>
-              <div style={{ fontWeight: 600, textTransform: "capitalize" }}>
-                {conditions.sky_condition.replace(/_/g, " ")}
-              </div>
+            </div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "1.15rem",
+                textTransform: "capitalize",
+                color: "rgba(255, 255, 255, 0.95)",
+              }}
+            >
+              {conditions.sky_condition.replace(/_/g, " ")}
             </div>
           </div>
 
           {/* Phase */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ opacity: 0.7 }}>
-              <ActivityIcon size={20} />
-            </div>
-            <div>
+          <div
+            style={{
+              padding: 16,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 12,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ color: "#4A90E2" }}>
+                <ActivityIcon size={20} />
+              </div>
               <div
-                style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 2 }}
+                style={{
+                  fontSize: "0.7rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontWeight: 600,
+                }}
               >
                 Phase
               </div>
-              <div style={{ fontWeight: 600, textTransform: "capitalize" }}>
-                {conditions.phase}
-              </div>
+            </div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: "1.15rem",
+                textTransform: "capitalize",
+                color: "rgba(255, 255, 255, 0.95)",
+              }}
+            >
+              {conditions.phase}
             </div>
           </div>
         </div>
@@ -245,11 +392,11 @@ function PreviewPatternView({
       <div
         style={{
           position: "relative",
-          padding: 40,
           background:
             "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.1) 0%, transparent 70%)",
           borderRadius: 16,
           marginBottom: 24,
+          overflow: "hidden",
         }}
       >
         <div
@@ -258,6 +405,7 @@ function PreviewPatternView({
             justifyContent: "center",
             alignItems: "center",
             minHeight: 200,
+            padding: 40,
           }}
         >
           {plan.colors.asset_key ? (
@@ -266,7 +414,7 @@ function PreviewPatternView({
               alt={plan.base_lure}
               style={{
                 width: "100%",
-                maxWidth: 300,
+                maxWidth: 400,
                 height: "auto",
                 objectFit: "contain",
                 filter: "drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5))",
@@ -310,35 +458,114 @@ function PreviewPatternView({
         </div>
       </div>
 
-      {/* Primary Color */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
-          Primary Color
-        </div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "8px 14px",
-            background: "rgba(255,255,255,0.05)",
-            borderRadius: 8,
-          }}
-        >
+      {/* Soft Plastic (if applicable) */}
+      {plan.soft_plastic && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+            Soft Plastic
+          </div>
           <div
             style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              background: getColorHex(plan.colors.primary_color),
-              border: "2px solid rgba(255,255,255,0.2)",
+              fontSize: "1em",
+              fontWeight: 500,
+              textTransform: "capitalize",
+              marginBottom: 8,
             }}
-          />
-          <span style={{ fontWeight: 500, textTransform: "capitalize" }}>
-            {plan.colors.primary_color}
-          </span>
+          >
+            {plan.soft_plastic}
+          </div>
+          {plan.soft_plastic_why && (
+            <div
+              style={{
+                fontSize: "0.9em",
+                opacity: 0.8,
+                lineHeight: 1.6,
+                fontStyle: "italic",
+              }}
+            >
+              {plan.soft_plastic_why}
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Trailer (if applicable) */}
+      {plan.trailer && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+            Trailer
+          </div>
+          <div
+            style={{
+              fontSize: "1em",
+              fontWeight: 500,
+              textTransform: "capitalize",
+              marginBottom: 8,
+            }}
+          >
+            {plan.trailer}
+          </div>
+          {plan.trailer_why && (
+            <div
+              style={{
+                fontSize: "0.9em",
+                opacity: 0.8,
+                lineHeight: 1.6,
+                fontStyle: "italic",
+              }}
+            >
+              {plan.trailer_why}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Color Swatches */}
+      {plan.color_recommendations && plan.color_recommendations.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+            Colors
+          </div>
+          <div
+            style={{
+              display: "flex",
+              gap: 16,
+              flexWrap: "wrap",
+              alignItems: "center",
+            }}
+          >
+            {plan.color_recommendations.map((color, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <div
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: "50%",
+                    background: getColorHex(color),
+                    border: "2px solid rgba(255,255,255,0.2)",
+                  }}
+                />
+                <span
+                  style={{
+                    fontWeight: 500,
+                    textTransform: "capitalize",
+                    fontSize: "0.95em",
+                  }}
+                >
+                  {color}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Why This Works */}
       {plan.why_this_works && (
@@ -519,7 +746,7 @@ function MemberPatternView({
   );
 }
 
-// Reusable pattern card component
+// Reusable pattern card component - PREMIUM REDESIGN
 function PatternCard({
   pattern,
   patternNumber,
@@ -533,56 +760,133 @@ function PatternCard({
     <div
       className="card"
       style={{
-        marginTop: 20,
+        marginTop: 32,
+        position: "relative",
+        // Premium frosted glass effect with depth
         background: isPrimary
-          ? "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, var(--bg-card) 100%)"
-          : "var(--bg-card)",
+          ? "linear-gradient(145deg, rgba(74, 144, 226, 0.06) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(74, 144, 226, 0.03) 100%)"
+          : "linear-gradient(145deg, rgba(255, 255, 255, 0.02) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(255, 255, 255, 0.01) 100%)",
         border: isPrimary
-          ? "1px solid rgba(74, 144, 226, 0.2)"
-          : "1px solid rgba(255,255,255,0.1)",
+          ? "1px solid rgba(74, 144, 226, 0.15)"
+          : "1px solid rgba(255, 255, 255, 0.08)",
+        borderRadius: 24,
+        padding: "48px",
+        // Premium shadows (work in PDF)
+        boxShadow: isPrimary
+          ? "0 8px 32px rgba(74, 144, 226, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
+          : "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
       }}
     >
-      <div className="badge primary" style={{ marginBottom: 12 }}>
+      {/* Floating Pattern Badge */}
+      <div
+        style={{
+          position: "absolute",
+          top: -12,
+          left: 32,
+          padding: "6px 18px",
+          background: isPrimary
+            ? "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)"
+            : "linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%)",
+          boxShadow: isPrimary
+            ? "0 4px 16px rgba(74, 144, 226, 0.4)"
+            : "0 4px 16px rgba(0, 0, 0, 0.3)",
+          borderRadius: 8,
+          fontSize: "0.7rem",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          fontWeight: 700,
+          color: isPrimary ? "#fff" : "rgba(255, 255, 255, 0.9)",
+        }}
+      >
         Pattern {patternNumber}
       </div>
-      <h3 style={{ fontSize: "1.75em", fontWeight: 700, marginBottom: 20 }}>
+
+      {/* Presentation Title - Premium typography */}
+      <h3
+        style={{
+          fontSize: "2.25rem",
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          marginTop: 12,
+          marginBottom: 32,
+          lineHeight: 1.1,
+          color: "rgba(255, 255, 255, 0.95)",
+        }}
+      >
         {pattern.presentation}
       </h3>
 
-      {/* Pattern Summary - Strategic Overview */}
+      {/* Pattern Summary - Refined callout */}
       {pattern.pattern_summary && (
         <div
           style={{
-            marginBottom: 24,
-            padding: 16,
-            background: "rgba(74, 144, 226, 0.05)",
-            borderRadius: 8,
-            borderLeft: "3px solid rgba(74, 144, 226, 0.4)",
+            marginBottom: 32,
+            padding: "24px 28px",
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.06) 0%, rgba(74, 144, 226, 0.02) 100%)",
+            borderLeft: "4px solid #4A90E2",
+            borderRadius: 12,
+            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
           }}
         >
-          <p style={{ lineHeight: 1.7, margin: 0, fontSize: "0.95em" }}>
+          <p
+            style={{
+              lineHeight: 1.75,
+              margin: 0,
+              fontSize: "1.05rem",
+              fontWeight: 400,
+              letterSpacing: "0.01em",
+              color: "rgba(255, 255, 255, 0.92)",
+            }}
+          >
             {pattern.pattern_summary}
           </p>
         </div>
       )}
 
-      {/* Lure Image */}
+      {/* Section Divider */}
+      <div
+        style={{
+          height: 1,
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
+          margin: "32px 0",
+        }}
+      />
+
+      {/* Lure Image Container - Premium hero treatment */}
       <div
         style={{
           position: "relative",
-          padding: 40,
+          marginBottom: 32,
+          overflow: "hidden",
           background:
-            "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.1) 0%, transparent 70%)",
-          borderRadius: 16,
-          marginBottom: 24,
+            "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.12) 0%, rgba(74, 144, 226, 0.04) 40%, transparent 70%)",
+          borderRadius: 20,
         }}
       >
+        {/* Glow effect behind */}
         <div
           style={{
+            position: "absolute",
+            inset: "-40px",
+            background:
+              "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.2) 0%, transparent 60%)",
+            filter: "blur(60px)",
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
+
+        <div
+          style={{
+            position: "relative",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            minHeight: 200,
+            minHeight: 280,
+            padding: "80px 40px",
+            zIndex: 1,
           }}
         >
           {pattern.colors.asset_key ? (
@@ -591,10 +895,12 @@ function PatternCard({
               alt={pattern.base_lure}
               style={{
                 width: "100%",
-                maxWidth: 300,
+                maxWidth: 480,
                 height: "auto",
                 objectFit: "contain",
-                filter: "drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5))",
+                // Premium multi-layer shadow
+                filter:
+                  "drop-shadow(0 24px 80px rgba(0, 0, 0, 0.6)) drop-shadow(0 12px 40px rgba(74, 144, 226, 0.5)) drop-shadow(0 4px 16px rgba(0, 0, 0, 0.4))",
               }}
               onError={(e) => {
                 e.currentTarget.src = "/images/jig_lure.jpeg";
@@ -609,88 +915,310 @@ function PatternCard({
                 alignItems: "center",
                 justifyContent: "center",
                 background: "rgba(255,255,255,0.05)",
-                borderRadius: 8,
+                borderRadius: 12,
                 opacity: 0.5,
+                fontSize: "0.9rem",
+                color: "rgba(255, 255, 255, 0.4)",
               }}
             >
-              No image
+              No image available
             </div>
           )}
         </div>
       </div>
 
       {/* Lure Name */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+      <div style={{ marginBottom: 32 }}>
+        <div
+          style={{
+            fontSize: "0.7rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            fontWeight: 700,
+            color: "rgba(255, 255, 255, 0.5)",
+            marginBottom: 12,
+          }}
+        >
           Lure
         </div>
         <div
           style={{
-            fontSize: "1.1em",
+            fontSize: "1.25rem",
             fontWeight: 600,
             textTransform: "capitalize",
+            color: "rgba(255, 255, 255, 0.95)",
           }}
         >
           {pattern.base_lure}
         </div>
       </div>
 
-      {/* Primary Color */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
-          Primary Color
-        </div>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "8px 14px",
-            background: "rgba(255,255,255,0.05)",
-            borderRadius: 8,
-          }}
-        >
+      {/* Soft Plastic */}
+      {pattern.soft_plastic && (
+        <div style={{ marginBottom: 32 }}>
           <div
             style={{
-              width: 28,
-              height: 28,
-              borderRadius: "50%",
-              background: getColorHex(pattern.colors.primary_color),
-              border: "2px solid rgba(255,255,255,0.2)",
+              fontSize: "0.7rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontWeight: 700,
+              color: "rgba(255, 255, 255, 0.5)",
+              marginBottom: 12,
             }}
-          />
-          <span style={{ fontWeight: 500, textTransform: "capitalize" }}>
-            {pattern.colors.primary_color}
-          </span>
+          >
+            Soft Plastic
+          </div>
+          <div
+            style={{
+              fontSize: "1.1rem",
+              fontWeight: 500,
+              textTransform: "capitalize",
+              marginBottom: 10,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
+            {pattern.soft_plastic}
+          </div>
+          {pattern.soft_plastic_why && (
+            <div
+              style={{
+                fontSize: "0.95rem",
+                opacity: 0.75,
+                lineHeight: 1.6,
+                fontStyle: "italic",
+              }}
+            >
+              {pattern.soft_plastic_why}
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* Gear Setup - Moved here to be near the bait info */}
+      {/* Trailer */}
+      {pattern.trailer && (
+        <div style={{ marginBottom: 32 }}>
+          <div
+            style={{
+              fontSize: "0.7rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontWeight: 700,
+              color: "rgba(255, 255, 255, 0.5)",
+              marginBottom: 12,
+            }}
+          >
+            Trailer
+          </div>
+          <div
+            style={{
+              fontSize: "1.1rem",
+              fontWeight: 500,
+              textTransform: "capitalize",
+              marginBottom: 10,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
+            {pattern.trailer}
+          </div>
+          {pattern.trailer_why && (
+            <div
+              style={{
+                fontSize: "0.95rem",
+                opacity: 0.75,
+                lineHeight: 1.6,
+                fontStyle: "italic",
+              }}
+            >
+              {pattern.trailer_why}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Color Swatches - Premium cards */}
+      {pattern.color_recommendations &&
+        pattern.color_recommendations.length > 0 && (
+          <div style={{ marginBottom: 32 }}>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                fontWeight: 700,
+                color: "rgba(255, 255, 255, 0.5)",
+                marginBottom: 16,
+              }}
+            >
+              Colors
+            </div>
+            <div
+              style={{
+                display: "flex",
+                gap: 20,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              {pattern.color_recommendations.map((color, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: "50%",
+                      background: getColorHex(color),
+                      border: "2px solid rgba(255,255,255,0.25)",
+                      boxShadow:
+                        "0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontWeight: 500,
+                      textTransform: "capitalize",
+                      fontSize: "0.95rem",
+                      color: "rgba(255, 255, 255, 0.9)",
+                    }}
+                  >
+                    {color}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      {/* Section Divider */}
+      <div
+        style={{
+          height: 1,
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
+          margin: "32px 0",
+        }}
+      />
+
+      {/* Gear Setup - Premium card */}
       {pattern.gear && (
         <div
           style={{
-            marginBottom: 24,
-            padding: 16,
-            background: "rgba(255,255,255,0.02)",
-            borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.08)",
+            marginBottom: 32,
+            padding: "24px 28px",
+            background:
+              "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: 16,
+            boxShadow: "inset 0 1px 2px rgba(255, 255, 255, 0.03)",
           }}
         >
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
+          <h4
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 20,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
             Gear Setup
           </h4>
-          <div style={{ display: "grid", gap: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.7 }}>Rod:</span>
-              <span style={{ fontWeight: 500 }}>{pattern.gear.rod}</span>
+          <div style={{ display: "grid", gap: 16 }}>
+            {/* Rod */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: 12,
+                borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontWeight: 600,
+                }}
+              >
+                Rod
+              </span>
+              <span
+                style={{
+                  fontSize: "1.05rem",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.95)",
+                }}
+              >
+                {pattern.gear.rod}
+              </span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.7 }}>Reel:</span>
-              <span style={{ fontWeight: 500 }}>{pattern.gear.reel}</span>
+            {/* Reel */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: 12,
+                borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontWeight: 600,
+                }}
+              >
+                Reel
+              </span>
+              <span
+                style={{
+                  fontSize: "1.05rem",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.95)",
+                }}
+              >
+                {pattern.gear.reel}
+              </span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ opacity: 0.7 }}>Line:</span>
-              <span style={{ fontWeight: 500 }}>{pattern.gear.line}</span>
+            {/* Line */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  fontWeight: 600,
+                }}
+              >
+                Line
+              </span>
+              <span
+                style={{
+                  fontSize: "1.05rem",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.95)",
+                }}
+              >
+                {pattern.gear.line}
+              </span>
             </div>
           </div>
         </div>
@@ -698,23 +1226,82 @@ function PatternCard({
 
       {/* Why This Works */}
       {pattern.why_this_works && (
-        <div style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 10 }}>
+        <div style={{ marginBottom: 32 }}>
+          <h4
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 14,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
             Why This Works
           </h4>
-          <p style={{ lineHeight: 1.7, opacity: 0.9, margin: 0 }}>
+          <p
+            style={{
+              lineHeight: 1.7,
+              opacity: 0.88,
+              margin: 0,
+              fontSize: "1.05rem",
+            }}
+          >
             {pattern.why_this_works}
           </p>
         </div>
       )}
 
-      {/* Targets */}
+      {/* Strategy */}
+      {pattern.strategy && (
+        <div style={{ marginBottom: 32 }}>
+          <h4
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 14,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
+            Strategy
+          </h4>
+          <p
+            style={{
+              lineHeight: 1.7,
+              opacity: 0.88,
+              margin: 0,
+              fontSize: "1.05rem",
+            }}
+          >
+            {typeof pattern.strategy === "string"
+              ? pattern.strategy.replace(/\.([A-Z])/g, ". $1")
+              : pattern.strategy}
+          </p>
+        </div>
+      )}
+
+      {/* Section Divider */}
+      <div
+        style={{
+          height: 1,
+          background:
+            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
+          margin: "32px 0",
+        }}
+      />
+
+      {/* Targets - Premium interactive cards */}
       {pattern.targets && pattern.targets.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
+        <div style={{ marginBottom: 32 }}>
+          <h4
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 16,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
             Where to Fish
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {pattern.targets.map((target, i) => {
               const targetName =
                 typeof target === "string" ? target : target.name;
@@ -727,18 +1314,22 @@ function PatternCard({
                 <div
                   key={i}
                   style={{
-                    padding: "12px 14px",
-                    background: "rgba(74, 144, 226, 0.08)",
-                    borderRadius: 6,
+                    padding: "18px 22px",
+                    background:
+                      "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.04) 100%)",
+                    border: "1px solid rgba(74, 144, 226, 0.15)",
+                    borderRadius: 12,
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                   }}
                 >
                   <div
                     style={{
                       textTransform: "uppercase",
-                      fontSize: "0.85em",
-                      fontWeight: 600,
-                      letterSpacing: "0.05em",
-                      marginBottom: targetDef ? 6 : 0,
+                      fontSize: "0.8rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.1em",
+                      marginBottom: targetDef ? 8 : 0,
+                      color: "#4A90E2",
                     }}
                   >
                     {targetName}
@@ -746,9 +1337,9 @@ function PatternCard({
                   {targetDef && (
                     <div
                       style={{
-                        fontSize: "0.85em",
-                        opacity: 0.7,
-                        lineHeight: 1.5,
+                        fontSize: "0.95rem",
+                        opacity: 0.75,
+                        lineHeight: 1.6,
                         textTransform: "none",
                         letterSpacing: "normal",
                         fontWeight: 400,
@@ -764,74 +1355,54 @@ function PatternCard({
         </div>
       )}
 
-      {/* How to Work It */}
+      {/* How to Work It - Premium step indicators */}
       {pattern.work_it && pattern.work_it.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
+        <div style={{ marginBottom: 0 }}>
+          <h4
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 16,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
             How to Work It
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {pattern.work_it.map((step, i) => (
               <div
                 key={i}
-                style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
+                style={{ display: "flex", gap: 16, alignItems: "flex-start" }}
               >
                 <div
                   style={{
-                    width: 24,
-                    height: 24,
+                    width: 32,
+                    height: 32,
                     borderRadius: "50%",
-                    background: "rgba(74, 144, 226, 0.2)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    boxShadow:
+                      "0 2px 8px rgba(74, 144, 226, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.2)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "0.85em",
-                    fontWeight: 600,
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
                     flexShrink: 0,
+                    color: "#fff",
                   }}
                 >
                   {i + 1}
                 </div>
-                <p style={{ margin: 0, lineHeight: 1.6, opacity: 0.9 }}>
-                  {step}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Strategy */}
-      {pattern.strategy && pattern.strategy.length > 0 && (
-        <div style={{ marginTop: 24 }}>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
-            Strategy
-          </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {pattern.strategy.map((tip, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: 12,
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: 6,
-                  display: "flex",
-                  gap: 10,
-                  alignItems: "flex-start",
-                }}
-              >
-                <div
+                <p
                   style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: "50%",
-                    background: "rgba(74, 144, 226, 0.8)",
-                    marginTop: 6,
-                    flexShrink: 0,
+                    margin: 0,
+                    lineHeight: 1.7,
+                    opacity: 0.88,
+                    fontSize: "1.05rem",
                   }}
-                />
-                <p style={{ margin: 0, lineHeight: 1.6, fontSize: "0.95em" }}>
-                  {tip}
+                >
+                  {step}
                 </p>
               </div>
             ))}
@@ -847,7 +1418,7 @@ function getColorHex(colorName: string): string {
   const colorMap: Record<string, string> = {
     // Natural / Clear Water
     "green pumpkin": "#4a5a3a",
-    watermelon: "#8fbc8f",
+    watermelon: "#6b8a5a", // Fixed: darker green with red undertone (actual bass fishing watermelon)
     "watermelon red": "#c97777",
     smoke: "#9e9e9e",
     "natural shad": "#d4d4d4",
@@ -869,7 +1440,7 @@ function getColorHex(colorName: string): string {
 
     // High-Contrast / Dirty Water
     chartreuse: "#dfff00",
-    "chartreuse/white": "#dfff00", // Display as chartreuse
+    "chartreuse/white": "#dfff00",
     firetiger: "#ff6b35",
 
     // Metallic / Blade Context
@@ -877,7 +1448,7 @@ function getColorHex(colorName: string): string {
     bronze: "#cd7f32",
     silver: "#c0c0c0",
 
-    // Legacy/Fallback (remove these if not in pools.py)
+    // Legacy/Fallback
     junebug: "#2d1b2e",
     "peanut butter": "#c4a15c",
     craw: "#8b4726",

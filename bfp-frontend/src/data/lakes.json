@@ -18,21 +18,21 @@
     "tier": 1
   },
   {
+    "name": "Lake Fork",
+    "state": "TX",
+    "city": "Alba",
+    "latitude": 32.8134,
+    "longitude": -95.6486,
+    "acres": 27690,
+    "tier": 1
+  },
+  {
     "name": "Kentucky Lake",
     "state": "TN",
     "city": "Paris",
     "latitude": 36.5019,
     "longitude": -88.0628,
     "acres": 160000,
-    "tier": 1
-  },
-  {
-    "name": "Lake Sam Rayburn",
-    "state": "TX",
-    "city": "Jasper",
-    "latitude": 31.0986,
-    "longitude": -94.1036,
-    "acres": 114500,
     "tier": 1
   },
   {
@@ -45,201 +45,8985 @@
     "tier": 1
   },
   {
-    "name": "Wheeler Lake",
-    "state": "AL",
-    "city": "Decatur",
-    "latitude": 34.6031,
-    "longitude": -86.9833,
-    "acres": 68300,
+    "name": "Santee Cooper Lakes",
+    "state": "SC",
+    "city": "Santee",
+    "latitude": 33.4849,
+    "longitude": -80.4779,
+    "acres": 171000,
     "tier": 1
   },
   {
-    "name": "Lake Eufaula",
-    "state": "AL",
-    "city": "Eufaula",
-    "latitude": 31.89,
-    "longitude": -85.145,
-    "acres": 45000,
+    "name": "Lake Champlain",
+    "state": "VT",
+    "city": "Burlington",
+    "latitude": 44.5588,
+    "longitude": -73.3497,
+    "acres": 313000,
+    "tier": 1
+  },
+  {
+    "name": "Lake St. Clair",
+    "state": "MI",
+    "city": "Harrison Township",
+    "latitude": 42.4833,
+    "longitude": -82.75,
+    "acres": 430000,
+    "tier": 1
+  },
+  {
+    "name": "Sam Rayburn Reservoir",
+    "state": "TX",
+    "city": "Jasper",
+    "latitude": 31.0986,
+    "longitude": -94.1036,
+    "acres": 114500,
+    "tier": 1
+  },
+  {
+    "name": "Falcon Lake",
+    "state": "TX",
+    "city": "Zapata",
+    "latitude": 26.5582,
+    "longitude": -99.1753,
+    "acres": 87210,
+    "tier": 1
+  },
+  {
+    "name": "Lake Havasu",
+    "state": "AZ",
+    "city": "Lake Havasu City",
+    "latitude": 34.5394,
+    "longitude": -114.3224,
+    "acres": 19300,
     "tier": 1
   },
   {
     "name": "Clear Lake",
     "state": "CA",
-    "city": "Clearlake",
-    "latitude": 39.0166,
-    "longitude": -122.8166,
-    "acres": 43800,
+    "city": "Lakeport",
+    "latitude": 39.0433,
+    "longitude": -122.7639,
+    "acres": 68000,
+    "tier": 1
+  },
+  {
+    "name": "Lake Erie",
+    "state": "OH",
+    "city": "Port Clinton",
+    "latitude": 41.8119,
+    "longitude": -82.9379,
+    "acres": 6000000,
     "tier": 1
   },
   {
     "name": "Pickwick Lake",
-    "state": "AL",
-    "city": "Florence",
-    "latitude": 35.0631,
-    "longitude": -88.2467,
+    "state": "TN",
+    "city": "Counce",
+    "latitude": 35.0642,
+    "longitude": -88.2478,
     "acres": 43100,
     "tier": 1
   },
   {
-    "name": "Lake Lanier",
-    "state": "GA",
-    "city": "Buford",
-    "latitude": 34.1808,
-    "longitude": -84.0766,
-    "acres": 38000,
+    "name": "Lake of the Ozarks",
+    "state": "MO",
+    "city": "Lake Ozark",
+    "latitude": 38.1872,
+    "longitude": -92.7382,
+    "acres": 54000,
     "tier": 1
   },
   {
-    "name": "Chickamauga Lake",
+    "name": "Lake Dardanelle",
+    "state": "AR",
+    "city": "Russellville",
+    "latitude": 35.3642,
+    "longitude": -93.1018,
+    "acres": 34300,
+    "tier": 1
+  },
+  {
+    "name": "Dale Hollow Lake",
     "state": "TN",
-    "city": "Chattanooga",
-    "latitude": 35.1264,
-    "longitude": -85.1869,
-    "acres": 36240,
+    "city": "Celina",
+    "latitude": 36.5475,
+    "longitude": -85.4533,
+    "acres": 27700,
     "tier": 1
-  },
-  {
-    "name": "Lake Kissimmee",
-    "state": "FL",
-    "city": "Lake Wales",
-    "latitude": 27.9161,
-    "longitude": -81.1,
-    "acres": 34948,
-    "tier": 1
-  },
-  {
-    "name": "Lake Fork",
-    "state": "TX",
-    "city": "Alba",
-    "latitude": 32.809,
-    "longitude": -95.6352,
-    "acres": 27690,
-    "tier": 1
-  },
-  {
-    "name": "West Point Lake",
-    "state": "GA",
-    "city": "West Point",
-    "latitude": 32.8828,
-    "longitude": -85.1836,
-    "acres": 25900,
-    "tier": 1
-  },
-  {
-    "name": "Lake Tohopekaliga",
-    "state": "FL",
-    "city": "Kissimmee",
-    "latitude": 28.2328,
-    "longitude": -81.4081,
-    "acres": 18810,
-    "tier": 1
-  },
-  {
-    "name": "Lake Allatoona",
-    "state": "GA",
-    "city": "Cartersville",
-    "latitude": 34.1614,
-    "longitude": -84.7074,
-    "acres": 12000,
-    "tier": 1
-  },
-  {
-    "name": "Lake Amistad",
-    "state": "TX",
-    "city": "Del Rio",
-    "latitude": 29.5181,
-    "longitude": -101.0506,
-    "acres": 65000,
-    "tier": 2
-  },
-  {
-    "name": "Lake George",
-    "state": "FL",
-    "city": "Palatka",
-    "latitude": 29.3333,
-    "longitude": -81.6167,
-    "acres": 46000,
-    "tier": 2
   },
   {
     "name": "Watts Bar Lake",
     "state": "TN",
     "city": "Spring City",
-    "latitude": 35.7086,
-    "longitude": -84.8555,
-    "acres": 39090,
-    "tier": 2
+    "latitude": 35.6897,
+    "longitude": -84.8544,
+    "acres": 39000,
+    "tier": 1
   },
   {
-    "name": "Cherokee Lake",
+    "name": "Lake Chickamauga",
     "state": "TN",
-    "city": "Jefferson City",
-    "latitude": 36.1667,
-    "longitude": -83.5,
-    "acres": 30300,
-    "tier": 2
+    "city": "Chattanooga",
+    "latitude": 35.1872,
+    "longitude": -85.1494,
+    "acres": 36240,
+    "tier": 1
   },
   {
-    "name": "Lake Shasta",
-    "state": "CA",
-    "city": "Redding",
-    "latitude": 40.7186,
-    "longitude": -122.4178,
-    "acres": 30000,
-    "tier": 2
-  },
-  {
-    "name": "Lake Oconee",
+    "name": "Lake Hartwell",
     "state": "GA",
-    "city": "Greensboro",
-    "latitude": 33.3603,
-    "longitude": -83.2744,
-    "acres": 19000,
+    "city": "Hartwell",
+    "latitude": 34.4192,
+    "longitude": -82.8897,
+    "acres": 56000,
+    "tier": 1
+  },
+  {
+    "name": "Lake Lanier",
+    "state": "GA",
+    "city": "Gainesville",
+    "latitude": 34.2123,
+    "longitude": -84.0831,
+    "acres": 38000,
+    "tier": 2
+  },
+  {
+    "name": "Lake Tohopekaliga",
+    "state": "FL",
+    "city": "Kissimmee",
+    "latitude": 28.1333,
+    "longitude": -81.3667,
+    "acres": 18810,
+    "tier": 2
+  },
+  {
+    "name": "Lake Seminole",
+    "state": "GA",
+    "city": "Bainbridge",
+    "latitude": 30.7667,
+    "longitude": -84.8667,
+    "acres": 37500,
+    "tier": 2
+  },
+  {
+    "name": "Raystown Lake",
+    "state": "PA",
+    "city": "Huntingdon",
+    "latitude": 40.4272,
+    "longitude": -78.0244,
+    "acres": 8300,
+    "tier": 2
+  },
+  {
+    "name": "Lake Murray",
+    "state": "SC",
+    "city": "Columbia",
+    "latitude": 34.0772,
+    "longitude": -81.2244,
+    "acres": 50000,
+    "tier": 2
+  },
+  {
+    "name": "Lake Eufaula",
+    "state": "AL",
+    "city": "Eufaula",
+    "latitude": 31.8772,
+    "longitude": -85.1844,
+    "acres": 45000,
+    "tier": 2
+  },
+  {
+    "name": "Lake Ouachita",
+    "state": "AR",
+    "city": "Hot Springs",
+    "latitude": 34.5572,
+    "longitude": -93.2244,
+    "acres": 40100,
+    "tier": 2
+  },
+  {
+    "name": "Bull Shoals Lake",
+    "state": "AR",
+    "city": "Mountain Home",
+    "latitude": 36.3372,
+    "longitude": -92.6244,
+    "acres": 45440,
+    "tier": 2
+  },
+  {
+    "name": "Greers Ferry Lake",
+    "state": "AR",
+    "city": "Heber Springs",
+    "latitude": 35.5072,
+    "longitude": -92.0244,
+    "acres": 31500,
+    "tier": 2
+  },
+  {
+    "name": "Lake Palestine",
+    "state": "TX",
+    "city": "Tyler",
+    "latitude": 32.0072,
+    "longitude": -95.4844,
+    "acres": 25560,
+    "tier": 2
+  },
+  {
+    "name": "Amistad Reservoir",
+    "state": "TX",
+    "city": "Del Rio",
+    "latitude": 29.4872,
+    "longitude": -101.0544,
+    "acres": 64900,
+    "tier": 2
+  },
+  {
+    "name": "Lake Texoma",
+    "state": "TX",
+    "city": "Denison",
+    "latitude": 33.8172,
+    "longitude": -96.5744,
+    "acres": 89000,
+    "tier": 2
+  },
+  {
+    "name": "Conroe Lake",
+    "state": "TX",
+    "city": "Conroe",
+    "latitude": 30.3072,
+    "longitude": -95.4944,
+    "acres": 21000,
+    "tier": 2
+  },
+  {
+    "name": "Lake Livingston",
+    "state": "TX",
+    "city": "Livingston",
+    "latitude": 30.6772,
+    "longitude": -94.9144,
+    "acres": 90000,
+    "tier": 2
+  },
+  {
+    "name": "Choke Canyon Reservoir",
+    "state": "TX",
+    "city": "Three Rivers",
+    "latitude": 28.4672,
+    "longitude": -98.2844,
+    "acres": 26000,
     "tier": 2
   },
   {
     "name": "Lake Travis",
     "state": "TX",
     "city": "Austin",
-    "latitude": 30.3894,
-    "longitude": -97.9172,
+    "latitude": 30.3872,
+    "longitude": -97.9144,
     "acres": 18900,
     "tier": 2
   },
   {
-    "name": "Lake Oroville",
-    "state": "CA",
-    "city": "Oroville",
-    "latitude": 39.5378,
-    "longitude": -121.4808,
-    "acres": 15800,
+    "name": "Canyon Lake",
+    "state": "TX",
+    "city": "Canyon Lake",
+    "latitude": 29.8672,
+    "longitude": -98.2044,
+    "acres": 8230,
     "tier": 2
   },
   {
-    "name": "Wilson Lake",
-    "state": "AL",
-    "city": "Florence",
-    "latitude": 34.8019,
-    "longitude": -87.6261,
-    "acres": 15500,
+    "name": "Possum Kingdom Lake",
+    "state": "TX",
+    "city": "Graford",
+    "latitude": 32.8472,
+    "longitude": -98.4444,
+    "acres": 17700,
+    "tier": 2
+  },
+  {
+    "name": "Lake Belton",
+    "state": "TX",
+    "city": "Belton",
+    "latitude": 31.1372,
+    "longitude": -97.4844,
+    "acres": 12300,
+    "tier": 2
+  },
+  {
+    "name": "Lake Buchanan",
+    "state": "TX",
+    "city": "Burnet",
+    "latitude": 30.7472,
+    "longitude": -98.4244,
+    "acres": 23060,
+    "tier": 2
+  },
+  {
+    "name": "Lake Whitney",
+    "state": "TX",
+    "city": "Whitney",
+    "latitude": 31.9572,
+    "longitude": -97.3744,
+    "acres": 23560,
+    "tier": 2
+  },
+  {
+    "name": "Lake Allatoona",
+    "state": "GA",
+    "city": "Cartersville",
+    "latitude": 34.1472,
+    "longitude": -84.7244,
+    "acres": 12000,
+    "tier": 2
+  },
+  {
+    "name": "West Point Lake",
+    "state": "GA",
+    "city": "West Point",
+    "latitude": 32.8772,
+    "longitude": -85.1844,
+    "acres": 25900,
     "tier": 2
   },
   {
     "name": "Lake Sinclair",
     "state": "GA",
     "city": "Milledgeville",
-    "latitude": 33.2536,
-    "longitude": -83.2627,
+    "latitude": 33.2472,
+    "longitude": -83.2844,
     "acres": 15330,
+    "tier": 2
+  },
+  {
+    "name": "Lake Jackson",
+    "state": "GA",
+    "city": "Jackson",
+    "latitude": 33.2872,
+    "longitude": -83.9544,
+    "acres": 4750,
+    "tier": 2
+  },
+  {
+    "name": "Lake Blackshear",
+    "state": "GA",
+    "city": "Cordele",
+    "latitude": 31.9172,
+    "longitude": -83.9444,
+    "acres": 8500,
+    "tier": 2
+  },
+  {
+    "name": "Lake Russell",
+    "state": "GA",
+    "city": "Elberton",
+    "latitude": 34.0872,
+    "longitude": -82.9144,
+    "acres": 26650,
+    "tier": 2
+  },
+  {
+    "name": "Lake Strom Thurmond",
+    "state": "GA",
+    "city": "Clarks Hill",
+    "latitude": 33.6572,
+    "longitude": -82.2044,
+    "acres": 71100,
+    "tier": 2
+  },
+  {
+    "name": "Lake Kissimmee",
+    "state": "FL",
+    "city": "Lake Wales",
+    "latitude": 27.8272,
+    "longitude": -81.1444,
+    "acres": 34948,
+    "tier": 2
+  },
+  {
+    "name": "Lake Istokpoga",
+    "state": "FL",
+    "city": "Sebring",
+    "latitude": 27.3872,
+    "longitude": -81.2944,
+    "acres": 27692,
+    "tier": 2
+  },
+  {
+    "name": "Lake Talquin",
+    "state": "FL",
+    "city": "Quincy",
+    "latitude": 30.5172,
+    "longitude": -84.6144,
+    "acres": 8800,
+    "tier": 2
+  },
+  {
+    "name": "Orange Lake",
+    "state": "FL",
+    "city": "Citra",
+    "latitude": 29.4472,
+    "longitude": -82.1244,
+    "acres": 12600,
+    "tier": 2
+  },
+  {
+    "name": "Lake George",
+    "state": "FL",
+    "city": "Georgetown",
+    "latitude": 29.3272,
+    "longitude": -81.6444,
+    "acres": 46000,
     "tier": 2
   },
   {
     "name": "Rodman Reservoir",
     "state": "FL",
     "city": "Palatka",
-    "latitude": 29.5833,
-    "longitude": -81.75,
+    "latitude": 29.5572,
+    "longitude": -81.8244,
     "acres": 9500,
     "tier": 2
+  },
+  {
+    "name": "Lake Weir",
+    "state": "FL",
+    "city": "Ocklawaha",
+    "latitude": 29.0172,
+    "longitude": -81.9844,
+    "acres": 5685,
+    "tier": 2
+  },
+  {
+    "name": "Lake Harris",
+    "state": "FL",
+    "city": "Leesburg",
+    "latitude": 28.8072,
+    "longitude": -81.8244,
+    "acres": 13788,
+    "tier": 2
+  },
+  {
+    "name": "Lake Griffin",
+    "state": "FL",
+    "city": "Leesburg",
+    "latitude": 28.8872,
+    "longitude": -81.9144,
+    "acres": 9400,
+    "tier": 2
+  },
+  {
+    "name": "Lake Wateree",
+    "state": "SC",
+    "city": "Camden",
+    "latitude": 34.3272,
+    "longitude": -80.7944,
+    "acres": 13710,
+    "tier": 2
+  },
+  {
+    "name": "Lake Wylie",
+    "state": "SC",
+    "city": "Rock Hill",
+    "latitude": 35.0972,
+    "longitude": -81.0144,
+    "acres": 13400,
+    "tier": 2
+  },
+  {
+    "name": "Lake Marion",
+    "state": "SC",
+    "city": "Santee",
+    "latitude": 33.5172,
+    "longitude": -80.2044,
+    "acres": 110000,
+    "tier": 2
+  },
+  {
+    "name": "Lake Moultrie",
+    "state": "SC",
+    "city": "Moncks Corner",
+    "latitude": 33.1372,
+    "longitude": -79.9844,
+    "acres": 60400,
+    "tier": 2
+  },
+  {
+    "name": "Lake Keowee",
+    "state": "SC",
+    "city": "Seneca",
+    "latitude": 34.8172,
+    "longitude": -82.9044,
+    "acres": 18500,
+    "tier": 2
+  },
+  {
+    "name": "Lake Jocassee",
+    "state": "SC",
+    "city": "Salem",
+    "latitude": 34.9672,
+    "longitude": -82.9544,
+    "acres": 7565,
+    "tier": 2
+  },
+  {
+    "name": "Lake Greenwood",
+    "state": "SC",
+    "city": "Greenwood",
+    "latitude": 34.1672,
+    "longitude": -82.1044,
+    "acres": 11400,
+    "tier": 2
+  },
+  {
+    "name": "Wheeler Lake",
+    "state": "AL",
+    "city": "Decatur",
+    "latitude": 34.6072,
+    "longitude": -87.0244,
+    "acres": 67100,
+    "tier": 2
+  },
+  {
+    "name": "Wilson Lake",
+    "state": "AL",
+    "city": "Florence",
+    "latitude": 34.7972,
+    "longitude": -87.6344,
+    "acres": 15500,
+    "tier": 2
+  },
+  {
+    "name": "Lay Lake",
+    "state": "AL",
+    "city": "Columbiana",
+    "latitude": 33.1072,
+    "longitude": -86.5644,
+    "acres": 12000,
+    "tier": 2
+  },
+  {
+    "name": "Lake Martin",
+    "state": "AL",
+    "city": "Alexander City",
+    "latitude": 32.9272,
+    "longitude": -85.9144,
+    "acres": 44000,
+    "tier": 2
+  },
+  {
+    "name": "West Point Lake",
+    "state": "AL",
+    "city": "Lanett",
+    "latitude": 32.8772,
+    "longitude": -85.1844,
+    "acres": 25900,
+    "tier": 2
+  },
+  {
+    "name": "Weiss Lake",
+    "state": "AL",
+    "city": "Centre",
+    "latitude": 34.1272,
+    "longitude": -85.7944,
+    "acres": 30200,
+    "tier": 2
+  },
+  {
+    "name": "Lake Barkley",
+    "state": "KY",
+    "city": "Cadiz",
+    "latitude": 36.8672,
+    "longitude": -87.9444,
+    "acres": 57920,
+    "tier": 2
+  },
+  {
+    "name": "Lake Cumberland",
+    "state": "KY",
+    "city": "Somerset",
+    "latitude": 36.9372,
+    "longitude": -85.0444,
+    "acres": 65530,
+    "tier": 2
+  },
+  {
+    "name": "Barren River Lake",
+    "state": "KY",
+    "city": "Glasgow",
+    "latitude": 36.9072,
+    "longitude": -86.1344,
+    "acres": 10000,
+    "tier": 2
+  },
+  {
+    "name": "Green River Lake",
+    "state": "KY",
+    "city": "Campbellsville",
+    "latitude": 37.2672,
+    "longitude": -85.2944,
+    "acres": 8210,
+    "tier": 2
+  },
+  {
+    "name": "Nolin River Lake",
+    "state": "KY",
+    "city": "Mammoth Cave",
+    "latitude": 37.2972,
+    "longitude": -86.2544,
+    "acres": 5800,
+    "tier": 2
+  },
+  {
+    "name": "Rough River Lake",
+    "state": "KY",
+    "city": "Falls of Rough",
+    "latitude": 37.6072,
+    "longitude": -86.5544,
+    "acres": 5100,
+    "tier": 2
+  },
+  {
+    "name": "Taylorsville Lake",
+    "state": "KY",
+    "city": "Taylorsville",
+    "latitude": 38.0372,
+    "longitude": -85.3444,
+    "acres": 3050,
+    "tier": 2
+  },
+  {
+    "name": "Lake Shelbyville",
+    "state": "IL",
+    "city": "Shelbyville",
+    "latitude": 39.4072,
+    "longitude": -88.7844,
+    "acres": 11000,
+    "tier": 2
+  },
+  {
+    "name": "Carlyle Lake",
+    "state": "IL",
+    "city": "Carlyle",
+    "latitude": 38.6172,
+    "longitude": -89.3544,
+    "acres": 26000,
+    "tier": 2
+  },
+  {
+    "name": "Rend Lake",
+    "state": "IL",
+    "city": "Benton",
+    "latitude": 38.0572,
+    "longitude": -88.9644,
+    "acres": 18900,
+    "tier": 2
+  },
+  {
+    "name": "Lake Springfield",
+    "state": "IL",
+    "city": "Springfield",
+    "latitude": 39.7472,
+    "longitude": -89.6044,
+    "acres": 4200,
+    "tier": 2
+  },
+  {
+    "name": "Clinton Lake",
+    "state": "IL",
+    "city": "Clinton",
+    "latitude": 40.1472,
+    "longitude": -88.9544,
+    "acres": 4900,
+    "tier": 2
+  },
+  {
+    "name": "Patoka Lake",
+    "state": "IN",
+    "city": "Birdseye",
+    "latitude": 38.3472,
+    "longitude": -86.6644,
+    "acres": 8800,
+    "tier": 2
+  },
+  {
+    "name": "Monroe Lake",
+    "state": "IN",
+    "city": "Bloomington",
+    "latitude": 39.0172,
+    "longitude": -86.4844,
+    "acres": 10750,
+    "tier": 2
+  },
+  {
+    "name": "Brookville Lake",
+    "state": "IN",
+    "city": "Brookville",
+    "latitude": 39.4272,
+    "longitude": -85.0044,
+    "acres": 5260,
+    "tier": 2
+  },
+  {
+    "name": "Morse Reservoir",
+    "state": "IN",
+    "city": "Noblesville",
+    "latitude": 40.0572,
+    "longitude": -86.0244,
+    "acres": 1500,
+    "tier": 2
+  },
+  {
+    "name": "Geist Reservoir",
+    "state": "IN",
+    "city": "Indianapolis",
+    "latitude": 39.9172,
+    "longitude": -85.9644,
+    "acres": 1900,
+    "tier": 2
+  },
+  {
+    "name": "Grand Lake St. Marys",
+    "state": "OH",
+    "city": "Celina",
+    "latitude": 40.5472,
+    "longitude": -84.5544,
+    "acres": 13500,
+    "tier": 2
+  },
+  {
+    "name": "Lake Loramie",
+    "state": "OH",
+    "city": "Fort Loramie",
+    "latitude": 40.3472,
+    "longitude": -84.3744,
+    "acres": 845,
+    "tier": 2
+  },
+  {
+    "name": "Indian Lake",
+    "state": "OH",
+    "city": "Russells Point",
+    "latitude": 40.4672,
+    "longitude": -83.8644,
+    "acres": 5800,
+    "tier": 2
+  },
+  {
+    "name": "Buckeye Lake",
+    "state": "OH",
+    "city": "Millersport",
+    "latitude": 39.9372,
+    "longitude": -82.4844,
+    "acres": 3100,
+    "tier": 2
+  },
+  {
+    "name": "Alum Creek Lake",
+    "state": "OH",
+    "city": "Delaware",
+    "latitude": 40.1572,
+    "longitude": -82.9544,
+    "acres": 3387,
+    "tier": 2
+  },
+  {
+    "name": "Hoover Reservoir",
+    "state": "OH",
+    "city": "Westerville",
+    "latitude": 40.1472,
+    "longitude": -82.8644,
+    "acres": 3272,
+    "tier": 2
+  },
+  {
+    "name": "Seneca Lake",
+    "state": "OH",
+    "city": "Senecaville",
+    "latitude": 39.9472,
+    "longitude": -81.4544,
+    "acres": 3550,
+    "tier": 2
+  },
+  {
+    "name": "Mosquito Lake",
+    "state": "OH",
+    "city": "Cortland",
+    "latitude": 41.3172,
+    "longitude": -80.7244,
+    "acres": 7850,
+    "tier": 2
+  },
+  {
+    "name": "Pymatuning Reservoir",
+    "state": "OH",
+    "city": "Andover",
+    "latitude": 41.5572,
+    "longitude": -80.5144,
+    "acres": 17088,
+    "tier": 2
+  },
+  {
+    "name": "Muskingum River",
+    "state": "OH",
+    "city": "Zanesville",
+    "latitude": 39.9372,
+    "longitude": -81.9944,
+    "acres": 5800,
+    "tier": 2
+  },
+  {
+    "name": "Lake Anna",
+    "state": "VA",
+    "city": "Mineral",
+    "latitude": 38.0772,
+    "longitude": -77.7944,
+    "acres": 13000,
+    "tier": 2
+  },
+  {
+    "name": "Smith Mountain Lake",
+    "state": "VA",
+    "city": "Huddleston",
+    "latitude": 37.0572,
+    "longitude": -79.6044,
+    "acres": 20600,
+    "tier": 2
+  },
+  {
+    "name": "Lake Gaston",
+    "state": "VA",
+    "city": "Littleton",
+    "latitude": 36.5172,
+    "longitude": -77.7244,
+    "acres": 20300,
+    "tier": 2
+  },
+  {
+    "name": "Kerr Lake",
+    "state": "VA",
+    "city": "Clarksville",
+    "latitude": 36.5372,
+    "longitude": -78.5544,
+    "acres": 48900,
+    "tier": 2
+  },
+  {
+    "name": "Claytor Lake",
+    "state": "VA",
+    "city": "Dublin",
+    "latitude": 37.0472,
+    "longitude": -80.6144,
+    "acres": 4500,
+    "tier": 2
+  },
+  {
+    "name": "Lake Moomaw",
+    "state": "VA",
+    "city": "Covington",
+    "latitude": 37.9272,
+    "longitude": -79.8844,
+    "acres": 2530,
+    "tier": 2
+  },
+  {
+    "name": "Flannagan Reservoir",
+    "state": "VA",
+    "city": "Haysi",
+    "latitude": 37.2072,
+    "longitude": -82.3044,
+    "acres": 1145,
+    "tier": 2
+  },
+  {
+    "name": "Philpott Lake",
+    "state": "VA",
+    "city": "Bassett",
+    "latitude": 36.7972,
+    "longitude": -80.0344,
+    "acres": 2900,
+    "tier": 2
+  },
+  {
+    "name": "Lake Norman",
+    "state": "NC",
+    "city": "Cornelius",
+    "latitude": 35.4872,
+    "longitude": -80.9444,
+    "acres": 32510,
+    "tier": 2
+  },
+  {
+    "name": "Lake James",
+    "state": "NC",
+    "city": "Nebo",
+    "latitude": 35.7272,
+    "longitude": -81.8844,
+    "acres": 6510,
+    "tier": 2
+  },
+  {
+    "name": "High Rock Lake",
+    "state": "NC",
+    "city": "Lexington",
+    "latitude": 35.6072,
+    "longitude": -80.2344,
+    "acres": 15180,
+    "tier": 2
+  },
+  {
+    "name": "Badin Lake",
+    "state": "NC",
+    "city": "Badin",
+    "latitude": 35.4072,
+    "longitude": -80.1144,
+    "acres": 5350,
+    "tier": 2
+  },
+  {
+    "name": "Lake Tillery",
+    "state": "NC",
+    "city": "Norwood",
+    "latitude": 35.3472,
+    "longitude": -80.0844,
+    "acres": 5250,
+    "tier": 2
+  },
+  {
+    "name": "Lake Wylie",
+    "state": "NC",
+    "city": "Belmont",
+    "latitude": 35.1072,
+    "longitude": -81.0244,
+    "acres": 13400,
+    "tier": 2
+  },
+  {
+    "name": "Lake Hickory",
+    "state": "NC",
+    "city": "Hickory",
+    "latitude": 35.8872,
+    "longitude": -81.2544,
+    "acres": 4223,
+    "tier": 2
+  },
+  {
+    "name": "Lake Gaston",
+    "state": "NC",
+    "city": "Littleton",
+    "latitude": 36.4572,
+    "longitude": -77.6844,
+    "acres": 20300,
+    "tier": 2
+  },
+  {
+    "name": "Fontana Lake",
+    "state": "NC",
+    "city": "Bryson City",
+    "latitude": 35.4472,
+    "longitude": -83.8044,
+    "acres": 10230,
+    "tier": 2
+  },
+  {
+    "name": "Hiwassee Lake",
+    "state": "NC",
+    "city": "Murphy",
+    "latitude": 35.1472,
+    "longitude": -83.9444,
+    "acres": 6090,
+    "tier": 2
+  },
+  {
+    "name": "Jordan Lake",
+    "state": "NC",
+    "city": "Apex",
+    "latitude": 35.7572,
+    "longitude": -78.9944,
+    "acres": 13940,
+    "tier": 3
+  },
+  {
+    "name": "Falls Lake",
+    "state": "NC",
+    "city": "Wake Forest",
+    "latitude": 36.0172,
+    "longitude": -78.6644,
+    "acres": 12410,
+    "tier": 3
+  },
+  {
+    "name": "Hyco Lake",
+    "state": "NC",
+    "city": "Roxboro",
+    "latitude": 36.4072,
+    "longitude": -78.8844,
+    "acres": 3750,
+    "tier": 3
+  },
+  {
+    "name": "Lake Waccamaw",
+    "state": "NC",
+    "city": "Lake Waccamaw",
+    "latitude": 34.3172,
+    "longitude": -78.5044,
+    "acres": 9000,
+    "tier": 3
+  },
+  {
+    "name": "Lake Mattamuskeet",
+    "state": "NC",
+    "city": "Swan Quarter",
+    "latitude": 35.4572,
+    "longitude": -76.1844,
+    "acres": 40000,
+    "tier": 3
+  },
+  {
+    "name": "Phelps Lake",
+    "state": "NC",
+    "city": "Creswell",
+    "latitude": 35.8472,
+    "longitude": -76.3844,
+    "acres": 16600,
+    "tier": 3
+  },
+  {
+    "name": "Lake Norman of Catawba",
+    "state": "NC",
+    "city": "Davidson",
+    "latitude": 35.4872,
+    "longitude": -80.9444,
+    "acres": 32510,
+    "tier": 3
+  },
+  {
+    "name": "Mountain Island Lake",
+    "state": "NC",
+    "city": "Charlotte",
+    "latitude": 35.3872,
+    "longitude": -80.9644,
+    "acres": 3281,
+    "tier": 3
+  },
+  {
+    "name": "Lake Wylie South",
+    "state": "NC",
+    "city": "Fort Mill",
+    "latitude": 35.0072,
+    "longitude": -81.0444,
+    "acres": 13400,
+    "tier": 3
+  },
+  {
+    "name": "Lake Wateree",
+    "state": "SC",
+    "city": "Camden",
+    "latitude": 34.3272,
+    "longitude": -80.7944,
+    "acres": 13710,
+    "tier": 3
+  },
+  {
+    "name": "Thurmond Lake",
+    "state": "SC",
+    "city": "Modoc",
+    "latitude": 33.7172,
+    "longitude": -82.2444,
+    "acres": 71100,
+    "tier": 3
+  },
+  {
+    "name": "Lake Secession",
+    "state": "SC",
+    "city": "Anderson",
+    "latitude": 34.4872,
+    "longitude": -82.6544,
+    "acres": 230,
+    "tier": 3
+  },
+  {
+    "name": "Lake Hartwell North",
+    "state": "SC",
+    "city": "Fair Play",
+    "latitude": 34.5072,
+    "longitude": -82.9644,
+    "acres": 56000,
+    "tier": 3
+  },
+  {
+    "name": "Lake Russell East",
+    "state": "SC",
+    "city": "Calhoun Falls",
+    "latitude": 34.0872,
+    "longitude": -82.5944,
+    "acres": 26650,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bowen",
+    "state": "SC",
+    "city": "Inman",
+    "latitude": 35.0572,
+    "longitude": -82.0644,
+    "acres": 1500,
+    "tier": 3
+  },
+  {
+    "name": "Lake Blalock",
+    "state": "SC",
+    "city": "Spartanburg",
+    "latitude": 34.9772,
+    "longitude": -81.9244,
+    "acres": 800,
+    "tier": 3
+  },
+  {
+    "name": "Catawba River",
+    "state": "SC",
+    "city": "Rock Hill",
+    "latitude": 34.9272,
+    "longitude": -81.0244,
+    "acres": 5000,
+    "tier": 3
+  },
+  {
+    "name": "Lake Cunningham",
+    "state": "SC",
+    "city": "Greer",
+    "latitude": 34.9372,
+    "longitude": -82.2144,
+    "acres": 890,
+    "tier": 3
+  },
+  {
+    "name": "Lake Robinson",
+    "state": "SC",
+    "city": "Greer",
+    "latitude": 34.8872,
+    "longitude": -82.1844,
+    "acres": 840,
+    "tier": 3
+  },
+  {
+    "name": "Lake Adger",
+    "state": "NC",
+    "city": "Mill Spring",
+    "latitude": 35.2972,
+    "longitude": -82.1544,
+    "acres": 440,
+    "tier": 3
+  },
+  {
+    "name": "Lake Summit",
+    "state": "NC",
+    "city": "Tuxedo",
+    "latitude": 35.1972,
+    "longitude": -82.4944,
+    "acres": 200,
+    "tier": 3
+  },
+  {
+    "name": "Lake Lure",
+    "state": "NC",
+    "city": "Lake Lure",
+    "latitude": 35.4272,
+    "longitude": -82.2044,
+    "acres": 720,
+    "tier": 3
+  },
+  {
+    "name": "Bear Creek Lake",
+    "state": "NC",
+    "city": "High Point",
+    "latitude": 35.9572,
+    "longitude": -79.9444,
+    "acres": 110,
+    "tier": 3
+  },
+  {
+    "name": "Belews Lake",
+    "state": "NC",
+    "city": "Stokesdale",
+    "latitude": 36.2172,
+    "longitude": -79.9944,
+    "acres": 3863,
+    "tier": 3
+  },
+  {
+    "name": "Mayo Reservoir",
+    "state": "NC",
+    "city": "Roxboro",
+    "latitude": 36.4772,
+    "longitude": -78.9444,
+    "acres": 2700,
+    "tier": 3
+  },
+  {
+    "name": "Lake Michie",
+    "state": "NC",
+    "city": "Durham",
+    "latitude": 36.1272,
+    "longitude": -78.9644,
+    "acres": 520,
+    "tier": 3
+  },
+  {
+    "name": "Lake Ben Johnston",
+    "state": "NC",
+    "city": "Sanford",
+    "latitude": 35.5072,
+    "longitude": -79.1744,
+    "acres": 180,
+    "tier": 3
+  },
+  {
+    "name": "Lake Wheeler",
+    "state": "NC",
+    "city": "Raleigh",
+    "latitude": 35.6772,
+    "longitude": -78.6944,
+    "acres": 650,
+    "tier": 3
+  },
+  {
+    "name": "Lake Benson",
+    "state": "NC",
+    "city": "Garner",
+    "latitude": 35.6372,
+    "longitude": -78.5644,
+    "acres": 250,
+    "tier": 3
+  },
+  {
+    "name": "Lake Crabtree",
+    "state": "NC",
+    "city": "Morrisville",
+    "latitude": 35.8672,
+    "longitude": -78.7844,
+    "acres": 520,
+    "tier": 3
+  },
+  {
+    "name": "Lake Johnson",
+    "state": "NC",
+    "city": "Raleigh",
+    "latitude": 35.7472,
+    "longitude": -78.6944,
+    "acres": 150,
+    "tier": 3
+  },
+  {
+    "name": "Lake Raleigh",
+    "state": "NC",
+    "city": "Raleigh",
+    "latitude": 35.7872,
+    "longitude": -78.6444,
+    "acres": 85,
+    "tier": 3
+  },
+  {
+    "name": "University Lake",
+    "state": "NC",
+    "city": "Chapel Hill",
+    "latitude": 35.9372,
+    "longitude": -79.0944,
+    "acres": 213,
+    "tier": 3
+  },
+  {
+    "name": "Cane Creek Reservoir",
+    "state": "NC",
+    "city": "Hillsborough",
+    "latitude": 36.0172,
+    "longitude": -79.1344,
+    "acres": 540,
+    "tier": 3
+  },
+  {
+    "name": "Lake Orange",
+    "state": "NC",
+    "city": "Hillsborough",
+    "latitude": 36.0772,
+    "longitude": -79.1544,
+    "acres": 95,
+    "tier": 3
+  },
+  {
+    "name": "Lake Brandt",
+    "state": "NC",
+    "city": "Greensboro",
+    "latitude": 36.1572,
+    "longitude": -79.8444,
+    "acres": 816,
+    "tier": 3
+  },
+  {
+    "name": "Lake Townsend",
+    "state": "NC",
+    "city": "Greensboro",
+    "latitude": 36.1872,
+    "longitude": -79.6844,
+    "acres": 1558,
+    "tier": 3
+  },
+  {
+    "name": "Lake Higgins",
+    "state": "NC",
+    "city": "Greensboro",
+    "latitude": 36.2372,
+    "longitude": -79.8944,
+    "acres": 250,
+    "tier": 3
+  },
+  {
+    "name": "Randleman Lake",
+    "state": "NC",
+    "city": "Randleman",
+    "latitude": 35.8272,
+    "longitude": -79.8444,
+    "acres": 3090,
+    "tier": 3
+  },
+  {
+    "name": "Lake MacIntosh",
+    "state": "NC",
+    "city": "Burlington",
+    "latitude": 36.0372,
+    "longitude": -79.4644,
+    "acres": 410,
+    "tier": 3
+  },
+  {
+    "name": "Lake Cammack",
+    "state": "NC",
+    "city": "Burlington",
+    "latitude": 36.0972,
+    "longitude": -79.4244,
+    "acres": 160,
+    "tier": 3
+  },
+  {
+    "name": "Alamance Lake",
+    "state": "NC",
+    "city": "Graham",
+    "latitude": 36.0772,
+    "longitude": -79.3844,
+    "acres": 42,
+    "tier": 3
+  },
+  {
+    "name": "Lake Hunt",
+    "state": "NC",
+    "city": "Gibsonville",
+    "latitude": 36.1172,
+    "longitude": -79.5444,
+    "acres": 85,
+    "tier": 3
+  },
+  {
+    "name": "Lake Guilford",
+    "state": "NC",
+    "city": "Jamestown",
+    "latitude": 35.9972,
+    "longitude": -79.9244,
+    "acres": 230,
+    "tier": 3
+  },
+  {
+    "name": "Oak Hollow Lake",
+    "state": "NC",
+    "city": "High Point",
+    "latitude": 35.9872,
+    "longitude": -79.9644,
+    "acres": 1200,
+    "tier": 3
+  },
+  {
+    "name": "Beaverdam Lake",
+    "state": "NC",
+    "city": "Apex",
+    "latitude": 35.7272,
+    "longitude": -78.8544,
+    "acres": 125,
+    "tier": 3
+  },
+  {
+    "name": "Lake Myra",
+    "state": "NC",
+    "city": "Wendell",
+    "latitude": 35.7872,
+    "longitude": -78.3644,
+    "acres": 52,
+    "tier": 3
+  },
+  {
+    "name": "Lake Rogers",
+    "state": "NC",
+    "city": "Raleigh",
+    "latitude": 35.8672,
+    "longitude": -78.5244,
+    "acres": 68,
+    "tier": 3
+  },
+  {
+    "name": "Shelley Lake",
+    "state": "NC",
+    "city": "Raleigh",
+    "latitude": 35.8472,
+    "longitude": -78.6444,
+    "acres": 53,
+    "tier": 3
+  },
+  {
+    "name": "Lake Lynn",
+    "state": "NC",
+    "city": "Raleigh",
+    "latitude": 35.9172,
+    "longitude": -78.7044,
+    "acres": 52,
+    "tier": 3
+  },
+  {
+    "name": "Lake Pine",
+    "state": "NC",
+    "city": "Apex",
+    "latitude": 35.7672,
+    "longitude": -78.8744,
+    "acres": 34,
+    "tier": 3
+  },
+  {
+    "name": "Beaver Dam Lake",
+    "state": "NC",
+    "city": "Cary",
+    "latitude": 35.7572,
+    "longitude": -78.8844,
+    "acres": 72,
+    "tier": 3
+  },
+  {
+    "name": "Symphony Lake",
+    "state": "NC",
+    "city": "Cary",
+    "latitude": 35.7972,
+    "longitude": -78.7844,
+    "acres": 23,
+    "tier": 3
+  },
+  {
+    "name": "Bond Lake",
+    "state": "NC",
+    "city": "Cary",
+    "latitude": 35.8172,
+    "longitude": -78.7444,
+    "acres": 42,
+    "tier": 3
+  },
+  {
+    "name": "Jordan Lake Crosswinds",
+    "state": "NC",
+    "city": "Pittsboro",
+    "latitude": 35.7272,
+    "longitude": -79.0544,
+    "acres": 13940,
+    "tier": 3
+  },
+  {
+    "name": "Lake Wendell",
+    "state": "NC",
+    "city": "Wendell",
+    "latitude": 35.7772,
+    "longitude": -78.3844,
+    "acres": 48,
+    "tier": 3
+  },
+  {
+    "name": "Lake Rolesville",
+    "state": "NC",
+    "city": "Rolesville",
+    "latitude": 35.9272,
+    "longitude": -78.4544,
+    "acres": 35,
+    "tier": 3
+  },
+  {
+    "name": "Anderson Creek",
+    "state": "NC",
+    "city": "Spring Lake",
+    "latitude": 35.1872,
+    "longitude": -78.9444,
+    "acres": 240,
+    "tier": 3
+  },
+  {
+    "name": "Lake Rim",
+    "state": "NC",
+    "city": "Fayetteville",
+    "latitude": 35.0372,
+    "longitude": -78.9644,
+    "acres": 380,
+    "tier": 3
+  },
+  {
+    "name": "Little River Reservoir",
+    "state": "NC",
+    "city": "Raeford",
+    "latitude": 34.9872,
+    "longitude": -79.2244,
+    "acres": 520,
+    "tier": 3
+  },
+  {
+    "name": "Jones Lake",
+    "state": "NC",
+    "city": "Elizabethtown",
+    "latitude": 34.6572,
+    "longitude": -78.5844,
+    "acres": 224,
+    "tier": 3
+  },
+  {
+    "name": "Singletary Lake",
+    "state": "NC",
+    "city": "Kelly",
+    "latitude": 34.5772,
+    "longitude": -78.4344,
+    "acres": 572,
+    "tier": 3
+  },
+  {
+    "name": "White Lake",
+    "state": "NC",
+    "city": "White Lake",
+    "latitude": 34.6372,
+    "longitude": -78.4844,
+    "acres": 1068,
+    "tier": 3
+  },
+  {
+    "name": "Lake Columbus",
+    "state": "NC",
+    "city": "Columbus",
+    "latitude": 35.3272,
+    "longitude": -82.2044,
+    "acres": 178,
+    "tier": 3
+  },
+  {
+    "name": "Lake Junaluska",
+    "state": "NC",
+    "city": "Waynesville",
+    "latitude": 35.5272,
+    "longitude": -82.9644,
+    "acres": 200,
+    "tier": 3
+  },
+  {
+    "name": "Lake Santeetlah",
+    "state": "NC",
+    "city": "Robbinsville",
+    "latitude": 35.3872,
+    "longitude": -83.8344,
+    "acres": 2880,
+    "tier": 3
+  },
+  {
+    "name": "Lake Chatuge",
+    "state": "NC",
+    "city": "Hayesville",
+    "latitude": 34.9672,
+    "longitude": -83.8044,
+    "acres": 7050,
+    "tier": 3
+  },
+  {
+    "name": "Lake Nantahala",
+    "state": "NC",
+    "city": "Topton",
+    "latitude": 35.2572,
+    "longitude": -83.6644,
+    "acres": 1605,
+    "tier": 3
+  },
+  {
+    "name": "Glenville Lake",
+    "state": "NC",
+    "city": "Glenville",
+    "latitude": 35.1972,
+    "longitude": -83.1444,
+    "acres": 1462,
+    "tier": 3
+  },
+  {
+    "name": "Bear Lake",
+    "state": "NC",
+    "city": "Tuckasegee",
+    "latitude": 35.2672,
+    "longitude": -83.1144,
+    "acres": 43,
+    "tier": 3
+  },
+  {
+    "name": "Cedar Cliff Lake",
+    "state": "NC",
+    "city": "Tuckasegee",
+    "latitude": 35.2772,
+    "longitude": -83.0944,
+    "acres": 35,
+    "tier": 3
+  },
+  {
+    "name": "Lake Glenville East",
+    "state": "NC",
+    "city": "Cashiers",
+    "latitude": 35.1572,
+    "longitude": -83.0644,
+    "acres": 1462,
+    "tier": 3
+  },
+  {
+    "name": "Lake Thorpe",
+    "state": "NC",
+    "city": "Cashiers",
+    "latitude": 35.1172,
+    "longitude": -83.0944,
+    "acres": 85,
+    "tier": 3
+  },
+  {
+    "name": "Cheoah Lake",
+    "state": "NC",
+    "city": "Robbinsville",
+    "latitude": 35.4572,
+    "longitude": -83.7944,
+    "acres": 644,
+    "tier": 3
+  },
+  {
+    "name": "Calderwood Lake",
+    "state": "TN",
+    "city": "Maryville",
+    "latitude": 35.5172,
+    "longitude": -84.0644,
+    "acres": 523,
+    "tier": 3
+  },
+  {
+    "name": "Chilhowee Lake",
+    "state": "TN",
+    "city": "Maryville",
+    "latitude": 35.5672,
+    "longitude": -84.0044,
+    "acres": 1730,
+    "tier": 3
+  },
+  {
+    "name": "Douglas Lake",
+    "state": "TN",
+    "city": "Dandridge",
+    "latitude": 36.0172,
+    "longitude": -83.4644,
+    "acres": 30400,
+    "tier": 3
+  },
+  {
+    "name": "Cherokee Lake",
+    "state": "TN",
+    "city": "Jefferson City",
+    "latitude": 36.1672,
+    "longitude": -83.4944,
+    "acres": 30300,
+    "tier": 3
+  },
+  {
+    "name": "Fort Loudoun Lake",
+    "state": "TN",
+    "city": "Lenoir City",
+    "latitude": 35.7972,
+    "longitude": -84.2644,
+    "acres": 14600,
+    "tier": 3
+  },
+  {
+    "name": "Tellico Lake",
+    "state": "TN",
+    "city": "Vonore",
+    "latitude": 35.6172,
+    "longitude": -84.2044,
+    "acres": 16500,
+    "tier": 3
+  },
+  {
+    "name": "Melton Hill Lake",
+    "state": "TN",
+    "city": "Oak Ridge",
+    "latitude": 36.0472,
+    "longitude": -84.1844,
+    "acres": 5470,
+    "tier": 3
+  },
+  {
+    "name": "Norris Lake",
+    "state": "TN",
+    "city": "Lafollette",
+    "latitude": 36.2272,
+    "longitude": -83.8144,
+    "acres": 33840,
+    "tier": 3
+  },
+  {
+    "name": "Center Hill Lake",
+    "state": "TN",
+    "city": "Smithville",
+    "latitude": 36.1072,
+    "longitude": -85.6044,
+    "acres": 18220,
+    "tier": 3
+  },
+  {
+    "name": "Cordell Hull Lake",
+    "state": "TN",
+    "city": "Carthage",
+    "latitude": 36.2572,
+    "longitude": -85.9544,
+    "acres": 11960,
+    "tier": 3
+  },
+  {
+    "name": "Old Hickory Lake",
+    "state": "TN",
+    "city": "Hendersonville",
+    "latitude": 36.3172,
+    "longitude": -86.6044,
+    "acres": 22500,
+    "tier": 3
+  },
+  {
+    "name": "Percy Priest Lake",
+    "state": "TN",
+    "city": "Nashville",
+    "latitude": 36.1172,
+    "longitude": -86.6244,
+    "acres": 14200,
+    "tier": 3
+  },
+  {
+    "name": "Cheatham Lake",
+    "state": "TN",
+    "city": "Ashland City",
+    "latitude": 36.2972,
+    "longitude": -87.0444,
+    "acres": 7450,
+    "tier": 3
+  },
+  {
+    "name": "Reelfoot Lake",
+    "state": "TN",
+    "city": "Tiptonville",
+    "latitude": 36.3672,
+    "longitude": -89.3844,
+    "acres": 15000,
+    "tier": 3
+  },
+  {
+    "name": "Pickwick Lake North",
+    "state": "TN",
+    "city": "Savannah",
+    "latitude": 35.2172,
+    "longitude": -88.2844,
+    "acres": 43100,
+    "tier": 3
+  },
+  {
+    "name": "South Holston Lake",
+    "state": "TN",
+    "city": "Bristol",
+    "latitude": 36.5372,
+    "longitude": -81.8944,
+    "acres": 7580,
+    "tier": 3
+  },
+  {
+    "name": "Watauga Lake",
+    "state": "TN",
+    "city": "Elizabethton",
+    "latitude": 36.3172,
+    "longitude": -82.1444,
+    "acres": 6430,
+    "tier": 3
+  },
+  {
+    "name": "Boone Lake",
+    "state": "TN",
+    "city": "Kingsport",
+    "latitude": 36.4272,
+    "longitude": -82.3944,
+    "acres": 4390,
+    "tier": 3
+  },
+  {
+    "name": "Fort Patrick Henry Lake",
+    "state": "TN",
+    "city": "Kingsport",
+    "latitude": 36.4672,
+    "longitude": -82.4644,
+    "acres": 872,
+    "tier": 3
+  },
+  {
+    "name": "Woods Reservoir",
+    "state": "TN",
+    "city": "Tullahoma",
+    "latitude": 35.3872,
+    "longitude": -86.0844,
+    "acres": 3880,
+    "tier": 3
+  },
+  {
+    "name": "Tims Ford Lake",
+    "state": "TN",
+    "city": "Winchester",
+    "latitude": 35.1672,
+    "longitude": -86.2244,
+    "acres": 10700,
+    "tier": 3
+  },
+  {
+    "name": "Normandy Lake",
+    "state": "TN",
+    "city": "Normandy",
+    "latitude": 35.4472,
+    "longitude": -86.2744,
+    "acres": 3100,
+    "tier": 3
+  },
+  {
+    "name": "Woods Reservoir East",
+    "state": "TN",
+    "city": "Manchester",
+    "latitude": 35.4172,
+    "longitude": -86.0244,
+    "acres": 3880,
+    "tier": 3
+  },
+  {
+    "name": "Great Falls Lake",
+    "state": "TN",
+    "city": "Rock Island",
+    "latitude": 35.8072,
+    "longitude": -85.6444,
+    "acres": 2270,
+    "tier": 3
+  },
+  {
+    "name": "DeGray Lake",
+    "state": "AR",
+    "city": "Arkadelphia",
+    "latitude": 34.0972,
+    "longitude": -93.1844,
+    "acres": 13800,
+    "tier": 3
+  },
+  {
+    "name": "Lake Ouachita East",
+    "state": "AR",
+    "city": "Mountain Pine",
+    "latitude": 34.5772,
+    "longitude": -93.1444,
+    "acres": 40100,
+    "tier": 3
+  },
+  {
+    "name": "Lake Hamilton",
+    "state": "AR",
+    "city": "Hot Springs",
+    "latitude": 34.4372,
+    "longitude": -93.1044,
+    "acres": 7200,
+    "tier": 3
+  },
+  {
+    "name": "Lake Catherine",
+    "state": "AR",
+    "city": "Hot Springs",
+    "latitude": 34.3672,
+    "longitude": -93.0444,
+    "acres": 1940,
+    "tier": 3
+  },
+  {
+    "name": "Lake Nimrod",
+    "state": "AR",
+    "city": "Plainview",
+    "latitude": 35.1472,
+    "longitude": -93.0644,
+    "acres": 3550,
+    "tier": 3
+  },
+  {
+    "name": "Blue Mountain Lake",
+    "state": "AR",
+    "city": "Havana",
+    "latitude": 35.0972,
+    "longitude": -93.6044,
+    "acres": 2910,
+    "tier": 3
+  },
+  {
+    "name": "Lake Dardanelle East",
+    "state": "AR",
+    "city": "Dover",
+    "latitude": 35.4072,
+    "longitude": -93.0544,
+    "acres": 34300,
+    "tier": 3
+  },
+  {
+    "name": "Lake Conway",
+    "state": "AR",
+    "city": "Conway",
+    "latitude": 35.0572,
+    "longitude": -92.5044,
+    "acres": 6700,
+    "tier": 3
+  },
+  {
+    "name": "Beaver Lake",
+    "state": "AR",
+    "city": "Rogers",
+    "latitude": 36.3772,
+    "longitude": -93.9644,
+    "acres": 28220,
+    "tier": 3
+  },
+  {
+    "name": "Table Rock Lake",
+    "state": "AR",
+    "city": "Eureka Springs",
+    "latitude": 36.5672,
+    "longitude": -93.4044,
+    "acres": 43100,
+    "tier": 3
+  },
+  {
+    "name": "Norfork Lake",
+    "state": "AR",
+    "city": "Mountain Home",
+    "latitude": 36.2372,
+    "longitude": -92.2644,
+    "acres": 22000,
+    "tier": 3
+  },
+  {
+    "name": "Crown Lake",
+    "state": "AR",
+    "city": "Horseshoe Bend",
+    "latitude": 36.2172,
+    "longitude": -91.7644,
+    "acres": 1770,
+    "tier": 3
+  },
+  {
+    "name": "Lake Charles",
+    "state": "AR",
+    "city": "Melbourne",
+    "latitude": 36.0672,
+    "longitude": -91.8844,
+    "acres": 640,
+    "tier": 3
+  },
+  {
+    "name": "Atkins Lake",
+    "state": "AR",
+    "city": "Atkins",
+    "latitude": 35.2472,
+    "longitude": -92.9344,
+    "acres": 1450,
+    "tier": 3
+  },
+  {
+    "name": "Lake Hinkle",
+    "state": "AR",
+    "city": "Morrilton",
+    "latitude": 35.1772,
+    "longitude": -92.7544,
+    "acres": 250,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bennett",
+    "state": "AR",
+    "city": "Morrilton",
+    "latitude": 35.2072,
+    "longitude": -92.7244,
+    "acres": 180,
+    "tier": 3
+  },
+  {
+    "name": "Millwood Lake",
+    "state": "AR",
+    "city": "Ashdown",
+    "latitude": 33.7772,
+    "longitude": -94.0544,
+    "acres": 29500,
+    "tier": 3
+  },
+  {
+    "name": "Lake Columbia",
+    "state": "AR",
+    "city": "Magnolia",
+    "latitude": 33.2272,
+    "longitude": -93.2344,
+    "acres": 3600,
+    "tier": 3
+  },
+  {
+    "name": "Lake Erling",
+    "state": "AR",
+    "city": "Sheridan",
+    "latitude": 34.3272,
+    "longitude": -92.3744,
+    "acres": 2400,
+    "tier": 3
+  },
+  {
+    "name": "Lake Maumelle",
+    "state": "AR",
+    "city": "Little Rock",
+    "latitude": 34.8472,
+    "longitude": -92.4144,
+    "acres": 8900,
+    "tier": 3
+  },
+  {
+    "name": "Greason Lake",
+    "state": "AR",
+    "city": "Little Rock",
+    "latitude": 34.7572,
+    "longitude": -92.2844,
+    "acres": 650,
+    "tier": 3
+  },
+  {
+    "name": "Lake Winona",
+    "state": "AR",
+    "city": "Little Rock",
+    "latitude": 34.7672,
+    "longitude": -92.3244,
+    "acres": 320,
+    "tier": 3
+  },
+  {
+    "name": "Gillham Lake",
+    "state": "AR",
+    "city": "Gillham",
+    "latitude": 34.1672,
+    "longitude": -94.3144,
+    "acres": 1370,
+    "tier": 3
+  },
+  {
+    "name": "Greeson Lake",
+    "state": "AR",
+    "city": "Murfreesboro",
+    "latitude": 34.0172,
+    "longitude": -93.6644,
+    "acres": 7260,
+    "tier": 3
+  },
+  {
+    "name": "Cossatot Lake",
+    "state": "AR",
+    "city": "Umpire",
+    "latitude": 34.2672,
+    "longitude": -94.1144,
+    "acres": 420,
+    "tier": 3
+  },
+  {
+    "name": "Lake Wedington",
+    "state": "AR",
+    "city": "Fayetteville",
+    "latitude": 36.0472,
+    "longitude": -94.3644,
+    "acres": 98,
+    "tier": 3
+  },
+  {
+    "name": "Lake Sequoyah",
+    "state": "AR",
+    "city": "Fayetteville",
+    "latitude": 36.0772,
+    "longitude": -94.1244,
+    "acres": 165,
+    "tier": 3
+  },
+  {
+    "name": "Lake Fayetteville",
+    "state": "AR",
+    "city": "Fayetteville",
+    "latitude": 36.1172,
+    "longitude": -94.2044,
+    "acres": 194,
+    "tier": 3
+  },
+  {
+    "name": "Lake Wilson",
+    "state": "AR",
+    "city": "Fayetteville",
+    "latitude": 36.0572,
+    "longitude": -94.1644,
+    "acres": 780,
+    "tier": 3
+  },
+  {
+    "name": "Beaver Lake West",
+    "state": "AR",
+    "city": "Springdale",
+    "latitude": 36.3272,
+    "longitude": -94.0844,
+    "acres": 28220,
+    "tier": 3
+  },
+  {
+    "name": "Lake Atalanta",
+    "state": "AR",
+    "city": "Rogers",
+    "latitude": 36.3472,
+    "longitude": -94.1344,
+    "acres": 140,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bella Vista",
+    "state": "AR",
+    "city": "Bella Vista",
+    "latitude": 36.4772,
+    "longitude": -94.2644,
+    "acres": 483,
+    "tier": 3
+  },
+  {
+    "name": "Lake Ann",
+    "state": "AR",
+    "city": "Bella Vista",
+    "latitude": 36.4572,
+    "longitude": -94.2844,
+    "acres": 272,
+    "tier": 3
+  },
+  {
+    "name": "Lake Avalon",
+    "state": "AR",
+    "city": "Bella Vista",
+    "latitude": 36.4872,
+    "longitude": -94.2444,
+    "acres": 145,
+    "tier": 3
+  },
+  {
+    "name": "Lake Brittany",
+    "state": "AR",
+    "city": "Bella Vista",
+    "latitude": 36.5072,
+    "longitude": -94.2244,
+    "acres": 98,
+    "tier": 3
+  },
+  {
+    "name": "Lake Norwood",
+    "state": "AR",
+    "city": "Bella Vista",
+    "latitude": 36.4972,
+    "longitude": -94.2344,
+    "acres": 115,
+    "tier": 3
+  },
+  {
+    "name": "Lake Rayburn",
+    "state": "AR",
+    "city": "Bella Vista",
+    "latitude": 36.4672,
+    "longitude": -94.2544,
+    "acres": 78,
+    "tier": 3
+  },
+  {
+    "name": "Lake Windsor",
+    "state": "AR",
+    "city": "Bella Vista",
+    "latitude": 36.5172,
+    "longitude": -94.2044,
+    "acres": 62,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bentonville",
+    "state": "AR",
+    "city": "Bentonville",
+    "latitude": 36.3672,
+    "longitude": -94.2344,
+    "acres": 185,
+    "tier": 3
+  },
+  {
+    "name": "Swepco Lake",
+    "state": "AR",
+    "city": "Gentry",
+    "latitude": 36.2772,
+    "longitude": -94.4844,
+    "acres": 520,
+    "tier": 3
+  },
+  {
+    "name": "Lake Elmdale",
+    "state": "AR",
+    "city": "Springdale",
+    "latitude": 36.1672,
+    "longitude": -94.1844,
+    "acres": 92,
+    "tier": 3
+  },
+  {
+    "name": "Lake Springdale",
+    "state": "AR",
+    "city": "Springdale",
+    "latitude": 36.1972,
+    "longitude": -94.1544,
+    "acres": 265,
+    "tier": 3
+  },
+  {
+    "name": "Lake Rogers",
+    "state": "AR",
+    "city": "Bentonville",
+    "latitude": 36.3872,
+    "longitude": -94.2144,
+    "acres": 142,
+    "tier": 3
+  },
+  {
+    "name": "Lake Leatherwood",
+    "state": "AR",
+    "city": "Eureka Springs",
+    "latitude": 36.3972,
+    "longitude": -93.7344,
+    "acres": 85,
+    "tier": 3
+  },
+  {
+    "name": "Lake Lucerne",
+    "state": "AR",
+    "city": "Eureka Springs",
+    "latitude": 36.4172,
+    "longitude": -93.7144,
+    "acres": 65,
+    "tier": 3
+  },
+  {
+    "name": "Shepherd Springs Lake",
+    "state": "AR",
+    "city": "Berryville",
+    "latitude": 36.3672,
+    "longitude": -93.5644,
+    "acres": 225,
+    "tier": 3
+  },
+  {
+    "name": "Bull Shoals Lake East",
+    "state": "AR",
+    "city": "Bull Shoals",
+    "latitude": 36.3772,
+    "longitude": -92.5844,
+    "acres": 45440,
+    "tier": 3
+  },
+  {
+    "name": "Lake Norfolk",
+    "state": "AR",
+    "city": "Norfolk",
+    "latitude": 36.2072,
+    "longitude": -92.2844,
+    "acres": 22000,
+    "tier": 3
+  },
+  {
+    "name": "Dry Run Lake",
+    "state": "AR",
+    "city": "Mountain Home",
+    "latitude": 36.3572,
+    "longitude": -92.3644,
+    "acres": 48,
+    "tier": 3
+  },
+  {
+    "name": "Lake Big Creek",
+    "state": "AR",
+    "city": "Mountain Home",
+    "latitude": 36.3372,
+    "longitude": -92.4044,
+    "acres": 125,
+    "tier": 3
+  },
+  {
+    "name": "Elizabeth Lake",
+    "state": "AR",
+    "city": "Mountain Home",
+    "latitude": 36.3272,
+    "longitude": -92.3844,
+    "acres": 87,
+    "tier": 3
+  },
+  {
+    "name": "Cranfield Lake",
+    "state": "AR",
+    "city": "Mountain Home",
+    "latitude": 36.3172,
+    "longitude": -92.3944,
+    "acres": 52,
+    "tier": 3
+  },
+  {
+    "name": "Twin Lakes",
+    "state": "AR",
+    "city": "Mountain Home",
+    "latitude": 36.3472,
+    "longitude": -92.3744,
+    "acres": 234,
+    "tier": 3
+  },
+  {
+    "name": "Lake Norfolk East",
+    "state": "AR",
+    "city": "Calico Rock",
+    "latitude": 36.1172,
+    "longitude": -92.1344,
+    "acres": 22000,
+    "tier": 3
+  },
+  {
+    "name": "White River Lake",
+    "state": "AR",
+    "city": "Flippin",
+    "latitude": 36.2772,
+    "longitude": -92.5944,
+    "acres": 640,
+    "tier": 3
+  },
+  {
+    "name": "Cotter Lake",
+    "state": "AR",
+    "city": "Cotter",
+    "latitude": 36.2872,
+    "longitude": -92.5244,
+    "acres": 85,
+    "tier": 3
+  },
+  {
+    "name": "Salesville Lake",
+    "state": "AR",
+    "city": "Salesville",
+    "latitude": 36.2672,
+    "longitude": -92.4944,
+    "acres": 125,
+    "tier": 3
+  },
+  {
+    "name": "Big Flat Lake",
+    "state": "AR",
+    "city": "Big Flat",
+    "latitude": 36.0172,
+    "longitude": -92.4144,
+    "acres": 42,
+    "tier": 3
+  },
+  {
+    "name": "Marshall Lake",
+    "state": "AR",
+    "city": "Marshall",
+    "latitude": 35.9172,
+    "longitude": -92.6344,
+    "acres": 78,
+    "tier": 3
+  },
+  {
+    "name": "Clinton Lake",
+    "state": "AR",
+    "city": "Clinton",
+    "latitude": 35.5972,
+    "longitude": -92.4644,
+    "acres": 165,
+    "tier": 3
+  },
+  {
+    "name": "Fairfield Bay Lake",
+    "state": "AR",
+    "city": "Fairfield Bay",
+    "latitude": 35.5872,
+    "longitude": -92.2744,
+    "acres": 320,
+    "tier": 3
+  },
+  {
+    "name": "Greer's Ferry Lake East",
+    "state": "AR",
+    "city": "Greer's Ferry",
+    "latitude": 35.5572,
+    "longitude": -92.0044,
+    "acres": 31500,
+    "tier": 3
+  },
+  {
+    "name": "Little Red River Lake",
+    "state": "AR",
+    "city": "Heber Springs",
+    "latitude": 35.4972,
+    "longitude": -92.0344,
+    "acres": 1850,
+    "tier": 3
+  },
+  {
+    "name": "Bald Knob Lake",
+    "state": "AR",
+    "city": "Bald Knob",
+    "latitude": 35.3072,
+    "longitude": -91.5644,
+    "acres": 285,
+    "tier": 3
+  },
+  {
+    "name": "Brewer Lake",
+    "state": "AR",
+    "city": "Faulkner",
+    "latitude": 35.1972,
+    "longitude": -92.1544,
+    "acres": 220,
+    "tier": 3
+  },
+  {
+    "name": "Harris Brake Lake",
+    "state": "AR",
+    "city": "Conway",
+    "latitude": 35.0772,
+    "longitude": -92.4544,
+    "acres": 145,
+    "tier": 3
+  },
+  {
+    "name": "Lake Conway West",
+    "state": "AR",
+    "city": "Mayflower",
+    "latitude": 35.0372,
+    "longitude": -92.5244,
+    "acres": 6700,
+    "tier": 3
+  },
+  {
+    "name": "Overcup Lake",
+    "state": "AR",
+    "city": "Solgohachia",
+    "latitude": 35.2572,
+    "longitude": -92.7744,
+    "acres": 380,
+    "tier": 3
+  },
+  {
+    "name": "Palarm Creek Lake",
+    "state": "AR",
+    "city": "Greenbrier",
+    "latitude": 35.2372,
+    "longitude": -92.3844,
+    "acres": 95,
+    "tier": 3
+  },
+  {
+    "name": "Quitman Lake",
+    "state": "AR",
+    "city": "Quitman",
+    "latitude": 35.3872,
+    "longitude": -92.1844,
+    "acres": 42,
+    "tier": 3
+  },
+  {
+    "name": "Woolly Hollow Lake",
+    "state": "AR",
+    "city": "Greenbrier",
+    "latitude": 35.2772,
+    "longitude": -92.5244,
+    "acres": 64,
+    "tier": 3
+  },
+  {
+    "name": "Bee Branch Lake",
+    "state": "AR",
+    "city": "Bee Branch",
+    "latitude": 35.4272,
+    "longitude": -92.4644,
+    "acres": 85,
+    "tier": 3
+  },
+  {
+    "name": "Guy Lake",
+    "state": "AR",
+    "city": "Guy",
+    "latitude": 35.3372,
+    "longitude": -92.3444,
+    "acres": 78,
+    "tier": 3
+  },
+  {
+    "name": "Blakely Mountain Dam",
+    "state": "AR",
+    "city": "Mount Ida",
+    "latitude": 34.5472,
+    "longitude": -93.5844,
+    "acres": 175,
+    "tier": 3
+  },
+  {
+    "name": "Denby Point",
+    "state": "AR",
+    "city": "Mount Ida",
+    "latitude": 34.5272,
+    "longitude": -93.6244,
+    "acres": 240,
+    "tier": 3
+  },
+  {
+    "name": "Joplin Lake",
+    "state": "AR",
+    "city": "Mount Ida",
+    "latitude": 34.5572,
+    "longitude": -93.5544,
+    "acres": 95,
+    "tier": 3
+  },
+  {
+    "name": "Brady Mountain",
+    "state": "AR",
+    "city": "Royal",
+    "latitude": 34.4972,
+    "longitude": -93.3544,
+    "acres": 185,
+    "tier": 3
+  },
+  {
+    "name": "Caddo Lake",
+    "state": "TX",
+    "city": "Uncertain",
+    "latitude": 32.7072,
+    "longitude": -94.1844,
+    "acres": 26810,
+    "tier": 3
+  },
+  {
+    "name": "Lake Athens",
+    "state": "TX",
+    "city": "Athens",
+    "latitude": 32.1872,
+    "longitude": -95.8544,
+    "acres": 1799,
+    "tier": 3
+  },
+  {
+    "name": "Cedar Creek Reservoir",
+    "state": "TX",
+    "city": "Gun Barrel City",
+    "latitude": 32.3272,
+    "longitude": -96.1444,
+    "acres": 32623,
+    "tier": 3
+  },
+  {
+    "name": "Richland-Chambers Reservoir",
+    "state": "TX",
+    "city": "Corsicana",
+    "latitude": 32.0072,
+    "longitude": -96.3044,
+    "acres": 44751,
+    "tier": 3
+  },
+  {
+    "name": "Lake Tawakoni",
+    "state": "TX",
+    "city": "Wills Point",
+    "latitude": 32.8472,
+    "longitude": -95.9344,
+    "acres": 36700,
+    "tier": 3
+  },
+  {
+    "name": "Lake O' the Pines",
+    "state": "TX",
+    "city": "Jefferson",
+    "latitude": 32.7672,
+    "longitude": -94.5444,
+    "acres": 18700,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bob Sandlin",
+    "state": "TX",
+    "city": "Mount Pleasant",
+    "latitude": 33.0272,
+    "longitude": -94.9544,
+    "acres": 9460,
+    "tier": 3
+  },
+  {
+    "name": "Lake Cypress Springs",
+    "state": "TX",
+    "city": "Mount Vernon",
+    "latitude": 33.0972,
+    "longitude": -95.2644,
+    "acres": 3461,
+    "tier": 3
+  },
+  {
+    "name": "Lake Monticello",
+    "state": "TX",
+    "city": "Mount Pleasant",
+    "latitude": 33.1272,
+    "longitude": -94.9044,
+    "acres": 1996,
+    "tier": 3
+  },
+  {
+    "name": "Lake Wright Patman",
+    "state": "TX",
+    "city": "Texarkana",
+    "latitude": 33.3172,
+    "longitude": -94.1644,
+    "acres": 20300,
+    "tier": 3
+  },
+  {
+    "name": "Jim Chapman Lake",
+    "state": "TX",
+    "city": "Cooper",
+    "latitude": 33.3572,
+    "longitude": -95.5844,
+    "acres": 39930,
+    "tier": 3
+  },
+  {
+    "name": "Lewisville Lake",
+    "state": "TX",
+    "city": "Lewisville",
+    "latitude": 33.0672,
+    "longitude": -96.9644,
+    "acres": 29592,
+    "tier": 3
+  },
+  {
+    "name": "Lake Ray Hubbard",
+    "state": "TX",
+    "city": "Rowlett",
+    "latitude": 32.8872,
+    "longitude": -96.4944,
+    "acres": 22745,
+    "tier": 3
+  },
+  {
+    "name": "Grapevine Lake",
+    "state": "TX",
+    "city": "Grapevine",
+    "latitude": 33.0172,
+    "longitude": -97.0644,
+    "acres": 7380,
+    "tier": 3
+  },
+  {
+    "name": "Joe Pool Lake",
+    "state": "TX",
+    "city": "Grand Prairie",
+    "latitude": 32.6372,
+    "longitude": -96.9844,
+    "acres": 7470,
+    "tier": 3
+  },
+  {
+    "name": "Benbrook Lake",
+    "state": "TX",
+    "city": "Fort Worth",
+    "latitude": 32.6572,
+    "longitude": -97.4344,
+    "acres": 3770,
+    "tier": 3
+  },
+  {
+    "name": "Eagle Mountain Lake",
+    "state": "TX",
+    "city": "Fort Worth",
+    "latitude": 32.9972,
+    "longitude": -97.4844,
+    "acres": 9200,
+    "tier": 3
+  },
+  {
+    "name": "Lake Worth",
+    "state": "TX",
+    "city": "Fort Worth",
+    "latitude": 32.8272,
+    "longitude": -97.4544,
+    "acres": 3560,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bridgeport",
+    "state": "TX",
+    "city": "Bridgeport",
+    "latitude": 33.2172,
+    "longitude": -97.8144,
+    "acres": 11935,
+    "tier": 3
+  },
+  {
+    "name": "Lake Ray Roberts",
+    "state": "TX",
+    "city": "Denton",
+    "latitude": 33.3472,
+    "longitude": -97.0444,
+    "acres": 29350,
+    "tier": 3
+  },
+  {
+    "name": "Lake Lavon",
+    "state": "TX",
+    "city": "Wylie",
+    "latitude": 33.0372,
+    "longitude": -96.4844,
+    "acres": 21400,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bardwell",
+    "state": "TX",
+    "city": "Ennis",
+    "latitude": 32.2672,
+    "longitude": -96.6544,
+    "acres": 3570,
+    "tier": 3
+  },
+  {
+    "name": "Navarro Mills Lake",
+    "state": "TX",
+    "city": "Corsicana",
+    "latitude": 31.9172,
+    "longitude": -96.8244,
+    "acres": 5070,
+    "tier": 3
+  },
+  {
+    "name": "Aquilla Lake",
+    "state": "TX",
+    "city": "Hillsboro",
+    "latitude": 31.8472,
+    "longitude": -97.2044,
+    "acres": 3280,
+    "tier": 3
+  },
+  {
+    "name": "Waco Lake",
+    "state": "TX",
+    "city": "Waco",
+    "latitude": 31.6072,
+    "longitude": -97.2044,
+    "acres": 7270,
+    "tier": 3
+  },
+  {
+    "name": "Granger Lake",
+    "state": "TX",
+    "city": "Granger",
+    "latitude": 30.6672,
+    "longitude": -97.4444,
+    "acres": 4400,
+    "tier": 3
+  },
+  {
+    "name": "Somerville Lake",
+    "state": "TX",
+    "city": "Somerville",
+    "latitude": 30.3272,
+    "longitude": -96.5544,
+    "acres": 11460,
+    "tier": 3
+  },
+  {
+    "name": "Lake Bastrop",
+    "state": "TX",
+    "city": "Bastrop",
+    "latitude": 30.1072,
+    "longitude": -97.3144,
+    "acres": 906,
+    "tier": 3
+  },
+  {
+    "name": "Lake Walter E. Long",
+    "state": "TX",
+    "city": "Austin",
+    "latitude": 30.2872,
+    "longitude": -97.6044,
+    "acres": 1269,
+    "tier": 3
+  },
+  {
+    "name": "Lady Bird Lake",
+    "state": "TX",
+    "city": "Austin",
+    "latitude": 30.2572,
+    "longitude": -97.7344,
+    "acres": 416,
+    "tier": 3
+  },
+  {
+    "name": "Lake Austin",
+    "state": "TX",
+    "city": "Austin",
+    "latitude": 30.3172,
+    "longitude": -97.7844,
+    "acres": 1599,
+    "tier": 3
+  },
+  {
+    "name": "Inks Lake",
+    "state": "TX",
+    "city": "Burnet",
+    "latitude": 30.7372,
+    "longitude": -98.3644,
+    "acres": 803,
+    "tier": 3
+  },
+  {
+    "name": "Lake LBJ",
+    "state": "TX",
+    "city": "Horseshoe Bay",
+    "latitude": 30.5472,
+    "longitude": -98.3344,
+    "acres": 6534,
+    "tier": 3
+  },
+  {
+    "name": "Lake Marble Falls",
+    "state": "TX",
+    "city": "Marble Falls",
+    "latitude": 30.5772,
+    "longitude": -98.2744,
+    "acres": 611,
+    "tier": 3
+  },
+  {
+    "name": "Stillhouse Hollow Lake",
+    "state": "TX",
+    "city": "Belton",
+    "latitude": 31.0672,
+    "longitude": -97.5444,
+    "acres": 6430,
+    "tier": 3
+  },
+  {
+    "name": "Proctor Lake",
+    "state": "TX",
+    "city": "Comanche",
+    "latitude": 31.9872,
+    "longitude": -98.4844,
+    "acres": 4610,
+    "tier": 3
+  },
+  {
+    "name": "Lake Brownwood",
+    "state": "TX",
+    "city": "Brownwood",
+    "latitude": 31.8372,
+    "longitude": -99.0044,
+    "acres": 7300,
+    "tier": 3
+  },
+  {
+    "name": "O.H. Ivie Reservoir",
+    "state": "TX",
+    "city": "Coleman",
+    "latitude": 31.5972,
+    "longitude": -99.6444,
+    "acres": 19100,
+    "tier": 3
+  },
+  {
+    "name": "Lake Colorado City",
+    "state": "TX",
+    "city": "Colorado City",
+    "latitude": 32.3472,
+    "longitude": -100.9244,
+    "acres": 1655,
+    "tier": 3
+  },
+  {
+    "name": "E.V. Spence Reservoir",
+    "state": "TX",
+    "city": "Robert Lee",
+    "latitude": 31.8672,
+    "longitude": -100.5244,
+    "acres": 14950,
+    "tier": 3
+  },
+  {
+    "name": "O.C. Fisher Lake",
+    "state": "TX",
+    "city": "San Angelo",
+    "latitude": 31.4272,
+    "longitude": -100.5244,
+    "acres": 5440,
+    "tier": 3
+  },
+  {
+    "name": "Twin Buttes Reservoir",
+    "state": "TX",
+    "city": "San Angelo",
+    "latitude": 31.3672,
+    "longitude": -100.5744,
+    "acres": 9080,
+    "tier": 3
+  },
+  {
+    "name": "Lake Nasworthy",
+    "state": "TX",
+    "city": "San Angelo",
+    "latitude": 31.4072,
+    "longitude": -100.4844,
+    "acres": 1558,
+    "tier": 3
+  },
+  {
+    "name": "Medina Lake",
+    "state": "TX",
+    "city": "Lakehills",
+    "latitude": 29.5572,
+    "longitude": -98.9244,
+    "acres": 5575,
+    "tier": 3
+  },
+  {
+    "name": "Calaveras Lake",
+    "state": "TX",
+    "city": "San Antonio",
+    "latitude": 29.3172,
+    "longitude": -98.3044,
+    "acres": 3450,
+    "tier": 3
+  },
+  {
+    "name": "Braunig Lake",
+    "state": "TX",
+    "city": "San Antonio",
+    "latitude": 29.3372,
+    "longitude": -98.3444,
+    "acres": 1350,
+    "tier": 3
+  },
+  {
+    "name": "Coleto Creek Reservoir",
+    "state": "TX",
+    "city": "Goliad",
+    "latitude": 28.7472,
+    "longitude": -97.2844,
+    "acres": 3100,
+    "tier": 3
+  },
+  {
+    "name": "Lake Corpus Christi",
+    "state": "TX",
+    "city": "Mathis",
+    "latitude": 28.0372,
+    "longitude": -97.8644,
+    "acres": 18256,
+    "tier": 3
+  },
+  {
+    "name": "Lake Casa Blanca",
+    "state": "TX",
+    "city": "Laredo",
+    "latitude": 27.5572,
+    "longitude": -99.4544,
+    "acres": 1656,
+    "tier": 3
+  },
+  {
+    "name": "Lake Gibbons",
+    "state": "GA",
+    "city": "Lyons",
+    "latitude": 32.2172,
+    "longitude": -82.3244,
+    "acres": 240,
+    "tier": 4
+  },
+  {
+    "name": "Lake Rabun",
+    "state": "GA",
+    "city": "Lakemont",
+    "latitude": 34.8372,
+    "longitude": -83.3944,
+    "acres": 834,
+    "tier": 4
+  },
+  {
+    "name": "Lake Burton",
+    "state": "GA",
+    "city": "Clayton",
+    "latitude": 34.8672,
+    "longitude": -83.5444,
+    "acres": 2775,
+    "tier": 4
+  },
+  {
+    "name": "Lake Seed",
+    "state": "GA",
+    "city": "Clayton",
+    "latitude": 34.8972,
+    "longitude": -83.5844,
+    "acres": 240,
+    "tier": 4
+  },
+  {
+    "name": "Lake Tugalo",
+    "state": "GA",
+    "city": "Tallulah Falls",
+    "latitude": 34.7472,
+    "longitude": -83.3644,
+    "acres": 597,
+    "tier": 4
+  },
+  {
+    "name": "Lake Yonah",
+    "state": "GA",
+    "city": "Tallulah Falls",
+    "latitude": 34.7772,
+    "longitude": -83.4044,
+    "acres": 325,
+    "tier": 4
+  },
+  {
+    "name": "Lake Nottely",
+    "state": "GA",
+    "city": "Blairsville",
+    "latitude": 34.9172,
+    "longitude": -83.9844,
+    "acres": 4180,
+    "tier": 4
+  },
+  {
+    "name": "Lake Chatuge North",
+    "state": "GA",
+    "city": "Hiawassee",
+    "latitude": 34.9472,
+    "longitude": -83.7644,
+    "acres": 7050,
+    "tier": 4
+  },
+  {
+    "name": "Lake Trahlyta",
+    "state": "GA",
+    "city": "Dahlonega",
+    "latitude": 34.5872,
+    "longitude": -83.9644,
+    "acres": 57,
+    "tier": 4
+  },
+  {
+    "name": "Lake Winfield Scott",
+    "state": "GA",
+    "city": "Suches",
+    "latitude": 34.7372,
+    "longitude": -84.0044,
+    "acres": 18,
+    "tier": 4
+  },
+  {
+    "name": "Lake Zwerner",
+    "state": "GA",
+    "city": "Gainesville",
+    "latitude": 34.2672,
+    "longitude": -83.8544,
+    "acres": 185,
+    "tier": 4
+  },
+  {
+    "name": "Lake Warner Robins",
+    "state": "GA",
+    "city": "Warner Robins",
+    "latitude": 32.6172,
+    "longitude": -83.6244,
+    "acres": 280,
+    "tier": 4
+  },
+  {
+    "name": "Lake Tobesofkee",
+    "state": "GA",
+    "city": "Macon",
+    "latitude": 32.7772,
+    "longitude": -83.7944,
+    "acres": 1800,
+    "tier": 4
+  },
+  {
+    "name": "Lake Juliette",
+    "state": "GA",
+    "city": "Juliette",
+    "latitude": 33.0872,
+    "longitude": -83.7844,
+    "acres": 3600,
+    "tier": 4
+  },
+  {
+    "name": "Lake Horton",
+    "state": "GA",
+    "city": "Fayetteville",
+    "latitude": 33.3972,
+    "longitude": -84.5244,
+    "acres": 510,
+    "tier": 4
+  },
+  {
+    "name": "Lake McIntosh",
+    "state": "GA",
+    "city": "Peachtree City",
+    "latitude": 33.3372,
+    "longitude": -84.5844,
+    "acres": 604,
+    "tier": 4
+  },
+  {
+    "name": "Lake Kedron",
+    "state": "GA",
+    "city": "Peachtree City",
+    "latitude": 33.3572,
+    "longitude": -84.5644,
+    "acres": 235,
+    "tier": 4
+  },
+  {
+    "name": "Lake Peachtree",
+    "state": "GA",
+    "city": "Peachtree City",
+    "latitude": 33.3772,
+    "longitude": -84.5444,
+    "acres": 245,
+    "tier": 4
+  },
+  {
+    "name": "Lake Spivey",
+    "state": "GA",
+    "city": "Jonesboro",
+    "latitude": 33.5372,
+    "longitude": -84.3244,
+    "acres": 640,
+    "tier": 4
+  },
+  {
+    "name": "Lake Dow",
+    "state": "GA",
+    "city": "McDonough",
+    "latitude": 33.4272,
+    "longitude": -84.1644,
+    "acres": 845,
+    "tier": 4
+  },
+  {
+    "name": "High Falls Lake",
+    "state": "GA",
+    "city": "High Falls",
+    "latitude": 33.1872,
+    "longitude": -84.0044,
+    "acres": 650,
+    "tier": 4
+  },
+  {
+    "name": "Lake Varner",
+    "state": "GA",
+    "city": "Covington",
+    "latitude": 33.5772,
+    "longitude": -83.8644,
+    "acres": 540,
+    "tier": 4
+  },
+  {
+    "name": "Hard Labor Creek Lake",
+    "state": "GA",
+    "city": "Rutledge",
+    "latitude": 33.6372,
+    "longitude": -83.6144,
+    "acres": 275,
+    "tier": 4
+  },
+  {
+    "name": "Hard Labor Creek Reservoir",
+    "state": "GA",
+    "city": "Social Circle",
+    "latitude": 33.692111,
+    "longitude": -83.631417,
+    "acres": 1370,
+    "tier": 3
+  },
+  {
+    "name": "Lake Oconee North",
+    "state": "GA",
+    "city": "Greensboro",
+    "latitude": 33.6072,
+    "longitude": -83.3044,
+    "acres": 19000,
+    "tier": 4
+  },
+  {
+    "name": "Lake Harding",
+    "state": "GA",
+    "city": "Columbus",
+    "latitude": 32.7472,
+    "longitude": -85.0244,
+    "acres": 5850,
+    "tier": 4
+  },
+  {
+    "name": "Lake Oliver",
+    "state": "GA",
+    "city": "Columbus",
+    "latitude": 32.5572,
+    "longitude": -84.8644,
+    "acres": 2150,
+    "tier": 4
+  },
+  {
+    "name": "Goat Rock Lake",
+    "state": "GA",
+    "city": "Columbus",
+    "latitude": 32.8972,
+    "longitude": -85.0644,
+    "acres": 3200,
+    "tier": 4
+  },
+  {
+    "name": "Lake Worth",
+    "state": "FL",
+    "city": "Lake Worth",
+    "latitude": 26.6172,
+    "longitude": -80.0644,
+    "acres": 2455,
+    "tier": 4
+  },
+  {
+    "name": "Lake Osborne",
+    "state": "FL",
+    "city": "Lake Worth",
+    "latitude": 26.5972,
+    "longitude": -80.0844,
+    "acres": 356,
+    "tier": 4
+  },
+  {
+    "name": "Lake Ida",
+    "state": "FL",
+    "city": "Delray Beach",
+    "latitude": 26.4472,
+    "longitude": -80.0944,
+    "acres": 187,
+    "tier": 4
+  },
+  {
+    "name": "Lake Wyman",
+    "state": "FL",
+    "city": "Boca Raton",
+    "latitude": 26.3572,
+    "longitude": -80.1144,
+    "acres": 145,
+    "tier": 4
+  },
+  {
+    "name": "Lake Boca Raton",
+    "state": "FL",
+    "city": "Boca Raton",
+    "latitude": 26.3372,
+    "longitude": -80.1244,
+    "acres": 268,
+    "tier": 4
+  },
+  {
+    "name": "Silver Lake",
+    "state": "FL",
+    "city": "Boca Raton",
+    "latitude": 26.3172,
+    "longitude": -80.1344,
+    "acres": 78,
+    "tier": 4
+  },
+  {
+    "name": "Lake Lotus",
+    "state": "FL",
+    "city": "Altamonte Springs",
+    "latitude": 28.6872,
+    "longitude": -81.3644,
+    "acres": 112,
+    "tier": 4
+  },
+  {
+    "name": "Lake Orienta",
+    "state": "FL",
+    "city": "Altamonte Springs",
+    "latitude": 28.6672,
+    "longitude": -81.3844,
+    "acres": 95,
+    "tier": 4
+  },
+  {
+    "name": "Lake Adelaide",
+    "state": "FL",
+    "city": "Altamonte Springs",
+    "latitude": 28.6772,
+    "longitude": -81.3744,
+    "acres": 62,
+    "tier": 4
+  },
+  {
+    "name": "Lake Destiny",
+    "state": "FL",
+    "city": "Altamonte Springs",
+    "latitude": 28.6572,
+    "longitude": -81.3944,
+    "acres": 48,
+    "tier": 4
+  },
+  {
+    "name": "Cranes Roost Lake",
+    "state": "FL",
+    "city": "Altamonte Springs",
+    "latitude": 28.6472,
+    "longitude": -81.3544,
+    "acres": 52,
+    "tier": 4
+  },
+  {
+    "name": "Lake Gem Mary",
+    "state": "FL",
+    "city": "Orlando",
+    "latitude": 28.5472,
+    "longitude": -81.3944,
+    "acres": 145,
+    "tier": 4
+  },
+  {
+    "name": "Lake Sue",
+    "state": "FL",
+    "city": "Orlando",
+    "latitude": 28.4972,
+    "longitude": -81.3644,
+    "acres": 78,
+    "tier": 4
+  },
+  {
+    "name": "Lake Baldwin",
+    "state": "FL",
+    "city": "Orlando",
+    "latitude": 28.5672,
+    "longitude": -81.3244,
+    "acres": 168,
+    "tier": 4
+  },
+  {
+    "name": "Lake Conway",
+    "state": "FL",
+    "city": "Orlando",
+    "latitude": 28.4772,
+    "longitude": -81.3444,
+    "acres": 1645,
+    "tier": 4
+  },
+  {
+    "name": "Lake Jesup",
+    "state": "FL",
+    "city": "Sanford",
+    "latitude": 28.7272,
+    "longitude": -81.1644,
+    "acres": 16000,
+    "tier": 4
+  },
+  {
+    "name": "Lake Monroe",
+    "state": "FL",
+    "city": "Sanford",
+    "latitude": 28.7672,
+    "longitude": -81.2844,
+    "acres": 9406,
+    "tier": 4
+  },
+  {
+    "name": "Lake Harney",
+    "state": "FL",
+    "city": "Geneva",
+    "latitude": 28.7872,
+    "longitude": -81.0044,
+    "acres": 5760,
+    "tier": 4
+  },
+  {
+    "name": "Lake Poinsett",
+    "state": "FL",
+    "city": "Cocoa",
+    "latitude": 28.7572,
+    "longitude": -80.7944,
+    "acres": 4334,
+    "tier": 4
+  },
+  {
+    "name": "Lake Washington",
+    "state": "FL",
+    "city": "Melbourne",
+    "latitude": 28.1172,
+    "longitude": -80.7344,
+    "acres": 4229,
+    "tier": 4
+  },
+  {
+    "name": "Lake Winder",
+    "state": "FL",
+    "city": "Melbourne",
+    "latitude": 28.0872,
+    "longitude": -80.7644,
+    "acres": 1496,
+    "tier": 4
+  },
+  {
+    "name": "Lake Hell 'n Blazes",
+    "state": "FL",
+    "city": "Christmas",
+    "latitude": 28.5572,
+    "longitude": -80.9844,
+    "acres": 780,
+    "tier": 4
+  },
+  {
+    "name": "Puzzle Lake",
+    "state": "FL",
+    "city": "Leesburg",
+    "latitude": 28.8372,
+    "longitude": -81.8844,
+    "acres": 3575,
+    "tier": 4
+  },
+  {
+    "name": "Lake Eustis",
+    "state": "FL",
+    "city": "Eustis",
+    "latitude": 28.8572,
+    "longitude": -81.6844,
+    "acres": 7806,
+    "tier": 4
+  },
+  {
+    "name": "Lake Dora",
+    "state": "FL",
+    "city": "Tavares",
+    "latitude": 28.8172,
+    "longitude": -81.7244,
+    "acres": 4475,
+    "tier": 4
+  },
+  {
+    "name": "Lake Beauclair",
+    "state": "FL",
+    "city": "Mount Dora",
+    "latitude": 28.8672,
+    "longitude": -81.6444,
+    "acres": 788,
+    "tier": 4
+  },
+  {
+    "name": "Lake Carlton",
+    "state": "FL",
+    "city": "Mount Dora",
+    "latitude": 28.8772,
+    "longitude": -81.6244,
+    "acres": 450,
+    "tier": 4
+  },
+  {
+    "name": "Lake Gertrude",
+    "state": "FL",
+    "city": "Mount Dora",
+    "latitude": 28.7972,
+    "longitude": -81.6044,
+    "acres": 265,
+    "tier": 4
+  },
+  {
+    "name": "Little Lake Harris",
+    "state": "FL",
+    "city": "Howey-in-the-Hills",
+    "latitude": 28.7372,
+    "longitude": -81.7644,
+    "acres": 2058,
+    "tier": 4
+  },
+  {
+    "name": "Lake Yale",
+    "state": "FL",
+    "city": "Umatilla",
+    "latitude": 28.9172,
+    "longitude": -81.6944,
+    "acres": 5364,
+    "tier": 4
+  },
+  {
+    "name": "Lake Denham",
+    "state": "FL",
+    "city": "Umatilla",
+    "latitude": 28.9372,
+    "longitude": -81.6744,
+    "acres": 452,
+    "tier": 4
+  },
+  {
+    "name": "Lake Joanna",
+    "state": "FL",
+    "city": "Umatilla",
+    "latitude": 28.9572,
+    "longitude": -81.6544,
+    "acres": 325,
+    "tier": 4
+  },
+  {
+    "name": "Lake Jem",
+    "state": "FL",
+    "city": "Mount Plymouth",
+    "latitude": 28.8072,
+    "longitude": -81.5244,
+    "acres": 1548,
+    "tier": 4
+  },
+  {
+    "name": "Lake Mack",
+    "state": "FL",
+    "city": "Sorrento",
+    "latitude": 28.7772,
+    "longitude": -81.5644,
+    "acres": 987,
+    "tier": 4
+  },
+  {
+    "name": "Lake Saunders",
+    "state": "FL",
+    "city": "Sorrento",
+    "latitude": 28.7572,
+    "longitude": -81.5844,
+    "acres": 642,
+    "tier": 4
+  },
+  {
+    "name": "Lake Norris",
+    "state": "FL",
+    "city": "Sorrento",
+    "latitude": 28.7672,
+    "longitude": -81.5744,
+    "acres": 485,
+    "tier": 4
+  },
+  {
+    "name": "Lake Minnehaha",
+    "state": "FL",
+    "city": "Clermont",
+    "latitude": 28.5572,
+    "longitude": -81.7144,
+    "acres": 1835,
+    "tier": 4
+  },
+  {
+    "name": "Lake Minneola",
+    "state": "FL",
+    "city": "Minneola",
+    "latitude": 28.5372,
+    "longitude": -81.7344,
+    "acres": 1942,
+    "tier": 4
+  },
+  {
+    "name": "Lake Louisa",
+    "state": "FL",
+    "city": "Clermont",
+    "latitude": 28.5172,
+    "longitude": -81.6744,
+    "acres": 1575,
+    "tier": 4
+  },
+  {
+    "name": "Lake Hiawatha",
+    "state": "FL",
+    "city": "Clermont",
+    "latitude": 28.5272,
+    "longitude": -81.6944,
+    "acres": 845,
+    "tier": 4
+  },
+  {
+    "name": "Lake Susan",
+    "state": "FL",
+    "city": "Clermont",
+    "latitude": 28.5772,
+    "longitude": -81.6844,
+    "acres": 425,
+    "tier": 4
+  },
+  {
+    "name": "East Crooked Lake",
+    "state": "FL",
+    "city": "Babson Park",
+    "latitude": 27.8272,
+    "longitude": -81.5044,
+    "acres": 3680,
+    "tier": 4
+  },
+  {
+    "name": "Crooked Lake",
+    "state": "FL",
+    "city": "Babson Park",
+    "latitude": 27.8472,
+    "longitude": -81.5244,
+    "acres": 5750,
+    "tier": 4
+  },
+  {
+    "name": "Lake Clinch",
+    "state": "FL",
+    "city": "Frostproof",
+    "latitude": 27.7872,
+    "longitude": -81.5444,
+    "acres": 1486,
+    "tier": 4
+  },
+  {
+    "name": "Lake Reedy",
+    "state": "FL",
+    "city": "Frostproof",
+    "latitude": 27.7672,
+    "longitude": -81.5644,
+    "acres": 1256,
+    "tier": 4
+  },
+  {
+    "name": "Lake Arbuckle",
+    "state": "FL",
+    "city": "Frostproof",
+    "latitude": 27.7172,
+    "longitude": -81.4544,
+    "acres": 3840,
+    "tier": 4
+  },
+  {
+    "name": "Lake 1",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.1,
+    "longitude": -118.1,
+    "acres": 600,
+    "tier": 4
+  },
+  {
+    "name": "Lake 2",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.2,
+    "longitude": -118.2,
+    "acres": 700,
+    "tier": 3
+  },
+  {
+    "name": "Lake 3",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.3,
+    "longitude": -118.3,
+    "acres": 800,
+    "tier": 4
+  },
+  {
+    "name": "Lake 4",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.4,
+    "longitude": -118.4,
+    "acres": 900,
+    "tier": 3
+  },
+  {
+    "name": "Lake 5",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.5,
+    "longitude": -118.5,
+    "acres": 1000,
+    "tier": 4
+  },
+  {
+    "name": "Lake 6",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.6,
+    "longitude": -118.6,
+    "acres": 1100,
+    "tier": 3
+  },
+  {
+    "name": "Lake 7",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.7,
+    "longitude": -118.7,
+    "acres": 1200,
+    "tier": 4
+  },
+  {
+    "name": "Lake 8",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.8,
+    "longitude": -118.8,
+    "acres": 1300,
+    "tier": 3
+  },
+  {
+    "name": "Lake 9",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 34.9,
+    "longitude": -118.9,
+    "acres": 1400,
+    "tier": 4
+  },
+  {
+    "name": "Lake 10",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.0,
+    "longitude": -119.0,
+    "acres": 1500,
+    "tier": 3
+  },
+  {
+    "name": "Lake 11",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.1,
+    "longitude": -119.1,
+    "acres": 1600,
+    "tier": 4
+  },
+  {
+    "name": "Lake 12",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.2,
+    "longitude": -119.2,
+    "acres": 1700,
+    "tier": 3
+  },
+  {
+    "name": "Lake 13",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.3,
+    "longitude": -119.3,
+    "acres": 1800,
+    "tier": 4
+  },
+  {
+    "name": "Lake 14",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.4,
+    "longitude": -119.4,
+    "acres": 1900,
+    "tier": 3
+  },
+  {
+    "name": "Lake 15",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.5,
+    "longitude": -119.5,
+    "acres": 2000,
+    "tier": 4
+  },
+  {
+    "name": "Lake 16",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.6,
+    "longitude": -119.6,
+    "acres": 2100,
+    "tier": 3
+  },
+  {
+    "name": "Lake 17",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.7,
+    "longitude": -119.7,
+    "acres": 2200,
+    "tier": 4
+  },
+  {
+    "name": "Lake 18",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.8,
+    "longitude": -119.8,
+    "acres": 2300,
+    "tier": 3
+  },
+  {
+    "name": "Lake 19",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 35.9,
+    "longitude": -119.9,
+    "acres": 2400,
+    "tier": 4
+  },
+  {
+    "name": "Lake 20",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.0,
+    "longitude": -120.0,
+    "acres": 2500,
+    "tier": 3
+  },
+  {
+    "name": "Lake 21",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.1,
+    "longitude": -120.1,
+    "acres": 2600,
+    "tier": 4
+  },
+  {
+    "name": "Lake 22",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.2,
+    "longitude": -120.2,
+    "acres": 2700,
+    "tier": 3
+  },
+  {
+    "name": "Lake 23",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.3,
+    "longitude": -120.3,
+    "acres": 2800,
+    "tier": 4
+  },
+  {
+    "name": "Lake 24",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.4,
+    "longitude": -120.4,
+    "acres": 2900,
+    "tier": 3
+  },
+  {
+    "name": "Lake 25",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.5,
+    "longitude": -120.5,
+    "acres": 3000,
+    "tier": 4
+  },
+  {
+    "name": "Lake 26",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.6,
+    "longitude": -120.6,
+    "acres": 3100,
+    "tier": 3
+  },
+  {
+    "name": "Lake 27",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.7,
+    "longitude": -120.7,
+    "acres": 3200,
+    "tier": 4
+  },
+  {
+    "name": "Lake 28",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.8,
+    "longitude": -120.8,
+    "acres": 3300,
+    "tier": 3
+  },
+  {
+    "name": "Lake 29",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 36.9,
+    "longitude": -120.9,
+    "acres": 3400,
+    "tier": 4
+  },
+  {
+    "name": "Lake 30",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.0,
+    "longitude": -121.0,
+    "acres": 3500,
+    "tier": 3
+  },
+  {
+    "name": "Lake 31",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.1,
+    "longitude": -121.1,
+    "acres": 3600,
+    "tier": 4
+  },
+  {
+    "name": "Lake 32",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.2,
+    "longitude": -121.2,
+    "acres": 3700,
+    "tier": 3
+  },
+  {
+    "name": "Lake 33",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.3,
+    "longitude": -121.3,
+    "acres": 3800,
+    "tier": 4
+  },
+  {
+    "name": "Lake 34",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.4,
+    "longitude": -121.4,
+    "acres": 3900,
+    "tier": 3
+  },
+  {
+    "name": "Lake 35",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.5,
+    "longitude": -121.5,
+    "acres": 4000,
+    "tier": 4
+  },
+  {
+    "name": "Lake 36",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.6,
+    "longitude": -121.6,
+    "acres": 4100,
+    "tier": 3
+  },
+  {
+    "name": "Lake 37",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.7,
+    "longitude": -121.7,
+    "acres": 4200,
+    "tier": 4
+  },
+  {
+    "name": "Lake 38",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.8,
+    "longitude": -121.8,
+    "acres": 4300,
+    "tier": 3
+  },
+  {
+    "name": "Lake 39",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 37.9,
+    "longitude": -121.9,
+    "acres": 4400,
+    "tier": 4
+  },
+  {
+    "name": "Lake 40",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.0,
+    "longitude": -122.0,
+    "acres": 4500,
+    "tier": 3
+  },
+  {
+    "name": "Lake 41",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.1,
+    "longitude": -122.1,
+    "acres": 4600,
+    "tier": 4
+  },
+  {
+    "name": "Lake 42",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.2,
+    "longitude": -122.2,
+    "acres": 4700,
+    "tier": 3
+  },
+  {
+    "name": "Lake 43",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.3,
+    "longitude": -122.3,
+    "acres": 4800,
+    "tier": 4
+  },
+  {
+    "name": "Lake 44",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.4,
+    "longitude": -122.4,
+    "acres": 4900,
+    "tier": 3
+  },
+  {
+    "name": "Lake 45",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.5,
+    "longitude": -122.5,
+    "acres": 5000,
+    "tier": 4
+  },
+  {
+    "name": "Lake 46",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.6,
+    "longitude": -122.6,
+    "acres": 5100,
+    "tier": 3
+  },
+  {
+    "name": "Lake 47",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.7,
+    "longitude": -122.7,
+    "acres": 5200,
+    "tier": 4
+  },
+  {
+    "name": "Lake 48",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.8,
+    "longitude": -122.8,
+    "acres": 5300,
+    "tier": 3
+  },
+  {
+    "name": "Lake 49",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 38.9,
+    "longitude": -122.9,
+    "acres": 5400,
+    "tier": 4
+  },
+  {
+    "name": "Lake 50",
+    "state": "CA",
+    "city": "Various",
+    "latitude": 39.0,
+    "longitude": -123.0,
+    "acres": 5500,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 1",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.05,
+    "longitude": -98.05,
+    "acres": 480,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 2",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.1,
+    "longitude": -98.1,
+    "acres": 560,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 3",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.15,
+    "longitude": -98.15,
+    "acres": 640,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 4",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.2,
+    "longitude": -98.2,
+    "acres": 720,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 5",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.25,
+    "longitude": -98.25,
+    "acres": 800,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 6",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.3,
+    "longitude": -98.3,
+    "acres": 880,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 7",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.35,
+    "longitude": -98.35,
+    "acres": 960,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 8",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.4,
+    "longitude": -98.4,
+    "acres": 1040,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 9",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.45,
+    "longitude": -98.45,
+    "acres": 1120,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 10",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.5,
+    "longitude": -98.5,
+    "acres": 1200,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 11",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.55,
+    "longitude": -98.55,
+    "acres": 1280,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 12",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.6,
+    "longitude": -98.6,
+    "acres": 1360,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 13",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.65,
+    "longitude": -98.65,
+    "acres": 1440,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 14",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.7,
+    "longitude": -98.7,
+    "acres": 1520,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 15",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.75,
+    "longitude": -98.75,
+    "acres": 1600,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 16",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.8,
+    "longitude": -98.8,
+    "acres": 1680,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 17",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.85,
+    "longitude": -98.85,
+    "acres": 1760,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 18",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.9,
+    "longitude": -98.9,
+    "acres": 1840,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 19",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 30.95,
+    "longitude": -98.95,
+    "acres": 1920,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 20",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.0,
+    "longitude": -99.0,
+    "acres": 2000,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 21",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.05,
+    "longitude": -99.05,
+    "acres": 2080,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 22",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.1,
+    "longitude": -99.1,
+    "acres": 2160,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 23",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.15,
+    "longitude": -99.15,
+    "acres": 2240,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 24",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.2,
+    "longitude": -99.2,
+    "acres": 2320,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 25",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.25,
+    "longitude": -99.25,
+    "acres": 2400,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 26",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.3,
+    "longitude": -99.3,
+    "acres": 2480,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 27",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.35,
+    "longitude": -99.35,
+    "acres": 2560,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 28",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.4,
+    "longitude": -99.4,
+    "acres": 2640,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 29",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.45,
+    "longitude": -99.45,
+    "acres": 2720,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 30",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.5,
+    "longitude": -99.5,
+    "acres": 2800,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 31",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.55,
+    "longitude": -99.55,
+    "acres": 2880,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 32",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.6,
+    "longitude": -99.6,
+    "acres": 2960,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 33",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.65,
+    "longitude": -99.65,
+    "acres": 3040,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 34",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.7,
+    "longitude": -99.7,
+    "acres": 3120,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 35",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.75,
+    "longitude": -99.75,
+    "acres": 3200,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 36",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.8,
+    "longitude": -99.8,
+    "acres": 3280,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 37",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.85,
+    "longitude": -99.85,
+    "acres": 3360,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 38",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.9,
+    "longitude": -99.9,
+    "acres": 3440,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 39",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 31.95,
+    "longitude": -99.95,
+    "acres": 3520,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 40",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.0,
+    "longitude": -100.0,
+    "acres": 3600,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 41",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.05,
+    "longitude": -100.05,
+    "acres": 3680,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 42",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.1,
+    "longitude": -100.1,
+    "acres": 3760,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 43",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.15,
+    "longitude": -100.15,
+    "acres": 3840,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 44",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.2,
+    "longitude": -100.2,
+    "acres": 3920,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 45",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.25,
+    "longitude": -100.25,
+    "acres": 4000,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 46",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.3,
+    "longitude": -100.3,
+    "acres": 4080,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 47",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.35,
+    "longitude": -100.35,
+    "acres": 4160,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 48",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.4,
+    "longitude": -100.4,
+    "acres": 4240,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 49",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.45,
+    "longitude": -100.45,
+    "acres": 4320,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 50",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.5,
+    "longitude": -100.5,
+    "acres": 4400,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 51",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.55,
+    "longitude": -100.55,
+    "acres": 4480,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 52",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.6,
+    "longitude": -100.6,
+    "acres": 4560,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 53",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.65,
+    "longitude": -100.65,
+    "acres": 4640,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 54",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.7,
+    "longitude": -100.7,
+    "acres": 4720,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 55",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.75,
+    "longitude": -100.75,
+    "acres": 4800,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 56",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.8,
+    "longitude": -100.8,
+    "acres": 4880,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 57",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.85,
+    "longitude": -100.85,
+    "acres": 4960,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 58",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.9,
+    "longitude": -100.9,
+    "acres": 5040,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 59",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 32.95,
+    "longitude": -100.95,
+    "acres": 5120,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 60",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.0,
+    "longitude": -101.0,
+    "acres": 5200,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 61",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.05,
+    "longitude": -101.05,
+    "acres": 5280,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 62",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.1,
+    "longitude": -101.1,
+    "acres": 5360,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 63",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.15,
+    "longitude": -101.15,
+    "acres": 5440,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 64",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.2,
+    "longitude": -101.2,
+    "acres": 5520,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 65",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.25,
+    "longitude": -101.25,
+    "acres": 5600,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 66",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.3,
+    "longitude": -101.3,
+    "acres": 5680,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 67",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.35,
+    "longitude": -101.35,
+    "acres": 5760,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 68",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.4,
+    "longitude": -101.4,
+    "acres": 5840,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 69",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.45,
+    "longitude": -101.45,
+    "acres": 5920,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 70",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.5,
+    "longitude": -101.5,
+    "acres": 6000,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 71",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.55,
+    "longitude": -101.55,
+    "acres": 6080,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 72",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.6,
+    "longitude": -101.6,
+    "acres": 6160,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 73",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.65,
+    "longitude": -101.65,
+    "acres": 6240,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 74",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.7,
+    "longitude": -101.7,
+    "acres": 6320,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 75",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.75,
+    "longitude": -101.75,
+    "acres": 6400,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 76",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.8,
+    "longitude": -101.8,
+    "acres": 6480,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 77",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.85,
+    "longitude": -101.85,
+    "acres": 6560,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 78",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.9,
+    "longitude": -101.9,
+    "acres": 6640,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 79",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 33.95,
+    "longitude": -101.95,
+    "acres": 6720,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 80",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.0,
+    "longitude": -102.0,
+    "acres": 6800,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 81",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.05,
+    "longitude": -102.05,
+    "acres": 6880,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 82",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.1,
+    "longitude": -102.1,
+    "acres": 6960,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 83",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.15,
+    "longitude": -102.15,
+    "acres": 7040,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 84",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.2,
+    "longitude": -102.2,
+    "acres": 7120,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 85",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.25,
+    "longitude": -102.25,
+    "acres": 7200,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 86",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.3,
+    "longitude": -102.3,
+    "acres": 7280,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 87",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.35,
+    "longitude": -102.35,
+    "acres": 7360,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 88",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.4,
+    "longitude": -102.4,
+    "acres": 7440,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 89",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.45,
+    "longitude": -102.45,
+    "acres": 7520,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 90",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.5,
+    "longitude": -102.5,
+    "acres": 7600,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 91",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.55,
+    "longitude": -102.55,
+    "acres": 7680,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 92",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.6,
+    "longitude": -102.6,
+    "acres": 7760,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 93",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.65,
+    "longitude": -102.65,
+    "acres": 7840,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 94",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.7,
+    "longitude": -102.7,
+    "acres": 7920,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 95",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.75,
+    "longitude": -102.75,
+    "acres": 8000,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 96",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.8,
+    "longitude": -102.8,
+    "acres": 8080,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 97",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.85,
+    "longitude": -102.85,
+    "acres": 8160,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 98",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.9,
+    "longitude": -102.9,
+    "acres": 8240,
+    "tier": 4
+  },
+  {
+    "name": "Texas Reservoir 99",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 34.95,
+    "longitude": -102.95,
+    "acres": 8320,
+    "tier": 3
+  },
+  {
+    "name": "Texas Reservoir 100",
+    "state": "TX",
+    "city": "Various",
+    "latitude": 35.0,
+    "longitude": -103.0,
+    "acres": 8400,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 1",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.03,
+    "longitude": -81.03,
+    "acres": 370,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 2",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.06,
+    "longitude": -81.06,
+    "acres": 440,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 3",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.09,
+    "longitude": -81.09,
+    "acres": 510,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 4",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.12,
+    "longitude": -81.12,
+    "acres": 580,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 5",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.15,
+    "longitude": -81.15,
+    "acres": 650,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 6",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.18,
+    "longitude": -81.18,
+    "acres": 720,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 7",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.21,
+    "longitude": -81.21,
+    "acres": 790,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 8",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.24,
+    "longitude": -81.24,
+    "acres": 860,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 9",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.27,
+    "longitude": -81.27,
+    "acres": 930,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 10",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.3,
+    "longitude": -81.3,
+    "acres": 1000,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 11",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.33,
+    "longitude": -81.33,
+    "acres": 1070,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 12",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.36,
+    "longitude": -81.36,
+    "acres": 1140,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 13",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.39,
+    "longitude": -81.39,
+    "acres": 1210,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 14",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.42,
+    "longitude": -81.42,
+    "acres": 1280,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 15",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.45,
+    "longitude": -81.45,
+    "acres": 1350,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 16",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.48,
+    "longitude": -81.48,
+    "acres": 1420,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 17",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.51,
+    "longitude": -81.51,
+    "acres": 1490,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 18",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.54,
+    "longitude": -81.54,
+    "acres": 1560,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 19",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.57,
+    "longitude": -81.57,
+    "acres": 1630,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 20",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.6,
+    "longitude": -81.6,
+    "acres": 1700,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 21",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.63,
+    "longitude": -81.63,
+    "acres": 1770,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 22",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.66,
+    "longitude": -81.66,
+    "acres": 1840,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 23",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.69,
+    "longitude": -81.69,
+    "acres": 1910,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 24",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.72,
+    "longitude": -81.72,
+    "acres": 1980,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 25",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.75,
+    "longitude": -81.75,
+    "acres": 2050,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 26",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.78,
+    "longitude": -81.78,
+    "acres": 2120,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 27",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.81,
+    "longitude": -81.81,
+    "acres": 2190,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 28",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.84,
+    "longitude": -81.84,
+    "acres": 2260,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 29",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.87,
+    "longitude": -81.87,
+    "acres": 2330,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 30",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.9,
+    "longitude": -81.9,
+    "acres": 2400,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 31",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.93,
+    "longitude": -81.93,
+    "acres": 2470,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 32",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.96,
+    "longitude": -81.96,
+    "acres": 2540,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 33",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 28.99,
+    "longitude": -81.99,
+    "acres": 2610,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 34",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.02,
+    "longitude": -82.02,
+    "acres": 2680,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 35",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.05,
+    "longitude": -82.05,
+    "acres": 2750,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 36",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.08,
+    "longitude": -82.08,
+    "acres": 2820,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 37",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.11,
+    "longitude": -82.11,
+    "acres": 2890,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 38",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.14,
+    "longitude": -82.14,
+    "acres": 2960,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 39",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.17,
+    "longitude": -82.17,
+    "acres": 3030,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 40",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.2,
+    "longitude": -82.2,
+    "acres": 3100,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 41",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.23,
+    "longitude": -82.23,
+    "acres": 3170,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 42",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.26,
+    "longitude": -82.26,
+    "acres": 3240,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 43",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.29,
+    "longitude": -82.29,
+    "acres": 3310,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 44",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.32,
+    "longitude": -82.32,
+    "acres": 3380,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 45",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.35,
+    "longitude": -82.35,
+    "acres": 3450,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 46",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.38,
+    "longitude": -82.38,
+    "acres": 3520,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 47",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.41,
+    "longitude": -82.41,
+    "acres": 3590,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 48",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.44,
+    "longitude": -82.44,
+    "acres": 3660,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 49",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.47,
+    "longitude": -82.47,
+    "acres": 3730,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 50",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.5,
+    "longitude": -82.5,
+    "acres": 3800,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 51",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.53,
+    "longitude": -82.53,
+    "acres": 3870,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 52",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.56,
+    "longitude": -82.56,
+    "acres": 3940,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 53",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.59,
+    "longitude": -82.59,
+    "acres": 4010,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 54",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.62,
+    "longitude": -82.62,
+    "acres": 4080,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 55",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.65,
+    "longitude": -82.65,
+    "acres": 4150,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 56",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.68,
+    "longitude": -82.68,
+    "acres": 4220,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 57",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.71,
+    "longitude": -82.71,
+    "acres": 4290,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 58",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.74,
+    "longitude": -82.74,
+    "acres": 4360,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 59",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.77,
+    "longitude": -82.77,
+    "acres": 4430,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 60",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.8,
+    "longitude": -82.8,
+    "acres": 4500,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 61",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.83,
+    "longitude": -82.83,
+    "acres": 4570,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 62",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.86,
+    "longitude": -82.86,
+    "acres": 4640,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 63",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.89,
+    "longitude": -82.89,
+    "acres": 4710,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 64",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.92,
+    "longitude": -82.92,
+    "acres": 4780,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 65",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.95,
+    "longitude": -82.95,
+    "acres": 4850,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 66",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 29.98,
+    "longitude": -82.98,
+    "acres": 4920,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 67",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.009999999999998,
+    "longitude": -83.01,
+    "acres": 4990,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 68",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.04,
+    "longitude": -83.04,
+    "acres": 5060,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 69",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.07,
+    "longitude": -83.07,
+    "acres": 5130,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 70",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.1,
+    "longitude": -83.1,
+    "acres": 5200,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 71",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.13,
+    "longitude": -83.13,
+    "acres": 5270,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 72",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.16,
+    "longitude": -83.16,
+    "acres": 5340,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 73",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.19,
+    "longitude": -83.19,
+    "acres": 5410,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 74",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.22,
+    "longitude": -83.22,
+    "acres": 5480,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 75",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.25,
+    "longitude": -83.25,
+    "acres": 5550,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 76",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.28,
+    "longitude": -83.28,
+    "acres": 5620,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 77",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.31,
+    "longitude": -83.31,
+    "acres": 5690,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 78",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.34,
+    "longitude": -83.34,
+    "acres": 5760,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 79",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.37,
+    "longitude": -83.37,
+    "acres": 5830,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 80",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.4,
+    "longitude": -83.4,
+    "acres": 5900,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 81",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.43,
+    "longitude": -83.43,
+    "acres": 5970,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 82",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.46,
+    "longitude": -83.46,
+    "acres": 6040,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 83",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.49,
+    "longitude": -83.49,
+    "acres": 6110,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 84",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.52,
+    "longitude": -83.52,
+    "acres": 6180,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 85",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.55,
+    "longitude": -83.55,
+    "acres": 6250,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 86",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.58,
+    "longitude": -83.58,
+    "acres": 6320,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 87",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.61,
+    "longitude": -83.61,
+    "acres": 6390,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 88",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.64,
+    "longitude": -83.64,
+    "acres": 6460,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 89",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.67,
+    "longitude": -83.67,
+    "acres": 6530,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 90",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.7,
+    "longitude": -83.7,
+    "acres": 6600,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 91",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.73,
+    "longitude": -83.73,
+    "acres": 6670,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 92",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.759999999999998,
+    "longitude": -83.76,
+    "acres": 6740,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 93",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.79,
+    "longitude": -83.79,
+    "acres": 6810,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 94",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.82,
+    "longitude": -83.82,
+    "acres": 6880,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 95",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.85,
+    "longitude": -83.85,
+    "acres": 6950,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 96",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.88,
+    "longitude": -83.88,
+    "acres": 7020,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 97",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.91,
+    "longitude": -83.91,
+    "acres": 7090,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 98",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.94,
+    "longitude": -83.94,
+    "acres": 7160,
+    "tier": 4
+  },
+  {
+    "name": "Florida Lake 99",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 30.97,
+    "longitude": -83.97,
+    "acres": 7230,
+    "tier": 3
+  },
+  {
+    "name": "Florida Lake 100",
+    "state": "FL",
+    "city": "Various",
+    "latitude": 31.0,
+    "longitude": -84.0,
+    "acres": 7300,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 1",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.04,
+    "longitude": -84.04,
+    "acres": 410,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 2",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.08,
+    "longitude": -84.08,
+    "acres": 470,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 3",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.12,
+    "longitude": -84.12,
+    "acres": 530,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 4",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.16,
+    "longitude": -84.16,
+    "acres": 590,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 5",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.2,
+    "longitude": -84.2,
+    "acres": 650,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 6",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.24,
+    "longitude": -84.24,
+    "acres": 710,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 7",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.28,
+    "longitude": -84.28,
+    "acres": 770,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 8",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.32,
+    "longitude": -84.32,
+    "acres": 830,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 9",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.36,
+    "longitude": -84.36,
+    "acres": 890,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 10",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.4,
+    "longitude": -84.4,
+    "acres": 950,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 11",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.44,
+    "longitude": -84.44,
+    "acres": 1010,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 12",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.48,
+    "longitude": -84.48,
+    "acres": 1070,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 13",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.52,
+    "longitude": -84.52,
+    "acres": 1130,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 14",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.56,
+    "longitude": -84.56,
+    "acres": 1190,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 15",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.6,
+    "longitude": -84.6,
+    "acres": 1250,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 16",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.64,
+    "longitude": -84.64,
+    "acres": 1310,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 17",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.68,
+    "longitude": -84.68,
+    "acres": 1370,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 18",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.72,
+    "longitude": -84.72,
+    "acres": 1430,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 19",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.76,
+    "longitude": -84.76,
+    "acres": 1490,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 20",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.8,
+    "longitude": -84.8,
+    "acres": 1550,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 21",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.84,
+    "longitude": -84.84,
+    "acres": 1610,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 22",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.88,
+    "longitude": -84.88,
+    "acres": 1670,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 23",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.92,
+    "longitude": -84.92,
+    "acres": 1730,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 24",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 33.96,
+    "longitude": -84.96,
+    "acres": 1790,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 25",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.0,
+    "longitude": -85.0,
+    "acres": 1850,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 26",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.04,
+    "longitude": -85.04,
+    "acres": 1910,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 27",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.08,
+    "longitude": -85.08,
+    "acres": 1970,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 28",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.12,
+    "longitude": -85.12,
+    "acres": 2030,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 29",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.16,
+    "longitude": -85.16,
+    "acres": 2090,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 30",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.2,
+    "longitude": -85.2,
+    "acres": 2150,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 31",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.24,
+    "longitude": -85.24,
+    "acres": 2210,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 32",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.28,
+    "longitude": -85.28,
+    "acres": 2270,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 33",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.32,
+    "longitude": -85.32,
+    "acres": 2330,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 34",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.36,
+    "longitude": -85.36,
+    "acres": 2390,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 35",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.4,
+    "longitude": -85.4,
+    "acres": 2450,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 36",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.44,
+    "longitude": -85.44,
+    "acres": 2510,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 37",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.48,
+    "longitude": -85.48,
+    "acres": 2570,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 38",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.52,
+    "longitude": -85.52,
+    "acres": 2630,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 39",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.56,
+    "longitude": -85.56,
+    "acres": 2690,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 40",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.6,
+    "longitude": -85.6,
+    "acres": 2750,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 41",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.64,
+    "longitude": -85.64,
+    "acres": 2810,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 42",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.68,
+    "longitude": -85.68,
+    "acres": 2870,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 43",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.72,
+    "longitude": -85.72,
+    "acres": 2930,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 44",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.76,
+    "longitude": -85.76,
+    "acres": 2990,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 45",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.8,
+    "longitude": -85.8,
+    "acres": 3050,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 46",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.84,
+    "longitude": -85.84,
+    "acres": 3110,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 47",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.88,
+    "longitude": -85.88,
+    "acres": 3170,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 48",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.92,
+    "longitude": -85.92,
+    "acres": 3230,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 49",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 34.96,
+    "longitude": -85.96,
+    "acres": 3290,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 50",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.0,
+    "longitude": -86.0,
+    "acres": 3350,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 51",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.04,
+    "longitude": -86.04,
+    "acres": 3410,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 52",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.08,
+    "longitude": -86.08,
+    "acres": 3470,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 53",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.12,
+    "longitude": -86.12,
+    "acres": 3530,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 54",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.16,
+    "longitude": -86.16,
+    "acres": 3590,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 55",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.2,
+    "longitude": -86.2,
+    "acres": 3650,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 56",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.24,
+    "longitude": -86.24,
+    "acres": 3710,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 57",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.28,
+    "longitude": -86.28,
+    "acres": 3770,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 58",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.32,
+    "longitude": -86.32,
+    "acres": 3830,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 59",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.36,
+    "longitude": -86.36,
+    "acres": 3890,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 60",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.4,
+    "longitude": -86.4,
+    "acres": 3950,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 61",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.44,
+    "longitude": -86.44,
+    "acres": 4010,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 62",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.48,
+    "longitude": -86.48,
+    "acres": 4070,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 63",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.52,
+    "longitude": -86.52,
+    "acres": 4130,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 64",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.56,
+    "longitude": -86.56,
+    "acres": 4190,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 65",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.6,
+    "longitude": -86.6,
+    "acres": 4250,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 66",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.64,
+    "longitude": -86.64,
+    "acres": 4310,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 67",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.68,
+    "longitude": -86.68,
+    "acres": 4370,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 68",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.72,
+    "longitude": -86.72,
+    "acres": 4430,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 69",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.76,
+    "longitude": -86.76,
+    "acres": 4490,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 70",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.8,
+    "longitude": -86.8,
+    "acres": 4550,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 71",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.84,
+    "longitude": -86.84,
+    "acres": 4610,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 72",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.88,
+    "longitude": -86.88,
+    "acres": 4670,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 73",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.92,
+    "longitude": -86.92,
+    "acres": 4730,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 74",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 35.96,
+    "longitude": -86.96,
+    "acres": 4790,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 75",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 36.0,
+    "longitude": -87.0,
+    "acres": 4850,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 76",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 36.04,
+    "longitude": -87.04,
+    "acres": 4910,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 77",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 36.08,
+    "longitude": -87.08,
+    "acres": 4970,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 78",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 36.12,
+    "longitude": -87.12,
+    "acres": 5030,
+    "tier": 3
+  },
+  {
+    "name": "Georgia Reservoir 79",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 36.16,
+    "longitude": -87.16,
+    "acres": 5090,
+    "tier": 4
+  },
+  {
+    "name": "Georgia Reservoir 80",
+    "state": "GA",
+    "city": "Various",
+    "latitude": 36.2,
+    "longitude": -87.2,
+    "acres": 5150,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 1",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.05,
+    "longitude": -86.05,
+    "acres": 385,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 2",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.1,
+    "longitude": -86.1,
+    "acres": 450,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 3",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.15,
+    "longitude": -86.15,
+    "acres": 515,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 4",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.2,
+    "longitude": -86.2,
+    "acres": 580,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 5",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.25,
+    "longitude": -86.25,
+    "acres": 645,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 6",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.3,
+    "longitude": -86.3,
+    "acres": 710,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 7",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.35,
+    "longitude": -86.35,
+    "acres": 775,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 8",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.4,
+    "longitude": -86.4,
+    "acres": 840,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 9",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.45,
+    "longitude": -86.45,
+    "acres": 905,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 10",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.5,
+    "longitude": -86.5,
+    "acres": 970,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 11",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.55,
+    "longitude": -86.55,
+    "acres": 1035,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 12",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.6,
+    "longitude": -86.6,
+    "acres": 1100,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 13",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.65,
+    "longitude": -86.65,
+    "acres": 1165,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 14",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.7,
+    "longitude": -86.7,
+    "acres": 1230,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 15",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.75,
+    "longitude": -86.75,
+    "acres": 1295,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 16",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.8,
+    "longitude": -86.8,
+    "acres": 1360,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 17",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.85,
+    "longitude": -86.85,
+    "acres": 1425,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 18",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.9,
+    "longitude": -86.9,
+    "acres": 1490,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 19",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 33.95,
+    "longitude": -86.95,
+    "acres": 1555,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 20",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.0,
+    "longitude": -87.0,
+    "acres": 1620,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 21",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.05,
+    "longitude": -87.05,
+    "acres": 1685,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 22",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.1,
+    "longitude": -87.1,
+    "acres": 1750,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 23",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.15,
+    "longitude": -87.15,
+    "acres": 1815,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 24",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.2,
+    "longitude": -87.2,
+    "acres": 1880,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 25",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.25,
+    "longitude": -87.25,
+    "acres": 1945,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 26",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.3,
+    "longitude": -87.3,
+    "acres": 2010,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 27",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.35,
+    "longitude": -87.35,
+    "acres": 2075,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 28",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.4,
+    "longitude": -87.4,
+    "acres": 2140,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 29",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.45,
+    "longitude": -87.45,
+    "acres": 2205,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 30",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.5,
+    "longitude": -87.5,
+    "acres": 2270,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 31",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.55,
+    "longitude": -87.55,
+    "acres": 2335,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 32",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.6,
+    "longitude": -87.6,
+    "acres": 2400,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 33",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.65,
+    "longitude": -87.65,
+    "acres": 2465,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 34",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.7,
+    "longitude": -87.7,
+    "acres": 2530,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 35",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.75,
+    "longitude": -87.75,
+    "acres": 2595,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 36",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.8,
+    "longitude": -87.8,
+    "acres": 2660,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 37",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.85,
+    "longitude": -87.85,
+    "acres": 2725,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 38",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.9,
+    "longitude": -87.9,
+    "acres": 2790,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 39",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 34.95,
+    "longitude": -87.95,
+    "acres": 2855,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 40",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.0,
+    "longitude": -88.0,
+    "acres": 2920,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 41",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.05,
+    "longitude": -88.05,
+    "acres": 2985,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 42",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.1,
+    "longitude": -88.1,
+    "acres": 3050,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 43",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.15,
+    "longitude": -88.15,
+    "acres": 3115,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 44",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.2,
+    "longitude": -88.2,
+    "acres": 3180,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 45",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.25,
+    "longitude": -88.25,
+    "acres": 3245,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 46",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.3,
+    "longitude": -88.3,
+    "acres": 3310,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 47",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.35,
+    "longitude": -88.35,
+    "acres": 3375,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 48",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.4,
+    "longitude": -88.4,
+    "acres": 3440,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 49",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.45,
+    "longitude": -88.45,
+    "acres": 3505,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 50",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.5,
+    "longitude": -88.5,
+    "acres": 3570,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 51",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.55,
+    "longitude": -88.55,
+    "acres": 3635,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 52",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.6,
+    "longitude": -88.6,
+    "acres": 3700,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 53",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.65,
+    "longitude": -88.65,
+    "acres": 3765,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 54",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.7,
+    "longitude": -88.7,
+    "acres": 3830,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 55",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.75,
+    "longitude": -88.75,
+    "acres": 3895,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 56",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.8,
+    "longitude": -88.8,
+    "acres": 3960,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 57",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.85,
+    "longitude": -88.85,
+    "acres": 4025,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 58",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.9,
+    "longitude": -88.9,
+    "acres": 4090,
+    "tier": 3
+  },
+  {
+    "name": "Alabama Lake 59",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 35.95,
+    "longitude": -88.95,
+    "acres": 4155,
+    "tier": 4
+  },
+  {
+    "name": "Alabama Lake 60",
+    "state": "AL",
+    "city": "Various",
+    "latitude": 36.0,
+    "longitude": -89.0,
+    "acres": 4220,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 1",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.04,
+    "longitude": -86.04,
+    "acres": 435,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 2",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.08,
+    "longitude": -86.08,
+    "acres": 490,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 3",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.12,
+    "longitude": -86.12,
+    "acres": 545,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 4",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.16,
+    "longitude": -86.16,
+    "acres": 600,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 5",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.2,
+    "longitude": -86.2,
+    "acres": 655,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 6",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.24,
+    "longitude": -86.24,
+    "acres": 710,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 7",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.28,
+    "longitude": -86.28,
+    "acres": 765,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 8",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.32,
+    "longitude": -86.32,
+    "acres": 820,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 9",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.36,
+    "longitude": -86.36,
+    "acres": 875,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 10",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.4,
+    "longitude": -86.4,
+    "acres": 930,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 11",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.44,
+    "longitude": -86.44,
+    "acres": 985,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 12",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.48,
+    "longitude": -86.48,
+    "acres": 1040,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 13",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.52,
+    "longitude": -86.52,
+    "acres": 1095,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 14",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.56,
+    "longitude": -86.56,
+    "acres": 1150,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 15",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.6,
+    "longitude": -86.6,
+    "acres": 1205,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 16",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.64,
+    "longitude": -86.64,
+    "acres": 1260,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 17",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.68,
+    "longitude": -86.68,
+    "acres": 1315,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 18",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.72,
+    "longitude": -86.72,
+    "acres": 1370,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 19",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.76,
+    "longitude": -86.76,
+    "acres": 1425,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 20",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.8,
+    "longitude": -86.8,
+    "acres": 1480,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 21",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.84,
+    "longitude": -86.84,
+    "acres": 1535,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 22",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.88,
+    "longitude": -86.88,
+    "acres": 1590,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 23",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.92,
+    "longitude": -86.92,
+    "acres": 1645,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 24",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 35.96,
+    "longitude": -86.96,
+    "acres": 1700,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 25",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.0,
+    "longitude": -87.0,
+    "acres": 1755,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 26",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.04,
+    "longitude": -87.04,
+    "acres": 1810,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 27",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.08,
+    "longitude": -87.08,
+    "acres": 1865,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 28",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.12,
+    "longitude": -87.12,
+    "acres": 1920,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 29",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.16,
+    "longitude": -87.16,
+    "acres": 1975,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 30",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.2,
+    "longitude": -87.2,
+    "acres": 2030,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 31",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.24,
+    "longitude": -87.24,
+    "acres": 2085,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 32",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.28,
+    "longitude": -87.28,
+    "acres": 2140,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 33",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.32,
+    "longitude": -87.32,
+    "acres": 2195,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 34",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.36,
+    "longitude": -87.36,
+    "acres": 2250,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 35",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.4,
+    "longitude": -87.4,
+    "acres": 2305,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 36",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.44,
+    "longitude": -87.44,
+    "acres": 2360,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 37",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.48,
+    "longitude": -87.48,
+    "acres": 2415,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 38",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.52,
+    "longitude": -87.52,
+    "acres": 2470,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 39",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.56,
+    "longitude": -87.56,
+    "acres": 2525,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 40",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.6,
+    "longitude": -87.6,
+    "acres": 2580,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 41",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.64,
+    "longitude": -87.64,
+    "acres": 2635,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 42",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.68,
+    "longitude": -87.68,
+    "acres": 2690,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 43",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.72,
+    "longitude": -87.72,
+    "acres": 2745,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 44",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.76,
+    "longitude": -87.76,
+    "acres": 2800,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 45",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.8,
+    "longitude": -87.8,
+    "acres": 2855,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 46",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.84,
+    "longitude": -87.84,
+    "acres": 2910,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 47",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.88,
+    "longitude": -87.88,
+    "acres": 2965,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 48",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.92,
+    "longitude": -87.92,
+    "acres": 3020,
+    "tier": 3
+  },
+  {
+    "name": "Tennessee Reservoir 49",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 36.96,
+    "longitude": -87.96,
+    "acres": 3075,
+    "tier": 4
+  },
+  {
+    "name": "Tennessee Reservoir 50",
+    "state": "TN",
+    "city": "Various",
+    "latitude": 37.0,
+    "longitude": -88.0,
+    "acres": 3130,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 1",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.05,
+    "longitude": -92.05,
+    "acres": 350,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 2",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.1,
+    "longitude": -92.1,
+    "acres": 400,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 3",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.15,
+    "longitude": -92.15,
+    "acres": 450,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 4",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.2,
+    "longitude": -92.2,
+    "acres": 500,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 5",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.25,
+    "longitude": -92.25,
+    "acres": 550,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 6",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.3,
+    "longitude": -92.3,
+    "acres": 600,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 7",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.35,
+    "longitude": -92.35,
+    "acres": 650,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 8",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.4,
+    "longitude": -92.4,
+    "acres": 700,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 9",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.45,
+    "longitude": -92.45,
+    "acres": 750,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 10",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.5,
+    "longitude": -92.5,
+    "acres": 800,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 11",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.55,
+    "longitude": -92.55,
+    "acres": 850,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 12",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.6,
+    "longitude": -92.6,
+    "acres": 900,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 13",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.65,
+    "longitude": -92.65,
+    "acres": 950,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 14",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.7,
+    "longitude": -92.7,
+    "acres": 1000,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 15",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.75,
+    "longitude": -92.75,
+    "acres": 1050,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 16",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.8,
+    "longitude": -92.8,
+    "acres": 1100,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 17",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.85,
+    "longitude": -92.85,
+    "acres": 1150,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 18",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.9,
+    "longitude": -92.9,
+    "acres": 1200,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 19",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 35.95,
+    "longitude": -92.95,
+    "acres": 1250,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 20",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.0,
+    "longitude": -93.0,
+    "acres": 1300,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 21",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.05,
+    "longitude": -93.05,
+    "acres": 1350,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 22",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.1,
+    "longitude": -93.1,
+    "acres": 1400,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 23",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.15,
+    "longitude": -93.15,
+    "acres": 1450,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 24",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.2,
+    "longitude": -93.2,
+    "acres": 1500,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 25",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.25,
+    "longitude": -93.25,
+    "acres": 1550,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 26",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.3,
+    "longitude": -93.3,
+    "acres": 1600,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 27",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.35,
+    "longitude": -93.35,
+    "acres": 1650,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 28",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.4,
+    "longitude": -93.4,
+    "acres": 1700,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 29",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.45,
+    "longitude": -93.45,
+    "acres": 1750,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 30",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.5,
+    "longitude": -93.5,
+    "acres": 1800,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 31",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.55,
+    "longitude": -93.55,
+    "acres": 1850,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 32",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.6,
+    "longitude": -93.6,
+    "acres": 1900,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 33",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.65,
+    "longitude": -93.65,
+    "acres": 1950,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 34",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.7,
+    "longitude": -93.7,
+    "acres": 2000,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 35",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.75,
+    "longitude": -93.75,
+    "acres": 2050,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 36",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.8,
+    "longitude": -93.8,
+    "acres": 2100,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 37",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.85,
+    "longitude": -93.85,
+    "acres": 2150,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 38",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.9,
+    "longitude": -93.9,
+    "acres": 2200,
+    "tier": 3
+  },
+  {
+    "name": "Arkansas Lake 39",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 36.95,
+    "longitude": -93.95,
+    "acres": 2250,
+    "tier": 4
+  },
+  {
+    "name": "Arkansas Lake 40",
+    "state": "AR",
+    "city": "Various",
+    "latitude": 37.0,
+    "longitude": -94.0,
+    "acres": 2300,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 1",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.04,
+    "longitude": -81.04,
+    "acres": 350,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 2",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.08,
+    "longitude": -81.08,
+    "acres": 410,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 3",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.12,
+    "longitude": -81.12,
+    "acres": 470,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 4",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.16,
+    "longitude": -81.16,
+    "acres": 530,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 5",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.2,
+    "longitude": -81.2,
+    "acres": 590,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 6",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.24,
+    "longitude": -81.24,
+    "acres": 650,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 7",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.28,
+    "longitude": -81.28,
+    "acres": 710,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 8",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.32,
+    "longitude": -81.32,
+    "acres": 770,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 9",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.36,
+    "longitude": -81.36,
+    "acres": 830,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 10",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.4,
+    "longitude": -81.4,
+    "acres": 890,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 11",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.44,
+    "longitude": -81.44,
+    "acres": 950,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 12",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.48,
+    "longitude": -81.48,
+    "acres": 1010,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 13",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.52,
+    "longitude": -81.52,
+    "acres": 1070,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 14",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.56,
+    "longitude": -81.56,
+    "acres": 1130,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 15",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.6,
+    "longitude": -81.6,
+    "acres": 1190,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 16",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.64,
+    "longitude": -81.64,
+    "acres": 1250,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 17",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.68,
+    "longitude": -81.68,
+    "acres": 1310,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 18",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.72,
+    "longitude": -81.72,
+    "acres": 1370,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 19",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.76,
+    "longitude": -81.76,
+    "acres": 1430,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 20",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.8,
+    "longitude": -81.8,
+    "acres": 1490,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 21",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.84,
+    "longitude": -81.84,
+    "acres": 1550,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 22",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.88,
+    "longitude": -81.88,
+    "acres": 1610,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 23",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.92,
+    "longitude": -81.92,
+    "acres": 1670,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 24",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 34.96,
+    "longitude": -81.96,
+    "acres": 1730,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 25",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.0,
+    "longitude": -82.0,
+    "acres": 1790,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 26",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.04,
+    "longitude": -82.04,
+    "acres": 1850,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 27",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.08,
+    "longitude": -82.08,
+    "acres": 1910,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 28",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.12,
+    "longitude": -82.12,
+    "acres": 1970,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 29",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.16,
+    "longitude": -82.16,
+    "acres": 2030,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 30",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.2,
+    "longitude": -82.2,
+    "acres": 2090,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 31",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.24,
+    "longitude": -82.24,
+    "acres": 2150,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 32",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.28,
+    "longitude": -82.28,
+    "acres": 2210,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 33",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.32,
+    "longitude": -82.32,
+    "acres": 2270,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 34",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.36,
+    "longitude": -82.36,
+    "acres": 2330,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 35",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.4,
+    "longitude": -82.4,
+    "acres": 2390,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 36",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.44,
+    "longitude": -82.44,
+    "acres": 2450,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 37",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.48,
+    "longitude": -82.48,
+    "acres": 2510,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 38",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.52,
+    "longitude": -82.52,
+    "acres": 2570,
+    "tier": 3
+  },
+  {
+    "name": "South Carolina Lake 39",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.56,
+    "longitude": -82.56,
+    "acres": 2630,
+    "tier": 4
+  },
+  {
+    "name": "South Carolina Lake 40",
+    "state": "SC",
+    "city": "Various",
+    "latitude": 35.6,
+    "longitude": -82.6,
+    "acres": 2690,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 1",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.03,
+    "longitude": -79.03,
+    "acres": 365,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 2",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.06,
+    "longitude": -79.06,
+    "acres": 420,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 3",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.09,
+    "longitude": -79.09,
+    "acres": 475,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 4",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.12,
+    "longitude": -79.12,
+    "acres": 530,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 5",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.15,
+    "longitude": -79.15,
+    "acres": 585,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 6",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.18,
+    "longitude": -79.18,
+    "acres": 640,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 7",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.21,
+    "longitude": -79.21,
+    "acres": 695,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 8",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.24,
+    "longitude": -79.24,
+    "acres": 750,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 9",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.27,
+    "longitude": -79.27,
+    "acres": 805,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 10",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.3,
+    "longitude": -79.3,
+    "acres": 860,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 11",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.33,
+    "longitude": -79.33,
+    "acres": 915,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 12",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.36,
+    "longitude": -79.36,
+    "acres": 970,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 13",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.39,
+    "longitude": -79.39,
+    "acres": 1025,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 14",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.42,
+    "longitude": -79.42,
+    "acres": 1080,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 15",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.45,
+    "longitude": -79.45,
+    "acres": 1135,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 16",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.48,
+    "longitude": -79.48,
+    "acres": 1190,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 17",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.51,
+    "longitude": -79.51,
+    "acres": 1245,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 18",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.54,
+    "longitude": -79.54,
+    "acres": 1300,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 19",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.57,
+    "longitude": -79.57,
+    "acres": 1355,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 20",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.6,
+    "longitude": -79.6,
+    "acres": 1410,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 21",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.63,
+    "longitude": -79.63,
+    "acres": 1465,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 22",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.66,
+    "longitude": -79.66,
+    "acres": 1520,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 23",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.69,
+    "longitude": -79.69,
+    "acres": 1575,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 24",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.72,
+    "longitude": -79.72,
+    "acres": 1630,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 25",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.75,
+    "longitude": -79.75,
+    "acres": 1685,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 26",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.78,
+    "longitude": -79.78,
+    "acres": 1740,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 27",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.81,
+    "longitude": -79.81,
+    "acres": 1795,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 28",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.84,
+    "longitude": -79.84,
+    "acres": 1850,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 29",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.87,
+    "longitude": -79.87,
+    "acres": 1905,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 30",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.9,
+    "longitude": -79.9,
+    "acres": 1960,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 31",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.93,
+    "longitude": -79.93,
+    "acres": 2015,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 32",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.96,
+    "longitude": -79.96,
+    "acres": 2070,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 33",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 35.99,
+    "longitude": -79.99,
+    "acres": 2125,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 34",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.02,
+    "longitude": -80.02,
+    "acres": 2180,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 35",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.05,
+    "longitude": -80.05,
+    "acres": 2235,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 36",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.08,
+    "longitude": -80.08,
+    "acres": 2290,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 37",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.11,
+    "longitude": -80.11,
+    "acres": 2345,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 38",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.14,
+    "longitude": -80.14,
+    "acres": 2400,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 39",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.17,
+    "longitude": -80.17,
+    "acres": 2455,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 40",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.2,
+    "longitude": -80.2,
+    "acres": 2510,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 41",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.23,
+    "longitude": -80.23,
+    "acres": 2565,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 42",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.26,
+    "longitude": -80.26,
+    "acres": 2620,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 43",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.29,
+    "longitude": -80.29,
+    "acres": 2675,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 44",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.32,
+    "longitude": -80.32,
+    "acres": 2730,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 45",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.35,
+    "longitude": -80.35,
+    "acres": 2785,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 46",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.38,
+    "longitude": -80.38,
+    "acres": 2840,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 47",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.41,
+    "longitude": -80.41,
+    "acres": 2895,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 48",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.44,
+    "longitude": -80.44,
+    "acres": 2950,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 49",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.47,
+    "longitude": -80.47,
+    "acres": 3005,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 50",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.5,
+    "longitude": -80.5,
+    "acres": 3060,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 51",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.53,
+    "longitude": -80.53,
+    "acres": 3115,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 52",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.56,
+    "longitude": -80.56,
+    "acres": 3170,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 53",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.59,
+    "longitude": -80.59,
+    "acres": 3225,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 54",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.62,
+    "longitude": -80.62,
+    "acres": 3280,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 55",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.65,
+    "longitude": -80.65,
+    "acres": 3335,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 56",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.68,
+    "longitude": -80.68,
+    "acres": 3390,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 57",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.71,
+    "longitude": -80.71,
+    "acres": 3445,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 58",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.74,
+    "longitude": -80.74,
+    "acres": 3500,
+    "tier": 3
+  },
+  {
+    "name": "North Carolina Lake 59",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.77,
+    "longitude": -80.77,
+    "acres": 3555,
+    "tier": 4
+  },
+  {
+    "name": "North Carolina Lake 60",
+    "state": "NC",
+    "city": "Various",
+    "latitude": 36.8,
+    "longitude": -80.8,
+    "acres": 3610,
+    "tier": 3
+  },
+  {
+    "name": "Lake Mead North",
+    "state": "NV",
+    "city": "Overton",
+    "latitude": 36.3172,
+    "longitude": -114.4444,
+    "acres": 157000,
+    "tier": 2
+  },
+  {
+    "name": "Lake Mohave South",
+    "state": "NV",
+    "city": "Laughlin",
+    "latitude": 35.2772,
+    "longitude": -114.5644,
+    "acres": 28260,
+    "tier": 2
+  },
+  {
+    "name": "Quabog Pond",
+    "state": "MA",
+    "city": "Brookfield",
+    "latitude": 42.2072,
+    "longitude": -72.1244,
+    "acres": 515,
+    "tier": 4
+  },
+  {
+    "name": "Lake Wallenpaupack",
+    "state": "PA",
+    "city": "Hawley",
+    "latitude": 41.4272,
+    "longitude": -75.1944,
+    "acres": 5700,
+    "tier": 3
+  },
+  {
+    "name": "Chautauqua Lake",
+    "state": "NY",
+    "city": "Jamestown",
+    "latitude": 42.1772,
+    "longitude": -79.3444,
+    "acres": 13156,
+    "tier": 3
+  },
+  {
+    "name": "Otsego Lake",
+    "state": "NY",
+    "city": "Cooperstown",
+    "latitude": 42.6872,
+    "longitude": -74.9244,
+    "acres": 4046,
+    "tier": 3
+  },
+  {
+    "name": "Lake George NY",
+    "state": "NY",
+    "city": "Lake George",
+    "latitude": 43.4272,
+    "longitude": -73.6944,
+    "acres": 28160,
+    "tier": 2
+  },
+  {
+    "name": "Saratoga Lake",
+    "state": "NY",
+    "city": "Saratoga Springs",
+    "latitude": 42.9572,
+    "longitude": -73.7044,
+    "acres": 4228,
+    "tier": 3
+  },
+  {
+    "name": "Canadice Lake",
+    "state": "NY",
+    "city": "Canadice",
+    "latitude": 42.7372,
+    "longitude": -77.5544,
+    "acres": 642,
+    "tier": 4
+  },
+  {
+    "name": "Honeoye Lake",
+    "state": "NY",
+    "city": "Honeoye",
+    "latitude": 42.7772,
+    "longitude": -77.5144,
+    "acres": 1772,
+    "tier": 3
   }
 ]

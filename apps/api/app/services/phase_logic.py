@@ -34,7 +34,8 @@ def determine_phase(temp_f: float, month: int, latitude: float) -> str:
             if 58 <= temp_f <= 68:
                 return "spawn"  # FL bass spawn when it's cold elsewhere
             elif temp_f > 68:
-                return "post-spawn"
+                # Warm December = late-fall transitioning, not post-spawn
+                return "late-fall" if month == 12 else "pre-spawn"
             else:  # < 58
                 return "pre-spawn"
         

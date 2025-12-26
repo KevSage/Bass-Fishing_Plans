@@ -29,6 +29,9 @@ const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const MAPBOX_API = "https://api.mapbox.com/geocoding/v5/mapbox.places";
 const LAKES: Lake[] = LAKES_DATA as Lake[];
 
+// Debug: Log lake count on module load
+console.log(`🎣 Lakes database loaded: ${LAKES.length} lakes`);
+
 /**
  * Simple fuzzy match - checks if all query words appear in target
  */

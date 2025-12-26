@@ -154,7 +154,13 @@ export function PlanPage() {
               onClick={(e) => e.currentTarget.select()}
             />
             <button
-              className="btn secondary"
+              className="btn"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.15) 0%, rgba(74, 144, 226, 0.08) 100%)",
+                border: "1px solid rgba(74, 144, 226, 0.3)",
+                fontWeight: 500,
+              }}
               onClick={() => {
                 navigator.clipboard.writeText(plan.plan_url);
                 alert("Link copied!");
