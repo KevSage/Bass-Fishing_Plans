@@ -66,9 +66,9 @@ def validate_colors_for_lure(base_lure: str, colors: list[str]) -> list[str]:
                 f"(silver/gold/bronze/firetiger are hardbait-only)."
             )
 
-    # black/blue not allowed for jerkbaits/hardbaits in V1 (+ weightless soft jerkbait)
+    # black/blue not allowed for jerkbaits/hardbaits in V1 (+ soft jerkbait)
     if "black/blue" in colors:
-        if base_lure in HARDBAIT_LURES or base_lure in {"weightless soft jerkbait"}:
+        if base_lure in HARDBAIT_LURES or base_lure in {"soft jerkbait"}:
             errs.append("black/blue is not allowed for jerkbaits/hardbaits in V1.")
 
     # spinnerbait: color refers to skirt, so metallic labels are not valid "colors" here

@@ -57,7 +57,7 @@ export function Navigation() {
           {/* Logo */}
           <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
             <div style={{ fontWeight: 600, fontSize: "1.1em" }}>
-              Bass Fishing Plans
+              Bass Clarity
             </div>
           </Link>
 
