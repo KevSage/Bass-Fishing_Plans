@@ -9,8 +9,8 @@ from typing import Optional
 
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-FROM_EMAIL = os.getenv("EMAIL_FROM", "plans@bassfishingplans.com")
-WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassfishingplans.com")
+FROM_EMAIL = os.getenv("EMAIL_FROM", "plans@bassclarity.com")
+WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
 
 def send_preview_plan_email(
@@ -77,13 +77,13 @@ def send_preview_plan_email(
     
     <p style="font-size: 14px; color: #666; margin-top: 30px;">
         Tight lines!<br>
-        The Bass Fishing Plans Team
+        The Bass Clarity Team
     </p>
     
     <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
     
     <p style="font-size: 12px; color: #999;">
-        You received this email because you requested a fishing plan at BassFishingPlans.com.
+        You received this email because you requested a fishing plan at BassClarity.com.
     </p>
 </body>
 </html>
@@ -122,7 +122,7 @@ def send_welcome_email(to_email: str) -> None:
         print("WARNING: RESEND_API_KEY not set, skipping welcome email")
         return
     
-    subject = "Welcome to Bass Fishing Plans! 🎣"
+    subject = "Welcome to Bass Clarity! 🎣"
     
     html = f"""
 <!DOCTYPE html>
@@ -132,7 +132,7 @@ def send_welcome_email(to_email: str) -> None:
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h2 style="color: #2c5f2d;">Welcome to Bass Fishing Plans! 🎣</h2>
+    <h2 style="color: #2c5f2d;">Welcome to Bass Clarity! 🎣</h2>
     
     <p>Thanks for subscribing! You now have unlimited access to professional bass fishing plans.</p>
     
@@ -148,7 +148,7 @@ def send_welcome_email(to_email: str) -> None:
     <h3 style="color: #2c5f2d;">How to Generate Your First Plan:</h3>
     
     <ol>
-        <li>Go to <a href="{WEB_BASE_URL}">BassFishingPlans.com</a></li>
+        <li>Go to <a href="{WEB_BASE_URL}">BassClarity.com</a></li>
         <li>Enter your email (this one: {to_email})</li>
         <li>Select your lake on the map</li>
         <li>Get your complete fishing plan instantly</li>
@@ -162,7 +162,7 @@ def send_welcome_email(to_email: str) -> None:
     
     <p style="margin-top: 30px;">
         Tight lines,<br>
-        The Bass Fishing Plans Team
+        The Bass Clarity Team
     </p>
 </body>
 </html>

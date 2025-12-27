@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route, Link, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Navigation } from "./components/Navigation";
+// import { ScrollToTop } from "./components/ScrollToTop";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
 import { Subscribe } from "./pages/Subscribe";
@@ -63,6 +64,7 @@ function TopBar() {
 export default function App() {
   return (
     <>
+      {/* <ScrollToTop /> */}
       <Navigation />
       <Routes>
         <Route path="/" element={<Landing />} />

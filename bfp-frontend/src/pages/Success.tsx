@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser, SignedIn, SignedOut } from "@clerk/clerk-react";
 
 export function Success() {
   const { user } = useUser();
@@ -10,17 +10,37 @@ export function Success() {
     if (user?.primaryEmailAddress?.emailAddress) {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
-  }, [user?.primaryEmailAddress?.emailAddress]); // ✅ Only depends on specific property
+  }, [user?.primaryEmailAddress?.emailAddress]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div style={{ maxWidth: 800, width: "100%" }}>
         {/* Success Card */}
-        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-12 text-center">
+        <div className="card" style={{ padding: 48, textAlign: "center" }}>
           {/* Success Icon */}
-          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div
+            style={{
+              width: 64,
+              height: 64,
+              background: "rgba(34, 197, 94, 0.2)",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 24px",
+            }}
+          >
             <svg
-              className="w-8 h-8 text-green-400"
+              style={{ width: 32, height: 32, color: "#22c55e" }}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -35,91 +55,244 @@ export function Success() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-3xl font-semibold text-white mb-4">
-            Welcome to Bass Clarity
+          <h1
+            style={{
+              fontSize: "clamp(1.75rem, 5vw, 2rem)",
+              fontWeight: 600,
+              color: "#fff",
+              marginBottom: 16,
+            }}
+          >
+            Payment Successful!
           </h1>
 
-          {/* Subhead */}
-          <p className="text-xl text-gray-300 mb-8">
-            Your subscription is now active.
-          </p>
+          {/* If signed out - prompt to create account */}
+          <SignedOut>
+            <p
+              style={{
+                fontSize: "1.25rem",
+                color: "rgba(255,255,255,0.8)",
+                marginBottom: 32,
+              }}
+            >
+              Now create your account to access your subscription
+            </p>
 
-          {/* Details */}
-          <div className="bg-white/5 border border-white/10 rounded-lg p-6 mb-8 text-left">
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Account</span>
-                <span className="text-white font-medium">
-                  {email || "Loading..."}
-                </span>
-              </div>
-              <div className="border-t border-white/10"></div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Plan</span>
-                <span className="text-white font-medium">
-                  $15/month • Unlimited plans
-                </span>
-              </div>
-              <div className="border-t border-white/10"></div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Billing</span>
-                <span className="text-white font-medium">
-                  Monthly (auto-renews)
-                </span>
+            <div
+              style={{
+                background: "rgba(59, 130, 246, 0.1)",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+                borderRadius: 12,
+                padding: 24,
+                marginBottom: 32,
+                textAlign: "left",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: "1.125rem",
+                  fontWeight: 600,
+                  color: "#fff",
+                  marginBottom: 12,
+                }}
+              >
+                Next Step
+              </h2>
+              <p style={{ color: "rgba(255,255,255,0.8)", marginBottom: 16 }}>
+                Sign up with the same email you used for payment to activate
+                your membership.
+              </p>
+            </div>
+
+            <Link
+              to="/sign-up"
+              className="btn primary"
+              style={{ textDecoration: "none", display: "inline-block" }}
+            >
+              Create Account
+            </Link>
+
+            <div style={{ marginTop: 24 }}>
+              <p
+                style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.6)" }}
+              >
+                Already have an account?{" "}
+                <Link
+                  to="/sign-in"
+                  style={{ color: "#60a5fa", textDecoration: "none" }}
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </div>
+          </SignedOut>
+
+          {/* If signed in - show welcome */}
+          <SignedIn>
+            <p
+              style={{
+                fontSize: "1.25rem",
+                color: "rgba(255,255,255,0.8)",
+                marginBottom: 32,
+              }}
+            >
+              Your subscription is now active.
+            </p>
+
+            {/* Details */}
+            <div
+              className="card"
+              style={{ padding: 24, marginBottom: 32, textAlign: "left" }}
+            >
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ color: "rgba(255,255,255,0.6)" }}>
+                    Account
+                  </span>
+                  <span style={{ color: "#fff", fontWeight: 500 }}>
+                    {email || "Loading..."}
+                  </span>
+                </div>
+                <div
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+                ></div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ color: "rgba(255,255,255,0.6)" }}>Plan</span>
+                  <span style={{ color: "#fff", fontWeight: 500 }}>
+                    $15/month • Unlimited plans
+                  </span>
+                </div>
+                <div
+                  style={{ borderTop: "1px solid rgba(255,255,255,0.1)" }}
+                ></div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span style={{ color: "rgba(255,255,255,0.6)" }}>
+                    Billing
+                  </span>
+                  <span style={{ color: "#fff", fontWeight: 500 }}>
+                    Monthly (auto-renews)
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Receipt Notice */}
-          <p className="text-sm text-gray-400 mb-8">
-            A confirmation email with your receipt has been sent to{" "}
-            <span className="text-white">{email || "your email"}</span>
-          </p>
-
-          {/* Next Steps */}
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-6 mb-8 text-left">
-            <h2 className="text-lg font-semibold text-white mb-3">
-              Next Steps
-            </h2>
-            <ul className="space-y-2 text-gray-300">
-              <li className="flex items-start">
-                <span className="text-blue-400 mr-2">1.</span>
-                <span>Navigate to your Members dashboard</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-400 mr-2">2.</span>
-                <span>Select your lake and fishing date</span>
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-400 mr-2">3.</span>
-                <span>Generate your first lake-optimized strategy</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/members"
-              className="inline-flex items-center justify-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+            {/* Receipt Notice */}
+            <p
+              style={{
+                fontSize: "0.875rem",
+                color: "rgba(255,255,255,0.6)",
+                marginBottom: 32,
+              }}
             >
-              Go to Members Dashboard
-            </Link>
-            <Link
-              to="/account"
-              className="inline-flex items-center justify-center px-8 py-3 bg-white/5 hover:bg-white/10 text-white font-medium rounded-lg border border-white/10 transition-colors"
+              A confirmation email with your receipt has been sent to{" "}
+              <span style={{ color: "#fff" }}>{email || "your email"}</span>
+            </p>
+
+            {/* Next Steps */}
+            <div
+              style={{
+                background: "rgba(59, 130, 246, 0.1)",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+                borderRadius: 12,
+                padding: 24,
+                marginBottom: 32,
+                textAlign: "left",
+              }}
             >
-              View Account
-            </Link>
-          </div>
+              <h2
+                style={{
+                  fontSize: "1.125rem",
+                  fontWeight: 600,
+                  color: "#fff",
+                  marginBottom: 12,
+                }}
+              >
+                Next Steps
+              </h2>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  color: "rgba(255,255,255,0.8)",
+                }}
+              >
+                <li style={{ display: "flex", alignItems: "flex-start" }}>
+                  <span style={{ color: "#60a5fa", marginRight: 8 }}>1.</span>
+                  <span>Navigate to your Members dashboard</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start" }}>
+                  <span style={{ color: "#60a5fa", marginRight: 8 }}>2.</span>
+                  <span>Select your lake and fishing date</span>
+                </li>
+                <li style={{ display: "flex", alignItems: "flex-start" }}>
+                  <span style={{ color: "#60a5fa", marginRight: 8 }}>3.</span>
+                  <span>Generate your first lake-optimized strategy</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* CTA Buttons */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                marginBottom: 32,
+              }}
+            >
+              <Link
+                to="/members"
+                className="btn primary"
+                style={{ textDecoration: "none" }}
+              >
+                Go to Members Dashboard
+              </Link>
+              <Link
+                to="/account"
+                className="btn"
+                style={{ textDecoration: "none" }}
+              >
+                View Account
+              </Link>
+            </div>
+          </SignedIn>
 
           {/* Support Link */}
-          <div className="mt-8 pt-8 border-t border-white/10">
-            <p className="text-sm text-gray-400">
+          <div
+            style={{
+              paddingTop: 32,
+              borderTop: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.6)" }}>
               Questions or need help?{" "}
               <a
-                href="mailto:support@bassfishingplans.com"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                href="mailto:support@bassclarity.com"
+                style={{ color: "#60a5fa", textDecoration: "none" }}
               >
                 Contact support
               </a>
@@ -128,17 +301,19 @@ export function Success() {
         </div>
 
         {/* Additional Info */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            You can manage your subscription anytime from your{" "}
-            <Link
-              to="/account"
-              className="text-blue-400 hover:text-blue-300 transition-colors"
-            >
-              Account page
-            </Link>
-          </p>
-        </div>
+        <SignedIn>
+          <div style={{ marginTop: 24, textAlign: "center" }}>
+            <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }}>
+              You can manage your subscription anytime from your{" "}
+              <Link
+                to="/account"
+                style={{ color: "#60a5fa", textDecoration: "none" }}
+              >
+                Account page
+              </Link>
+            </p>
+          </div>
+        </SignedIn>
       </div>
     </div>
   );

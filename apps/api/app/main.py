@@ -1,6 +1,6 @@
 # apps/api/app/main.py
 """
-Bass Fishing Plans API - Complete Backend
+Bass Clarity API - Complete Backend
 Unified plan generation with LLM, rate limiting, emails, and downloads.
 """
 from __future__ import annotations
@@ -22,6 +22,7 @@ from pydantic import BaseModel, EmailStr
 from app.services.subscribers import SubscriberStore
 from app.services.rate_limits import RateLimitStore
 from app.services.plan_links import PlanLinkStore
+from app.services.plan_history import plan_history_store
 from app.services.weather import get_weather_snapshot
 from app.services.phase_logic import determine_phase
 from app.services.llm_plan_service import generate_llm_plan_with_retries
@@ -52,7 +53,7 @@ rate_limits = RateLimitStore()
 plan_links = PlanLinkStore()
 
 # FastAPI app
-app = FastAPI(title="Bass Fishing Plans API")
+app = FastAPI(title="Bass Clarity API")
 
 # CORS
 app.add_middleware(
@@ -64,7 +65,7 @@ app.add_middleware(
 )
 
 # Environment
-WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassfishingplans.com")
+WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
 
 # ========================================
@@ -221,6 +222,15 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     )
     
     plan_url = f"{WEB_BASE_URL}/plan/view/{token}"
+    
+    # 5b. Add to plan history
+    plan_history_store.add_plan(
+        user_email=email,
+        plan_link_id=token,
+        lake_name=body.location_name,
+        plan_type="member" if is_member else "preview",
+        conditions=plan["conditions"]
+    )
     
     # 6. Record request and send email (preview only)
     email_sent = False
@@ -441,6 +451,14 @@ def health_check():
 app.include_router(clerk_webhooks.router, tags=["clerk"])
 app.include_router(members.router, tags=["members"])
 
+# DEBUG: Print all registered routes
+print("\n" + "="*50)
+print("REGISTERED ROUTES:")
+for route in app.routes:
+    if hasattr(route, 'path') and hasattr(route, 'methods'):
+        print(f"  {list(route.methods)} {route.path}")
+print("="*50 + "\n")
+
 
 @app.get("/")
 def root():
@@ -448,7 +466,7 @@ def root():
     Root endpoint.
     """
     return {
-        "service": "Bass Fishing Plans API",
+        "service": "Bass Clarity API",
         "version": "2.0",
         "endpoints": {
             "generate_plan": "POST /plan/generate",

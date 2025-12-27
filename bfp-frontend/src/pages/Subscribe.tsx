@@ -21,7 +21,7 @@ export function Subscribe() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE}/api/stripe/checkout`, {
+      const response = await fetch(`${API_BASE}/billing/subscribe`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
