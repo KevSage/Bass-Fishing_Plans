@@ -189,7 +189,7 @@ def generate_mobile_dark_html(plan_data: Dict[str, Any]) -> str:
     </div>
     
     <div class="footer">
-        {"Member Plan" if is_member else "Preview Plan"} • BassFishingPlans.com
+        {"Member Plan" if is_member else "Preview Plan"} • BassClarity.com
     </div>
 </body>
 </html>
@@ -372,7 +372,7 @@ def generate_a4_printable_html(plan_data: Dict[str, Any]) -> str:
     </div>
     
     <div class="footer">
-        {"Member Plan" if is_member else "Preview Plan"} • BassFishingPlans.com • Tight Lines!
+        {"Member Plan" if is_member else "Preview Plan"} • BassClarity.com • Tight Lines!
     </div>
 </body>
 </html>
