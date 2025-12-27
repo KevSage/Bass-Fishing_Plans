@@ -83,7 +83,7 @@ export function Account() {
     };
 
     fetchSubscription();
-  }, [isLoaded, user, getToken]);
+  }, [isLoaded, user?.id, getToken]); // ✅ Only depends on user.id (stable)
 
   const handleManageSubscription = () => {
     // TODO: Integrate with Stripe Customer Portal

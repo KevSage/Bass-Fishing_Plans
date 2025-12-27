@@ -45,7 +45,7 @@ export function PreviewEnhanced() {
     if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
-  }, [isSignedIn, user]);
+  }, [isSignedIn, user?.primaryEmailAddress?.emailAddress]); // ✅ Only depends on specific property
 
   // Initialize map
   useEffect(() => {
