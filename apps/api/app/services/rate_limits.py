@@ -61,6 +61,11 @@ class RateLimitStore:
             - If allowed: (True, None)
             - If blocked: (False, seconds_remaining)
         """
+        # Bypass rate limits for testing emails
+        bypass_emails = os.getenv("RATE_LIMIT_BYPASS_EMAILS", "").lower().split(",")
+        if email.lower().strip() in bypass_emails:
+            return (True, None)
+        
         THIRTY_DAYS = 30 * 24 * 60 * 60  # 30 days in seconds
         
         with self._conn() as conn:
@@ -112,6 +117,11 @@ class RateLimitStore:
             - If allowed: (True, None)
             - If blocked: (False, seconds_remaining)
         """
+        # Bypass rate limits for testing emails
+        bypass_emails = os.getenv("RATE_LIMIT_BYPASS_EMAILS", "").lower().split(",")
+        if email.lower().strip() in bypass_emails:
+            return (True, None)
+        
         THREE_HOURS = 3 * 60 * 60  # 3 hours in seconds
         
         with self._conn() as conn:

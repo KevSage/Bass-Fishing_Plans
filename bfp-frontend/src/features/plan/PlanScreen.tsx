@@ -2,7 +2,13 @@
 // Complete plan display: consolidated weather, per-pattern gear/strategy, downloads at bottom
 
 import React, { useEffect, useState, useRef } from "react";
-import type { Plan, PlanGenerateResponse, Pattern } from "./types";
+import type {
+  Plan,
+  PlanGenerateResponse,
+  Pattern,
+  MemberPlan,
+  PreviewPlan,
+} from "./types";
 import { isMemberPlan } from "./types";
 import {
   ThermometerIcon,
@@ -15,12 +21,122 @@ import {
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
+// Famous/large bass fishing lakes - zoom out more to show context
+const LARGE_LAKES = new Set([
+  "okeechobee",
+  "fork",
+  "lanier",
+  "guntersville",
+  "champlain",
+  "eufaula",
+  "chickamauga",
+  "pickwick",
+  "kentucky",
+  "barkley",
+  "martin",
+  "hartwell",
+  "clarks hill",
+  "thurmond",
+  "sam rayburn",
+  "toledo bend",
+  "texoma",
+  "amistad",
+  "falcon",
+  "conroe",
+  "livingston",
+  "buchanan",
+  "travis",
+  "havasu",
+  "mead",
+  "powell",
+  "shasta",
+  "oroville",
+  "berryessa",
+  "folsom",
+  "detroit",
+  "dworshak",
+  "shelbyville",
+  "cumberland",
+  "percy priest",
+  "wilson",
+  "nickajack",
+  "watts bar",
+  "cherokee",
+  "douglas",
+  "fontana",
+  "chatuge",
+  "allatoona",
+  "west point",
+  "walter f george",
+  "seminole",
+  "tohopekaliga",
+  "kissimmee",
+  "istokpoga",
+  "rodman",
+  "santee cooper",
+  "murray",
+  "wylie",
+  "norman",
+  "texoma",
+  "grand",
+  "tenkiller",
+  "stockton",
+  "pomme de terre",
+  "truman",
+  "of the ozarks",
+  "table rock",
+  "bull shoals",
+  "norfork",
+  "greers ferry",
+  "ouachita",
+  "dardanelle",
+  "degray",
+  "millwood",
+  "hamilton",
+  "palestine",
+  "fork",
+  "tawakoni",
+  "athens",
+  "somerville",
+  "waco",
+  "belton",
+  "stillhouse hollow",
+  "canyon",
+  "grapevine",
+  "lewisville",
+  "ray roberts",
+  "lavon",
+  "cedar creek",
+  "limestone",
+]);
+
+// Determine zoom level based on lake name
+function getLakeZoom(lakeName: string): number {
+  const normalized = lakeName
+    .toLowerCase()
+    .replace(/^lake\s+/i, "") // Remove "Lake" prefix
+    .replace(/\s+reservoir$/i, ""); // Remove "Reservoir" suffix
+
+  // Check if it's a known large lake
+  for (const largeLake of LARGE_LAKES) {
+    if (normalized.includes(largeLake)) {
+      return 11; // Zoom in for large/famous lakes (show lake clearly)
+    }
+  }
+
+  // Default: zoom in closer for smaller/unknown lakes
+  return 13; // Close zoom for small lakes (show detail)
+}
+
 export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   const { plan, is_member } = response;
   const conditions = plan.conditions;
   const [locationCity, setLocationCity] = useState<string>("");
   const [locationState, setLocationState] = useState<string>("");
   const hasGeocodedRef = useRef(false);
+
+  // Calculate zoom level for this lake
+  const lakeZoom = getLakeZoom(conditions.location_name);
 
   // Reverse geocode to get city + state - only once
   useEffect(() => {
@@ -75,62 +191,102 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
           background:
             "linear-gradient(145deg, rgba(74, 144, 226, 0.04) 0%, rgba(10, 10, 10, 0.4) 100%)",
           border: "1px solid rgba(74, 144, 226, 0.12)",
+          overflow: "hidden",
         }}
       >
-        {/* Date - Prominent with blue accent */}
+        {/* Lake Background Header with Satellite Image */}
         <div
           style={{
-            marginBottom: 12,
-            fontSize: "0.85rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: "#4A90E2",
-            fontWeight: 600,
-          }}
-        >
-          {conditions.trip_date}
-        </div>
-
-        {/* Location - Large with blue pin icon */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
+            position: "relative",
             marginBottom: 24,
-            paddingBottom: 24,
-            borderBottom: "1px solid rgba(74, 144, 226, 0.15)",
+            borderRadius: "12px 12px 0 0",
+            overflow: "hidden",
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.2) 0%, rgba(10, 10, 10, 0.8) 100%)",
           }}
         >
-          <div style={{ color: "#4A90E2" }}>
-            <MapPinIcon size={28} />
-          </div>
-          <div>
-            <h2
-              className="h2"
+          {/* Mapbox Static Satellite Image */}
+          {MAPBOX_TOKEN && (
+            <div
               style={{
-                margin: 0,
-                fontSize: "1.85em",
-                fontWeight: 700,
-                color: "rgba(255, 255, 255, 0.95)",
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${conditions.longitude},${conditions.latitude},${lakeZoom},0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false)`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: "brightness(0.95) saturate(1.4) contrast(1.15)",
               }}
-            >
-              {conditions.location_name}
-            </h2>
-            {(locationCity || locationState) && (
-              <div
+            />
+          )}
+
+          {/* Lighter gradient overlay for vibrant colors */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.5) 100%)",
+            }}
+          />
+
+          {/* Date - Prominent with blue accent */}
+          <div
+            style={{
+              position: "relative",
+              padding: "20px 20px 0",
+              marginBottom: 12,
+              fontSize: "0.85rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "#4A90E2",
+              fontWeight: 600,
+            }}
+          >
+            {conditions.trip_date}
+          </div>
+
+          {/* Location - Large with blue pin icon */}
+          <div
+            style={{
+              position: "relative",
+              padding: "0 20px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <div style={{ color: "#4A90E2" }}>
+              <MapPinIcon size={28} />
+            </div>
+            <div>
+              <h2
+                className="h2"
                 style={{
-                  fontSize: "1.05em",
-                  opacity: 0.7,
-                  marginTop: 4,
-                  color: "rgba(255, 255, 255, 0.75)",
+                  margin: 0,
+                  fontSize: "1.85em",
+                  fontWeight: 700,
+                  color: "#fff",
+                  textShadow: "0 2px 8px rgba(0,0,0,0.5)",
                 }}
               >
-                {locationCity && locationState
-                  ? `${locationCity}, ${locationState}`
-                  : locationCity || locationState}
-              </div>
-            )}
+                {conditions.location_name}
+              </h2>
+              {(locationCity || locationState) && (
+                <div
+                  style={{
+                    fontSize: "1.05em",
+                    opacity: 0.95,
+                    marginTop: 4,
+                    color: "#fff",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                  }}
+                >
+                  {locationCity && locationState
+                    ? `${locationCity}, ${locationState}`
+                    : locationCity || locationState}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -357,10 +513,10 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
       </div>
 
       {/* Pattern Display */}
-      {isMemberPlan(plan) ? (
-        <MemberPatternView plan={plan} />
+      {is_member ? (
+        <MemberPatternView plan={plan as MemberPlan} />
       ) : (
-        <PreviewPatternView plan={plan} />
+        <PreviewPatternView plan={plan as PreviewPlan} />
       )}
     </div>
   );

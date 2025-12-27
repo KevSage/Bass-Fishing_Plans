@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 
 export function Landing() {
   return (
-    <div style={{ background: "#000" }}>
-      {/* HERO - Clean, confident, simple */}
+    <div style={{ background: "#000", color: "#fff" }}>
+      {/* ============================================
+          HERO SECTION - CLARITY EVERY TIME, EVERYWHERE
+          ============================================ */}
       <section
         style={{
-          minHeight: "88vh",
+          minHeight: "92vh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -15,17 +17,17 @@ export function Landing() {
           overflow: "hidden",
         }}
       >
-        {/* Subtle gradient background */}
+        {/* Gradient background */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             background:
-              "radial-gradient(circle at 30% 20%, rgba(74, 144, 226, 0.06) 0%, transparent 70%)",
+              "radial-gradient(circle at 30% 20%, rgba(74, 144, 226, 0.08) 0%, transparent 70%)",
           }}
         />
 
-        {/* Bass image - subtle, professional */}
+        {/* Bass hero image - FULL VISIBILITY */}
         <div
           style={{
             position: "absolute",
@@ -33,18 +35,18 @@ export function Landing() {
             backgroundImage: "url(/images/hero_bass.jpeg)",
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.28,
-            filter: "brightness(0.65) saturate(1.2)",
+            opacity: 1,
+            filter: "brightness(0.4)",
           }}
         />
 
-        {/* Dark overlay for text clarity */}
+        {/* Dark overlay */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.8) 100%)",
+              "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.85) 100%)",
           }}
         />
 
@@ -54,82 +56,381 @@ export function Landing() {
             position: "relative",
             zIndex: 1,
             textAlign: "center",
-            maxWidth: 980,
+            maxWidth: 1020,
             padding: "0 24px",
           }}
         >
+          {/* Main headline */}
           <h1
             style={{
-              fontSize: "clamp(2.5rem, 7vw, 4.75rem)",
+              fontSize: "clamp(2.75rem, 7.5vw, 5rem)",
               fontWeight: 700,
-              lineHeight: 1.08,
+              lineHeight: 1.1,
               marginBottom: 32,
               letterSpacing: "-0.03em",
             }}
           >
-            Everyone has the data.
-            <br />
-            We actually do something with it.
+            Bass Clarity
           </h1>
+
+          {/* THE PROMISE */}
           <p
             style={{
-              fontSize: "clamp(1.2rem, 2.8vw, 1.45rem)",
-              lineHeight: 1.5,
-              opacity: 0.9,
-              marginBottom: 16,
-              maxWidth: 860,
-              margin: "0 auto 16px",
+              fontSize: "clamp(1.3rem, 3.2vw, 1.65rem)",
+              lineHeight: 1.4,
+              opacity: 0.95,
+              marginBottom: 28,
+              maxWidth: 980,
+              margin: "0 auto 28px",
+              fontWeight: 500,
+            }}
+          >
+            Clarity every time you fish, everywhere you fish.
+          </p>
+
+          {/* What that means */}
+          <p
+            style={{
+              fontSize: "clamp(1.15rem, 2.6vw, 1.35rem)",
+              lineHeight: 1.6,
+              opacity: 0.8,
+              marginBottom: 20,
+              fontWeight: 400,
+              maxWidth: 920,
+              margin: "0 auto 20px",
+            }}
+          >
+            Clear strategy. Clear execution. Clear reasoning. Know what to
+            throw, how to fish it, and why it works—for any lake, any
+            conditions, any season.
+          </p>
+
+          {/* Stats bar */}
+          <p
+            style={{
+              fontSize: "clamp(1rem, 2.2vw, 1.15rem)",
+              opacity: 0.65,
+              marginBottom: 52,
               fontWeight: 400,
             }}
           >
-            Bass Fishing Plans runs a synthesis engine that calculates a
-            lake-optimized strategy from current conditions, seasonal bass
-            behavior, and regional spawn timing.
+            1000+ lakes • All 50 states • Every season
           </p>
-          <p
-            style={{
-              fontSize: "clamp(1.1rem, 2.5vw, 1.3rem)",
-              lineHeight: 1.5,
-              opacity: 0.75,
-              marginBottom: 48,
-              fontWeight: 400,
-            }}
-          >
-            Not a pattern library. Not generic AI. Not yesterday's catches.
-            <br />A calculation engine for your water today.
-          </p>
+
+          {/* CTA */}
           <Link
             className="btn primary"
             to="/preview"
             style={{
-              fontSize: "1.15rem",
-              padding: "20px 56px",
-              background: "#4A90E2",
-              borderRadius: 14,
+              fontSize: "1.2rem",
+              padding: "22px 60px",
+              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              borderRadius: 16,
               fontWeight: 600,
               display: "inline-block",
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
+              transition: "all 0.3s ease",
             }}
           >
-            Try one free
+            Get clarity for your next trip
           </Link>
           <p
             style={{
               marginTop: 20,
               fontSize: "1rem",
-              opacity: 0.55,
+              opacity: 0.5,
               fontWeight: 400,
             }}
           >
-            No signup required
+            No credit card required
           </p>
         </div>
       </section>
 
-      {/* HOW THE ENGINE WORKS - Show the depth */}
+      {/* ============================================
+          FROM CONFUSION TO CLARITY
+          ============================================ */}
+      <section
+        style={{
+          padding: "140px 24px",
+          background: "#000",
+        }}
+      >
+        <div className="container" style={{ maxWidth: 1100 }}>
+          <h2
+            style={{
+              fontSize: "clamp(2.25rem, 5.5vw, 3.5rem)",
+              fontWeight: 700,
+              textAlign: "center",
+              marginBottom: 32,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.2,
+            }}
+          >
+            From Confusion to Clarity
+          </h2>
+
+          <p
+            style={{
+              fontSize: "clamp(1.15rem, 2.5vw, 1.35rem)",
+              textAlign: "center",
+              opacity: 0.8,
+              marginBottom: 80,
+              maxWidth: 860,
+              margin: "0 auto 80px",
+              lineHeight: 1.6,
+            }}
+          >
+            Most apps dump data and leave you guessing. Bass Clarity cuts
+            through the noise and delivers clear answers.
+          </p>
+
+          {/* Two column comparison */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: 48,
+              marginBottom: 80,
+            }}
+          >
+            {/* The Confusion */}
+            <div
+              style={{
+                padding: "48px 40px",
+                background: "rgba(255,255,255,0.02)",
+                borderRadius: 20,
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "1.4rem",
+                  fontWeight: 600,
+                  marginBottom: 28,
+                  color: "#888",
+                }}
+              >
+                The Confusion
+              </h3>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  fontSize: "1.1rem",
+                  lineHeight: 2.2,
+                  opacity: 0.6,
+                }}
+              >
+                <li>→ Weather charts and data dumps</li>
+                <li>→ Generic lure lists</li>
+                <li>→ "Figure it out yourself"</li>
+                <li>→ Overwhelming choices</li>
+                <li>→ No clear direction</li>
+              </ul>
+            </div>
+
+            {/* The Clarity */}
+            <div
+              style={{
+                padding: "48px 40px",
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%)",
+                borderRadius: 20,
+                border: "1px solid rgba(74, 144, 226, 0.2)",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "1.4rem",
+                  fontWeight: 600,
+                  marginBottom: 28,
+                  color: "#4A90E2",
+                }}
+              >
+                The Clarity
+              </h3>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  fontSize: "1.1rem",
+                  lineHeight: 2.2,
+                  opacity: 0.9,
+                }}
+              >
+                <li>✓ Clear strategy built FROM data</li>
+                <li>✓ Specific lures matched to conditions</li>
+                <li>✓ Exactly what to throw and where</li>
+                <li>✓ Two focused approaches</li>
+                <li>✓ Clear direction, confident execution</li>
+              </ul>
+            </div>
+          </div>
+
+          <p
+            style={{
+              fontSize: "clamp(1.2rem, 2.8vw, 1.45rem)",
+              textAlign: "center",
+              opacity: 0.75,
+              fontStyle: "italic",
+              lineHeight: 1.6,
+            }}
+          >
+            Cut through the noise. Fish with clarity.
+          </p>
+        </div>
+      </section>
+
+      {/* ============================================
+          MOBILE PHONE MOCKUP - See The Clarity
+          ============================================ */}
       <section
         style={{
           padding: "140px 24px",
           background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
+        }}
+      >
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <h2
+            style={{
+              fontSize: "clamp(2rem, 5vw, 3rem)",
+              fontWeight: 700,
+              textAlign: "center",
+              marginBottom: 24,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            See the Clarity
+          </h2>
+
+          <p
+            style={{
+              fontSize: "1.2rem",
+              textAlign: "center",
+              opacity: 0.7,
+              marginBottom: 80,
+              maxWidth: 720,
+              margin: "0 auto 80px",
+              lineHeight: 1.6,
+            }}
+          >
+            Complete strategic approach, ready to execute. Everything connects.
+          </p>
+
+          {/* iPhone Mockup Placeholder */}
+          <div
+            style={{
+              maxWidth: 400,
+              margin: "0 auto",
+              padding: "60px 40px",
+              background: "rgba(255,255,255,0.03)",
+              borderRadius: 24,
+              border: "2px dashed rgba(74, 144, 226, 0.3)",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "4rem",
+                marginBottom: 24,
+                opacity: 0.3,
+              }}
+            >
+              📱
+            </div>
+            <p
+              style={{
+                fontSize: "1.1rem",
+                opacity: 0.6,
+                marginBottom: 12,
+              }}
+            >
+              iPhone Mockup Placeholder
+            </p>
+            <p
+              style={{
+                fontSize: "0.95rem",
+                opacity: 0.4,
+                lineHeight: 1.6,
+              }}
+            >
+              TODO: Replace with scrolling plan screenshot showing:
+              <br />• Weather section
+              <br />• Pattern 1 + 2
+              <br />• Lure-specific retrieves
+              <br />• Download buttons
+            </p>
+          </div>
+
+          <div
+            style={{
+              marginTop: 80,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 32,
+            }}
+          >
+            {[
+              {
+                title: "Everything Connects",
+                desc: "Pattern 2 complements Pattern 1. Gear matches technique. Strategic coherence.",
+              },
+              {
+                title: "Lure-Specific Retrieves",
+                desc: "Multiple ways to work each bait, matched to conditions and targets.",
+              },
+              {
+                title: "Clear Reasoning",
+                desc: "Understand why this approach works for these conditions.",
+              },
+              {
+                title: "Mobile Optimized",
+                desc: "Downloadable PDFs readable in direct sunlight.",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "28px 32px",
+                  background: "rgba(255,255,255,0.02)",
+                  borderRadius: 14,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  textAlign: "center",
+                }}
+              >
+                <h4
+                  style={{
+                    fontSize: "1.15rem",
+                    fontWeight: 600,
+                    marginBottom: 10,
+                    color: "#4A90E2",
+                  }}
+                >
+                  {item.title}
+                </h4>
+                <p
+                  style={{
+                    fontSize: "1rem",
+                    opacity: 0.7,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================
+          EVERYWHERE YOU FISH - 1000 Lakes
+          ============================================ */}
+      <section
+        style={{
+          padding: "140px 24px",
+          background: "#000",
         }}
       >
         <div className="container" style={{ maxWidth: 1000 }}>
@@ -138,245 +439,128 @@ export function Landing() {
               fontSize: "clamp(2rem, 5vw, 3rem)",
               fontWeight: 700,
               textAlign: "center",
-              marginBottom: 80,
+              marginBottom: 24,
               letterSpacing: "-0.02em",
             }}
           >
-            How the engine works
+            Clarity Everywhere You Fish
           </h2>
-
-          {/* Steps */}
-          <div style={{ display: "grid", gap: 60 }}>
-            {/* Step 1 */}
-            <div
-              style={{
-                padding: "40px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  color: "#4A90E2",
-                  marginBottom: 16,
-                  fontWeight: 600,
-                }}
-              >
-                Step 1: Data Collection
-              </div>
-              <div
-                style={{ fontSize: "1.15rem", lineHeight: 1.8, opacity: 0.85 }}
-              >
-                <p style={{ marginBottom: 12 }}>
-                  <strong>Lake GPS coordinates</strong> → Weather API
-                </p>
-                <p style={{ marginBottom: 12 }}>
-                  <strong>Current date/time</strong> → Phase calculation
-                </p>
-                <p>
-                  <strong>Latitude</strong> → Regional spawn timing (FL bass ≠
-                  MI bass)
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div
-              style={{
-                padding: "40px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  color: "#4A90E2",
-                  marginBottom: 16,
-                  fontWeight: 600,
-                }}
-              >
-                Step 2: Engine Processing
-              </div>
-              <div
-                style={{ fontSize: "1.15rem", lineHeight: 1.8, opacity: 0.85 }}
-              >
-                <p style={{ marginBottom: 12 }}>
-                  ✓ Presentation family selection (based on phase + conditions)
-                </p>
-                <p style={{ marginBottom: 12 }}>
-                  ✓ Lure matching (from canonical buckets)
-                </p>
-                <p style={{ marginBottom: 12 }}>
-                  ✓ Retrieve pattern scoring (130+ options, weather-aware)
-                </p>
-                <p style={{ marginBottom: 12 }}>
-                  ✓ Target evaluation (50+ definitions, matched to positioning)
-                </p>
-                <p style={{ marginBottom: 12 }}>
-                  ✓ Soft plastic selection (contextual to conditions)
-                </p>
-                <p style={{ marginBottom: 12 }}>
-                  ✓ Color validation (clarity + light penetration)
-                </p>
-                <p>✓ Gear matching (rod/reel/line, deterministic)</p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div
-              style={{
-                padding: "40px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  color: "#4A90E2",
-                  marginBottom: 16,
-                  fontWeight: 600,
-                }}
-              >
-                Step 3: Dual Approach Generation
-              </div>
-              <div
-                style={{ fontSize: "1.15rem", lineHeight: 1.8, opacity: 0.85 }}
-              >
-                <p style={{ marginBottom: 12 }}>
-                  <strong>Primary approach</strong> → Highest-scoring complete
-                  strategy
-                </p>
-                <p>
-                  <strong>Counter approach</strong> → Contrasting presentation
-                  for different behavior
-                </p>
-              </div>
-            </div>
-
-            {/* Step 4 */}
-            <div
-              style={{
-                padding: "40px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  color: "#4A90E2",
-                  marginBottom: 16,
-                  fontWeight: 600,
-                }}
-              >
-                Step 4: Output Synthesis
-              </div>
-              <div
-                style={{ fontSize: "1.15rem", lineHeight: 1.8, opacity: 0.85 }}
-              >
-                <p style={{ marginBottom: 12 }}>
-                  <strong>Execution guide</strong> → What to throw, where to
-                  fish it, how to work it
-                </p>
-                <p style={{ marginBottom: 12 }}>
-                  <strong>Reasoning</strong> → Why it works, how it connects to
-                  bass behavior
-                </p>
-                <p>
-                  <strong>Day progression</strong> → What to watch for as
-                  conditions shift
-                </p>
-              </div>
-            </div>
-          </div>
 
           <p
             style={{
-              marginTop: 80,
+              fontSize: "1.2rem",
               textAlign: "center",
-              fontSize: "1.35rem",
-              fontWeight: 600,
-              opacity: 0.95,
+              opacity: 0.7,
+              marginBottom: 80,
+              maxWidth: 780,
+              margin: "0 auto 80px",
+              lineHeight: 1.6,
             }}
           >
-            This isn't a pattern library. It's a calculation engine.
-            <br />
-            <span
-              style={{ fontSize: "1.15rem", fontWeight: 400, opacity: 0.7 }}
-            >
-              Every plan is custom-built for your lake, your conditions, today.
-            </span>
+            1000+ lakes across all 50 states. Same clarity, different water.
           </p>
-        </div>
-      </section>
 
-      {/* THE REALITY - Empathy section */}
-      <section
-        style={{
-          padding: "140px 24px",
-          background: "#000",
-        }}
-      >
-        <div className="container" style={{ maxWidth: 960 }}>
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 5vw, 3.25rem)",
-              fontWeight: 700,
-              lineHeight: 1.25,
-              marginBottom: 48,
-              letterSpacing: "-0.03em",
-            }}
-          >
-            You already know how to fish.
-          </h2>
+          {/* 1000 Lakes Feature */}
           <div
             style={{
-              fontSize: "1.3rem",
-              lineHeight: 1.7,
-              opacity: 0.88,
-              maxWidth: 840,
+              background:
+                "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%)",
+              border: "1px solid rgba(74, 144, 226, 0.2)",
+              borderRadius: 20,
+              padding: "56px 48px",
+              marginBottom: 60,
             }}
           >
-            <p style={{ marginBottom: 32 }}>
-              You've checked the weather. You've watched the forecast shift.
-              You've rigged rods, tied backups, and thought through how the day
-              should set up.
-            </p>
-            <p style={{ marginBottom: 32 }}>That's not the hard part.</p>
-            <p
+            <div
               style={{
-                fontSize: "1.45rem",
-                fontWeight: 600,
-                opacity: 1,
-                paddingLeft: 32,
-                borderLeft: "4px solid #4A90E2",
-                lineHeight: 1.6,
+                fontSize: "clamp(3rem, 6vw, 4.5rem)",
+                fontWeight: 700,
+                textAlign: "center",
+                marginBottom: 24,
+                background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
               }}
             >
-              The hard part is showing up to a big body of water with too many
-              reasonable options—and deciding which ones deserve your time right
-              now.
+              1000+ Lakes
+            </div>
+            <p
+              style={{
+                fontSize: "1.25rem",
+                textAlign: "center",
+                opacity: 0.9,
+                lineHeight: 1.7,
+              }}
+            >
+              From Lake Fork to Lake Champlain. From the Delta to Lake Lanier.
+              Bass Clarity delivers consistent clarity everywhere you fish.
             </p>
+          </div>
+
+          {/* Coverage Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: 32,
+            }}
+          >
+            {[
+              {
+                title: "All 50 States",
+                desc: "Complete coverage coast to coast. Your home lake and your tournament lake.",
+              },
+              {
+                title: "Every Season",
+                desc: "Strategy adapts to seasonal patterns. What works NOW, not year-round generics.",
+              },
+              {
+                title: "Any Conditions",
+                desc: "Sunny, cloudy, windy, calm. Strategy built for YOUR conditions today.",
+              },
+              {
+                title: "Consistent Clarity",
+                desc: "Same strategic approach everywhere. New lake? Same clarity.",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "32px 28px",
+                  background: "rgba(255,255,255,0.02)",
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "1.25rem",
+                    fontWeight: 600,
+                    marginBottom: 12,
+                    color: "#4A90E2",
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p
+                  style={{
+                    fontSize: "1.05rem",
+                    lineHeight: 1.7,
+                    opacity: 0.8,
+                  }}
+                >
+                  {item.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* WHAT CHANGES - The unspoken benefits */}
+      {/* ============================================
+          CLARITY WHEN YOU NEED IT
+          ============================================ */}
       <section
         style={{
           padding: "140px 24px",
@@ -393,64 +577,182 @@ export function Landing() {
               letterSpacing: "-0.02em",
             }}
           >
-            What changes when you have a plan
+            Clarity When You Need It Most
           </h2>
+
           <p
             style={{
-              textAlign: "center",
               fontSize: "1.2rem",
+              textAlign: "center",
               opacity: 0.7,
               marginBottom: 80,
-              maxWidth: 700,
+              maxWidth: 780,
               margin: "0 auto 80px",
+              lineHeight: 1.6,
             }}
           >
-            Beyond catching more bass, here's what's different:
+            Not just before you launch. Every time you need clarity.
           </p>
 
-          <div style={{ display: "grid", gap: 48 }}>
+          <div
+            style={{
+              display: "grid",
+              gap: 40,
+            }}
+          >
             {[
               {
-                title: "You get an anchor",
-                desc: "Bring 2 rods or 10—doesn't matter. You know at least two are dialed in for your water today. The plan gives you confidence, not restriction.",
+                title: "Before You Launch",
+                desc: "Know what to bring, how to fish it, why it works. Start your day with clarity.",
               },
               {
-                title: "You stop guessing at colors",
-                desc: "The plan tells you which colors work—and why. Not because 'it worked last week.' Because conditions say so.",
+                title: "3 Hours In, No Bites",
+                desc: "Did conditions change? Generate a new plan right from the water. Check if wind, clouds, or temperature shift warrant a different approach.",
               },
               {
-                title: "You commit instead of wandering",
-                desc: "You stop fishing every spot halfway. The plan tells you where bass SHOULD be positioned—so you give it a real shot.",
+                title: "New Lake, Tournament Day",
+                desc: "Never fished it before? Get instant clarity. Strategic approach built specifically for this water.",
               },
               {
-                title: "You get lure-specific retrieve guidance",
-                desc: "Not 'work it slow.' Not generic advice. Actual cadence from 130+ retrieve patterns: 'Drag 2-3 feet, pause 3-5 seconds on secondary points—most bites come when the bait settles into the contour.' Matched to the lure, the conditions, and the presentation.",
-              },
-              {
-                title: "You target the right depth",
-                desc: "No more fishing every column hoping to connect. The plan gives you the range that makes sense today.",
-              },
-              {
-                title: "You adapt with intent",
-                desc: "Weather shifts? Bite slows down? Day progression guidance keeps you deliberate, not desperate.",
+                title: "Conditions Shift Mid-Day",
+                desc: "Wind picks up. Clouds roll in. Water gets choppy. Adapt your strategy when it matters.",
               },
             ].map((item, i) => (
               <div
                 key={i}
                 style={{
-                  padding: "32px 0",
-                  borderBottom:
-                    i < 5 ? "1px solid rgba(255,255,255,0.08)" : "none",
+                  padding: "40px 44px",
+                  background:
+                    i === 1
+                      ? "linear-gradient(135deg, rgba(74, 144, 226, 0.12) 0%, rgba(74, 144, 226, 0.04) 100%)"
+                      : "rgba(255,255,255,0.02)",
+                  borderRadius: 16,
+                  border:
+                    i === 1
+                      ? "1px solid rgba(74, 144, 226, 0.25)"
+                      : "1px solid rgba(255,255,255,0.08)",
                 }}
               >
                 <h3
                   style={{
-                    fontSize: "1.4rem",
+                    fontSize: "1.35rem",
+                    fontWeight: 600,
+                    marginBottom: 14,
+                    color: "#4A90E2",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p
+                  style={{
+                    fontSize: "1.1rem",
+                    lineHeight: 1.7,
+                    opacity: 0.85,
+                  }}
+                >
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p
+            style={{
+              marginTop: 64,
+              textAlign: "center",
+              fontSize: "1.3rem",
+              opacity: 0.75,
+              fontStyle: "italic",
+            }}
+          >
+            Clarity every time you need it. Not just once.
+          </p>
+        </div>
+      </section>
+
+      {/* ============================================
+          HOW IT WORKS - What Makes It Clear
+          ============================================ */}
+      <section
+        style={{
+          padding: "140px 24px",
+          background: "#000",
+        }}
+      >
+        <div className="container" style={{ maxWidth: 1000 }}>
+          <h2
+            style={{
+              fontSize: "clamp(2rem, 5vw, 3rem)",
+              fontWeight: 700,
+              textAlign: "center",
+              marginBottom: 24,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            What Makes Bass Clarity Clear
+          </h2>
+
+          <p
+            style={{
+              fontSize: "1.2rem",
+              textAlign: "center",
+              opacity: 0.7,
+              marginBottom: 80,
+              maxWidth: 760,
+              margin: "0 auto 80px",
+              lineHeight: 1.6,
+            }}
+          >
+            Strategic coherence. Everything connects. Nothing contradicts.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gap: 36,
+            }}
+          >
+            {[
+              {
+                title: "Two Complementary Approaches",
+                desc: "Not scattered tips. Two focused strategies that work together. Everything connects—your second approach complements your first, your gear matches your technique, strategy is coherent from start to finish.",
+              },
+              {
+                title: "1000+ Lakes",
+                desc: "If it's not in our database, select your water from a map. Consistent clarity everywhere—your home lake, tournament lake, or that spot you've never fished.",
+              },
+              {
+                title: "Weather Analysis",
+                desc: "Not just data displayed—analysis of how weather affects the water below. Wind direction, cloud cover, temperature trends all factor into your strategy.",
+              },
+              {
+                title: "Lure-Specific Intelligence",
+                desc: "Lures matched to your conditions. Trailer recommendations based on forage profile. Multiple retrieves per lure depending on bass temperament and activity level.",
+              },
+              {
+                title: "Regional Seasonal Logic",
+                desc: "What works NOW for your phase and region. Late-fall Texas gets different tactics than late-fall Michigan. Our seasonal data accounts for regional variation—not one-size-fits-all calendar dates.",
+              },
+              {
+                title: "Targets + Day Progression",
+                desc: "Narrow your water to specific structure types. Understand how to work secondary points vs channel swings. Day progression logic—where to start, where to go next.",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "36px 40px",
+                  background: "rgba(255,255,255,0.02)",
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "1.3rem",
                     fontWeight: 600,
                     marginBottom: 12,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    // fontSize: "1.1rem",
                     color: "#4A90E2",
                   }}
                 >
@@ -458,7 +760,7 @@ export function Landing() {
                 </h3>
                 <p
                   style={{
-                    fontSize: "1.15rem",
+                    fontSize: "1.1rem",
                     lineHeight: 1.7,
                     opacity: 0.8,
                   }}
@@ -471,230 +773,260 @@ export function Landing() {
 
           <p
             style={{
-              marginTop: 80,
+              marginTop: 64,
               textAlign: "center",
               fontSize: "1.3rem",
-              fontStyle: "italic",
               opacity: 0.75,
+              fontStyle: "italic",
             }}
           >
-            Not easier fishing. Clearer fishing.
+            Not scattered tips. Systematic clarity.
           </p>
         </div>
       </section>
 
-      {/* EVERYTHING YOU NEED - The value */}
-      <section
-        style={{
-          padding: "140px 24px",
-          background: "#000",
-        }}
-      >
-        <div className="container" style={{ maxWidth: 960 }}>
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 5vw, 3rem)",
-              fontWeight: 700,
-              textAlign: "center",
-              marginBottom: 80,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Everything you need. Nothing you don't.
-          </h2>
-
-          <div
-            style={{
-              background: "rgba(74, 144, 226, 0.03)",
-              border: "1px solid rgba(74, 144, 226, 0.15)",
-              borderRadius: 16,
-              padding: "48px",
-            }}
-          >
-            <p
-              style={{
-                fontSize: "1.2rem",
-                lineHeight: 1.8,
-                opacity: 0.85,
-                marginBottom: 32,
-              }}
-            >
-              Behind every plan, the engine processes:
-            </p>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                fontSize: "1.1rem",
-                lineHeight: 2,
-                opacity: 0.8,
-              }}
-            >
-              <li>→ 130+ lure-specific retrieve patterns</li>
-              <li>→ 50+ target definitions</li>
-              <li>→ 7 presentation families</li>
-              <li>→ Regional spawn timing logic</li>
-              <li>→ Weather-aware tip scoring</li>
-              <li>→ Contextual soft plastic selection</li>
-              <li>→ Thousands of possible permutations</li>
-            </ul>
-
-            <div
-              style={{
-                marginTop: 48,
-                paddingTop: 32,
-                borderTop: "1px solid rgba(255,255,255,0.1)",
-              }}
-            >
-              <p
-                style={{
-                  fontSize: "1.2rem",
-                  lineHeight: 1.8,
-                  opacity: 0.85,
-                  marginBottom: 24,
-                }}
-              >
-                What you get:
-              </p>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  fontSize: "1.1rem",
-                  lineHeight: 2,
-                  opacity: 0.8,
-                }}
-              >
-                <li>✓ Primary approach</li>
-                <li>✓ Counter approach</li>
-                <li>✓ Complete execution guidance</li>
-                <li>✓ Explanation of why it works</li>
-                <li>✓ How it connects to bass behavior</li>
-              </ul>
-            </div>
-
-            <p
-              style={{
-                marginTop: 48,
-                fontSize: "1.25rem",
-                fontWeight: 600,
-                textAlign: "center",
-                opacity: 0.95,
-              }}
-            >
-              We calculate everything. You fish one clear plan.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* PRICING - Confident, not pushy */}
+      {/* ============================================
+          FOR SERIOUS ANGLERS
+          ============================================ */}
       <section
         style={{
           padding: "140px 24px",
           background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
-        <div
-          className="container"
-          style={{
-            maxWidth: 700,
-            textAlign: "center",
-          }}
-        >
+        <div className="container" style={{ maxWidth: 1000 }}>
           <h2
             style={{
-              fontSize: "clamp(3rem, 6vw, 4.5rem)",
+              fontSize: "clamp(2rem, 5vw, 3rem)",
               fontWeight: 700,
+              textAlign: "center",
               marginBottom: 24,
-              letterSpacing: "-0.03em",
+              letterSpacing: "-0.02em",
             }}
           >
-            $15/month
+            Clarity Under Pressure
           </h2>
+
           <p
             style={{
-              fontSize: "1.25rem",
-              lineHeight: 1.7,
-              opacity: 0.85,
-              marginBottom: 16,
-            }}
-          >
-            Unlimited plans. No limits on lakes, no caps on generations.
-          </p>
-          <p
-            style={{
-              fontSize: "1.1rem",
-              opacity: 0.6,
-              marginBottom: 48,
+              fontSize: "1.2rem",
+              textAlign: "center",
+              opacity: 0.7,
+              marginBottom: 80,
+              maxWidth: 820,
+              margin: "0 auto 80px",
               lineHeight: 1.6,
             }}
           >
-            Less than one fishing trip.
-            <br />
-            Less than one bag of Senkos.
-            <br />
-            Less than one wasted Saturday guessing.
+            Tournament day. New lake. Tough conditions. When you need clarity
+            most, Bass Clarity delivers.
           </p>
-          <Link
-            className="btn primary"
-            to="/subscribe"
+
+          <div
             style={{
-              fontSize: "1.15rem",
-              padding: "20px 56px",
-              background: "#4A90E2",
-              borderRadius: 14,
-              fontWeight: 600,
+              display: "grid",
+              gap: 40,
             }}
           >
-            Get started
-          </Link>
+            {[
+              {
+                title: "Pattern Discipline",
+                desc: "Not 20 random tips. Two calculated approaches that work together. Strategic discipline when it matters.",
+              },
+              {
+                title: "Tactical Execution",
+                desc: "Lure-specific retrieves applied to specific structure. How to work secondary points vs channel swings. Specific, not generic.",
+              },
+              {
+                title: "Strategic Coherence",
+                desc: "Everything connects. Your Pattern 2 doesn't contradict Pattern 1. Your gear fits your technique. Systematic clarity.",
+              },
+              {
+                title: "Behavioral Logic",
+                desc: "Targets based on where bass position in different phases. Not generic 'throw it everywhere' advice.",
+              },
+            ].map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  padding: "36px 40px",
+                  background: "rgba(255,255,255,0.02)",
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "1.3rem",
+                    fontWeight: 600,
+                    marginBottom: 12,
+                    color: "#4A90E2",
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p
+                  style={{
+                    fontSize: "1.1rem",
+                    lineHeight: 1.7,
+                    opacity: 0.8,
+                  }}
+                >
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p
+            style={{
+              marginTop: 64,
+              textAlign: "center",
+              fontSize: "1.3rem",
+              opacity: 0.75,
+              fontStyle: "italic",
+              lineHeight: 1.6,
+            }}
+          >
+            Clarity when the pressure's on. Strategic discipline. No BS.
+          </p>
         </div>
       </section>
 
-      {/* FINAL CTA - Simple, powerful */}
+      {/* ============================================
+          PRICING SECTION
+          ============================================ */}
       <section
         style={{
-          padding: "120px 24px 140px",
+          padding: "140px 24px",
           background: "#000",
         }}
       >
         <div
           className="container"
           style={{
-            maxWidth: 880,
+            maxWidth: 760,
             textAlign: "center",
           }}
         >
           <h2
             style={{
-              fontSize: "clamp(2.25rem, 5.5vw, 3.75rem)",
+              fontSize: "clamp(3.5rem, 7vw, 5rem)",
+              fontWeight: 700,
+              marginBottom: 28,
+              letterSpacing: "-0.03em",
+              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            $15/month
+          </h2>
+
+          <p
+            style={{
+              fontSize: "1.3rem",
+              lineHeight: 1.7,
+              opacity: 0.85,
+              marginBottom: 20,
+            }}
+          >
+            Clarity every time you fish, everywhere you fish
+          </p>
+
+          <p
+            style={{
+              fontSize: "1.1rem",
+              opacity: 0.6,
+              marginBottom: 52,
+              lineHeight: 1.8,
+            }}
+          >
+            Less than one fishing trip.
+            <br />
+            Less than a Jackhammer or a Vision 110.
+            <br />
+            Less than one wasted Saturday guessing.
+          </p>
+
+          <Link
+            className="btn primary"
+            to="/subscribe"
+            style={{
+              fontSize: "1.2rem",
+              padding: "22px 60px",
+              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              borderRadius: 16,
+              fontWeight: 600,
+              display: "inline-block",
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
+            }}
+          >
+            Get Clarity
+          </Link>
+
+          <p
+            style={{
+              marginTop: 32,
+              fontSize: "1rem",
+              opacity: 0.5,
+            }}
+          >
+            Cancel anytime
+          </p>
+        </div>
+      </section>
+
+      {/* ============================================
+          FINAL CTA SECTION
+          ============================================ */}
+      <section
+        style={{
+          padding: "120px 24px 160px",
+          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
+        }}
+      >
+        <div
+          className="container"
+          style={{
+            maxWidth: 900,
+            textAlign: "center",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "clamp(2.5rem, 6vw, 4rem)",
               fontWeight: 700,
               lineHeight: 1.2,
-              marginBottom: 48,
+              marginBottom: 52,
               letterSpacing: "-0.03em",
             }}
           >
-            Have clarity before you ever
+            Stop guessing.
             <br />
-            launch the boat.
+            Start fishing with clarity.
           </h2>
+
           <Link
             className="btn primary"
             to="/preview"
             style={{
-              fontSize: "1.15rem",
-              padding: "20px 56px",
-              background: "#4A90E2",
-              borderRadius: 14,
+              fontSize: "1.2rem",
+              padding: "22px 60px",
+              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              borderRadius: 16,
               fontWeight: 600,
+              display: "inline-block",
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
-            Try one free
+            Get clarity for your next trip
           </Link>
+
           <p
             style={{
-              marginTop: 20,
+              marginTop: 24,
               fontSize: "1rem",
               opacity: 0.5,
             }}
@@ -703,6 +1035,143 @@ export function Landing() {
           </p>
         </div>
       </section>
+
+      {/* ============================================
+          FOOTER
+          ============================================ */}
+      <footer
+        style={{
+          padding: "60px 24px",
+          background: "#0a0a0a",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        <div
+          className="container"
+          style={{
+            maxWidth: 1200,
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            gap: 48,
+          }}
+        >
+          {/* Brand */}
+          <div style={{ flex: "1 1 250px" }}>
+            <div
+              style={{
+                fontSize: "1.3rem",
+                fontWeight: 700,
+                marginBottom: 16,
+                color: "#4A90E2",
+              }}
+            >
+              Bass Clarity
+            </div>
+            <p style={{ opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
+              Clarity every time you fish, everywhere you fish.
+            </p>
+          </div>
+
+          {/* Links */}
+          <div style={{ flex: "1 1 150px" }}>
+            <h4
+              style={{
+                fontSize: "0.9rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: 20,
+                opacity: 0.5,
+              }}
+            >
+              Product
+            </h4>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                fontSize: "0.95rem",
+              }}
+            >
+              <Link
+                to="/preview"
+                style={{
+                  opacity: 0.7,
+                  transition: "opacity 0.2s",
+                }}
+              >
+                Try Free Sample
+              </Link>
+              <Link
+                to="/subscribe"
+                style={{
+                  opacity: 0.7,
+                  transition: "opacity 0.2s",
+                }}
+              >
+                Pricing
+              </Link>
+            </div>
+          </div>
+
+          {/* Support */}
+          <div style={{ flex: "1 1 150px" }}>
+            <h4
+              style={{
+                fontSize: "0.9rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: 20,
+                opacity: 0.5,
+              }}
+            >
+              Support
+            </h4>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                fontSize: "0.95rem",
+              }}
+            >
+              <Link
+                to="/about"
+                style={{
+                  opacity: 0.7,
+                  transition: "opacity 0.2s",
+                }}
+              >
+                About
+              </Link>
+              <a
+                href="mailto:support@bassclarity.com"
+                style={{
+                  opacity: 0.7,
+                  transition: "opacity 0.2s",
+                }}
+              >
+                Contact
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div
+          style={{
+            marginTop: 60,
+            paddingTop: 32,
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            textAlign: "center",
+            fontSize: "0.9rem",
+            opacity: 0.4,
+          }}
+        >
+          © 2025 Bass Clarity. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 }

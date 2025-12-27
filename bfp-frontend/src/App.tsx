@@ -16,8 +16,6 @@ import { Admin } from "./pages/Admin";
 import { Success } from "./pages/Success";
 import { Account } from "./pages/Account";
 import { NotFound } from "./pages/NotFound";
-// import "./styles.css";
-// import "./enhanced-styles.css";
 import "./complete-styles.css";
 
 import { PlanPage } from "./pages/PlanPage";
