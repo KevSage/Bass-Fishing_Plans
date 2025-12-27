@@ -126,7 +126,7 @@ LURE_TIP_BANK: Dict[str, List[Tip]] = {
         ("Bright/clear: slow down and let it soak longer near the target.", "cadence", ("bright", "clear")),
         ("Lower light: rotate targets faster until you find the stretch that reloads.", "positioning", ("low_light",)),
     ],
-    "weightless soft jerkbait": [
+    "soft jerkbait": [
         ("Use twitch-twitch-glide; let the glide do the convincing.", "cadence", ("any",)),
         ("Work it over grass lanes, points, and shallow edges where fish roam.", "targets", ("grass", "points", "shallow", "any")),
         ("Clear/bright: longer casts and subtler twitches; keep it tracking true.", "gear", ("clear", "bright")),

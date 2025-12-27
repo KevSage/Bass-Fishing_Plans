@@ -49,7 +49,7 @@ LURE_POOL = [
     # Hovering / Mid-Column Finesse
     "neko rig",
     "wacky rig",
-    "weightless soft jerkbait",
+    "soft jerkbait",
     "ned rig",
     "dropshot",
 
@@ -146,7 +146,7 @@ LURE_ZONE_SCHEMA = {
     # Zones: primary, secondary optional, accent optional (tail/belly)
     # Metallic: ABSOLUTELY FORBIDDEN
     
-    "weightless soft jerkbait": {"primary": True, "secondary": False, "accent": False},
+    "soft jerkbait": {"primary": True, "secondary": False, "accent": False},
     "paddle tail swimbait": {"primary": True, "secondary": False, "accent": False},
     
     # ========================================
@@ -188,7 +188,7 @@ RIG_ICON_LURES = {
 
 # Lures that are SOFT PLASTIC BODIES (standalone plastic, not rigs)
 SOFT_PLASTIC_BODY_LURES = {
-    "weightless soft jerkbait",
+    "soft jerkbait",
     "paddle tail swimbait",
 }
 
@@ -269,7 +269,7 @@ BOTTOM_CONTACT_PLASTICS = [
     "creature bait",
     "craw",
     "ribbon tail worm",
-    "straight tail worm",
+    "stickbait",
     "finesse worm",
     "lizard",
 ]
@@ -291,16 +291,16 @@ JIG_TRAILERS = [
 TERMINAL_PLASTIC_MAP = {
     "texas rig": {
         "creature bait", "craw", "ribbon tail worm",
-        "straight tail worm", "finesse worm", "lizard",
+        "stickbait", "finesse worm", "lizard",
     },
     "carolina rig": {
         "creature bait", "craw", "ribbon tail worm",
-        "straight tail worm", "finesse worm", "lizard",
+        "stickbait", "finesse worm", "lizard",
     },
-    "shaky head": {"straight tail worm", "finesse worm"},
-    "ned rig": {"finesse worm", "straight tail worm"},
-    "neko rig": {"straight tail worm", "finesse worm"},
-    "wacky rig": {"straight tail worm", "finesse worm"},
+    "shaky head": {"stickbait", "finesse worm"},
+    "ned rig": {"finesse worm", "stickbait"},
+    "neko rig": {"stickbait", "finesse worm"},
+    "wacky rig": {"stickbait", "finesse worm"},
     "dropshot": {"finesse worm", "small minnow"},  # STRICT
 }
 
@@ -336,7 +336,7 @@ TRAILER_REQUIREMENT = {
     "paddle tail swimbait": "none",
     "jerkbait": "none",
     "blade bait": "none",
-    "weightless soft jerkbait": "none",
+    "soft jerkbait": "none",
     "walking bait": "none",
     "whopper plopper": "none",
     "wake bait": "none",
@@ -401,7 +401,7 @@ LURE_TO_PRESENTATION = {
     # Hovering / Mid-Column Finesse
     "neko rig": "Hovering / Mid-Column Finesse",
     "wacky rig": "Hovering / Mid-Column Finesse",
-    "weightless soft jerkbait": "Hovering / Mid-Column Finesse",
+    "soft jerkbait": "Hovering / Mid-Column Finesse",
     "ned rig": "Hovering / Mid-Column Finesse",
     "dropshot": "Hovering / Mid-Column Finesse",
 

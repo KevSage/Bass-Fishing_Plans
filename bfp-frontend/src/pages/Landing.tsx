@@ -36,7 +36,7 @@ export function Landing() {
             backgroundSize: "cover",
             backgroundPosition: "center",
             opacity: 1,
-            filter: "brightness(0.4)",
+            filter: "brightness(0.9)",
           }}
         />
 

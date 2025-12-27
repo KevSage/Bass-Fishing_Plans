@@ -522,7 +522,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   );
 }
 
-function PreviewPatternView({
+const PreviewPatternView = React.memo(function PreviewPatternView({
   plan,
 }: {
   plan: Extract<Plan, { base_lure: string }>;
@@ -856,9 +856,9 @@ function PreviewPatternView({
       )}
     </div>
   );
-}
+});
 
-function MemberPatternView({
+const MemberPatternView = React.memo(function MemberPatternView({
   plan,
 }: {
   plan: Extract<Plan, { primary: any }>;
@@ -900,10 +900,10 @@ function MemberPatternView({
       )}
     </>
   );
-}
+});
 
 // Reusable pattern card component - PREMIUM REDESIGN
-function PatternCard({
+const PatternCard = React.memo(function PatternCard({
   pattern,
   patternNumber,
   isPrimary,
@@ -1567,7 +1567,7 @@ function PatternCard({
       )}
     </div>
   );
-}
+});
 
 // Helper function to map color names to hex values
 function getColorHex(colorName: string): string {

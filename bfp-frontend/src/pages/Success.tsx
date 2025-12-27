@@ -36,7 +36,7 @@ export function Success() {
 
           {/* Headline */}
           <h1 className="text-3xl font-semibold text-white mb-4">
-            Welcome to Bass Fishing Plans
+            Welcome to Bass Clarity
           </h1>
 
           {/* Subhead */}
