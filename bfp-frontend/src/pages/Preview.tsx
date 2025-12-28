@@ -1,13 +1,14 @@
 // src/pages/Preview.tsx
-// Streamlined UX - modal on water click
+// Streamlined UX - modal on water click with loader integration
 
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth, useUser } from "@clerk/clerk-react";
-import { generatePlan, RateLimitError } from "@/lib/api";
+import { generatePlan } from "@/lib/api";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { LocationSearch } from "@/components/LocationSearch";
+import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -45,7 +46,7 @@ export function PreviewEnhanced() {
     if (isSignedIn && user?.primaryEmailAddress?.emailAddress) {
       setEmail(user.primaryEmailAddress.emailAddress);
     }
-  }, [isSignedIn, user?.primaryEmailAddress?.emailAddress]); // ✅ Only depends on specific property
+  }, [isSignedIn, user?.primaryEmailAddress?.emailAddress]);
 
   // Initialize map
   useEffect(() => {
@@ -134,6 +135,9 @@ export function PreviewEnhanced() {
     longitude: number;
     name: string;
   }) {
+    setWaterName(location.name);
+    setSelectedCoords({ lat: location.latitude, lng: location.longitude });
+
     if (map.current) {
       map.current.flyTo({
         center: [location.longitude, location.latitude],
@@ -142,6 +146,7 @@ export function PreviewEnhanced() {
       });
     }
     setShowSearch(false);
+    setShowModal(true);
   }
 
   // Generate plan
@@ -167,6 +172,11 @@ export function PreviewEnhanced() {
       setErr(e?.message ?? "Failed to generate plan.");
       setLoading(false);
     }
+  }
+
+  // Show loader during generation
+  if (loading) {
+    return <PlanGenerationLoader lakeName={waterName} />;
   }
 
   return (
@@ -365,10 +375,10 @@ export function PreviewEnhanced() {
             <button
               className="btn primary"
               style={{ width: "100%", marginBottom: 12 }}
-              disabled={!waterName || !email || loading}
+              disabled={!waterName || !email}
               onClick={handleGeneratePlan}
             >
-              {loading ? "Generating…" : "Generate Fishing Plan"}
+              Generate Fishing Plan
             </button>
 
             <button

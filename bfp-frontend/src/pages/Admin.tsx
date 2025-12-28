@@ -1,47 +1,25 @@
-import { useState } from "react";
+// src/pages/Admin.tsx
+// Auth wrapper + same map as Members but with admin override
+
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth, useUser } from "@clerk/clerk-react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { LocationSearch } from "@/components/LocationSearch";
+import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 
-const ADMIN_PASSWORD = "bass2025"; // TODO: Move to env variable
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+const ADMIN_PASSWORD = "bass2025";
 
-interface PlanParams {
-  email: string;
-  waterName: string;
-  lat: string;
-  lon: string;
-  bypassRateLimit: boolean;
+function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
+  return f.source === "composite" && f.sourceLayer === "water";
 }
 
 export function Admin() {
-  const navigate = useNavigate();
   const [authed, setAuthed] = useState(false);
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
-
-  const [params, setParams] = useState<PlanParams>({
-    email: "",
-    waterName: "",
-    lat: "",
-    lon: "",
-    bypassRateLimit: true,
-  });
-
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-
-  const handleSearchSelect = (result: {
-    name: string;
-    latitude: number;
-    longitude: number;
-  }) => {
-    setParams({
-      ...params,
-      waterName: result.name,
-      lat: result.latitude.toString(),
-      lon: result.longitude.toString(),
-    });
-  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,51 +28,6 @@ export function Admin() {
       setLoginError("");
     } else {
       setLoginError("Invalid password");
-    }
-  };
-
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setGenerating(true);
-    setError("");
-    setSuccess(false);
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/plan/generate`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(params.bypassRateLimit && {
-              "X-Admin-Override": "true",
-            }),
-          },
-          body: JSON.stringify({
-            email: params.email,
-            location_name: params.waterName,
-            latitude: parseFloat(params.lat),
-            longitude: parseFloat(params.lon),
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.detail || "Failed to generate plan");
-      }
-
-      const data = await response.json();
-      setSuccess(true);
-
-      // Navigate to plan page
-      if (data.token) {
-        navigate(`/plan?token=${data.token}`);
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -149,233 +82,417 @@ export function Admin() {
     );
   }
 
+  return <AdminMap onLogout={() => setAuthed(false)} />;
+}
+
+function AdminMap({ onLogout }: { onLogout: () => void }) {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const initialized = useRef(false);
+  const navigate = useNavigate();
+
+  const { user } = useUser();
+
+  const [showSearch, setShowSearch] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [hoveredWater, setHoveredWater] = useState(false);
+  const [waterName, setWaterName] = useState("");
+  const [selectedCoords, setSelectedCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialized.current || !mapContainer.current || !MAPBOX_TOKEN) return;
+    initialized.current = true;
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/outdoors-v12",
+      center: [-86.7816, 33.5186],
+      zoom: 6,
+    });
+
+    map.current.dragRotate.disable();
+    map.current.touchZoomRotate.disableRotation();
+    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.current.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: false,
+        showUserLocation: true,
+      }),
+      "top-right"
+    );
+
+    map.current.on("mousemove", (e) => {
+      if (!map.current) return;
+      const features = map.current.queryRenderedFeatures(e.point);
+      const hasWater = features.some(isWaterFeature);
+      setHoveredWater(hasWater);
+      map.current.getCanvas().style.cursor = hasWater ? "pointer" : "";
+    });
+
+    map.current.on("click", async (e) => {
+      if (!map.current) return;
+      const features = map.current.queryRenderedFeatures(e.point);
+      const waterFeature = features.find(isWaterFeature);
+
+      if (waterFeature) {
+        const { lng, lat } = e.lngLat;
+        setSelectedCoords({ lat, lng });
+
+        try {
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
+          );
+          const data = await response.json();
+
+          if (data.features?.[0]?.context) {
+            const context = data.features[0].context;
+            const city =
+              context.find((c: any) => c.id.startsWith("place"))?.text || "";
+            const state =
+              context
+                .find((c: any) => c.id.startsWith("region"))
+                ?.short_code?.replace("US-", "") || "";
+            setWaterName(
+              `Water body near ${[city, state].filter(Boolean).join(", ")}`
+            );
+          }
+        } catch (err) {
+          console.error("Geocode failed:", err);
+          setWaterName("My fishing spot");
+        }
+
+        setShowModal(true);
+      }
+    });
+
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+    };
+  }, []);
+
+  function handleSearchSelect(location: {
+    latitude: number;
+    longitude: number;
+    name: string;
+  }) {
+    setWaterName(location.name);
+    setSelectedCoords({ lat: location.latitude, lng: location.longitude });
+
+    if (map.current) {
+      map.current.flyTo({
+        center: [location.longitude, location.latitude],
+        zoom: 13,
+        duration: 1500,
+      });
+    }
+    setShowSearch(false);
+    setShowModal(true);
+  }
+
+  async function handleGeneratePlan() {
+    if (!user?.primaryEmailAddress?.emailAddress) {
+      setErr("Email not found");
+      return;
+    }
+    if (!selectedCoords || !waterName) {
+      setErr("Please fill in all fields");
+      return;
+    }
+
+    setErr(null);
+    setLoading(true);
+
+    try {
+      const response = await fetch(
+        `${
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+        }/plan/generate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Admin-Override": "true",
+          },
+          body: JSON.stringify({
+            email: user.primaryEmailAddress.emailAddress,
+            location_name: waterName,
+            latitude: selectedCoords.lat,
+            longitude: selectedCoords.lng,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.detail || "Failed to generate plan");
+      }
+
+      const res = await response.json();
+      navigate("/plan", { state: { planResponse: res } });
+    } catch (e: any) {
+      setErr(e?.message ?? "Failed to generate plan.");
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return <PlanGenerationLoader lakeName={waterName} />;
+  }
+
   return (
-    <div style={{ minHeight: "100vh", paddingBottom: 60 }}>
-      {/* Header */}
-      <div
+    <div style={{ position: "relative", height: "100vh" }}>
+      <button
+        onClick={onLogout}
         style={{
-          borderBottom: "1px solid rgba(238,242,246,0.10)",
-          background: "rgba(10,10,10,0.95)",
+          position: "absolute",
+          top: 20,
+          right: 20,
+          zIndex: 10000,
+          background: "rgba(10, 10, 10, 0.95)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          borderRadius: 8,
+          padding: "8px 16px",
+          color: "rgba(255, 255, 255, 0.7)",
+          cursor: "pointer",
+          fontSize: "0.9rem",
         }}
       >
-        <div
-          className="container"
-          style={{
-            paddingTop: 20,
-            paddingBottom: 20,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <h1 style={{ fontSize: "1.5em", fontWeight: 700, margin: 0 }}>
-            🔧 Admin Panel
-          </h1>
-          <button
-            onClick={() => setAuthed(false)}
-            className="btn"
-            style={{ padding: "8px 16px" }}
+        Logout
+      </button>
+
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 999,
+          background:
+            "linear-gradient(to bottom, rgba(10,10,10,0.95) 0%, transparent 100%)",
+          padding: "20px",
+          pointerEvents: "none",
+        }}
+      >
+        <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
+          <h1
+            style={{
+              fontSize: "clamp(1.5rem, 4vw, 2rem)",
+              fontWeight: 700,
+              marginBottom: 8,
+            }}
           >
-            Logout
-          </button>
+            Admin: Find Your Water
+          </h1>
+          <p style={{ fontSize: "clamp(0.9rem, 2vw, 1rem)", opacity: 0.8 }}>
+            Click any body of water to generate your fishing plan
+          </p>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="container" style={{ paddingTop: 40, maxWidth: 700 }}>
-        <div className="card">
-          <h2 style={{ fontSize: "1.8em", fontWeight: 700, marginBottom: 8 }}>
-            Manual Plan Generation
-          </h2>
-          <p style={{ opacity: 0.7, marginBottom: 24 }}>
-            Generate plans for any user with full control over parameters and
-            rate limits.
-          </p>
+      {!showSearch && !showModal && (
+        <button
+          onClick={() => setShowSearch(true)}
+          style={{
+            position: "absolute",
+            top: 120,
+            left: 20,
+            zIndex: 1000,
+            background: "rgba(10, 10, 10, 0.95)",
+            backdropFilter: "blur(20px)",
+            border: "2px solid rgba(74, 144, 226, 0.4)",
+            borderRadius: 12,
+            padding: "12px 20px",
+            color: "#4A90E2",
+            fontWeight: 600,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>🔍</span>
+          <span>Search Lakes</span>
+        </button>
+      )}
 
-          <form onSubmit={handleGenerate}>
-            {/* Lake Search */}
-            <div style={{ marginBottom: 24 }}>
-              <div className="label">Search for a Lake (Optional)</div>
-              <LocationSearch
-                onSelect={handleSearchSelect}
-                placeholder="Lake Lanier, Lake Fork..."
-              />
-              <div style={{ fontSize: "0.85em", opacity: 0.6, marginTop: 6 }}>
-                Or manually enter water name and coordinates below
-              </div>
-            </div>
-
-            {/* Email */}
-            <div style={{ marginBottom: 16 }}>
-              <div className="label">Email Address</div>
-              <input
-                type="email"
-                className="input"
-                value={params.email}
-                onChange={(e) =>
-                  setParams({ ...params, email: e.target.value })
-                }
-                placeholder="user@example.com"
-                required
-              />
-            </div>
-
-            {/* Water Name */}
-            <div style={{ marginBottom: 16 }}>
-              <div className="label">Water Body Name</div>
-              <input
-                type="text"
-                className="input"
-                value={params.waterName}
-                onChange={(e) =>
-                  setParams({ ...params, waterName: e.target.value })
-                }
-                placeholder="Lake Lanier"
-                required
-              />
-            </div>
-
-            {/* Coordinates */}
+      {showSearch && (
+        <div
+          style={{
+            position: "absolute",
+            top: 120,
+            left: 20,
+            zIndex: 1000,
+            maxWidth: 380,
+            width: "calc(100% - 40px)",
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              background: "rgba(10, 10, 10, 0.95)",
+              backdropFilter: "blur(20px)",
+            }}
+          >
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-                marginBottom: 16,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 12,
               }}
             >
-              <div>
-                <div className="label">Latitude</div>
-                <input
-                  type="number"
-                  step="any"
-                  className="input"
-                  value={params.lat}
-                  onChange={(e) =>
-                    setParams({ ...params, lat: e.target.value })
-                  }
-                  placeholder="34.188"
-                  required
-                />
-              </div>
-              <div>
-                <div className="label">Longitude</div>
-                <input
-                  type="number"
-                  step="any"
-                  className="input"
-                  value={params.lon}
-                  onChange={(e) =>
-                    setParams({ ...params, lon: e.target.value })
-                  }
-                  placeholder="-84.073"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Bypass Rate Limit */}
-            <div
-              style={{
-                marginBottom: 24,
-                padding: 16,
-                background: "rgba(255, 230, 109, 0.1)",
-                border: "1px solid rgba(255, 230, 109, 0.3)",
-                borderRadius: 8,
-              }}
-            >
-              <label
+              <div className="label">Search for a lake</div>
+              <button
+                onClick={() => setShowSearch(false)}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
+                  background: "transparent",
+                  border: "none",
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: "1.5em",
                   cursor: "pointer",
+                  padding: 0,
+                  lineHeight: 1,
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={params.bypassRateLimit}
-                  onChange={(e) =>
-                    setParams({ ...params, bypassRateLimit: e.target.checked })
-                  }
-                  style={{ width: 18, height: 18, cursor: "pointer" }}
-                />
-                <div>
-                  <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                    Bypass Rate Limits
-                  </div>
-                  <div style={{ fontSize: "0.9em", opacity: 0.7 }}>
-                    Generate plan regardless of user's cooldown status
-                  </div>
-                </div>
-              </label>
+                ×
+              </button>
             </div>
-
-            {/* Error/Success Messages */}
-            {error && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: 12,
-                  background: "rgba(255, 107, 107, 0.1)",
-                  border: "1px solid rgba(255, 107, 107, 0.3)",
-                  borderRadius: 8,
-                  color: "#ff6b6b",
-                }}
-              >
-                ⚠️ {error}
-              </div>
-            )}
-
-            {success && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: 12,
-                  background: "rgba(78, 205, 196, 0.1)",
-                  border: "1px solid rgba(78, 205, 196, 0.3)",
-                  borderRadius: 8,
-                  color: "#4ecdc4",
-                }}
-              >
-                ✓ Plan generated successfully! Redirecting...
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className="btn primary"
-              style={{ width: "100%", padding: "14px" }}
-              disabled={generating}
-            >
-              {generating ? "Generating Plan..." : "Generate Plan"}
-            </button>
-          </form>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="card" style={{ marginTop: 24 }}>
-          <h3 style={{ fontSize: "1.2em", fontWeight: 600, marginBottom: 16 }}>
-            Quick Actions
-          </h3>
-          <div style={{ display: "grid", gap: 12 }}>
-            <a
-              href="/members"
-              className="btn"
-              style={{ textDecoration: "none", textAlign: "center" }}
-            >
-              View Members Dashboard
-            </a>
-            <a
-              href="/preview"
-              className="btn"
-              style={{ textDecoration: "none", textAlign: "center" }}
-            >
-              Open Preview Page
-            </a>
+            <LocationSearch
+              onSelect={handleSearchSelect}
+              placeholder="Lake Lanier, Lake Fork..."
+            />
           </div>
         </div>
+      )}
+
+      {showModal && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.8)",
+            zIndex: 2000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="card"
+            style={{
+              background: "rgba(10, 10, 10, 0.98)",
+              backdropFilter: "blur(20px)",
+              maxWidth: 450,
+              width: "100%",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2
+              style={{ fontSize: "1.5em", fontWeight: 700, marginBottom: 20 }}
+            >
+              Generate Fishing Plan
+            </h2>
+
+            <div style={{ marginBottom: 16 }}>
+              <div className="label">What do you call this fishing spot?</div>
+              <input
+                className="input"
+                value={waterName}
+                onChange={(e) => setWaterName(e.target.value)}
+                placeholder="Lake Lanier, My secret pond..."
+                autoFocus
+              />
+            </div>
+
+            {user?.primaryEmailAddress?.emailAddress && (
+              <div
+                style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 16 }}
+              >
+                ✓ Using your account email:{" "}
+                {user.primaryEmailAddress.emailAddress}
+              </div>
+            )}
+
+            {err && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  color: "rgba(255,160,160,0.95)",
+                  fontSize: "0.9em",
+                }}
+              >
+                ⚠️ {err}
+              </div>
+            )}
+
+            <button
+              className="btn primary"
+              style={{ width: "100%", marginBottom: 12 }}
+              disabled={!waterName}
+              onClick={handleGeneratePlan}
+            >
+              Generate Full Plan
+            </button>
+
+            <button
+              onClick={() => setShowModal(false)}
+              style={{
+                width: "100%",
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 8,
+                padding: "12px",
+                color: "rgba(255,255,255,0.7)",
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ width: "100%", height: "100%" }}>
+        <style>{`.mapboxgl-ctrl-top-right { top: 90px !important; }`}</style>
+        <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
+
+        {hoveredWater && !showModal && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "120px",
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(10, 10, 10, 0.95)",
+              padding: "12px 20px",
+              borderRadius: 8,
+              border: "2px solid rgba(74, 144, 226, 0.5)",
+              textAlign: "center",
+              pointerEvents: "none",
+              zIndex: 998,
+              fontSize: "0.9em",
+              color: "#4A90E2",
+            }}
+          >
+            Click to select this water body
+          </div>
+        )}
       </div>
     </div>
   );
