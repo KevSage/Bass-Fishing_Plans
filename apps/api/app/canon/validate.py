@@ -40,21 +40,44 @@ def validate_lure_and_presentation(lure: str, presentation: str) -> list[str]:
     return errs
 
 
-def validate_colors(colors: list[str]) -> list[str]:
+def validate_colors(colors: list[str], valid_colors: list[str] = None) -> list[str]:
+    """
+    Validate color list.
+    If valid_colors is provided, check against that list (lure-specific).
+    Otherwise, use old COLOR_POOL for backwards compatibility.
+    """
     errs: list[str] = []
     if not isinstance(colors, list):
         return ["color_recommendations must be a list"]
     if len(colors) == 0 or len(colors) > 2:
         errs.append("color_recommendations must contain 1-2 colors")
-    for c in colors:
-        if c not in COLOR_POOL:
-            errs.append(f"Invalid color: {c!r} (not in COLOR_POOL)")
+    
+    # If lure-specific colors provided, validate against those
+    if valid_colors is not None:
+        for c in colors:
+            if c not in valid_colors:
+                errs.append(f"Invalid color: {c!r} (not in allowed colors for this lure)")
+    else:
+        # Fallback to old COLOR_POOL for backwards compatibility
+        for c in colors:
+            if c not in COLOR_POOL:
+                errs.append(f"Invalid color: {c!r} (not in COLOR_POOL)")
     return errs
 
 
-def validate_colors_for_lure(base_lure: str, colors: list[str]) -> list[str]:
+def validate_colors_for_lure(base_lure: str, colors: list[str], soft_plastic: str = None) -> list[str]:
+    """
+    Validate colors for a specific lure using lure-specific color pools.
+    """
+    from app.canon.pools import get_color_pool_for_lure
+    
     errs: list[str] = []
-    errs.extend(validate_colors(colors))
+    
+    # Get the correct color pool for this lure
+    valid_colors = get_color_pool_for_lure(base_lure, soft_plastic)
+    
+    # Validate against lure-specific pool
+    errs.extend(validate_colors(colors, valid_colors))
     if errs:
         return errs
 

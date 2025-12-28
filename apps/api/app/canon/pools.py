@@ -4,6 +4,7 @@ CANONICAL POOLS - SINGLE SOURCE OF TRUTH
 All lures, colors, presentations, and rules for BFP.
 Merged from patterns/catalog.py and original canon/pools.py.
 """
+from typing import Optional, List
 
 # ----------------------------------------
 # PRESENTATIONS (LOCKED)
@@ -206,8 +207,231 @@ JIG_LURES = {
 }
 
 # ----------------------------------------
-# COLORS (LOCKED)
+# LURE-SPECIFIC COLOR POOLS
 # ----------------------------------------
+# Each lure group gets its own curated color pool
+
+# Group 1: Rigs (9 colors)
+RIG_COLORS = [
+    "green pumpkin",
+    "black/blue",
+    "junebug",
+    "baby bass",
+    "watermelon red",
+    "red craw",
+    "black",
+    "green pumpkin orange",
+    "peanut butter & jelly",
+]
+
+# Group 2: Bladed/Skirted (8 colors)
+BLADED_SKIRTED_COLORS = [
+    "white",
+    "shad",
+    "chartreuse/white",
+    "chartreuse",
+    "black/blue",
+    "green pumpkin",
+    "red craw",
+    "bluegill",
+]
+
+# Group 3: Soft Swimbaits (5 colors)
+SOFT_SWIMBAIT_COLORS = [
+    "white",
+    "shad",
+    "pearl",
+    "bluegill",
+    "green pumpkin",
+]
+
+# Group 4: Crankbaits (9 colors)
+CRANKBAIT_COLORS = [
+    "sexy shad",
+    "chartreuse/black back",
+    "red craw",
+    "bluegill",
+    "ghost shad",
+    "citrus shad",
+    "firetiger",
+    "chrome",
+    "gold",
+]
+
+# Group 5: Jerkbaits (10 colors)
+JERKBAIT_COLORS = [
+    "pro blue",
+    "table rock",
+    "ghost minnow",
+    "transparent",
+    "bone",
+    "natural shad",
+    "chrome",
+    "gold",
+    "white",
+    "red craw",
+]
+
+# Group 6: Topwater (6 colors)
+TOPWATER_COLORS = [
+    "bone",
+    "chrome",
+    "black",
+    "shad",
+    "bluegill",
+    "translucent",
+]
+
+# Group 7: Frogs (6 colors)
+FROG_COLORS = [
+    "green",
+    "brown",
+    "yellow",
+    "black",
+    "white",
+    "bluegill",
+]
+
+# Map lures to their color pools
+LURE_COLOR_POOL_MAP = {
+    # Rigs
+    "texas rig": RIG_COLORS,
+    "carolina rig": RIG_COLORS,
+    "shaky head": RIG_COLORS,
+    "ned rig": RIG_COLORS,
+    "neko rig": RIG_COLORS,
+    "wacky rig": RIG_COLORS,
+    # dropshot is conditional - see get_color_pool_for_lure()
+    
+    # Bladed/Skirted
+    "chatterbait": BLADED_SKIRTED_COLORS,
+    "spinnerbait": BLADED_SKIRTED_COLORS,
+    "buzzbait": BLADED_SKIRTED_COLORS,
+    "underspin": BLADED_SKIRTED_COLORS,
+    "swim jig": BLADED_SKIRTED_COLORS,
+    "football jig": BLADED_SKIRTED_COLORS,
+    "casting jig": BLADED_SKIRTED_COLORS,
+    
+    # Soft Swimbaits
+    "soft jerkbait": SOFT_SWIMBAIT_COLORS,
+    "paddle tail swimbait": SOFT_SWIMBAIT_COLORS,
+    # dropshot with minnow uses SOFT_SWIMBAIT_COLORS
+    
+    # Crankbaits
+    "shallow crankbait": CRANKBAIT_COLORS,
+    "mid crankbait": CRANKBAIT_COLORS,
+    "deep crankbait": CRANKBAIT_COLORS,
+    "lipless crankbait": CRANKBAIT_COLORS,
+    "wake bait": CRANKBAIT_COLORS,
+    "blade bait": CRANKBAIT_COLORS,
+    
+    # Jerkbaits
+    "jerkbait": JERKBAIT_COLORS,
+    
+    # Topwater
+    "walking bait": TOPWATER_COLORS,
+    "whopper plopper": TOPWATER_COLORS,
+    "popper": TOPWATER_COLORS,
+    
+    # Frogs
+    "hollow body frog": FROG_COLORS,
+    "popping frog": FROG_COLORS,
+}
+
+def get_color_pool_for_lure(lure: str, soft_plastic: Optional[str] = None) -> List[str]:
+    """
+    Get the appropriate color pool for a lure.
+    
+    Special case: dropshot depends on soft_plastic type
+    - finesse worm/trick worm/straight tail worm → RIG_COLORS
+    - small minnow/fluke/jerkbait → SOFT_SWIMBAIT_COLORS
+    
+    Args:
+        lure: Base lure name
+        soft_plastic: Soft plastic type (for dropshot conditional logic)
+    
+    Returns:
+        List of allowed colors for this lure
+    
+    Raises:
+        ValueError: If lure not found or dropshot without soft_plastic
+    """
+    if lure == "dropshot":
+        if not soft_plastic:
+            raise ValueError("dropshot requires soft_plastic to determine color pool")
+        
+        # Finesse worm variants → Rig colors
+        if soft_plastic.lower() in ["finesse worm", "trick worm", "straight tail worm"]:
+            return RIG_COLORS
+        # Minnow variants → Soft swimbait colors
+        elif soft_plastic.lower() in ["small minnow", "fluke", "jerkbait"]:
+            return SOFT_SWIMBAIT_COLORS
+        else:
+            # Default to rig colors if unclear
+            return RIG_COLORS
+    
+    if lure not in LURE_COLOR_POOL_MAP:
+        raise ValueError(f"No color pool defined for lure: {lure}")
+    
+    return LURE_COLOR_POOL_MAP[lure]
+
+# ----------------------------------------
+# COLOR DESCRIPTIONS (for LLM reasoning)
+# ----------------------------------------
+# These descriptions help the LLM explain color choices in "why_this_works"
+# Format: "Choose [Color] if [conditions] — [bass behavior/why it works]"
+
+COLOR_DESCRIPTIONS = {
+    # Rig Colors
+    "green pumpkin": "Natural crawfish/creature imitation, works in most water clarities, standard choice for bottom contact",
+    "black/blue": "High contrast for stained water or low light, triggers reaction strikes from aggressive bass",
+    "junebug": "Dark profile for murky water or night fishing, strong silhouette creates clear target",
+    "baby bass": "Translucent with subtle flake, imitates small bass/bluegill in clear water",
+    "watermelon red": "Clear water crawfish with red flake imitating eggs or gills, natural in clean conditions",
+    "red craw": "Bright crawfish imitation for stained water or aggressive feeding, high visibility",
+    "black": "Maximum contrast for dirty water or night, creates strongest silhouette",
+    "green pumpkin orange": "Natural green with orange highlights mimicking egg-bearing crawfish",
+    "peanut butter & jelly": "Purple/brown translucent for clear water, imitates bluegill or natural forage",
+    
+    # Bladed/Skirted Colors
+    "white": "Clean baitfish imitation for clear water or when bass are keyed on shad",
+    "shad": "Natural shad pattern with dark back, works in most water clarities",
+    "chartreuse/white": "High visibility for stained water while maintaining baitfish profile",
+    "chartreuse": "Maximum visibility in muddy water or low light, triggers reaction strikes",
+    
+    # Soft Swimbait Colors
+    "pearl": "Translucent white for ultra-clear water, realistic baitfish with subtle flash",
+    
+    # Crankbait Colors
+    "sexy shad": "Realistic shad pattern with gray/purple back for clear to slightly stained water",
+    "chartreuse/black back": "High visibility chartreuse with dark back for stained water",
+    "ghost shad": "Translucent white/blue for clear water, mimics natural shad perfectly",
+    "citrus shad": "Chartreuse belly with shad profile for slightly off-colored water",
+    "firetiger": "Extreme contrast pattern for muddy water or aggressive feeding windows",
+    "chrome": "Silver metallic finish reflects light in any water clarity, mimics shad flash",
+    "gold": "Gold metallic for stained water or low light, creates warm flash",
+    
+    # Jerkbait Colors
+    "pro blue": "Transparent with blue/purple back imitating shad in clear to stained water",
+    "table rock": "Translucent chartreuse with purple and orange accents, triggers strikes in overcast or off-colored water",
+    "ghost minnow": "Translucent with olive back and blue accent for gin-clear water, ultra-realistic",
+    "transparent": "Completely clear for extreme clarity or highly pressured fish, nearly invisible",
+    "bone": "Off-white/cream natural finish for clear water",
+    "natural shad": "White/silver with dark back, standard shad imitation",
+    
+    # Topwater Colors
+    "translucent": "Clear/transparent for clear water when bass inspect closely",
+    
+    # Frog Colors
+    "green": "Natural frog green for vegetated areas",
+    "brown": "Natural frog brown for darker vegetation or muddy banks",
+    "yellow": "High visibility for stained water or thick cover",
+}
+
+# ----------------------------------------
+# LEGACY COLOR POOL (for backwards compatibility)
+# ----------------------------------------
+# This is the old unified pool - kept for now but will be deprecated
 COLOR_POOL = [
     # Natural / Clear Water
     "green pumpkin",
@@ -434,7 +658,7 @@ BAITFISH_SET = {"soft jerkbait", "small minnow", "paddle tail swimbait"}
 # COLOR ZONE EXPANSION
 # ----------------------------------------
 
-def expand_color_zones(lure: str, llm_colors: list[str]) -> dict:
+def expand_color_zones(lure: str, llm_colors: List[str]) -> dict:
     """
     Expand LLM color output into full zone payload.
     
@@ -560,7 +784,7 @@ def generate_asset_key(lure: str, zones: dict) -> str:
     return f"{normalized_lure}.png"
 
 
-def validate_color_zones(lure: str, zones: dict) -> list[str]:
+def validate_color_zones(lure: str, zones: dict) -> List[str]:
     """
     Validate expanded color zones for a lure.
     

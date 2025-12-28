@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1766901548560",
+  "user_email": "ksagedeveloper@gmail.com",
+  "plan_link_id": "CVJnLWULVXB2mI0fniMcEMGWdDV0vkkTEDr2BNAHS7s",
+  "lake_name": "Lake Lanier",
+  "generation_date": "2025-12-28T05:59:08.560985+00:00",
+  "plan_type": "member",
+  "conditions": {
+    "temp_low": 59.07,
+    "temp_high": 64.71,
+    "sky_condition": "overcast",
+    "wind_speed": 1.68
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-28T05:59:08.561011+00:00",
+  "expires_at": "2026-01-27T05:59:08.561017+00:00"
+}

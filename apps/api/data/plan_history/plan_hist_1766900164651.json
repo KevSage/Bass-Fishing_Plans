@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1766900164651",
+  "user_email": "ksagedeveloper@gmail.com",
+  "plan_link_id": "eCkVOngMVI-uJFpdYJut_P6Fv1IUwrcEfQ99PYAXXew",
+  "lake_name": "Jackson Lake",
+  "generation_date": "2025-12-28T05:36:04.651473+00:00",
+  "plan_type": "member",
+  "conditions": {
+    "temp_low": 60.96,
+    "temp_high": 69.17,
+    "sky_condition": "overcast",
+    "wind_speed": 3.69
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-28T05:36:04.651486+00:00",
+  "expires_at": "2026-01-27T05:36:04.651489+00:00"
+}

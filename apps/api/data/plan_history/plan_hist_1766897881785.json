@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1766897881785",
+  "user_email": "ksagedeveloper@gmail.com",
+  "plan_link_id": "xqZhyY0v7OdaIVHymV4ZMeOhy251P5aoIfrn8vOMMrw",
+  "lake_name": "West Point Lake",
+  "generation_date": "2025-12-28T04:58:01.785210+00:00",
+  "plan_type": "member",
+  "conditions": {
+    "temp_low": 51.91,
+    "temp_high": 70.03,
+    "sky_condition": "overcast",
+    "wind_speed": 0.0
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-28T04:58:01.785234+00:00",
+  "expires_at": "2026-01-27T04:58:01.785238+00:00"
+}

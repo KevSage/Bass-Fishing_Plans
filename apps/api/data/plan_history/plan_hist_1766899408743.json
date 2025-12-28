@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1766899408743",
+  "user_email": "ksagedeveloper@gmail.com",
+  "plan_link_id": "EJyivIX38847l6i57g9MWwzSPZg19faGUAtpeX-Ok3w",
+  "lake_name": "Lake George",
+  "generation_date": "2025-12-28T05:23:28.743237+00:00",
+  "plan_type": "member",
+  "conditions": {
+    "temp_low": 61.57,
+    "temp_high": 77.65,
+    "sky_condition": "overcast",
+    "wind_speed": 2.33
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-28T05:23:28.743248+00:00",
+  "expires_at": "2026-01-27T05:23:28.743250+00:00"
+}
