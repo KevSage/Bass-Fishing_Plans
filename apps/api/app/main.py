@@ -178,26 +178,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     if is_member:
         plan = enrich_member_plan(plan, weather, phase)
     
-    # 4c. Add target definitions to both preview and member plans
-    def add_target_definitions(pattern_dict):
-        """Add definitions to targets in a pattern."""
-        if "targets" in pattern_dict and isinstance(pattern_dict["targets"], list):
-            enriched_targets = []
-            for target in pattern_dict["targets"]:
-                definition = get_target_definition(target)
-                enriched_targets.append({
-                    "name": target,
-                    "definition": definition
-                })
-            pattern_dict["targets"] = enriched_targets
-    
-    # Add definitions based on plan type
-    if is_member and "primary" in plan:
-        add_target_definitions(plan["primary"])
-        if "secondary" in plan:
-            add_target_definitions(plan["secondary"])
-    elif "targets" in plan:
-        add_target_definitions(plan)
+    # Note: Target definitions are now included in work_it objects directly from LLM
     
     # Add conditions to plan
     plan["conditions"] = {

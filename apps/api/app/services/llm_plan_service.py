@@ -12,7 +12,7 @@ import httpx
 
 from app.canon.pools import (
     LURE_POOL,
-    COLOR_POOL,
+    COLOR_POOL,  # Legacy - still used for fallback
     PRESENTATIONS,
     LURE_TO_PRESENTATION,
     TERMINAL_PLASTIC_MAP,
@@ -24,6 +24,16 @@ from app.canon.pools import (
     HARDBAIT_LURES,
     expand_color_zones,
     validate_color_zones,
+    # Lure-specific color pools
+    get_color_pool_for_lure,
+    RIG_COLORS,
+    BLADED_SKIRTED_COLORS,
+    SOFT_SWIMBAIT_COLORS,
+    CRANKBAIT_COLORS,
+    JERKBAIT_COLORS,
+    TOPWATER_COLORS,
+    FROG_COLORS,
+    LURE_COLOR_POOL_MAP,
 )
 from app.canon.targets import CANONICAL_TARGETS
 from app.canon.validate import (
@@ -111,13 +121,21 @@ OUTPUT FORMAT (JSON only - no markdown, no explanation):
     "base_lure": "<one from LURE_POOL>",
     "soft_plastic": "<OPTIONAL - only for terminal tackle: texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head>",
     "soft_plastic_why": "<OPTIONAL - contextual explanation why THIS plastic for THESE conditions>",
-    "trailer": "<OPTIONAL - only for: chatterbait, swim jig, spinnerbait, casting jig, football jig>",
+    "trailer": "<OPTIONAL - only for: chatterbait, swim jig, spinnerbait, casting jig, football jig, buzzbait>",
     "trailer_why": "<OPTIONAL - contextual explanation why THIS trailer for THESE conditions>",
     "color_recommendations": ["<color1>", "<color2>"],
     "targets": ["<target1>", "<target2>", "<target3>"],
-    "why_this_works": "<1-2 sentences why THIS lure for these conditions>",
+    "why_this_works": "<3-4 sentences: lure choice + MANDATORY 'Choose X if Y' color format + optional trailer color>",
+    "pattern_summary": "<2-3 sentences: presentation type + water column context + why this lure>",
+    "strategy": "<3-4 sentences: conversational, 'bass are likely' logic, proper spacing after periods>",
     "work_it": ["<target + specific retrieve for this lure>", "...", "..."],
-    "strategy": "<2-3 sentence paragraph about positioning/angles/conditions - NO bullets>"
+    "work_it_cards": [
+      {
+        "name": "<TARGET NAME from targets list>",
+        "definition": "<1 sentence - what this target is>",
+        "how_to_fish": "<2-3 sentences - how to fish THIS target with THIS lure>"
+      }
+    ]
   },
   "secondary": {
     "presentation": "<different from primary>",
@@ -128,11 +146,23 @@ OUTPUT FORMAT (JSON only - no markdown, no explanation):
     "trailer_why": "<OPTIONAL>",
     "color_recommendations": ["<color1>", "<color2>"],
     "targets": ["<target1>", "<target2>", "<target3>"],
-    "why_this_works": "<explain the pivot>",
+    "why_this_works": "<3-4 sentences: lure choice + MANDATORY 'Choose X if Y' color format + optional trailer color>",
+    "pattern_summary": "<2-3 sentences: presentation type + water column context + why this lure>",
+    "strategy": "<3-4 sentences: conversational, 'bass are likely' logic, proper spacing after periods>",
     "work_it": ["<target + retrieve>", "...", "..."],
-    "strategy": "<2-3 sentence paragraph - NO bullets>"
+    "work_it_cards": [
+      {
+        "name": "<TARGET NAME>",
+        "definition": "<what this target is>",
+        "how_to_fish": "<how to fish it>"
+      }
+    ]
   },
-  "day_progression": ["Morning: ...", "Midday: ...", "Late: ..."],
+  "day_progression": [
+    "Morning: <2-3 sentences with proper spacing>",
+    "Midday: <2-3 sentences with proper spacing>",
+    "Evening: <2-3 sentences with proper spacing>"
+  ],
   "outlook_blurb": "<weather forecast only>"
 }
 """
@@ -148,16 +178,23 @@ OUTPUT FORMAT (JSON only - no markdown, no explanation):
   "trailer_why": "<OPTIONAL - contextual to conditions>",
   "color_recommendations": ["<color1>", "<color2>"],
   "targets": ["<target1>", "<target2>", "<target3>"],
-  "why_this_works": "<1-2 sentences explaining why this lure fits conditions>",
+  "why_this_works": "<2-3 sentences: lure choice + MANDATORY 'Choose X if Y' color format>",
   "work_it": [
     "<target name + specific retrieve cadence for this lure>",
     "<target name + specific retrieve cadence>",
     "<target name + specific retrieve cadence>"
   ],
+  "work_it_cards": [
+    {
+      "name": "<TARGET NAME from targets list>",
+      "definition": "<1 sentence - what this target is>",
+      "how_to_fish": "<2-3 sentences - how to fish THIS target with THIS lure>"
+    }
+  ],
   "day_progression": [
-    "Morning: <tactical sentence using same targets from above>",
-    "Midday: <tactical sentence using same targets>",
-    "Late: <tactical sentence using same targets>"
+    "Morning: <2-3 sentences with proper spacing after periods>",
+    "Midday: <2-3 sentences with proper spacing after periods>",
+    "Evening: <2-3 sentences with proper spacing after periods>"
   ],
   "outlook_blurb": "<weather forecast only - NO bass strategy>"
 }
@@ -169,19 +206,55 @@ Your job: Generate a complete bass fishing plan based on weather, location, and 
 
 CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
 
-1. PRESENTATIONS (choose ONE for primary pattern):
+0. CRITICAL FORMATTING RULES (STRICTLY ENFORCED):
+   - ALWAYS add a space after every period: "word. Word" NOT "word.Word"
+   - This is tested automatically - missing spaces = INSTANT REJECTION
+   - Check EVERY sentence in strategy, day_progression, why_this_works
+   
+1. COLOR EXPLANATION FORMAT (MANDATORY IN "why_this_works"):
+   - You MUST use "Choose X if Y" format for colors
+   - Format: "Choose [Color 1] if [water conditions]—[why it works]. Choose [Color 2] if [water conditions]—[why it works]."
+   - Example: "Choose pro blue if fishing clear water—realistic baitfish pattern triggers strikes from bass keying on shad. Choose chartreuse if water is stained—high visibility creates strong contrast bass can see from distance."
+   - This is NOT optional - every plan MUST include this color guidance
+   - Missing this format = INSTANT REJECTION
+
+2. PRESENTATIONS (choose ONE for primary pattern):
 {json.dumps(PRESENTATIONS, indent=2)}
 
-2. ALLOWED LURES (choose from this list ONLY - exact strings):
+3. ALLOWED LURES (choose from this list ONLY - exact strings):
 {json.dumps(LURE_POOL, indent=2)}
 
-3. LURE → PRESENTATION MAPPING (lure MUST match its presentation):
+4. LURE → PRESENTATION MAPPING (lure MUST match its presentation):
 {json.dumps(LURE_TO_PRESENTATION, indent=2)}
 
-4. ALLOWED COLORS (choose 1-2 from this list ONLY - exact strings):
-{json.dumps(COLOR_POOL, indent=2)}
+5. LURE-SPECIFIC COLOR POOLS (choose 1-2 colors based on YOUR CHOSEN LURE):
 
-5. COLOR VARIETY RULE:
+   RIG COLORS (for texas rig, carolina rig, shaky head, ned rig, neko rig, wacky rig, dropshot w/ finesse worm):
+   {json.dumps(RIG_COLORS, indent=2)}
+   
+   BLADED/SKIRTED COLORS (for chatterbait, spinnerbait, buzzbait, underspin, swim jig, football jig, casting jig):
+   {json.dumps(BLADED_SKIRTED_COLORS, indent=2)}
+   
+   SOFT SWIMBAIT COLORS (for soft jerkbait, paddle tail swimbait, dropshot w/ minnow):
+   {json.dumps(SOFT_SWIMBAIT_COLORS, indent=2)}
+   
+   CRANKBAIT COLORS (for shallow crankbait, mid crankbait, deep crankbait, lipless crankbait, wake bait, blade bait):
+   {json.dumps(CRANKBAIT_COLORS, indent=2)}
+   
+   JERKBAIT COLORS (for jerkbait ONLY):
+   {json.dumps(JERKBAIT_COLORS, indent=2)}
+   
+   TOPWATER COLORS (for walking bait, whopper plopper, popper):
+   {json.dumps(TOPWATER_COLORS, indent=2)}
+   
+   FROG COLORS (for hollow body frog, popping frog):
+   {json.dumps(FROG_COLORS, indent=2)}
+   
+   CRITICAL: You MUST use colors from the pool that matches YOUR CHOSEN LURE.
+   Example: If you choose "jerkbait", use JERKBAIT_COLORS only.
+   Example: If you choose "texas rig", use RIG_COLORS only.
+
+6. COLOR VARIETY RULE:
    - When choosing 2 colors, they MUST be from different color families
    - BAD: "watermelon" + "green pumpkin" (both natural greens)
    - BAD: "shad" + "natural shad" (both shad colors)
@@ -190,12 +263,12 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    - GOOD: "shad" + "firetiger" (natural + high-contrast)
    - GOOD: "green pumpkin" + "white" (natural + pelagic)
    
-6. COLOR RESTRICTIONS:
+7. COLOR RESTRICTIONS:
    - Metallic/firetiger colors (gold, bronze, silver, firetiger) can ONLY be used on hard baits: {sorted(HARDBAIT_LURES)}
    - black/blue is NOT allowed on hard baits or jerkbaits
    - For spinnerbait, color refers to SKIRT color (not blade finish)
 
-7. TERMINAL TACKLE SOFT PLASTIC RULES:
+8. TERMINAL TACKLE SOFT PLASTIC RULES:
    If you choose terminal tackle (texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head), you MUST include:
    - soft_plastic: choose from allowed plastics for that lure
    - soft_plastic_why: 1-2 sentences explaining why THIS plastic for THESE conditions (phase, temp, clarity)
@@ -207,7 +280,7 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ✅ GOOD: "In late-fall with 68° water, creature baits create maximum displacement in stained conditions where bass locate by feel."
    ❌ BAD: "Creature baits have lots of appendages" (this is generic knowledge)
 
-8. TRAILER RULES:
+9. TRAILER RULES:
    If you choose lures that need trailers (chatterbait, swim jig, spinnerbait, casting jig, football jig), you MUST include:
    - trailer: choose from allowed trailers for that lure
    - trailer_why: 1-2 sentences explaining why THIS trailer for THESE conditions
@@ -219,14 +292,33 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ✅ GOOD: "With clear skies and calm water, a craw trailer keeps the profile compact for less aggressive fish in 68° water."
    ❌ BAD: "Craws look like crawfish" (generic)
 
-8. CANONICAL TARGETS (choose 3-5 from this list ONLY - exact strings):
+10. CANONICAL TARGETS (choose 3-5 from this list ONLY - exact strings):
 {json.dumps(CANONICAL_TARGETS, indent=2)}
 
-9. DAY PROGRESSION RULES:
-   - Exactly 3 lines: Morning/Midday/Late
-   - Each line MUST start with "Morning:", "Midday:", or "Late:"
+9. DAY PROGRESSION (EXTENDED FORMAT):
+   - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
+   - Length: 2-3 sentences PER time block (not just 1 sentence)
+   - Each time block MUST start with "Morning:", "Midday:", or "Evening:" (or "Late:")
    - NO colors in day progression (no parentheses, no "in green pumpkin")
-   - Be specific and tactical about what to do, not just "fish here"
+   
+   Each time block should cover:
+   - Where + Why: Location/target type and bass behavior at this time
+   - How: Tactical adjustment specific to this time period
+   - Key insight: What to expect or prioritize
+   
+   CRITICAL FORMATTING:
+   - Proper spacing after periods (this is frequently missed - ensure spaces!)
+   - Conversational tone
+   - Vary sentence structure (don't start multiple sentences the same way)
+   
+   GOOD Example:
+   ✅ "Morning: Start on main lake points where bass position to ambush baitfish moving with first light. Low light conditions allow fish to roam more aggressively, so cover water efficiently and focus on wind-blown banks where bait concentrates. Most strikes happen in the first hour as fish are actively feeding."
+   
+   BAD Examples:
+   ❌ "Morning: Main lake points" - way too brief
+   ❌ "Midday: Fish deeper using green pumpkin" - mentions colors (not allowed)
+   ❌ "Low light: hover higher.Set countdown rule..." - missing space after period
+   ❌ "Low light: hover higher. Low light extends roaming..." - repetitive starts
 
 10. WEATHER FORECAST (outlook_blurb):
    - 3-4 sentences describing the WEATHER FORECAST for the fishing day
@@ -258,7 +350,11 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
 12. WHY THIS WORKS:
    - ONLY explain why THIS SPECIFIC LURE was chosen for these conditions
    - Focus on: lure characteristics, presentation style
-   - ALWAYS include a brief, casual mention of the two color options and when to use each
+   - MUST include color explanation using "Choose X if Y" format:
+     * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
+     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
+   - For jigs/chatterbaits/spinnerbaits, add ONE sentence about trailer color choice
+   - Length: 3-4 sentences total (lure choice + color explanation + optional trailer color)
    - Format: End with something like "Go with [color1] in clearer water, [color2] when it's stained."
    - 2-3 sentences total
    
@@ -272,19 +368,42 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ❌ No mention of color guidance - MUST casually explain which color for which clarity
    ❌ "The conditions favor moving baits" - too general, explain why THIS lure specifically
 
-13. STRATEGY PARAGRAPH (MEMBERS ONLY):
-   - MUST be a flowing 2-3 sentence paragraph (NOT bullet points, NOT numbered list)
-   - Cover positioning, wind adaptation, angle considerations, conditions-based adjustments
-   - This is the big-picture tactical approach
+13. PATTERN SUMMARY (MEMBERS ONLY - top blurb for each pattern):
+   - 2-3 sentences introducing the presentation and lure choice
+   - MUST cover:
+     * What this presentation family is (e.g., "Vertical Reaction")
+     * For vertical/suspended presentations: mention water column ("works the water column", "targets suspended fish")
+     * Why THIS LURE was chosen for current conditions
+     * Key behavioral trigger
+   - Use positive framing only (don't say what it's NOT)
    
    GOOD Example:
-   ✅ "Start on windward points where bait concentrates and fish position to ambush. Use the wind to drift naturally along depth changes, repositioning for clean casts when you get a cue. In brighter conditions, prioritize shade edges and the first depth break rather than open flats."
+   ✅ "Vertical Reaction presentations work the water column with erratic stop-and-go action, targeting suspended bass and fish holding along depth transitions. A jerkbait excels in these post-frontal conditions because its suspending capability and darting motion pulls reaction strikes from fish in open water."
    
    BAD Examples:
-   ❌ "• Fish windward banks\n• Target points\n• Focus on shade" - These are bullets, not a paragraph
-   ❌ "Fish the points. Then move to banks." - Too choppy, needs to flow
+   ❌ "Vertical Reaction is not a bottom presentation" - negative framing
+   ❌ Missing water column context for vertical presentations
 
-13. CRITICAL DEPTH RULE:
+14. STRATEGY PARAGRAPH (MEMBERS ONLY):
+   - 3-4 sentences covering environmental/positional tactics
+   - Use "Bass are likely doing X because Y, so you do Z" logic
+   - CONVERSATIONAL tone: "give each spot a fair shake", "don't bail too quick", "if things go quiet"
+   - Must complement (NOT contradict) targets and day_progression sections
+   - Cover: mobility/pacing, light/shade, positioning, casting angles, adjustment protocol
+   - NO specific structure types (use "high-percentage areas", "productive water")
+   - NO retrieve mechanics (that's in work_it_cards)
+   - CRITICAL: Proper spacing after periods, vary sentence structure
+   
+   GOOD Example:
+   ✅ "Post-frontal conditions tend to scatter bass and push them into a neutral mood, so give each spot a fair shake—10 to 15 casts usually tells you if fish are home. Look for shade lines and depth breaks where bass can sit without working too hard, and position yourself to cast along these edges rather than across them. If things go quiet, don't bail too quick—bass often shift position with changing light, so try different angles and adjust where you're casting before moving on."
+   
+   BAD Examples:
+   ❌ "Fish points and ledges" - mentions specific structures
+   ❌ "Use a slow retrieve" - mentions retrieve mechanics
+   ❌ "Low light: hover higher.Set countdown rule..." - missing spaces, bad formatting
+   ❌ "Low light: hover higher. Low light extends..." - repetitive sentence starts
+
+15. CRITICAL DEPTH RULE:
    - NEVER mention specific depths in feet (e.g., "15-30 feet", "8-12 feet")
    - You don't know the depth of the user's water body
    - Use RELATIVE depth language instead:
@@ -475,10 +594,14 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
     if not isinstance(day_prog, list) or len(day_prog) != 3:
         errors.append(f"day_progression must have exactly 3 lines, got {len(day_prog) if isinstance(day_prog, list) else 'not a list'}")
     else:
-        prefixes = ["Morning:", "Midday:", "Late:"]
+        # Check each time block - third one can be either "Evening:" or "Late:"
         for i, line in enumerate(day_prog):
-            if not isinstance(line, str) or not line.startswith(prefixes[i]):
-                errors.append(f"day_progression line {i} must start with '{prefixes[i]}'")
+            if i == 0 and not line.startswith("Morning:"):
+                errors.append(f"day_progression line 0 must start with 'Morning:'")
+            elif i == 1 and not line.startswith("Midday:"):
+                errors.append(f"day_progression line 1 must start with 'Midday:'")
+            elif i == 2 and not (line.startswith("Evening:") or line.startswith("Late:")):
+                errors.append(f"day_progression line 2 must start with 'Evening:' or 'Late:'")
             # Check for colors (shouldn't have parentheses or color names)
             if "(" in line or ") in " in line.lower():
                 errors.append(f"day_progression line {i} contains color (not allowed)")
@@ -558,12 +681,16 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
     if not isinstance(colors, list) or not (1 <= len(colors) <= 2):
         errors.append(f"{pattern_name}: color_recommendations must be 1-2 colors, got {len(colors) if isinstance(colors, list) else 'not a list'}")
     else:
-        for color in colors:
-            if color not in COLOR_POOL:
-                errors.append(f"{pattern_name}: Invalid color: {color}")
+        # Get the correct color pool for this lure
+        soft_plastic = pattern.get("soft_plastic", None)
+        valid_colors = get_color_pool_for_lure(base_lure, soft_plastic)
         
-        # Validate colors for this lure
-        color_errs = validate_colors_for_lure(base_lure, colors)
+        for color in colors:
+            if color not in valid_colors:
+                errors.append(f"{pattern_name}: Invalid color '{color}' for {base_lure}. Allowed colors: {valid_colors}")
+        
+        # Additional validation for lure/color compatibility (hardbaits, etc.)
+        color_errs = validate_colors_for_lure(base_lure, colors, soft_plastic)
         errors.extend([f"{pattern_name}: {err}" for err in color_errs])
     
     # Validate targets

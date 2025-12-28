@@ -32,10 +32,16 @@ export type ColorZones = {
   warnings?: string[];
 };
 
+export type WorkItTarget = {
+  name: string;
+  definition: string;
+  how_to_fish: string;
+};
+
 export type Target = {
   name: string;
   definition: string;
-  retrieve_cadence: string;
+  retrieve_cadence: string; // Legacy - may be removed
 };
 
 export type Pattern = {
@@ -47,16 +53,18 @@ export type Pattern = {
   trailer_why?: string;
   color_recommendations: string[];
   colors: ColorZones;
-  targets: Target[];
+  targets?: Target[]; // Legacy - keeping for backwards compatibility
   why_this_works: string;
-  work_it: string[];
+  work_it: WorkItTarget[] | string[]; // Support both new and legacy formats
+  work_it_cards?: WorkItTarget[]; // NEW - rich card format for rendering
+  day_progression?: string[]; // Array of strings (just longer now)
   gear?: {
     rod: string;
     reel: string;
     line: string;
     technique: string;
   };
-  strategy?: string; // Changed from string[] to string (paragraph)
+  strategy?: string;
   pattern_summary?: string;
 };
 
@@ -70,10 +78,10 @@ export type PreviewPlan = {
   trailer_why?: string;
   color_recommendations: string[];
   colors: ColorZones;
-  targets: Target[];
+  targets?: Target[]; // Legacy
   why_this_works?: string;
-  work_it: string[];
-  day_progression: string[];
+  work_it: WorkItTarget[] | string[]; // Support both new and legacy formats
+  day_progression: string[]; // Array of strings (just longer now)
   outlook_blurb: string;
   conditions: PlanConditions;
 };
@@ -82,7 +90,7 @@ export type PreviewPlan = {
 export type MemberPlan = {
   primary: Pattern;
   secondary: Pattern;
-  day_progression: string[];
+  day_progression?: string[]; // Array of strings (just longer now)
   outlook_blurb: string;
   conditions: PlanConditions;
 };

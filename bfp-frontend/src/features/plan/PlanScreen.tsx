@@ -522,7 +522,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   );
 }
 
-const PreviewPatternView = React.memo(function PreviewPatternView({
+function PreviewPatternView({
   plan,
 }: {
   plan: Extract<Plan, { base_lure: string }>;
@@ -735,7 +735,7 @@ const PreviewPatternView = React.memo(function PreviewPatternView({
         </div>
       )}
 
-      {/* Targets */}
+      {/* Targets - HIDDEN: Now part of work_it_cards 
       {plan.targets && plan.targets.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
@@ -791,40 +791,100 @@ const PreviewPatternView = React.memo(function PreviewPatternView({
           </div>
         </div>
       )}
+      */}
 
       {/* How to Work It */}
       {plan.work_it && plan.work_it.length > 0 && (
         <div style={{ marginBottom: 24 }}>
           <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
-            How to Work It
+            Where & How
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {plan.work_it.map((step, i) => (
-              <div
-                key={i}
-                style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
-              >
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {plan.work_it.map((item, i) => {
+              // Handle new object format
+              if (typeof item === "object" && item !== null && "name" in item) {
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "16px 20px",
+                      background: "rgba(255, 255, 255, 0.02)",
+                      borderRadius: 10,
+                      border: "1px solid rgba(255, 255, 255, 0.06)",
+                    }}
+                  >
+                    {/* Target Name */}
+                    <h5
+                      style={{
+                        fontSize: "1.05em",
+                        fontWeight: 700,
+                        marginBottom: 6,
+                        color: "#4A90E2",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      {item.name}
+                    </h5>
+
+                    {/* Definition */}
+                    <p
+                      style={{
+                        margin: "0 0 10px 0",
+                        lineHeight: 1.6,
+                        opacity: 0.65,
+                        fontSize: "0.9em",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      {item.definition}
+                    </p>
+
+                    {/* How to Fish */}
+                    <p
+                      style={{
+                        margin: 0,
+                        paddingLeft: 12,
+                        borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
+                        lineHeight: 1.7,
+                        opacity: 0.9,
+                        fontSize: "1em",
+                      }}
+                    >
+                      {item.how_to_fish}
+                    </p>
+                  </div>
+                );
+              }
+
+              // Handle legacy string format
+              return (
                 <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    background: "rgba(74, 144, 226, 0.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.85em",
-                    fontWeight: 600,
-                    flexShrink: 0,
-                  }}
+                  key={i}
+                  style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
                 >
-                  {i + 1}
+                  <div
+                    style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      background: "rgba(74, 144, 226, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.85em",
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {i + 1}
+                  </div>
+                  <p style={{ margin: 0, lineHeight: 1.6, opacity: 0.9 }}>
+                    {item}
+                  </p>
                 </div>
-                <p style={{ margin: 0, lineHeight: 1.6, opacity: 0.9 }}>
-                  {step}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -836,17 +896,25 @@ const PreviewPatternView = React.memo(function PreviewPatternView({
             Day Progression
           </h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {plan.day_progression.map((item, i) => (
+            {(plan.day_progression as string[]).map((item, i) => (
               <div
                 key={i}
                 style={{
-                  padding: 12,
+                  padding: 16,
                   background: "rgba(255,255,255,0.02)",
-                  borderRadius: 6,
+                  borderRadius: 8,
                   borderLeft: "3px solid rgba(74, 144, 226, 0.5)",
                 }}
               >
-                <p style={{ margin: 0, lineHeight: 1.6, fontSize: "0.95em" }}>
+                <p
+                  style={{
+                    margin: 0,
+                    lineHeight: 1.7,
+                    fontSize: "0.95em",
+                    opacity: 0.92,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
                   {item}
                 </p>
               </div>
@@ -856,9 +924,9 @@ const PreviewPatternView = React.memo(function PreviewPatternView({
       )}
     </div>
   );
-});
+}
 
-const MemberPatternView = React.memo(function MemberPatternView({
+function MemberPatternView({
   plan,
 }: {
   plan: Extract<Plan, { primary: any }>;
@@ -881,18 +949,29 @@ const MemberPatternView = React.memo(function MemberPatternView({
           <h3 style={{ fontSize: "1.5em", fontWeight: 700, marginBottom: 16 }}>
             Day Progression
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {plan.day_progression.map((item, i) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {(plan.day_progression as string[]).map((item, i) => (
               <div
                 key={i}
                 style={{
-                  padding: 16,
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: 8,
-                  borderLeft: "3px solid rgba(74, 144, 226, 0.5)",
+                  padding: 20,
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: 12,
+                  borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                 }}
               >
-                <p style={{ margin: 0, lineHeight: 1.6 }}>{item}</p>
+                <p
+                  style={{
+                    margin: 0,
+                    lineHeight: 1.7,
+                    fontSize: "1.05em",
+                    opacity: 0.92,
+                    whiteSpace: "pre-wrap",
+                  }}
+                >
+                  {item}
+                </p>
               </div>
             ))}
           </div>
@@ -900,10 +979,10 @@ const MemberPatternView = React.memo(function MemberPatternView({
       )}
     </>
   );
-});
+}
 
 // Reusable pattern card component - PREMIUM REDESIGN
-const PatternCard = React.memo(function PatternCard({
+function PatternCard({
   pattern,
   patternNumber,
   isPrimary,
@@ -1444,7 +1523,7 @@ const PatternCard = React.memo(function PatternCard({
         }}
       />
 
-      {/* Targets - Premium interactive cards */}
+      {/* Targets - HIDDEN: Now part of work_it_cards
       {pattern.targets && pattern.targets.length > 0 && (
         <div style={{ marginBottom: 32 }}>
           <h4
@@ -1510,9 +1589,11 @@ const PatternCard = React.memo(function PatternCard({
           </div>
         </div>
       )}
+      */}
 
       {/* How to Work It - Premium step indicators */}
-      {pattern.work_it && pattern.work_it.length > 0 && (
+      {((pattern.work_it_cards && pattern.work_it_cards.length > 0) ||
+        (pattern.work_it && pattern.work_it.length > 0)) && (
         <div style={{ marginBottom: 0 }}>
           <h4
             style={{
@@ -1522,52 +1603,114 @@ const PatternCard = React.memo(function PatternCard({
               color: "rgba(255, 255, 255, 0.95)",
             }}
           >
-            How to Work It
+            Where & How
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {pattern.work_it.map((step, i) => (
-              <div
-                key={i}
-                style={{ display: "flex", gap: 16, alignItems: "flex-start" }}
-              >
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {(pattern.work_it_cards || pattern.work_it).map((item, i) => {
+              // Handle new object format
+              if (typeof item === "object" && item !== null && "name" in item) {
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      padding: "20px 24px",
+                      background: "rgba(255, 255, 255, 0.02)",
+                      borderRadius: 12,
+                      border: "1px solid rgba(255, 255, 255, 0.06)",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                    }}
+                  >
+                    {/* Target Name */}
+                    <h5
+                      style={{
+                        fontSize: "1.1rem",
+                        fontWeight: 700,
+                        marginBottom: 8,
+                        color: "#4A90E2",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      {item.name}
+                    </h5>
+
+                    {/* Definition (Educational) */}
+                    <p
+                      style={{
+                        margin: "0 0 12px 0",
+                        lineHeight: 1.6,
+                        opacity: 0.7,
+                        fontSize: "0.95rem",
+                        fontStyle: "italic",
+                        color: "rgba(255, 255, 255, 0.8)",
+                      }}
+                    >
+                      {item.definition}
+                    </p>
+
+                    {/* How to Fish (Actionable) */}
+                    <p
+                      style={{
+                        margin: 0,
+                        paddingLeft: 16,
+                        borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
+                        lineHeight: 1.7,
+                        opacity: 0.92,
+                        fontSize: "1.05rem",
+                        color: "rgba(255, 255, 255, 0.95)",
+                      }}
+                    >
+                      {item.how_to_fish}
+                    </p>
+                  </div>
+                );
+              }
+
+              // Handle legacy string format
+              return (
                 <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-                    boxShadow:
-                      "0 2px 8px rgba(74, 144, 226, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.85rem",
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    color: "#fff",
-                  }}
+                  key={i}
+                  style={{ display: "flex", gap: 16, alignItems: "flex-start" }}
                 >
-                  {i + 1}
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background:
+                        "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                      boxShadow:
+                        "0 2px 8px rgba(74, 144, 226, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.2)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      flexShrink: 0,
+                      color: "#fff",
+                    }}
+                  >
+                    {i + 1}
+                  </div>
+                  <p
+                    style={{
+                      margin: 0,
+                      lineHeight: 1.7,
+                      opacity: 0.88,
+                      fontSize: "1.05rem",
+                    }}
+                  >
+                    {item}
+                  </p>
                 </div>
-                <p
-                  style={{
-                    margin: 0,
-                    lineHeight: 1.7,
-                    opacity: 0.88,
-                    fontSize: "1.05rem",
-                  }}
-                >
-                  {step}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
     </div>
   );
-});
+}
 
 // Helper function to map color names to hex values
 function getColorHex(colorName: string): string {
