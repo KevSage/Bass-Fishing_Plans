@@ -76,8 +76,7 @@ export function PlanHistory() {
   };
 
   const copyPlanLink = (plan: Plan) => {
-    const token = plan.plan_url.split("/").pop();
-    const url = `${window.location.origin}/plan?token=${token}`;
+    const url = `${window.location.origin}${plan.plan_url}`;
     navigator.clipboard.writeText(url);
 
     const toast = document.createElement("div");
@@ -168,12 +167,11 @@ export function PlanHistory() {
           Plan History
         </h2>
         <div style={{ textAlign: "center", padding: "48px 0" }}>
-          <div style={{ fontSize: "3.5rem", marginBottom: 16 }}>🎣</div>
           <p style={{ color: "rgba(255,255,255,0.6)", marginBottom: 24 }}>
             You haven't generated any plans yet
           </p>
           <a href="/members" className="btn primary">
-            Generate Plan
+            Generate Your First Plan
           </a>
         </div>
       </div>
@@ -254,7 +252,7 @@ export function PlanHistory() {
             {/* Actions */}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <a
-                href={`/plan?token=${plan.plan_url.split("/").pop()}`}
+                href={plan.plan_url}
                 className="btn primary"
                 style={{
                   textDecoration: "none",
