@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { ActivityIcon } from "@/components/UnifiedIcons";
 
 interface PlanGenerationLoaderProps {
   lakeName: string;
@@ -6,17 +7,17 @@ interface PlanGenerationLoaderProps {
 }
 
 const steps = [
-  { label: "Analyzing lake conditions", duration: 2000 },
-  { label: "Checking weather patterns", duration: 2500 },
-  { label: "Identifying bass patterns", duration: 2800 },
-  { label: "Analyzing water temperature", duration: 2400 },
-  { label: "Selecting optimal lures", duration: 3000 },
-  { label: "Matching color profiles", duration: 2700 },
-  { label: "Generating strategy", duration: 3200 },
-  { label: "Finalizing your plan", duration: 2400 },
+  { label: "Analyzing lake conditions", duration: 6000 },
+  { label: "Checking weather patterns", duration: 7000 },
+  { label: "Identifying bass patterns", duration: 7500 },
+  { label: "Analyzing water temperature", duration: 6500 },
+  { label: "Selecting optimal lures", duration: 8000 },
+  { label: "Matching color profiles", duration: 7000 },
+  { label: "Generating strategy", duration: 8000 },
+  { label: "Finalizing your plan", duration: 7000 },
 ];
 
-const totalDuration = steps.reduce((sum, step) => sum + step.duration, 0); // ~21 seconds
+const totalDuration = steps.reduce((sum, step) => sum + step.duration, 0); // ~57 seconds
 
 export function PlanGenerationLoader({
   lakeName,
@@ -135,7 +136,13 @@ export function PlanGenerationLoader({
                     transition: "all 0.3s ease",
                   }}
                 >
-                  {isComplete ? "✓" : isActive ? "⌛" : "○"}
+                  {isComplete ? (
+                    "✓"
+                  ) : isActive ? (
+                    <ActivityIcon size={14} style={{ color: "#4A90E2" }} />
+                  ) : (
+                    "○"
+                  )}
                 </div>
 
                 {/* Label */}
@@ -187,6 +194,18 @@ export function PlanGenerationLoader({
           }}
         >
           {Math.round(progress)}%
+        </div>
+
+        {/* Subtle Tip at Bottom */}
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "0.75rem",
+            opacity: 0.25,
+            marginTop: 32,
+          }}
+        >
+          Location-specific plans may take up to 60 seconds
         </div>
       </div>
     </div>

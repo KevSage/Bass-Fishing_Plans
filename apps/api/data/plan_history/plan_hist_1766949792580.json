@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1766949792580",
+  "user_email": "ksagedeveloper@gmail.com",
+  "plan_link_id": "20_ZyZqDjef2pixe2iFElApVoUXObTDMGFP2l4SARPE",
+  "lake_name": "Lake Guntersville",
+  "generation_date": "2025-12-28T19:23:12.580620+00:00",
+  "plan_type": "member",
+  "conditions": {
+    "temp_low": 35.15,
+    "temp_high": 69.96,
+    "sky_condition": "overcast",
+    "wind_speed": 7.0
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-28T19:23:12.580635+00:00",
+  "expires_at": "2026-01-27T19:23:12.580639+00:00"
+}
