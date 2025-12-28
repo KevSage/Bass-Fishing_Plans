@@ -5,9 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { generateMemberPlan } from "@/lib/api";
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
-import type { PlanGenerateResponse } from "@/features/plan/types";
-import { PlanDownloads } from "@/features/plan/PlanDownloads";
-import { PlanScreen } from "@/features/plan/PlanScreen";
+import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 import { useNavigate } from "react-router-dom";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -28,6 +26,7 @@ export function Members() {
   const [waterName, setWaterName] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [hoveredWater, setHoveredWater] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -57,10 +56,8 @@ export function Members() {
     map.current.dragRotate.disable();
     map.current.touchZoomRotate.disableRotation();
 
-    // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-    // Add geolocate control (Find My Location)
     const geolocate = new mapboxgl.GeolocateControl({
       positionOptions: {
         enableHighAccuracy: true,
@@ -71,7 +68,6 @@ export function Members() {
     });
     map.current.addControl(geolocate, "top-right");
 
-    // Hover detection
     map.current.on("mousemove", (e) => {
       if (!map.current) return;
       const features = map.current.queryRenderedFeatures(e.point);
@@ -80,7 +76,6 @@ export function Members() {
       map.current.getCanvas().style.cursor = water ? "pointer" : "";
     });
 
-    // Click water to select
     map.current.on("click", (e) => {
       if (!map.current) return;
       const features = map.current.queryRenderedFeatures(e.point);
@@ -93,7 +88,6 @@ export function Members() {
           setWaterName("Selected Water Body");
         }
 
-        // Update marker
         if (marker.current) {
           marker.current.remove();
         }
@@ -107,9 +101,8 @@ export function Members() {
       map.current?.remove();
       map.current = null;
     };
-  }, [isActive]); // Re-run when subscription status changes
+  }, [isActive]);
 
-  // Handle search selection
   function handleSearchSelect(location: {
     name: string;
     latitude: number;
@@ -119,7 +112,6 @@ export function Members() {
     setSelectedCoords({ lat: location.latitude, lng: location.longitude });
     setShowSearch(false);
 
-    // Update map
     if (map.current) {
       map.current.flyTo({
         center: [location.longitude, location.latitude],
@@ -127,7 +119,6 @@ export function Members() {
         duration: 1500,
       });
 
-      // Update marker
       if (marker.current) {
         marker.current.remove();
       }
@@ -137,7 +128,6 @@ export function Members() {
     }
   }
 
-  // Generate plan
   async function handleGenerate() {
     if (!user?.primaryEmailAddress?.emailAddress) {
       alert("Email not found");
@@ -147,6 +137,8 @@ export function Members() {
       alert("Please select a lake");
       return;
     }
+
+    setLoading(true);
 
     try {
       const payload = {
@@ -158,12 +150,16 @@ export function Members() {
         },
       };
       const response = await generateMemberPlan(payload);
-
-      // Navigate to plan page with response
       navigate("/plan", { state: { planResponse: response } });
     } catch (e: any) {
       alert(e?.message ?? "Failed to generate plan.");
+      setLoading(false);
     }
+  }
+
+  // Show loader
+  if (loading) {
+    return <PlanGenerationLoader lakeName={waterName} />;
   }
 
   // Loading state
@@ -211,15 +207,12 @@ export function Members() {
 
   return (
     <div style={{ position: "relative", height: "100vh" }}>
-      {/* Custom CSS for repositioning map controls */}
       <style>{`
-        /* Reposition navigation controls higher */
         .mapboxgl-ctrl-top-right {
           top: 140px !important;
           right: 10px !important;
         }
         
-        /* Style the controls */
         .mapboxgl-ctrl-group {
           background: rgba(10, 10, 10, 0.95) !important;
           backdrop-filter: blur(10px);
@@ -241,7 +234,6 @@ export function Members() {
         }
       `}</style>
 
-      {/* Header */}
       <div
         style={{
           position: "absolute",
@@ -282,7 +274,6 @@ export function Members() {
         </div>
       </div>
 
-      {/* Search Button */}
       {!showSearch && (
         <button
           onClick={() => setShowSearch(true)}
@@ -309,7 +300,6 @@ export function Members() {
         </button>
       )}
 
-      {/* Search Panel */}
       {showSearch && (
         <div
           style={{
@@ -363,7 +353,6 @@ export function Members() {
         </div>
       )}
 
-      {/* Map */}
       <div
         ref={mapContainer}
         style={{
@@ -373,16 +362,15 @@ export function Members() {
         }}
       />
 
-      {/* Bottom Panel - Only show when lake is selected */}
       {(selectedCoords || waterName) && (
         <div
           style={{
             position: "absolute",
-            bottom: 60, // Higher on screen for better visibility
+            bottom: 60,
             left: 0,
             right: 0,
             zIndex: 1000,
-            pointerEvents: "none", // Allow clicks to pass through to map
+            pointerEvents: "none",
           }}
         >
           <div
@@ -399,11 +387,10 @@ export function Members() {
                 border: "1px solid rgba(255, 255, 255, 0.15)",
                 borderRadius: 16,
                 padding: 24,
-                pointerEvents: "auto", // Re-enable clicks on the form itself
+                pointerEvents: "auto",
                 boxShadow: "0 -4px 24px rgba(0, 0, 0, 0.4)",
               }}
             >
-              {/* Selected Lake */}
               <div style={{ marginBottom: 16 }}>
                 <div
                   style={{
@@ -431,7 +418,6 @@ export function Members() {
                 )}
               </div>
 
-              {/* Lake Name Input */}
               <div style={{ marginBottom: 16 }}>
                 <div
                   style={{
@@ -462,7 +448,6 @@ export function Members() {
                 />
               </div>
 
-              {/* Generate Button */}
               <button
                 onClick={handleGenerate}
                 disabled={!canGenerate}

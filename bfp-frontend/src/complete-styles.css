@@ -12,6 +12,7 @@
 
   /* Backgrounds */
   --bg-main: #0a0a0a;
+  --bg-gradient: linear-gradient(to bottom, #0a0a0a, #1a1a2e);
   --bg-card: #1a1a1a;
   --bg-elevated: #242424;
 
@@ -48,10 +49,12 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
     Ubuntu, Cantarell, sans-serif;
-  background: var(--bg-main);
+  background: linear-gradient(to bottom, #0a0a0a, #1a1a2e);
+  background-attachment: fixed; /* Keeps gradient fixed when scrolling */
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 /* === LAYOUT === */
@@ -317,16 +320,16 @@ hr {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-main);
+  background: #0a0a0a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(74, 144, 226, 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(74, 144, 226, 0.5);
 }
 
 /* === SELECTION === */
@@ -347,7 +350,7 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* In your global CSS or map styles */
+/* === MAPBOX === */
 .mapboxgl-ctrl-geolocate {
   display: block !important;
 }
