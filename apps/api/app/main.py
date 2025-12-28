@@ -221,7 +221,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         plan_data=plan,
     )
     
-    plan_url = f"{WEB_BASE_URL}/plan/view/{token}"
+    plan_url = f"{WEB_BASE_URL}/plan?token={token}"
     
     # 5b. Add to plan history
     plan_history_store.add_plan(
