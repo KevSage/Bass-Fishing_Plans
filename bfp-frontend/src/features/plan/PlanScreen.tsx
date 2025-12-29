@@ -948,7 +948,15 @@ function MemberPatternView({
   plan: Extract<Plan, { primary: any }>;
 }) {
   return (
-    <>
+    <div
+      className="card"
+      style={{
+        marginTop: 20,
+        background:
+          "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, var(--bg-card) 100%)",
+        border: "1px solid rgba(74, 144, 226, 0.2)",
+      }}
+    >
       {/* Primary Pattern */}
       <PatternCard pattern={plan.primary} patternNumber={1} isPrimary={true} />
 
@@ -961,29 +969,59 @@ function MemberPatternView({
 
       {/* Day Progression */}
       {plan.day_progression && plan.day_progression.length > 0 && (
-        <div className="card" style={{ marginTop: 20 }}>
+        <div
+          className="card"
+          style={{
+            marginTop: 32,
+            position: "relative",
+            // Premium frosted glass effect with depth
+            background:
+              "linear-gradient(145deg, rgba(255, 255, 255, 0.02) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(255, 255, 255, 0.01) 100%)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: 24,
+            padding: "48px",
+            // Premium shadows (work in PDF)
+            boxShadow:
+              "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+          }}
+        >
           <h3 style={{ fontSize: "1.5em", fontWeight: 700, marginBottom: 16 }}>
             Day Progression
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div
+            className="card"
+            style={{
+              // padding: "20px 24px",
+              // // background: "rgba(255, 255, 255, 0.02)",
+              // borderRadius: 12,
+              // border: "1px solid rgba(255, 255, 255, 0.06)",
+              // boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+            }}
+          >
             {(plan.day_progression as string[]).map((item, i) => (
               <div
                 key={i}
                 style={{
                   padding: 20,
-                  background: "rgba(255,255,255,0.03)",
+                  background: "rgba(255, 255, 255, 0.02)",
+
                   borderRadius: 12,
-                  borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
+                  // borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
                   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                 }}
               >
                 <p
                   style={{
                     margin: 0,
+                    paddingLeft: 16,
+                    borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
                     lineHeight: 1.7,
-                    fontSize: "1.05em",
                     opacity: 0.92,
-                    whiteSpace: "pre-wrap",
+                    fontSize: "1.05rem",
+                    color: "rgba(255, 255, 255, 0.95)",
                   }}
                 >
                   {item}
@@ -993,7 +1031,7 @@ function MemberPatternView({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

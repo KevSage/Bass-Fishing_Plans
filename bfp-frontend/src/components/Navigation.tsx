@@ -58,8 +58,16 @@ export function Navigation() {
         >
           {/* Logo */}
           <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-            <div style={{ fontWeight: 600, fontSize: "1.1em" }}>
-              Bass Fishing Plans
+            <div
+              style={{
+                fontSize: "1.15rem",
+                fontWeight: 800,
+                letterSpacing: "0.04em", // 👈 important
+                textTransform: "uppercase",
+                opacity: 0.95,
+              }}
+            >
+              Bass Clarity
             </div>
           </Link>
 
