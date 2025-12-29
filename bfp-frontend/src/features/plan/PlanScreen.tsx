@@ -503,6 +503,9 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
                   fontWeight: 600,
                   marginBottom: 10,
                   opacity: 0.8,
+                  display: "inline-block",
+                  paddingBottom: "6px",
+                  borderBottom: "3px solid rgb(74, 144, 226)",
                 }}
               >
                 Forecast
@@ -581,6 +584,7 @@ function PreviewPatternView({
         >
           {plan.colors.asset_key ? (
             <img
+              className="image-fade"
               src={`/images/lures/${plan.colors.asset_key}`}
               alt={plan.base_lure}
               style={{
@@ -614,15 +618,25 @@ function PreviewPatternView({
       </div>
 
       {/* Lure Name */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+      <div style={{ marginBottom: 16 }}>
+        <div
+          style={{
+            fontSize: "0.7rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            fontWeight: 700,
+            color: "rgba(255, 255, 255, 0.5)",
+            marginBottom: 12,
+          }}
+        >
           Lure
         </div>
         <div
           style={{
-            fontSize: "1.1em",
+            fontSize: "1.25rem",
             fontWeight: 600,
             textTransform: "capitalize",
+            color: "rgba(255, 255, 255, 0.95)",
           }}
         >
           {plan.base_lure}
@@ -632,15 +646,25 @@ function PreviewPatternView({
       {/* Soft Plastic (if applicable) */}
       {plan.soft_plastic && (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+          <div
+            style={{
+              fontSize: "0.7rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontWeight: 700,
+              color: "rgba(255, 255, 255, 0.5)",
+              marginBottom: 12,
+            }}
+          >
             Soft Plastic
           </div>
           <div
             style={{
-              fontSize: "1em",
+              fontSize: "1.1rem",
               fontWeight: 500,
               textTransform: "capitalize",
-              marginBottom: 8,
+              marginBottom: 10,
+              color: "rgba(255, 255, 255, 0.95)",
             }}
           >
             {plan.soft_plastic}
@@ -648,8 +672,8 @@ function PreviewPatternView({
           {plan.soft_plastic_why && (
             <div
               style={{
-                fontSize: "0.9em",
-                opacity: 0.8,
+                fontSize: "0.95rem",
+                opacity: 0.75,
                 lineHeight: 1.6,
                 fontStyle: "italic",
               }}
@@ -662,16 +686,26 @@ function PreviewPatternView({
 
       {/* Trailer (if applicable) */}
       {plan.trailer && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+        <div style={{ marginBottom: 32 }}>
+          <div
+            style={{
+              fontSize: "0.7rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontWeight: 700,
+              color: "rgba(255, 255, 255, 0.5)",
+              marginBottom: 12,
+            }}
+          >
             Trailer
           </div>
           <div
             style={{
-              fontSize: "1em",
+              fontSize: "1.1rem",
               fontWeight: 500,
               textTransform: "capitalize",
-              marginBottom: 8,
+              marginBottom: 10,
+              color: "rgba(255, 255, 255, 0.95)",
             }}
           >
             {plan.trailer}
@@ -679,8 +713,8 @@ function PreviewPatternView({
           {plan.trailer_why && (
             <div
               style={{
-                fontSize: "0.9em",
-                opacity: 0.8,
+                fontSize: "0.95rem",
+                opacity: 0.75,
                 lineHeight: 1.6,
                 fontStyle: "italic",
               }}
@@ -693,14 +727,23 @@ function PreviewPatternView({
 
       {/* Color Swatches */}
       {plan.color_recommendations && plan.color_recommendations.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: "0.85em", opacity: 0.6, marginBottom: 8 }}>
+        <div style={{ marginBottom: 32 }}>
+          <div
+            style={{
+              fontSize: "0.7rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.12em",
+              fontWeight: 700,
+              color: "rgba(255, 255, 255, 0.5)",
+              marginBottom: 16,
+            }}
+          >
             Colors
           </div>
           <div
             style={{
               display: "flex",
-              gap: 16,
+              gap: 20,
               flexWrap: "wrap",
               alignItems: "center",
             }}
@@ -711,23 +754,26 @@ function PreviewPatternView({
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 8,
+                  gap: 10,
                 }}
               >
                 <div
                   style={{
-                    width: 24,
-                    height: 24,
+                    width: 20,
+                    height: 20,
                     borderRadius: "50%",
                     background: getColorHex(color),
-                    border: "2px solid rgba(255,255,255,0.2)",
+                    border: "2px solid rgba(255,255,255,0.25)",
+                    boxShadow:
+                      "0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)",
                   }}
                 />
                 <span
                   style={{
                     fontWeight: 500,
                     textTransform: "capitalize",
-                    fontSize: "0.95em",
+                    fontSize: "0.95rem",
+                    color: "rgba(255, 255, 255, 0.9)",
                   }}
                 >
                   {color}
@@ -740,11 +786,28 @@ function PreviewPatternView({
 
       {/* Why This Works */}
       {plan.why_this_works && (
-        <div style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 10 }}>
+        <div style={{ marginBottom: 32 }}>
+          <h4
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 14,
+              color: "rgba(255, 255, 255, 0.95)",
+              display: "inline-block",
+              paddingBottom: "6px",
+              borderBottom: "3px solid rgb(74, 144, 226)",
+            }}
+          >
             Why This Works
           </h4>
-          <p style={{ lineHeight: 1.7, opacity: 0.9, margin: 0 }}>
+          <p
+            style={{
+              lineHeight: 1.6,
+              opacity: 0.88,
+              margin: 0,
+              fontSize: ".97rem",
+            }}
+          >
             {plan.why_this_works}
           </p>
         </div>
@@ -810,11 +873,22 @@ function PreviewPatternView({
 
       {/* How to Work It */}
       {plan.work_it && plan.work_it.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
+        <div style={{ marginBottom: 0 }}>
+          <h4
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 16,
+              color: "rgba(255, 255, 255, 0.95)",
+              display: "inline-block",
+              paddingBottom: "6px",
+              borderBottom: "3px solid rgb(74, 144, 226)",
+            }}
+          >
             Where & How
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {plan.work_it.map((item, i) => {
               // Handle new object format
               if (typeof item === "object" && item !== null && "name" in item) {
@@ -822,18 +896,19 @@ function PreviewPatternView({
                   <div
                     key={i}
                     style={{
-                      padding: "16px 20px",
+                      padding: "20px 24px",
                       background: "rgba(255, 255, 255, 0.02)",
-                      borderRadius: 10,
+                      borderRadius: 12,
                       border: "1px solid rgba(255, 255, 255, 0.06)",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                     }}
                   >
                     {/* Target Name */}
                     <h5
                       style={{
-                        fontSize: "1.05em",
+                        fontSize: ".95rem",
                         fontWeight: 700,
-                        marginBottom: 6,
+                        marginBottom: 8,
                         color: "#4A90E2",
                         textTransform: "uppercase",
                         letterSpacing: "0.05em",
@@ -845,11 +920,12 @@ function PreviewPatternView({
                     {/* Definition */}
                     <p
                       style={{
-                        margin: "0 0 10px 0",
+                        margin: "0 0 12px 0",
                         lineHeight: 1.6,
-                        opacity: 0.65,
-                        fontSize: "0.9em",
+                        opacity: 0.7,
+                        fontSize: "0.8rem",
                         fontStyle: "italic",
+                        color: "rgba(255, 255, 255, 0.8)",
                       }}
                     >
                       {item.definition}
@@ -859,11 +935,12 @@ function PreviewPatternView({
                     <p
                       style={{
                         margin: 0,
-                        paddingLeft: 12,
+                        paddingLeft: 10,
                         borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
-                        lineHeight: 1.7,
-                        opacity: 0.9,
-                        fontSize: "1em",
+                        lineHeight: 1.5,
+                        opacity: 0.92,
+                        fontSize: ".9rem",
+                        color: "rgba(255, 255, 255, 0.95)",
                       }}
                     >
                       {item.how_to_fish}
@@ -906,37 +983,58 @@ function PreviewPatternView({
 
       {/* Day Progression */}
       {plan.day_progression && plan.day_progression.length > 0 && (
-        <div>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
+        <div
+          className="card"
+          style={{
+            marginTop: 32,
+            position: "relative",
+            // Premium frosted glass effect with depth
+            // background: "rgba(255, 255, 255, 0.02)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: 24,
+            padding: "20px",
+            // Premium shadows (work in PDF)
+            boxShadow:
+              "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, var(--bg-card) 100%)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+          }}
+        >
+          <h3 style={{ fontSize: "1.2em", fontWeight: 600, marginBottom: 16 }}>
             Day Progression
-          </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {(plan.day_progression as string[]).map((item, i) => (
-              <div
-                key={i}
+          </h3>
+          {(plan.day_progression as string[]).map((item, i) => (
+            <div
+              key={i}
+              style={{
+                padding: 10,
+                background: "rgba(255, 255, 255, 0.02)",
+
+                borderRadius: 12,
+                // borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
+                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+              }}
+            >
+              <p
                 style={{
-                  padding: 20,
-                  background: "rgba(255,255,255,0.03)",
-                  borderRadius: 12,
-                  borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+                  margin: 0,
+                  paddingLeft: 16,
+                  borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
+                  lineHeight: 1.7,
+                  opacity: 0.92,
+                  fontSize: "1.05rem",
+                  color: "rgba(255, 255, 255, 0.95)",
                 }}
               >
-                <p
-                  style={{
-                    margin: 0,
-                    lineHeight: 1.7,
-                    fontSize: "1.05em",
-                    opacity: 0.92,
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
+                {item}
+              </p>
+            </div>
+          ))}
         </div>
+        // </div>
       )}
     </div>
   );
@@ -979,13 +1077,13 @@ function MemberPatternView({
               "linear-gradient(145deg, rgba(255, 255, 255, 0.02) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(255, 255, 255, 0.01) 100%)",
             border: "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: 24,
-            padding: "48px",
+            padding: "4px",
             // Premium shadows (work in PDF)
             boxShadow:
               "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
           }}
         >
-          <h3 style={{ fontSize: "1.5em", fontWeight: 700, marginBottom: 16 }}>
+          <h3 style={{ fontSize: "1.2em", fontWeight: 600, marginBottom: 16 }}>
             Day Progression
           </h3>
           <div
@@ -1005,7 +1103,7 @@ function MemberPatternView({
               <div
                 key={i}
                 style={{
-                  padding: 20,
+                  // padding: 20,
                   background: "rgba(255, 255, 255, 0.02)",
 
                   borderRadius: 12,
@@ -1020,7 +1118,7 @@ function MemberPatternView({
                     borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
                     lineHeight: 1.7,
                     opacity: 0.92,
-                    fontSize: "1.05rem",
+                    fontSize: ".9rem",
                     color: "rgba(255, 255, 255, 0.95)",
                   }}
                 >
@@ -1059,7 +1157,7 @@ function PatternCard({
           ? "1px solid rgba(74, 144, 226, 0.15)"
           : "1px solid rgba(255, 255, 255, 0.08)",
         borderRadius: 24,
-        padding: "48px",
+        padding: "24px",
         // Premium shadows (work in PDF)
         boxShadow: isPrimary
           ? "0 8px 32px rgba(74, 144, 226, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
@@ -1093,12 +1191,12 @@ function PatternCard({
       {/* Presentation Title - Premium typography */}
       <h3
         style={{
-          fontSize: "2.25rem",
-          fontWeight: 800,
+          fontSize: "1.7rem",
+          fontWeight: 600,
           letterSpacing: "-0.02em",
           marginTop: 12,
           marginBottom: 32,
-          lineHeight: 1.1,
+          lineHeight: 1,
           color: "rgba(255, 255, 255, 0.95)",
         }}
       >
@@ -1109,8 +1207,8 @@ function PatternCard({
       {pattern.pattern_summary && (
         <div
           style={{
-            marginBottom: 32,
-            padding: "24px 28px",
+            marginBottom: 16,
+            padding: "10px 16px",
             background:
               "linear-gradient(135deg, rgba(74, 144, 226, 0.06) 0%, rgba(74, 144, 226, 0.02) 100%)",
             borderLeft: "4px solid #4A90E2",
@@ -1122,7 +1220,7 @@ function PatternCard({
             style={{
               lineHeight: 1.75,
               margin: 0,
-              fontSize: "1.05rem",
+              fontSize: ".9rem",
               fontWeight: 400,
               letterSpacing: "0.01em",
               color: "rgba(255, 255, 255, 0.92)",
@@ -1139,7 +1237,7 @@ function PatternCard({
           height: 1,
           background:
             "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
-          margin: "32px 0",
+          margin: "0px 0",
         }}
       />
 
@@ -1147,7 +1245,7 @@ function PatternCard({
       <div
         style={{
           position: "relative",
-          marginBottom: 32,
+          marginBottom: 16,
           overflow: "hidden",
           background:
             "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.12) 0%, rgba(74, 144, 226, 0.04) 40%, transparent 70%)",
@@ -1174,12 +1272,13 @@ function PatternCard({
             justifyContent: "center",
             alignItems: "center",
             minHeight: 280,
-            padding: "80px 40px",
+            padding: "20px 10px",
             zIndex: 1,
           }}
         >
           {pattern.colors.asset_key ? (
             <img
+              className="image-fade"
               src={`/images/lures/${pattern.colors.asset_key}`}
               alt={pattern.base_lure}
               style={{
@@ -1217,7 +1316,7 @@ function PatternCard({
       </div>
 
       {/* Lure Name */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 16 }}>
         <div
           style={{
             fontSize: "0.7rem",
@@ -1359,8 +1458,8 @@ function PatternCard({
                 >
                   <div
                     style={{
-                      width: 28,
-                      height: 28,
+                      width: 20,
+                      height: 20,
                       borderRadius: "50%",
                       background: getColorHex(color),
                       border: "2px solid rgba(255,255,255,0.25)",
@@ -1390,7 +1489,7 @@ function PatternCard({
           height: 1,
           background:
             "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
-          margin: "32px 0",
+          margin: "10px 0",
         }}
       />
 
@@ -1399,7 +1498,7 @@ function PatternCard({
         <div
           style={{
             marginBottom: 32,
-            padding: "24px 28px",
+            padding: "12px 14px",
             background:
               "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
             border: "1px solid rgba(255, 255, 255, 0.08)",
@@ -1409,7 +1508,7 @@ function PatternCard({
         >
           <h4
             style={{
-              fontSize: "1.25rem",
+              fontSize: "1rem",
               fontWeight: 600,
               marginBottom: 20,
               color: "rgba(255, 255, 255, 0.95)",
@@ -1430,7 +1529,7 @@ function PatternCard({
             >
               <span
                 style={{
-                  fontSize: "0.85rem",
+                  fontSize: "0.8rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(255, 255, 255, 0.5)",
@@ -1441,7 +1540,7 @@ function PatternCard({
               </span>
               <span
                 style={{
-                  fontSize: "1.05rem",
+                  fontSize: "0.85rem",
                   fontWeight: 600,
                   color: "rgba(255, 255, 255, 0.95)",
                 }}
@@ -1461,7 +1560,7 @@ function PatternCard({
             >
               <span
                 style={{
-                  fontSize: "0.85rem",
+                  fontSize: "0.8rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(255, 255, 255, 0.5)",
@@ -1472,7 +1571,7 @@ function PatternCard({
               </span>
               <span
                 style={{
-                  fontSize: "1.05rem",
+                  fontSize: ".85rem",
                   fontWeight: 600,
                   color: "rgba(255, 255, 255, 0.95)",
                 }}
@@ -1490,7 +1589,7 @@ function PatternCard({
             >
               <span
                 style={{
-                  fontSize: "0.85rem",
+                  fontSize: "0.8rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(255, 255, 255, 0.5)",
@@ -1501,9 +1600,11 @@ function PatternCard({
               </span>
               <span
                 style={{
-                  fontSize: "1.05rem",
+                  fontSize: "0.85rem",
                   fontWeight: 600,
                   color: "rgba(255, 255, 255, 0.95)",
+                  maxWidth: "70%",
+                  textAlign: "right",
                 }}
               >
                 {pattern.gear.line}
@@ -1522,16 +1623,19 @@ function PatternCard({
               fontWeight: 600,
               marginBottom: 14,
               color: "rgba(255, 255, 255, 0.95)",
+              display: "inline-block",
+              paddingBottom: "6px",
+              borderBottom: "3px solid rgb(74, 144, 226)",
             }}
           >
             Why This Works
           </h4>
           <p
             style={{
-              lineHeight: 1.7,
+              lineHeight: 1.6,
               opacity: 0.88,
               margin: 0,
-              fontSize: "1.05rem",
+              fontSize: ".97rem",
             }}
           >
             {pattern.why_this_works}
@@ -1548,16 +1652,19 @@ function PatternCard({
               fontWeight: 600,
               marginBottom: 14,
               color: "rgba(255, 255, 255, 0.95)",
+              display: "inline-block",
+              paddingBottom: "6px",
+              borderBottom: "3px solid rgb(74, 144, 226)",
             }}
           >
             Strategy
           </h4>
           <p
             style={{
-              lineHeight: 1.7,
+              lineHeight: 1.6,
               opacity: 0.88,
               margin: 0,
-              fontSize: "1.05rem",
+              fontSize: ".97rem",
             }}
           >
             {typeof pattern.strategy === "string"
@@ -1655,6 +1762,9 @@ function PatternCard({
               fontWeight: 600,
               marginBottom: 16,
               color: "rgba(255, 255, 255, 0.95)",
+              display: "inline-block",
+              paddingBottom: "6px",
+              borderBottom: "3px solid rgb(74, 144, 226)",
             }}
           >
             Where & How
@@ -1677,7 +1787,7 @@ function PatternCard({
                     {/* Target Name */}
                     <h5
                       style={{
-                        fontSize: "1.1rem",
+                        fontSize: ".95rem",
                         fontWeight: 700,
                         marginBottom: 8,
                         color: "#4A90E2",
@@ -1694,7 +1804,7 @@ function PatternCard({
                         margin: "0 0 12px 0",
                         lineHeight: 1.6,
                         opacity: 0.7,
-                        fontSize: "0.95rem",
+                        fontSize: "0.8rem",
                         fontStyle: "italic",
                         color: "rgba(255, 255, 255, 0.8)",
                       }}
@@ -1706,11 +1816,11 @@ function PatternCard({
                     <p
                       style={{
                         margin: 0,
-                        paddingLeft: 16,
+                        paddingLeft: 10,
                         borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
-                        lineHeight: 1.7,
+                        lineHeight: 1.5,
                         opacity: 0.92,
-                        fontSize: "1.05rem",
+                        fontSize: ".9rem",
                         color: "rgba(255, 255, 255, 0.95)",
                       }}
                     >

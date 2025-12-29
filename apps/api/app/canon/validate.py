@@ -26,19 +26,31 @@ from .targets import CANONICAL_TARGETS  # ✅ Import from targets.py
 # CORE VALIDATORS
 # ----------------------------------------
 
-def validate_lure_and_presentation(lure: str, presentation: str) -> list[str]:
+def validate_lure_and_presentation(base_lure: str, presentation: str) -> list[str]:
     errs: list[str] = []
-    if lure not in LURE_POOL:
-        errs.append(f"Invalid lure: {lure!r} (not in LURE_POOL)")
+    
+    # Validate lure exists
+    if base_lure not in LURE_POOL:
+        errs.append(f"Invalid lure: {base_lure!r} (not in LURE_POOL)")
         return errs
+    
+    # Validate presentation exists
     if presentation not in PRESENTATIONS:
         errs.append(f"Invalid presentation: {presentation!r} (not in PRESENTATIONS)")
         return errs
-    expected = LURE_TO_PRESENTATION.get(lure)
-    if expected != presentation:
-        errs.append(f"Presentation mismatch for {lure!r}: expected {expected!r}, got {presentation!r}")
+    
+    # Check lure-presentation mapping
+    expected = LURE_TO_PRESENTATION.get(base_lure)
+    
+    # Handle both single presentation and list of allowed presentations
+    if isinstance(expected, list):
+        if presentation not in expected:
+            errs.append(f"Presentation mismatch for {base_lure!r}: expected one of {expected}, got {presentation!r}")
+    else:
+        if expected != presentation:
+            errs.append(f"Presentation mismatch for {base_lure!r}: expected {expected!r}, got {presentation!r}")
+    
     return errs
-
 
 def validate_colors(colors: list[str], valid_colors: list[str] = None) -> list[str]:
     """

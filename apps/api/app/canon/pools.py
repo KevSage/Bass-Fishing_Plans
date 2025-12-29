@@ -618,11 +618,12 @@ LURE_TO_PRESENTATION = {
     "jerkbait": "Vertical Reaction",
     "blade bait": "Vertical Reaction",
 
-    # Bottom Contact - Dragging
-    "texas rig": "Bottom Contact - Dragging",
-    "carolina rig": "Bottom Contact - Dragging",
-    "football jig": "Bottom Contact - Dragging",
-    "shaky head": "Bottom Contact - Dragging",
+  # Bottom Contact - BOTH dragging and hopping allowed
+    "texas rig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
+    "carolina rig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
+    "football jig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
+    "casting jig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
+    "shaky head": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
 
     # Bottom Contact - Hopping / Targeted
     "casting jig": "Bottom Contact - Hopping / Targeted",

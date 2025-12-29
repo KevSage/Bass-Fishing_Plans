@@ -54,6 +54,17 @@ COLOR_SWATCHES = {
     "red_craw": "red craw",
     "white": "white",
     "chart_white": "white/chartreuse",
+    "baby_bass": "baby bass",
+    "watermelon_red" :"watermelon red",
+    "green_pumpkin_orange" : "green pumpkin orange",
+    "peanut butter_jelly" :  "peanut butter & jelly",
+    "chartreuse_black_back" : "chartreuse/black back",
+    "ghost_shad" : "ghost shad",
+    "citrus_shad": "citrus shad",
+    "pro_blue" :  "pro blue",
+    "table_rock" : "table rock",
+    "ghost_minnow": "ghost minnow",
+    "natural_shad": "natural shad",
 }
 
 

@@ -447,14 +447,14 @@ function AdminMap({ onLogout }: { onLogout: () => void }) {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateRows: "1fr 1fr",
                 gap: 24,
                 padding: 24,
                 overflowY: "auto",
                 flex: 1,
               }}
             >
-              {/* LEFT SIDE - FORM */}
+              {/* Top - FORM */}
               <div
                 style={{ display: "flex", flexDirection: "column", gap: 20 }}
               >
@@ -625,7 +625,7 @@ function AdminMap({ onLogout }: { onLogout: () => void }) {
                 )}
               </div>
 
-              {/* RIGHT SIDE - SEARCH */}
+              {/* Bottom SIDE - SEARCH */}
               <div
                 style={{
                   borderLeft: "1px solid rgba(0,0,0,0.1)",
