@@ -387,7 +387,7 @@ export function Members() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
+                gridTemplateRows: "1fr 1fr",
                 gap: 24,
                 padding: 24,
                 overflowY: "auto",

@@ -354,3 +354,14 @@ button:focus-visible {
 .mapboxgl-ctrl-geolocate {
   display: block !important;
 }
+
+/* === Pattern Lure Image === */
+
+.image-fade {
+  -webkit-mask-image: radial-gradient(
+    ellipse at center,
+    black 72%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(ellipse at center, black 72%, transparent 100%);
+}

@@ -196,7 +196,7 @@ OUTPUT FORMAT (JSON only - no markdown, no explanation):
     "Midday: <2-3 sentences with proper spacing after periods>",
     "Evening: <2-3 sentences with proper spacing after periods>"
   ],
-  "outlook_blurb": "<weather forecast only - NO bass strategy>"
+  "outlook_blurb": "<weather forecast only - You can inlcude phase and regional logic related to bass activity, but NO bass strategy>"
 }
 """
     
@@ -274,13 +274,13 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    - soft_plastic_why: 1-2 sentences explaining why THIS plastic for THESE conditions (phase, temp, clarity)
    
    Allowed soft plastics by lure:
-{chr(10).join(terminal_rules)}
+    {chr(10).join(terminal_rules)}
    
    IMPORTANT: soft_plastic_why must be CONTEXTUAL, not generic
    ✅ GOOD: "In late-fall with 68° water, creature baits create maximum displacement in stained conditions where bass locate by feel."
    ❌ BAD: "Creature baits have lots of appendages" (this is generic knowledge)
 
-9. TRAILER RULES:
+10. TRAILER RULES:
    If you choose lures that need trailers (chatterbait, swim jig, spinnerbait, casting jig, football jig), you MUST include:
    - trailer: choose from allowed trailers for that lure
    - trailer_why: 1-2 sentences explaining why THIS trailer for THESE conditions
@@ -292,10 +292,20 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ✅ GOOD: "With clear skies and calm water, a craw trailer keeps the profile compact for less aggressive fish in 68° water."
    ❌ BAD: "Craws look like crawfish" (generic)
 
-10. CANONICAL TARGETS (choose 3-5 from this list ONLY - exact strings):
-{json.dumps(CANONICAL_TARGETS, indent=2)}
+   CRITICAL - FIELD USAGE:
+   ❌ NEVER put soft_plastic on jigs (casting jig, football jig, swim jig) - they use "trailer" field
+   ❌ NEVER put trailer on terminal tackle (carolina rig, texas rig, drop shot) - they use "soft_plastic" field
+   
+   When you choose a jig (casting jig, football jig, swim jig)  → set soft_plastic to null, use trailer field
+   When you choose terminal tackle → set trailer to null, use soft_plastic field
 
-9. DAY PROGRESSION (EXTENDED FORMAT):
+11. CANONICAL TARGETS (choose 3-5 from this list ONLY - exact strings):
+{json.dumps(CANONICAL_TARGETS, indent=2)}
+    CRITICAL - FIELD USAGE:
+    You must only use targets from the CANNONICAL_TARGETS pool
+    ❌ NEVER use "insulated target"
+
+12. DAY PROGRESSION (EXTENDED FORMAT):
    - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
    - Length: 2-3 sentences PER time block (not just 1 sentence)
    - Each time block MUST start with "Morning:", "Midday:", or "Evening:" (or "Late:")
@@ -320,9 +330,9 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ❌ "Low light: hover higher.Set countdown rule..." - missing space after period
    ❌ "Low light: hover higher. Low light extends roaming..." - repetitive starts
 
-10. WEATHER FORECAST (outlook_blurb):
+13. WEATHER FORECAST (outlook_blurb):
    - 3-4 sentences describing the WEATHER FORECAST for the fishing day
-   - Focus ONLY on weather conditions - NO bass behavior, NO fishing strategy, NO lure advice
+   - Focus ONLY on weather conditions - General seasonal bass behavior, NO fishing strategy, NO lure advice
    - Include: current conditions, how they might change throughout the day, and any factors that affect fishing
    - Use descriptive weather language but DO NOT repeat exact numbers from conditions
    - Mention things like: cloud cover changes, wind shifts, temperature trends, precipitation, pressure changes
@@ -334,12 +344,11 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ✅ "Cloudy conditions persist all day with occasional breaks of filtered sunlight. A cold front passed overnight, leaving cooler temperatures and shifting winds. Morning starts calm but expect northwest winds to build through midday. Temperatures drop slightly as the day progresses - cooler afternoon than morning."
    
    BAD Examples (DO NOT DO THIS):
-   ❌ "Bass will be active in these conditions" - NO bass behavior
    ❌ "Perfect for moving baits" - NO fishing strategy
    ❌ "With 55°F and 8 mph winds..." - NO exact numbers
    ❌ "Fish will be on points" - NO location advice
 
-11. WORK IT / HOW TO FISH:
+14. WORK IT / HOW TO FISH:
    - 3-5 tactical steps combining target + specific retrieve cadence
    - Each step should reference a target and explain HOW to fish it with THIS lure
    - Use specific retrieve instructions (drag-pause timing, twitch patterns, etc.)
@@ -347,16 +356,16 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    - Example: "Work channel swings with a steady swim and brief stall when you tick cover - the pause triggers followers."
    - Use natural capitalization (not ALL CAPS)
 
-12. WHY THIS WORKS:
+15. WHY THIS WORKS:
    - ONLY explain why THIS SPECIFIC LURE was chosen for these conditions
    - Focus on: lure characteristics, presentation style
    - MUST include color explanation using "Choose X if Y" format:
      * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
      * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
-   - For jigs/chatterbaits/spinnerbaits, add ONE sentence about trailer color choice
-   - Length: 3-4 sentences total (lure choice + color explanation + optional trailer color)
+   - Add ONE sentence about soft plastic/trailer color choice if applicable.
+   - Length: 4-5 sentences total (lure choice + color explanation + optional trailer color)
    - Format: End with something like "Go with [color1] in clearer water, [color2] when it's stained."
-   - 2-3 sentences total
+   - 4-5 sentences total
    
    GOOD Examples:
    ✅ "A chatterbait's vibration and flash mimics distressed baitfish, triggering reaction strikes from roaming bass in windward zones. Natural shad works in clear conditions, while chartreuse/white shines when visibility drops."
@@ -368,11 +377,11 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ❌ No mention of color guidance - MUST casually explain which color for which clarity
    ❌ "The conditions favor moving baits" - too general, explain why THIS lure specifically
 
-13. PATTERN SUMMARY (MEMBERS ONLY - top blurb for each pattern):
+16. PATTERN SUMMARY:
    - 2-3 sentences introducing the presentation and lure choice
    - MUST cover:
      * What this presentation family is (e.g., "Vertical Reaction")
-     * For vertical/suspended presentations: mention water column ("works the water column", "targets suspended fish")
+     * If lure is for vertical/suspended presentations: mention water column ("works the water column", "targets suspended fish")
      * Why THIS LURE was chosen for current conditions
      * Key behavioral trigger
    - Use positive framing only (don't say what it's NOT)
@@ -384,7 +393,7 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ❌ "Vertical Reaction is not a bottom presentation" - negative framing
    ❌ Missing water column context for vertical presentations
 
-14. STRATEGY PARAGRAPH (MEMBERS ONLY):
+17. STRATEGY PARAGRAPH:
    - 3-4 sentences covering environmental/positional tactics
    - Use "Bass are likely doing X because Y, so you do Z" logic
    - CONVERSATIONAL tone: "give each spot a fair shake", "don't bail too quick", "if things go quiet"
@@ -403,7 +412,7 @@ CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
    ❌ "Low light: hover higher.Set countdown rule..." - missing spaces, bad formatting
    ❌ "Low light: hover higher. Low light extends..." - repetitive sentence starts
 
-15. CRITICAL DEPTH RULE:
+18. CRITICAL DEPTH RULE:
    - NEVER mention specific depths in feet (e.g., "15-30 feet", "8-12 feet")
    - You don't know the depth of the user's water body
    - Use RELATIVE depth language instead:
@@ -432,7 +441,7 @@ VALIDATION BEFORE RETURNING:
 - outlook_blurb has no exact temperature/wind numbers
 - NO specific depth mentions anywhere
 
-Use your bass fishing expertise to choose the BEST options from these pools based on conditions.
+Use your bass fishing expertise to choose the BEST options from these pools based on bass seasonal phase and the user's local weather, conditions, and regional location for the day.
 """
 
 
