@@ -3,7 +3,12 @@ import { Link } from "react-router-dom";
 
 export function Landing() {
   return (
-    <div style={{ background: "#000", color: "#fff" }}>
+    <div
+      style={{
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        color: "#fff",
+      }}
+    >
       {/* ============================================
           HERO SECTION - CLARITY EVERY TIME, EVERYWHERE
           ============================================ */}
@@ -153,7 +158,6 @@ export function Landing() {
       <section
         style={{
           padding: "140px 24px",
-          background: "#000",
         }}
       >
         <div className="container" style={{ maxWidth: 1100 }}>
@@ -288,7 +292,6 @@ export function Landing() {
       <section
         style={{
           padding: "140px 24px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
         <div className="container" style={{ maxWidth: 1200 }}>
@@ -430,7 +433,6 @@ export function Landing() {
       <section
         style={{
           padding: "140px 24px",
-          background: "#000",
         }}
       >
         <div className="container" style={{ maxWidth: 1000 }}>
@@ -564,7 +566,6 @@ export function Landing() {
       <section
         style={{
           padding: "140px 24px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
         <div className="container" style={{ maxWidth: 1000 }}>
@@ -622,15 +623,9 @@ export function Landing() {
                 key={i}
                 style={{
                   padding: "40px 44px",
-                  background:
-                    i === 1
-                      ? "linear-gradient(135deg, rgba(74, 144, 226, 0.12) 0%, rgba(74, 144, 226, 0.04) 100%)"
-                      : "rgba(255,255,255,0.02)",
+                  background: "rgba(255,255,255,0.02)",
                   borderRadius: 16,
-                  border:
-                    i === 1
-                      ? "1px solid rgba(74, 144, 226, 0.25)"
-                      : "1px solid rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
                 <h3
@@ -677,7 +672,6 @@ export function Landing() {
       <section
         style={{
           padding: "140px 24px",
-          background: "#000",
         }}
       >
         <div className="container" style={{ maxWidth: 1000 }}>
@@ -791,7 +785,6 @@ export function Landing() {
       <section
         style={{
           padding: "140px 24px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
         <div className="container" style={{ maxWidth: 1000 }}>
@@ -899,7 +892,6 @@ export function Landing() {
       <section
         style={{
           padding: "140px 24px",
-          background: "#000",
         }}
       >
         <div
@@ -984,7 +976,6 @@ export function Landing() {
       <section
         style={{
           padding: "120px 24px 160px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
         <div

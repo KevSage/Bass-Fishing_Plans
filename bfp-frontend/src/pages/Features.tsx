@@ -3,15 +3,23 @@ import { Link } from "react-router-dom";
 
 export function WhatsIncluded() {
   return (
-    <div style={{ background: "#000", color: "#fff", minHeight: "100vh" }}>
+    <div
+      style={{
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        color: "#fff",
+        minHeight: "100vh",
+      }}
+    >
       {/* Hero Section */}
       <section
         style={{
           padding: "120px 24px 80px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
-        <div className="container" style={{ maxWidth: 900, textAlign: "center" }}>
+        <div
+          className="container"
+          style={{ maxWidth: 900, textAlign: "center" }}
+        >
           <h1
             style={{
               fontSize: "clamp(2.5rem, 6vw, 4rem)",
@@ -31,13 +39,18 @@ export function WhatsIncluded() {
               margin: "0 auto",
             }}
           >
-            Every plan delivers complete strategic clarity. Here's exactly what you get.
+            Every plan delivers complete strategic clarity. Here's exactly what
+            you get.
           </p>
         </div>
       </section>
 
       {/* Core Features */}
-      <section style={{ padding: "80px 24px" }}>
+      <section
+        style={{
+          padding: "80px 24px",
+        }}
+      >
         <div className="container" style={{ maxWidth: 1100 }}>
           <h2
             style={{
@@ -55,9 +68,10 @@ export function WhatsIncluded() {
             <div
               style={{
                 padding: "40px",
-                background: "rgba(255,255,255,0.02)",
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
             >
               <h3
@@ -78,7 +92,8 @@ export function WhatsIncluded() {
                   marginBottom: 20,
                 }}
               >
-                Not just data displayed—analysis of how weather affects the water below.
+                Not just data displayed—analysis of how weather affects the
+                water below.
               </p>
               <ul
                 style={{
@@ -100,7 +115,7 @@ export function WhatsIncluded() {
               style={{
                 padding: "40px",
                 background:
-                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%)",
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
                 border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
@@ -138,7 +153,9 @@ export function WhatsIncluded() {
                   marginBottom: 20,
                 }}
               >
-                Not scattered tips. Two focused strategies that work together. Everything connects—your second approach complements your first, your gear matches your technique.
+                Not scattered tips. Two focused strategies that work together.
+                Everything connects—your second approach complements your first,
+                your gear matches your technique.
               </p>
               <ul
                 style={{
@@ -159,9 +176,10 @@ export function WhatsIncluded() {
             <div
               style={{
                 padding: "40px",
-                background: "rgba(255,255,255,0.02)",
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
             >
               <h3
@@ -182,7 +200,8 @@ export function WhatsIncluded() {
                   marginBottom: 20,
                 }}
               >
-                Multiple ways to work each bait, matched to conditions and bass activity.
+                Multiple ways to work each bait, matched to conditions and bass
+                activity.
               </p>
               <ul
                 style={{
@@ -205,7 +224,7 @@ export function WhatsIncluded() {
               style={{
                 padding: "40px",
                 background:
-                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%)",
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
                 border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
@@ -243,7 +262,9 @@ export function WhatsIncluded() {
                   marginBottom: 20,
                 }}
               >
-                Rod, reel, and line matched to how you're fishing it. Bottom contact gets heavy gear. Finesse gets lighter touch. Deliberate, not random.
+                Rod, reel, and line matched to how you're fishing it. Bottom
+                contact gets heavy gear. Finesse gets lighter touch. Deliberate,
+                not random.
               </p>
               <ul
                 style={{
@@ -264,9 +285,10 @@ export function WhatsIncluded() {
             <div
               style={{
                 padding: "40px",
-                background: "rgba(255,255,255,0.02)",
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
             >
               <h3
@@ -287,7 +309,8 @@ export function WhatsIncluded() {
                   marginBottom: 20,
                 }}
               >
-                Narrow your water to specific structure types. Understand how to work each target.
+                Narrow your water to specific structure types. Understand how to
+                work each target.
               </p>
               <ul
                 style={{
@@ -309,7 +332,7 @@ export function WhatsIncluded() {
               style={{
                 padding: "40px",
                 background:
-                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.03) 100%)",
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
                 border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
@@ -347,7 +370,8 @@ export function WhatsIncluded() {
                   marginBottom: 20,
                 }}
               >
-                Where to start, where to go next. Adjust your approach as conditions change throughout the day.
+                Where to start, where to go next. Adjust your approach as
+                conditions change throughout the day.
               </p>
               <ul
                 style={{
@@ -368,9 +392,10 @@ export function WhatsIncluded() {
             <div
               style={{
                 padding: "40px",
-                background: "rgba(255,255,255,0.02)",
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
             >
               <h3
@@ -391,7 +416,10 @@ export function WhatsIncluded() {
                   marginBottom: 20,
                 }}
               >
-                What works NOW for your phase and region. Late-fall Texas gets different tactics than late-fall Michigan. Our seasonal data accounts for regional variation—not one-size-fits-all calendar dates.
+                What works NOW for your phase and region. Late-fall Texas gets
+                different tactics than late-fall Michigan. Our seasonal data
+                accounts for regional variation—not one-size-fits-all calendar
+                dates.
               </p>
               <ul
                 style={{
@@ -412,9 +440,10 @@ export function WhatsIncluded() {
             <div
               style={{
                 padding: "40px",
-                background: "rgba(255,255,255,0.02)",
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
             >
               <h3
@@ -459,7 +488,6 @@ export function WhatsIncluded() {
       <section
         style={{
           padding: "100px 24px",
-          background: "linear-gradient(180deg, #0a0a0a 0%, #000 100%)",
         }}
       >
         <div className="container" style={{ maxWidth: 1100 }}>
@@ -495,9 +523,10 @@ export function WhatsIncluded() {
             <div
               style={{
                 padding: "40px",
-                background: "rgba(255,255,255,0.02)",
+                background:
+                  "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
                 borderRadius: 20,
-                border: "1px solid rgba(255,255,255,0.08)",
+                border: "1px solid rgba(74, 144, 226, 0.2)",
               }}
             >
               <h3
@@ -571,7 +600,11 @@ export function WhatsIncluded() {
       </section>
 
       {/* CTA */}
-      <section style={{ padding: "100px 24px" }}>
+      <section
+        style={{
+          padding: "100px 24px",
+        }}
+      >
         <div
           className="container"
           style={{ maxWidth: 700, textAlign: "center" }}
@@ -596,6 +629,7 @@ export function WhatsIncluded() {
               fontWeight: 600,
               display: "inline-block",
               marginBottom: 16,
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
             Try Free Preview

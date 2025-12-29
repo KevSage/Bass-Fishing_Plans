@@ -88,15 +88,23 @@ export function FAQ() {
   ];
 
   return (
-    <div style={{ background: "#000", color: "#fff", minHeight: "100vh" }}>
+    <div
+      style={{
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        color: "#fff",
+        minHeight: "100vh",
+      }}
+    >
       {/* Hero */}
       <section
         style={{
           padding: "120px 24px 80px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
-        <div className="container" style={{ maxWidth: 900, textAlign: "center" }}>
+        <div
+          className="container"
+          style={{ maxWidth: 900, textAlign: "center" }}
+        >
           <h1
             style={{
               fontSize: "clamp(2.5rem, 6vw, 4rem)",
@@ -133,10 +141,21 @@ export function FAQ() {
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 12,
                   overflow: "hidden",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(74, 144, 226, 0.05)";
+                  e.currentTarget.style.borderColor = "rgba(74, 144, 226, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.02)";
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
                 }}
               >
                 <button
-                  onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                  onClick={() =>
+                    setOpenIndex(openIndex === index ? null : index)
+                  }
                   style={{
                     width: "100%",
                     padding: "24px 28px",
@@ -165,7 +184,9 @@ export function FAQ() {
                       fontSize: "1.5rem",
                       flexShrink: 0,
                       transition: "transform 0.3s ease",
-                      transform: openIndex === index ? "rotate(180deg)" : "rotate(0deg)",
+                      transform:
+                        openIndex === index ? "rotate(180deg)" : "rotate(0deg)",
+                      color: "#4A90E2",
                     }}
                   >
                     ▼
@@ -193,7 +214,6 @@ export function FAQ() {
       <section
         style={{
           padding: "100px 24px",
-          background: "linear-gradient(180deg, #0a0a0a 0%, #000 100%)",
         }}
       >
         <div
@@ -230,6 +250,7 @@ export function FAQ() {
               fontWeight: 600,
               display: "inline-block",
               marginBottom: 24,
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
             Try Free Preview

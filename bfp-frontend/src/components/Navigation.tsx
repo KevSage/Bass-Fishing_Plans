@@ -16,8 +16,10 @@ export function Navigation() {
   // Public links (shown to everyone)
   const publicLinks = [
     { to: "/", label: "Home" },
+    { to: "/whats-included", label: "Features" },
     { to: "/what-your-plan-includes", label: "What You Get" },
     { to: "/how-to-use", label: "How to Use" },
+    { to: "/about", label: "About" },
     { to: "/faq", label: "FAQ" },
   ];
 
@@ -57,7 +59,7 @@ export function Navigation() {
           {/* Logo */}
           <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
             <div style={{ fontWeight: 600, fontSize: "1.1em" }}>
-              Bass Clarity
+              Bass Fishing Plans
             </div>
           </Link>
 

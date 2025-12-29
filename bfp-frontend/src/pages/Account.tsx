@@ -142,7 +142,7 @@ export function Account() {
       <div
         style={{
           minHeight: "100vh",
-          background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)",
+          background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -199,17 +199,17 @@ export function Account() {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)",
-        padding: "48px 24px",
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        padding: "80px 24px 60px",
         color: "#fff",
       }}
     >
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <div style={{ marginBottom: 32 }}>
+        <div style={{ marginBottom: 48 }}>
           <h1
             style={{
               fontSize: "clamp(2rem, 5vw, 2.5rem)",
-              fontWeight: 600,
+              fontWeight: 700,
               marginBottom: 8,
             }}
           >
@@ -236,16 +236,21 @@ export function Account() {
 
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
-            padding: 24,
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+            border: "1px solid rgba(74, 144, 226, 0.2)",
+            borderRadius: 16,
+            padding: 32,
             marginBottom: 24,
           }}
         >
           <h2
-            style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: 16 }}
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 24,
+              color: "#4A90E2",
+            }}
           >
             Account Information
           </h2>
@@ -302,11 +307,11 @@ export function Account() {
 
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
-            padding: 24,
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+            border: "1px solid rgba(74, 144, 226, 0.2)",
+            borderRadius: 16,
+            padding: 32,
             marginBottom: 24,
           }}
         >
@@ -315,10 +320,12 @@ export function Account() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "flex-start",
-              marginBottom: 16,
+              marginBottom: 24,
             }}
           >
-            <h2 style={{ fontSize: "1.25rem", fontWeight: 600 }}>
+            <h2
+              style={{ fontSize: "1.25rem", fontWeight: 600, color: "#4A90E2" }}
+            >
               Subscription
             </h2>
             {subscription && getStatusBadge(subscription.status)}
@@ -421,30 +428,46 @@ export function Account() {
 
         <div
           style={{
-            background: "rgba(255,255,255,0.03)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 12,
-            padding: 24,
+            background:
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+            border: "1px solid rgba(74, 144, 226, 0.2)",
+            borderRadius: 16,
+            padding: 32,
             marginBottom: 24,
           }}
         >
           <h2
-            style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: 16 }}
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 600,
+              marginBottom: 20,
+              color: "#4A90E2",
+            }}
           >
             Quick Links
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Link
               to="/members"
-              className="card"
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: 12,
+                padding: 16,
                 textDecoration: "none",
                 color: "#fff",
+                background: "rgba(255, 255, 255, 0.03)",
+                borderRadius: 12,
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(74, 144, 226, 0.1)";
+                e.currentTarget.style.borderColor = "rgba(74, 144, 226, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
               }}
             >
               <span>Members Dashboard</span>
@@ -452,14 +475,25 @@ export function Account() {
             </Link>
             <Link
               to="/faq"
-              className="card"
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: 12,
+                padding: 16,
                 textDecoration: "none",
                 color: "#fff",
+                background: "rgba(255, 255, 255, 0.03)",
+                borderRadius: 12,
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(74, 144, 226, 0.1)";
+                e.currentTarget.style.borderColor = "rgba(74, 144, 226, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)";
+                e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
               }}
             >
               <span>FAQ</span>

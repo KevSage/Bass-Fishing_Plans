@@ -182,343 +182,358 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   }, [conditions.latitude, conditions.longitude]);
 
   return (
-    <div style={{ marginTop: 18 }}>
-      {/* Weather Forecast Panel - Premium with blue accents */}
-      <div
-        className="card"
-        style={{
-          marginTop: 0,
-          background:
-            "linear-gradient(145deg, rgba(74, 144, 226, 0.04) 0%, rgba(10, 10, 10, 0.4) 100%)",
-          border: "1px solid rgba(74, 144, 226, 0.12)",
-          overflow: "hidden",
-        }}
-      >
-        {/* Lake Background Header with Satellite Image */}
+    <>
+      <div style={{ marginTop: 18 }}>
+        {/* Weather Forecast Panel - Premium with blue accents */}
         <div
+          className="card"
           style={{
-            position: "relative",
-            marginBottom: 24,
-            borderRadius: "12px 12px 0 0",
-            overflow: "hidden",
+            marginTop: 0,
             background:
-              "linear-gradient(135deg, rgba(74, 144, 226, 0.2) 0%, rgba(10, 10, 10, 0.8) 100%)",
+              "linear-gradient(145deg, rgba(74, 144, 226, 0.04) 0%, rgba(10, 10, 10, 0.4) 100%)",
+            border: "1px solid rgba(74, 144, 226, 0.12)",
+            overflow: "hidden",
           }}
         >
-          {/* Mapbox Static Satellite Image */}
-          {MAPBOX_TOKEN && (
+          {/* Lake Background Header with Satellite Image */}
+          <div
+            style={{
+              position: "relative",
+              marginBottom: 24,
+              borderRadius: "12px 12px 0 0",
+              overflow: "hidden",
+              background:
+                "linear-gradient(135deg, rgba(74, 144, 226, 0.2) 0%, rgba(10, 10, 10, 0.8) 100%)",
+            }}
+          >
+            {/* Mapbox Static Satellite Image */}
+            {MAPBOX_TOKEN && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${conditions.longitude},${conditions.latitude},${lakeZoom},0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false)`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  filter: "brightness(0.95) saturate(1.4) contrast(1.15)",
+                }}
+              />
+            )}
+
+            {/* Lighter gradient overlay for vibrant colors */}
             <div
               style={{
                 position: "absolute",
                 inset: 0,
-                backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${conditions.longitude},${conditions.latitude},${lakeZoom},0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false)`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                filter: "brightness(0.95) saturate(1.4) contrast(1.15)",
+                background:
+                  "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.5) 100%)",
               }}
             />
-          )}
 
-          {/* Lighter gradient overlay for vibrant colors */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background:
-                "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.5) 100%)",
-            }}
-          />
-
-          {/* Date - Prominent with blue accent */}
-          <div
-            style={{
-              position: "relative",
-              padding: "20px 20px 0",
-              marginBottom: 12,
-              fontSize: "0.85rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: "#4A90E2",
-              fontWeight: 600,
-            }}
-          >
-            {conditions.trip_date}
-          </div>
-
-          {/* Location - Large with blue pin icon */}
-          <div
-            style={{
-              position: "relative",
-              padding: "0 20px 20px",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <div style={{ color: "#4A90E2" }}>
-              <MapPinIcon size={28} />
+            {/* Date - Prominent with blue accent */}
+            <div
+              style={{
+                position: "relative",
+                padding: "20px 20px 0",
+                marginBottom: 12,
+                fontSize: "0.85rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+                color: "#4A90E2",
+                fontWeight: 600,
+              }}
+            >
+              {conditions.trip_date}
             </div>
-            <div>
-              <h2
-                className="h2"
-                style={{
-                  margin: 0,
-                  fontSize: "1.85em",
-                  fontWeight: 700,
-                  color: "#fff",
-                  textShadow: "0 2px 8px rgba(0,0,0,0.5)",
-                }}
-              >
-                {conditions.location_name}
-              </h2>
-              {(locationCity || locationState) && (
-                <div
+
+            {/* Location - Large with blue pin icon */}
+            <div
+              style={{
+                position: "relative",
+                padding: "0 20px 20px",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <div style={{ color: "#4A90E2" }}>
+                <MapPinIcon size={28} />
+              </div>
+              <div>
+                <h2
+                  className="h2"
                   style={{
-                    fontSize: "1.05em",
-                    opacity: 0.95,
-                    marginTop: 4,
+                    margin: 0,
+                    fontSize: "1.85em",
+                    fontWeight: 700,
                     color: "#fff",
-                    textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                    textShadow: "0 2px 8px rgba(0,0,0,0.5)",
                   }}
                 >
-                  {locationCity && locationState
-                    ? `${locationCity}, ${locationState}`
-                    : locationCity || locationState}
+                  {conditions.location_name}
+                </h2>
+                {(locationCity || locationState) && (
+                  <div
+                    style={{
+                      fontSize: "1.05em",
+                      opacity: 0.95,
+                      marginTop: 4,
+                      color: "#fff",
+                      textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+                    }}
+                  >
+                    {locationCity && locationState
+                      ? `${locationCity}, ${locationState}`
+                      : locationCity || locationState}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Weather Forecast Header */}
+          <h3
+            style={{
+              fontSize: "1.25em",
+              fontWeight: 600,
+              marginBottom: 18,
+              color: "rgba(255, 255, 255, 0.95)",
+            }}
+          >
+            Weather Forecast
+          </h3>
+
+          {/* Weather Grid - Premium cards with blue accents */}
+          <div
+            className="weather-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: 16,
+              marginBottom: 24,
+            }}
+          >
+            {/* Temperature Range */}
+            <div
+              style={{
+                padding: 16,
+                background:
+                  "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: 12,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 8,
+                }}
+              >
+                <div style={{ color: "#4A90E2" }}>
+                  <ThermometerIcon size={20} />
                 </div>
-              )}
+                <div
+                  style={{
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Temperature
+                </div>
+              </div>
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "1.15rem",
+                  color: "rgba(255, 255, 255, 0.95)",
+                }}
+              >
+                {Math.round(conditions.temp_low)}° -{" "}
+                {Math.round(conditions.temp_high)}
+                °F
+              </div>
+            </div>
+
+            {/* Wind */}
+            <div
+              style={{
+                padding: 16,
+                background:
+                  "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: 12,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 8,
+                }}
+              >
+                <div style={{ color: "#4A90E2" }}>
+                  <WindIcon size={20} />
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Wind
+                </div>
+              </div>
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "1.15rem",
+                  color: "rgba(255, 255, 255, 0.95)",
+                }}
+              >
+                {Math.round(conditions.wind_speed)} mph
+              </div>
+            </div>
+
+            {/* Sky */}
+            <div
+              style={{
+                padding: 16,
+                background:
+                  "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: 12,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 8,
+                }}
+              >
+                <div style={{ color: "#4A90E2" }}>
+                  <CloudIcon size={20} />
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Sky
+                </div>
+              </div>
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "1.15rem",
+                  textTransform: "capitalize",
+                  color: "rgba(255, 255, 255, 0.95)",
+                }}
+              >
+                {conditions.sky_condition.replace(/_/g, " ")}
+              </div>
+            </div>
+
+            {/* Phase */}
+            <div
+              style={{
+                padding: 16,
+                background:
+                  "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: 12,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 8,
+                }}
+              >
+                <div style={{ color: "#4A90E2" }}>
+                  <ActivityIcon size={20} />
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                    color: "rgba(255, 255, 255, 0.5)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Phase
+                </div>
+              </div>
+              <div
+                style={{
+                  fontWeight: 600,
+                  fontSize: "1.15rem",
+                  textTransform: "capitalize",
+                  color: "rgba(255, 255, 255, 0.95)",
+                }}
+              >
+                {conditions.phase}
+              </div>
             </div>
           </div>
+
+          {/* Forecast Description */}
+          {plan.outlook_blurb && (
+            <div>
+              <h4
+                style={{
+                  fontSize: "1em",
+                  fontWeight: 600,
+                  marginBottom: 10,
+                  opacity: 0.8,
+                }}
+              >
+                Forecast
+              </h4>
+              <p style={{ lineHeight: 1.7, opacity: 0.9, margin: 0 }}>
+                {plan.outlook_blurb}
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* Weather Forecast Header */}
-        <h3
-          style={{
-            fontSize: "1.25em",
-            fontWeight: 600,
-            marginBottom: 18,
-            color: "rgba(255, 255, 255, 0.95)",
-          }}
-        >
-          Weather Forecast
-        </h3>
-
-        {/* Weather Grid - Premium cards with blue accents */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: 16,
-            marginBottom: 24,
-          }}
-        >
-          {/* Temperature Range */}
-          <div
-            style={{
-              padding: 16,
-              background:
-                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ color: "#4A90E2" }}>
-                <ThermometerIcon size={20} />
-              </div>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  fontWeight: 600,
-                }}
-              >
-                Temperature
-              </div>
-            </div>
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "1.15rem",
-                color: "rgba(255, 255, 255, 0.95)",
-              }}
-            >
-              {Math.round(conditions.temp_low)}° -{" "}
-              {Math.round(conditions.temp_high)}
-              °F
-            </div>
-          </div>
-
-          {/* Wind */}
-          <div
-            style={{
-              padding: 16,
-              background:
-                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ color: "#4A90E2" }}>
-                <WindIcon size={20} />
-              </div>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  fontWeight: 600,
-                }}
-              >
-                Wind
-              </div>
-            </div>
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "1.15rem",
-                color: "rgba(255, 255, 255, 0.95)",
-              }}
-            >
-              {Math.round(conditions.wind_speed)} mph
-            </div>
-          </div>
-
-          {/* Sky */}
-          <div
-            style={{
-              padding: 16,
-              background:
-                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ color: "#4A90E2" }}>
-                <CloudIcon size={20} />
-              </div>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  fontWeight: 600,
-                }}
-              >
-                Sky
-              </div>
-            </div>
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "1.15rem",
-                textTransform: "capitalize",
-                color: "rgba(255, 255, 255, 0.95)",
-              }}
-            >
-              {conditions.sky_condition.replace(/_/g, " ")}
-            </div>
-          </div>
-
-          {/* Phase */}
-          <div
-            style={{
-              padding: 16,
-              background:
-                "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: 12,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ color: "#4A90E2" }}>
-                <ActivityIcon size={20} />
-              </div>
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  fontWeight: 600,
-                }}
-              >
-                Phase
-              </div>
-            </div>
-            <div
-              style={{
-                fontWeight: 600,
-                fontSize: "1.15rem",
-                textTransform: "capitalize",
-                color: "rgba(255, 255, 255, 0.95)",
-              }}
-            >
-              {conditions.phase}
-            </div>
-          </div>
-        </div>
-
-        {/* Forecast Description */}
-        {plan.outlook_blurb && (
-          <div>
-            <h4
-              style={{
-                fontSize: "1em",
-                fontWeight: 600,
-                marginBottom: 10,
-                opacity: 0.8,
-              }}
-            >
-              Forecast
-            </h4>
-            <p style={{ lineHeight: 1.7, opacity: 0.9, margin: 0 }}>
-              {plan.outlook_blurb}
-            </p>
-          </div>
+        {/* Pattern Display */}
+        {is_member ? (
+          <MemberPatternView plan={plan as MemberPlan} />
+        ) : (
+          <PreviewPatternView plan={plan as PreviewPlan} />
         )}
       </div>
-
-      {/* Pattern Display */}
-      {is_member ? (
-        <MemberPatternView plan={plan as MemberPlan} />
-      ) : (
-        <PreviewPatternView plan={plan as PreviewPlan} />
-      )}
-    </div>
+      <style>{`
+      @media (min-width: 768px) {
+        .weather-grid {
+          grid-template-columns: repeat(4, 1fr) !important;
+        }
+      }
+      @media (max-width: 767px) {
+        .weather-grid {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+      }
+    `}</style>
+    </>
   );
 }
 
@@ -895,22 +910,23 @@ function PreviewPatternView({
           <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
             Day Progression
           </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {(plan.day_progression as string[]).map((item, i) => (
               <div
                 key={i}
                 style={{
-                  padding: 16,
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: 8,
-                  borderLeft: "3px solid rgba(74, 144, 226, 0.5)",
+                  padding: 20,
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: 12,
+                  borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
+                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                 }}
               >
                 <p
                   style={{
                     margin: 0,
                     lineHeight: 1.7,
-                    fontSize: "0.95em",
+                    fontSize: "1.05em",
                     opacity: 0.92,
                     whiteSpace: "pre-wrap",
                   }}
