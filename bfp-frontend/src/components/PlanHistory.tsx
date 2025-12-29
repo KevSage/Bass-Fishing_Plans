@@ -30,6 +30,7 @@ export function PlanHistory() {
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -105,12 +106,21 @@ export function PlanHistory() {
 
   if (loading && offset === 0) {
     return (
-      <div className="card" style={{ marginBottom: 24 }}>
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+          border: "1px solid rgba(74, 144, 226, 0.2)",
+          borderRadius: 16,
+          padding: 32,
+          marginBottom: 24,
+        }}
+      >
         <h2
           style={{
             fontSize: "1.25rem",
             fontWeight: 600,
-            color: "#fff",
+            color: "#4A90E2",
             marginBottom: 16,
           }}
         >
@@ -128,12 +138,21 @@ export function PlanHistory() {
 
   if (error) {
     return (
-      <div className="card" style={{ marginBottom: 24 }}>
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+          border: "1px solid rgba(74, 144, 226, 0.2)",
+          borderRadius: 16,
+          padding: 32,
+          marginBottom: 24,
+        }}
+      >
         <h2
           style={{
             fontSize: "1.25rem",
             fontWeight: 600,
-            color: "#fff",
+            color: "#4A90E2",
             marginBottom: 16,
           }}
         >
@@ -155,12 +174,21 @@ export function PlanHistory() {
 
   if (plans.length === 0) {
     return (
-      <div className="card" style={{ marginBottom: 24 }}>
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+          border: "1px solid rgba(74, 144, 226, 0.2)",
+          borderRadius: 16,
+          padding: 32,
+          marginBottom: 24,
+        }}
+      >
         <h2
           style={{
             fontSize: "1.25rem",
             fontWeight: 600,
-            color: "#fff",
+            color: "#4A90E2",
             marginBottom: 16,
           }}
         >
@@ -179,9 +207,18 @@ export function PlanHistory() {
   }
 
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
-      <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#fff" }}>
+    <div
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+        border: "1px solid rgba(74, 144, 226, 0.2)",
+        borderRadius: 16,
+        padding: 32,
+        marginBottom: 24,
+      }}
+    >
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#4A90E2" }}>
           Plan History
         </h2>
         <p
@@ -196,8 +233,16 @@ export function PlanHistory() {
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {plans.map((plan) => (
-          <div key={plan.id} className="card" style={{ padding: 16 }}>
+        {(showAll ? plans : plans.slice(0, 3)).map((plan) => (
+          <div
+            key={plan.id}
+            style={{
+              padding: 20,
+              background: "rgba(255, 255, 255, 0.03)",
+              borderRadius: 12,
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+            }}
+          >
             {/* Header */}
             <div
               style={{
@@ -211,14 +256,16 @@ export function PlanHistory() {
                 <div style={{ color: "#4A90E2" }}>
                   <MapPinIcon size={18} />
                 </div>
-                <h3 style={{ color: "#fff", fontWeight: 500 }}>
+                <h3
+                  style={{ color: "#fff", fontWeight: 500, fontSize: "1.1rem" }}
+                >
                   {plan.lake_name}
                 </h3>
               </div>
               <span
                 style={{
-                  padding: "4px 8px",
-                  borderRadius: 4,
+                  padding: "4px 10px",
+                  borderRadius: 6,
                   fontSize: "0.75rem",
                   fontWeight: 500,
                   ...(plan.plan_type === "member"
@@ -243,7 +290,7 @@ export function PlanHistory() {
               style={{
                 fontSize: "0.875rem",
                 color: "rgba(255,255,255,0.6)",
-                marginBottom: 12,
+                marginBottom: 16,
               }}
             >
               {formatDate(plan.generation_date)}
@@ -257,15 +304,29 @@ export function PlanHistory() {
                 style={{
                   textDecoration: "none",
                   fontSize: "0.875rem",
-                  padding: "8px 16px",
+                  padding: "10px 20px",
+                  background:
+                    "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  border: "none",
+                  color: "#fff",
                 }}
               >
                 View Plan
               </a>
               <button
                 onClick={() => copyPlanLink(plan)}
-                className="btn"
-                style={{ fontSize: "0.875rem", padding: "8px 16px" }}
+                style={{
+                  fontSize: "0.875rem",
+                  padding: "10px 20px",
+                  background: "rgba(255, 255, 255, 0.05)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: 8,
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
                 title="Copy link"
               >
                 📋 Copy Link
@@ -275,16 +336,53 @@ export function PlanHistory() {
         ))}
       </div>
 
-      {/* Load More */}
-      {hasMore && (
+      {/* Show All / Show Less Toggle */}
+      {plans.length > 3 && (
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <button
+            onClick={() => setShowAll(!showAll)}
+            style={{
+              padding: "12px 24px",
+              background: "rgba(74, 144, 226, 0.1)",
+              border: "1px solid rgba(74, 144, 226, 0.3)",
+              borderRadius: 8,
+              color: "#4A90E2",
+              cursor: "pointer",
+              fontWeight: 500,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(74, 144, 226, 0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(74, 144, 226, 0.1)";
+            }}
+          >
+            {showAll ? `Show Less ▲` : `Show All ${plans.length} Plans ▼`}
+          </button>
+        </div>
+      )}
+
+      {/* Load More (only when showing all AND there's more to load) */}
+      {showAll && hasMore && (
         <div style={{ marginTop: 16, textAlign: "center" }}>
           <button
             onClick={() => setOffset(offset + 10)}
             disabled={loading}
-            className="btn"
-            style={{ opacity: loading ? 0.5 : 1 }}
+            style={{
+              padding: "12px 24px",
+              background: loading
+                ? "rgba(255, 255, 255, 0.03)"
+                : "rgba(255, 255, 255, 0.05)",
+              border: "1px solid rgba(255, 255, 255, 0.1)",
+              borderRadius: 8,
+              color: "#fff",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontWeight: 500,
+              opacity: loading ? 0.5 : 1,
+            }}
           >
-            {loading ? "Loading..." : "Show More Plans"}
+            {loading ? "Loading..." : "Load More Plans"}
           </button>
         </div>
       )}

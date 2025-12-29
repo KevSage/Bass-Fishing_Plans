@@ -2,13 +2,13 @@ import React from "react";
 import { Routes, Route, Link, Navigate } from "react-router-dom";
 import { SignedIn, SignedOut } from "@clerk/clerk-react";
 import { Navigation } from "./components/Navigation";
-// import { ScrollToTop } from "./components/ScrollToTop";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
 import { Subscribe } from "./pages/Subscribe";
 import { PreviewEnhanced } from "./pages/Preview";
 import { Members } from "./pages/Members";
 import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
+import { WhatsIncluded } from "./pages/features";
 import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
 import SignInPage from "./pages/signIn";
@@ -17,6 +17,7 @@ import { Admin } from "./pages/Admin";
 import { Success } from "./pages/Success";
 import { Account } from "./pages/Account";
 import { NotFound } from "./pages/NotFound";
+import { VerifyEmail } from "./pages/VerifyEmail";
 import "./complete-styles.css";
 
 import { PlanPage } from "./pages/PlanPage";
@@ -64,7 +65,6 @@ function TopBar() {
 export default function App() {
   return (
     <>
-      {/* <ScrollToTop /> */}
       <Navigation />
       <Routes>
         <Route path="/" element={<Landing />} />
@@ -73,6 +73,7 @@ export default function App() {
         <Route path="/preview" element={<PreviewEnhanced />} />
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
         <Route path="/admin" element={<Admin />} />
         <Route
           path="/members"
@@ -91,6 +92,7 @@ export default function App() {
           path="/what-your-plan-includes"
           element={<WhatYourPlanIncludes />}
         />
+        <Route path="/whats-included" element={<WhatsIncluded />} />
         <Route path="/how-to-use" element={<HowToUse />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/plan" element={<PlanPage />} />

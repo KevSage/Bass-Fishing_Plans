@@ -3,15 +3,23 @@ import { Link } from "react-router-dom";
 
 export function HowToUse() {
   return (
-    <div style={{ background: "#000", color: "#fff", minHeight: "100vh" }}>
+    <div
+      style={{
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        color: "#fff",
+        minHeight: "100vh",
+      }}
+    >
       {/* Hero */}
       <section
         style={{
           padding: "120px 24px 80px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
-        <div className="container" style={{ maxWidth: 900, textAlign: "center" }}>
+        <div
+          className="container"
+          style={{ maxWidth: 900, textAlign: "center" }}
+        >
           <h1
             style={{
               fontSize: "clamp(2.5rem, 6vw, 4rem)",
@@ -31,7 +39,8 @@ export function HowToUse() {
               margin: "0 auto",
             }}
           >
-            From selection to execution. Here's how to get the most out of your Bass Clarity plans.
+            From selection to execution. Here's how to get the most out of your
+            Bass Clarity plans.
           </p>
         </div>
       </section>
@@ -55,7 +64,8 @@ export function HowToUse() {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -85,7 +95,8 @@ export function HowToUse() {
                     marginBottom: 20,
                   }}
                 >
-                  Choose your lake from our database or select any water body from the map.
+                  Choose your lake from our database or select any water body
+                  from the map.
                 </p>
                 <ul
                   style={{
@@ -118,7 +129,8 @@ export function HowToUse() {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -148,7 +160,8 @@ export function HowToUse() {
                     marginBottom: 20,
                   }}
                 >
-                  Bass Clarity analyzes current weather, seasonal phase, and regional patterns to build your strategic approach.
+                  Bass Clarity analyzes current weather, seasonal phase, and
+                  regional patterns to build your strategic approach.
                 </p>
                 <ul
                   style={{
@@ -181,7 +194,8 @@ export function HowToUse() {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -211,7 +225,8 @@ export function HowToUse() {
                     marginBottom: 20,
                   }}
                 >
-                  Your plan shows you exactly what to throw, how to fish it, and why it works.
+                  Your plan shows you exactly what to throw, how to fish it, and
+                  why it works.
                 </p>
                 <ul
                   style={{
@@ -245,7 +260,8 @@ export function HowToUse() {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -275,7 +291,8 @@ export function HowToUse() {
                     marginBottom: 20,
                   }}
                 >
-                  Download your plan as a PDF. Readable on your phone in direct sunlight or print it out.
+                  Download your plan as a PDF. Readable on your phone in direct
+                  sunlight or print it out.
                 </p>
                 <ul
                   style={{
@@ -308,7 +325,8 @@ export function HowToUse() {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -338,7 +356,8 @@ export function HowToUse() {
                     marginBottom: 20,
                   }}
                 >
-                  Fish your plan. Start with Pattern 1. If conditions change or bites slow, adjust.
+                  Fish your plan. Start with Pattern 1. If conditions change or
+                  bites slow, adjust.
                 </p>
                 <ul
                   style={{
@@ -371,7 +390,8 @@ export function HowToUse() {
                     width: 56,
                     height: 56,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -426,7 +446,6 @@ export function HowToUse() {
       <section
         style={{
           padding: "100px 24px",
-          background: "linear-gradient(180deg, #0a0a0a 0%, #000 100%)",
         }}
       >
         <div className="container" style={{ maxWidth: 900 }}>
@@ -460,8 +479,16 @@ export function HowToUse() {
               >
                 Generate Before You Go
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                Create your plan the night before. Know what to bring, what to rig, what to expect. Start your day with clarity.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                Create your plan the night before. Know what to bring, what to
+                rig, what to expect. Start your day with clarity.
               </p>
             </div>
 
@@ -483,8 +510,16 @@ export function HowToUse() {
               >
                 Download for Offline Access
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                Save the PDF to your phone. No cell service? No problem. Your plan works offline.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                Save the PDF to your phone. No cell service? No problem. Your
+                plan works offline.
               </p>
             </div>
 
@@ -506,8 +541,17 @@ export function HowToUse() {
               >
                 Trust the System
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                Your plan is built on regional seasonal logic and current conditions. Give it time. Work the retrieves as described. Strategic discipline pays off.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                Your plan is built on regional seasonal logic and current
+                conditions. Give it time. Work the retrieves as described.
+                Strategic discipline pays off.
               </p>
             </div>
 
@@ -529,8 +573,16 @@ export function HowToUse() {
               >
                 Use Pattern 2 as a Pivot (Members)
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                Pattern 2 isn't a backup—it's a complementary approach. If Pattern 1 slows, switch. They work together by design.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                Pattern 2 isn't a backup—it's a complementary approach. If
+                Pattern 1 slows, switch. They work together by design.
               </p>
             </div>
           </div>
@@ -563,6 +615,7 @@ export function HowToUse() {
               fontWeight: 600,
               display: "inline-block",
               marginBottom: 16,
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
             Generate Your First Plan

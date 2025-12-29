@@ -3,15 +3,23 @@ import { Link } from "react-router-dom";
 
 export function About() {
   return (
-    <div style={{ background: "#000", color: "#fff", minHeight: "100vh" }}>
+    <div
+      style={{
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        color: "#fff",
+        minHeight: "100vh",
+      }}
+    >
       {/* Hero */}
       <section
         style={{
           padding: "120px 24px 80px",
-          background: "linear-gradient(180deg, #000 0%, #0a0a0a 100%)",
         }}
       >
-        <div className="container" style={{ maxWidth: 900, textAlign: "center" }}>
+        <div
+          className="container"
+          style={{ maxWidth: 900, textAlign: "center" }}
+        >
           <h1
             style={{
               fontSize: "clamp(2.5rem, 6vw, 4rem)",
@@ -56,7 +64,9 @@ export function About() {
               marginBottom: 28,
             }}
           >
-            Most fishing apps dump data and leave you guessing. Weather charts, solunar tables, moon phases, barometric pressure graphs—all the information, none of the answers.
+            Most fishing apps dump data and leave you guessing. Weather charts,
+            solunar tables, moon phases, barometric pressure graphs—all the
+            information, none of the answers.
           </p>
           <p
             style={{
@@ -66,7 +76,9 @@ export function About() {
               marginBottom: 28,
             }}
           >
-            You're staring at numbers you don't understand, trying to translate data into action. Should you throw a crankbait or a jig? What color? What retrieve? Where do you even start?
+            You're staring at numbers you don't understand, trying to translate
+            data into action. Should you throw a crankbait or a jig? What color?
+            What retrieve? Where do you even start?
           </p>
           <p
             style={{
@@ -75,7 +87,11 @@ export function About() {
               opacity: 0.85,
             }}
           >
-            <strong style={{ color: "#4A90E2" }}>Bass Clarity cuts through the noise.</strong> We don't dump data—we deliver clarity. Clear strategy. Clear execution. Clear reasoning.
+            <strong style={{ color: "#4A90E2" }}>
+              Bass Clarity cuts through the noise.
+            </strong>{" "}
+            We don't dump data—we deliver clarity. Clear strategy. Clear
+            execution. Clear reasoning.
           </p>
         </div>
       </section>
@@ -84,7 +100,6 @@ export function About() {
       <section
         style={{
           padding: "100px 24px",
-          background: "linear-gradient(180deg, #0a0a0a 0%, #000 100%)",
         }}
       >
         <div className="container" style={{ maxWidth: 900 }}>
@@ -112,7 +127,10 @@ export function About() {
                 Clarity Over Complexity
               </h3>
               <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                The best strategy isn't the one with the most data—it's the one you can execute with confidence. We give you exactly what you need to know: what to throw, how to fish it, why it works. No clutter, no confusion.
+                The best strategy isn't the one with the most data—it's the one
+                you can execute with confidence. We give you exactly what you
+                need to know: what to throw, how to fish it, why it works. No
+                clutter, no confusion.
               </p>
             </div>
 
@@ -129,7 +147,10 @@ export function About() {
                 Everything Connects
               </h3>
               <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                Your Pattern 2 complements Pattern 1. Your gear matches your technique. Your lures match conditions. Bass Clarity plans are coherent from start to finish—not scattered tips pulled from different sources that contradict each other.
+                Your Pattern 2 complements Pattern 1. Your gear matches your
+                technique. Your lures match conditions. Bass Clarity plans are
+                coherent from start to finish—not scattered tips pulled from
+                different sources that contradict each other.
               </p>
             </div>
 
@@ -145,11 +166,23 @@ export function About() {
               >
                 Honest Intelligence
               </h3>
-              <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85, marginBottom: 20 }}>
-                We don't guess your lake's exact depth when we don't have that data. We don't make up temperature readings. We don't claim to know things we can't verify.
+              <p
+                style={{
+                  fontSize: "1.1rem",
+                  lineHeight: 1.8,
+                  opacity: 0.85,
+                  marginBottom: 20,
+                }}
+              >
+                We don't guess your lake's exact depth when we don't have that
+                data. We don't make up temperature readings. We don't claim to
+                know things we can't verify.
               </p>
               <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                What we DO know: seasonal patterns for your region, how weather affects bass behavior, which presentations work in which conditions, and how to match lures to targets. That's where our clarity comes from—honesty about what we know and don't know.
+                What we DO know: seasonal patterns for your region, how weather
+                affects bass behavior, which presentations work in which
+                conditions, and how to match lures to targets. That's where our
+                clarity comes from—honesty about what we know and don't know.
               </p>
             </div>
 
@@ -166,7 +199,10 @@ export function About() {
                 Strategic Discipline
               </h3>
               <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                Bass Clarity isn't for anglers who want 20 random tips. It's for serious anglers who want systematic clarity. Tournament anglers. Weekend warriors who treat fishing like a craft. People who want to fish smarter, not just harder.
+                Bass Clarity isn't for anglers who want 20 random tips. It's for
+                serious anglers who want systematic clarity. Tournament anglers.
+                Weekend warriors who treat fishing like a craft. People who want
+                to fish smarter, not just harder.
               </p>
             </div>
           </div>
@@ -205,8 +241,16 @@ export function About() {
               >
                 We Analyze, Not Just Display
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                Other apps show you weather data. We tell you how it affects the water below and what it means for your strategy.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                Other apps show you weather data. We tell you how it affects the
+                water below and what it means for your strategy.
               </p>
             </div>
 
@@ -228,8 +272,17 @@ export function About() {
               >
                 Regional Seasonal Logic
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                Late-fall in Texas is different from late-fall in Michigan. Our plans account for regional variation—not one-size-fits-all calendar dates.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                Late-fall in Texas is different from late-fall in Michigan. Our
+                plans account for regional variation—not one-size-fits-all
+                calendar dates.
               </p>
             </div>
 
@@ -251,8 +304,17 @@ export function About() {
               >
                 Lure-Specific Retrieves
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                We don't just say "throw a crankbait." We tell you how to work it based on bass activity and then match those retrieves to specific targets like secondary points and channel swings.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                We don't just say "throw a crankbait." We tell you how to work
+                it based on bass activity and then match those retrieves to
+                specific targets like secondary points and channel swings.
               </p>
             </div>
 
@@ -274,8 +336,17 @@ export function About() {
               >
                 Two Complementary Approaches (Members)
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                Not scattered tips. Two focused patterns that work together. When Pattern 1 slows, Pattern 2 picks up. Strategic coherence under pressure.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                Not scattered tips. Two focused patterns that work together.
+                When Pattern 1 slows, Pattern 2 picks up. Strategic coherence
+                under pressure.
               </p>
             </div>
 
@@ -297,8 +368,17 @@ export function About() {
               >
                 1000+ Lakes
               </h3>
-              <p style={{ fontSize: "1.05rem", lineHeight: 1.7, opacity: 0.85, margin: 0 }}>
-                If it's not in our database, select it from the map. Consistent clarity everywhere—your home lake, tournament lake, or that spot you've never fished.
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  lineHeight: 1.7,
+                  opacity: 0.85,
+                  margin: 0,
+                }}
+              >
+                If it's not in our database, select it from the map. Consistent
+                clarity everywhere—your home lake, tournament lake, or that spot
+                you've never fished.
               </p>
             </div>
           </div>
@@ -309,7 +389,6 @@ export function About() {
       <section
         style={{
           padding: "100px 24px",
-          background: "linear-gradient(180deg, #0a0a0a 0%, #000 100%)",
         }}
       >
         <div className="container" style={{ maxWidth: 900 }}>
@@ -374,7 +453,8 @@ export function About() {
               lineHeight: 1.6,
             }}
           >
-            See what strategic clarity looks like. Generate your first plan free.
+            See what strategic clarity looks like. Generate your first plan
+            free.
           </p>
           <Link
             to="/preview"
@@ -387,6 +467,7 @@ export function About() {
               fontWeight: 600,
               display: "inline-block",
               marginBottom: 16,
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
             Try Free Preview

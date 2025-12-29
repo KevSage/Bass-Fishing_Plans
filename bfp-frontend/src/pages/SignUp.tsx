@@ -2,12 +2,33 @@ import { SignUp } from "@clerk/clerk-react";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-900 to-blue-700 flex items-center justify-center p-4">
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
       <SignUp
         routing="path"
         path="/sign-up"
         signInUrl="/sign-in"
         redirectUrl="/members"
+        appearance={{
+          elements: {
+            rootBox: {
+              width: "100%",
+              maxWidth: "420px",
+            },
+            card: {
+              background: "rgba(255, 255, 255, 0.98)",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+            },
+          },
+        }}
       />
     </div>
   );
