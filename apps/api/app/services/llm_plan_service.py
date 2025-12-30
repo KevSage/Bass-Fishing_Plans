@@ -441,7 +441,7 @@ VALIDATION BEFORE RETURNING:
 - outlook_blurb has no exact temperature/wind numbers
 - NO specific depth mentions anywhere
 
-Use your bass fishing expertise to choose the BEST options from these pools based on bass seasonal phase and the user's local weather, conditions, and regional location for the day.
+Use your bass fishing expertise to choose the BEST options from these pools based on bass seasonal phase and the user's local weather, conditions, and regional location for the day.`
 """
 
 

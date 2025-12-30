@@ -39,7 +39,7 @@ export function Landing() {
             inset: 0,
             backgroundImage: "url(/images/hero_bass.png)",
             backgroundSize: "cover",
-            backgroundPosition: "center",
+            backgroundPosition: "right 40% bottom 85%",
             opacity: 1,
             filter: "brightness(0.9)",
           }}
@@ -97,7 +97,7 @@ export function Landing() {
           <p
             style={{
               fontSize: "clamp(1.15rem, 2.6vw, 1.35rem)",
-              lineHeight: 1.6,
+              lineHeight: 1.5,
               opacity: 0.8,
               marginBottom: 20,
               fontWeight: 400,
@@ -105,8 +105,8 @@ export function Landing() {
               margin: "0 auto 20px",
             }}
           >
-            Clear strategy. Clear execution. Clear reasoning. Know what to
-            throw, how to fish it, and why it works—for any lake, any
+            Clear strategy. Clear execution. Clear reasoning. <br></br>Know what
+            to throw, how to fish it, and why it works—for any lake, any
             conditions, any season.
           </p>
 
@@ -127,8 +127,8 @@ export function Landing() {
             className="btn primary"
             to="/preview"
             style={{
-              fontSize: "1.2rem",
-              padding: "22px 60px",
+              fontSize: "1rem",
+              padding: "20px 54px",
               background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
               borderRadius: 16,
               fontWeight: 600,
@@ -450,7 +450,7 @@ export function Landing() {
 
           <p
             style={{
-              fontSize: "1.2rem",
+              fontSize: "1rem",
               textAlign: "center",
               opacity: 0.7,
               marginBottom: 80,
@@ -1028,139 +1028,184 @@ export function Landing() {
       </section>
 
       {/* ============================================
-          FOOTER
-          ============================================ */}
+    FOOTER (Landing Only)
+    ============================================ */}
       <footer
         style={{
-          padding: "60px 24px",
+          padding: "64px 24px",
           background: "#0a0a0a",
           borderTop: "1px solid rgba(255,255,255,0.08)",
         }}
       >
-        <div
-          className="container"
-          style={{
-            maxWidth: 1200,
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            gap: 48,
-          }}
-        >
-          {/* Brand */}
-          <div style={{ flex: "1 1 250px" }}>
-            <div
-              style={{
-                fontSize: "1.3rem",
-                fontWeight: 700,
-                marginBottom: 16,
-                color: "#4A90E2",
-              }}
-            >
-              Bass Clarity
+        <div className="container" style={{ maxWidth: 1200 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 40,
+              alignItems: "start",
+            }}
+          >
+            {/* Brand */}
+            <div>
+              <div
+                style={{
+                  fontSize: "1.15rem",
+                  fontWeight: 700,
+                  marginBottom: 14,
+                  color: "#4A90E2",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Bass Clarity
+              </div>
+              <p
+                style={{ opacity: 0.62, fontSize: "0.95rem", lineHeight: 1.6 }}
+              >
+                Clarity every time you fish, everywhere you fish.
+              </p>
             </div>
-            <p style={{ opacity: 0.6, fontSize: "0.95rem", lineHeight: 1.6 }}>
-              Clarity every time you fish, everywhere you fish.
-            </p>
+
+            {/* Product */}
+            <div>
+              <h4
+                style={{
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  marginBottom: 16,
+                  opacity: 0.5,
+                }}
+              >
+                Product
+              </h4>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 10 }}
+              >
+                <Link
+                  to="/preview"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Try Free Sample
+                </Link>
+                <Link
+                  to="/subscribe"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Pricing
+                </Link>
+                <Link
+                  to="/faq"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  FAQ
+                </Link>
+              </div>
+            </div>
+
+            {/* Support + Legal */}
+            <div>
+              <h4
+                style={{
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  marginBottom: 16,
+                  opacity: 0.5,
+                }}
+              >
+                Support
+              </h4>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 10 }}
+              >
+                <Link
+                  to="/support"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Support / Contact
+                </Link>
+                <a
+                  href="mailto:support@bassclarity.com"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  support@bassclarity.com
+                </a>
+
+                <div style={{ height: 10 }} />
+
+                <Link
+                  to="/privacy"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/terms"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Terms of Service
+                </Link>
+                <Link
+                  to="/refunds"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Refund Policy
+                </Link>
+              </div>
+            </div>
           </div>
 
-          {/* Links */}
-          <div style={{ flex: "1 1 150px" }}>
-            <h4
-              style={{
-                fontSize: "0.9rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                marginBottom: 20,
-                opacity: 0.5,
-              }}
-            >
-              Product
-            </h4>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                fontSize: "0.95rem",
-              }}
-            >
+          {/* Bottom bar */}
+          <div
+            style={{
+              marginTop: 52,
+              paddingTop: 22,
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 14,
+              flexWrap: "wrap",
+              fontSize: "0.9rem",
+              opacity: 0.5,
+            }}
+          >
+            <div>
+              © {new Date().getFullYear()} Bass Clarity. All rights reserved.
+            </div>
+
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               <Link
-                to="/preview"
-                style={{
-                  opacity: 0.7,
-                  transition: "opacity 0.2s",
-                }}
+                to="/privacy"
+                className="muted"
+                style={{ textDecoration: "none" }}
               >
-                Try Free Sample
+                Privacy
               </Link>
               <Link
-                to="/subscribe"
-                style={{
-                  opacity: 0.7,
-                  transition: "opacity 0.2s",
-                }}
+                to="/terms"
+                className="muted"
+                style={{ textDecoration: "none" }}
               >
-                Pricing
+                Terms
+              </Link>
+              <Link
+                to="/refunds"
+                className="muted"
+                style={{ textDecoration: "none" }}
+              >
+                Refunds
               </Link>
             </div>
           </div>
-
-          {/* Support */}
-          <div style={{ flex: "1 1 150px" }}>
-            <h4
-              style={{
-                fontSize: "0.9rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                marginBottom: 20,
-                opacity: 0.5,
-              }}
-            >
-              Support
-            </h4>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 12,
-                fontSize: "0.95rem",
-              }}
-            >
-              <Link
-                to="/about"
-                style={{
-                  opacity: 0.7,
-                  transition: "opacity 0.2s",
-                }}
-              >
-                About
-              </Link>
-              <a
-                href="mailto:support@bassclarity.com"
-                style={{
-                  opacity: 0.7,
-                  transition: "opacity 0.2s",
-                }}
-              >
-                Contact
-              </a>
-            </div>
-          </div>
-        </div>
-
-        {/* Copyright */}
-        <div
-          style={{
-            marginTop: 60,
-            paddingTop: 32,
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-            textAlign: "center",
-            fontSize: "0.9rem",
-            opacity: 0.4,
-          }}
-        >
-          © 2025 Bass Clarity. All rights reserved.
         </div>
       </footer>
     </div>

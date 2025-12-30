@@ -8,7 +8,6 @@ import { Subscribe } from "./pages/Subscribe";
 import { PreviewEnhanced } from "./pages/Preview";
 import { Members } from "./pages/Members";
 import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
-import { WhatsIncluded } from "./pages/features";
 import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
 import SignInPage from "./pages/signIn";
@@ -92,7 +91,6 @@ export default function App() {
           path="/what-your-plan-includes"
           element={<WhatYourPlanIncludes />}
         />
-        <Route path="/whats-included" element={<WhatsIncluded />} />
         <Route path="/how-to-use" element={<HowToUse />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/plan" element={<PlanPage />} />
