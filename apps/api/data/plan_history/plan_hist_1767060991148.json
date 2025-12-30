@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1767060991148",
+  "user_email": "ksagedeveloper@gmail.com",
+  "plan_link_id": "vYzRtkOmeUa0qWMmDky_Xiie3z9UtV486DPVyeDZmaA",
+  "lake_name": "Hard Labor Creek Reservoir",
+  "generation_date": "2025-12-30T02:16:31.148150+00:00",
+  "plan_type": "member",
+  "conditions": {
+    "temp_low": 28.49,
+    "temp_high": 45.81,
+    "sky_condition": "clear",
+    "wind_speed": 11.81
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-30T02:16:31.148176+00:00",
+  "expires_at": "2026-01-29T02:16:31.148182+00:00"
+}

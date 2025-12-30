@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1767048322906",
+  "user_email": "fadaf@fadfad.com",
+  "plan_link_id": "LRPfbLK0UeBR3ql4CoPOU_KF6czdTUiQpGxTRzH93Ys",
+  "lake_name": "Lake Seminole",
+  "generation_date": "2025-12-29T22:45:22.906775+00:00",
+  "plan_type": "preview",
+  "conditions": {
+    "temp_low": 34.38,
+    "temp_high": 54.05,
+    "sky_condition": "overcast",
+    "wind_speed": 3.0
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-29T22:45:22.906785+00:00",
+  "expires_at": "2026-01-28T22:45:22.906788+00:00"
+}

@@ -1928,3 +1928,31 @@ function getColorHex(colorName: string): string {
   const normalized = colorName.toLowerCase().replace(/\s+/g, " ");
   return colorMap[normalized] || colorMap["default"];
 }
+function normalizeColorToken(token: string): string {
+  return token.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function normalizeComboPart(part: string): string {
+  const p = normalizeColorToken(part);
+  // fishing-native combos like "chartreuse/black back"
+  if (p === "black back") return "black";
+  if (p === "blue back") return "blue";
+  return p;
+}
+
+function getSwatchBackground(colorToken: string): string {
+  const normalized = normalizeColorToken(colorToken);
+
+  // Combo colorway: render as ONE chip with two-tone split
+  if (normalized.includes("/")) {
+    const [rawA, rawB] = normalized.split("/", 2);
+    const a = getColorHex(normalizeComboPart(rawA));
+    const b = getColorHex(normalizeComboPart(rawB));
+
+    // Diagonal split (top-left to bottom-right)
+    return `linear-gradient(135deg, ${a} 0%, ${a} 50%, ${b} 50%, ${b} 100%)`;
+  }
+
+  // Single colorway
+  return getColorHex(normalized);
+}

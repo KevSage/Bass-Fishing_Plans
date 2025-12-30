@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1767048216203",
+  "user_email": "adfd@efda.com",
+  "plan_link_id": "Of1paxq9QcJsUdEvRoj_4osgaBtQ5J_Wdt2w7vgmhGU",
+  "lake_name": "Florrida Lake",
+  "generation_date": "2025-12-29T22:43:36.203783+00:00",
+  "plan_type": "preview",
+  "conditions": {
+    "temp_low": 49.44,
+    "temp_high": 74.66,
+    "sky_condition": "clear",
+    "wind_speed": 9.22
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-29T22:43:36.203833+00:00",
+  "expires_at": "2026-01-28T22:43:36.203853+00:00"
+}
