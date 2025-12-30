@@ -762,7 +762,7 @@ function PreviewPatternView({
                     width: 20,
                     height: 20,
                     borderRadius: "50%",
-                    background: getColorHex(color),
+                    background: getSwatchBackground(color),
                     border: "2px solid rgba(255,255,255,0.25)",
                     boxShadow:
                       "0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)",
@@ -1461,7 +1461,7 @@ function PatternCard({
                       width: 20,
                       height: 20,
                       borderRadius: "50%",
-                      background: getColorHex(color),
+                      background: getSwatchBackground(color),
                       border: "2px solid rgba(255,255,255,0.25)",
                       boxShadow:
                         "0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)",

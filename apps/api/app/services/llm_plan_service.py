@@ -9,6 +9,9 @@ import os
 import json
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
+import random
+import asyncio
+import time
 
 from app.canon.pools import (
     LURE_POOL,
@@ -46,408 +49,300 @@ from app.canon.validate import (
 # ----------------------------------------
 # System Prompt (LOCKED RULES)
 # ----------------------------------------
+
 def build_system_prompt(include_pattern_2: bool = False) -> str:
     """
-    Build the system prompt with all canonical rules embedded.
-    
-    Args:
-        include_pattern_2: If True, request both primary and secondary patterns (for members)
+    Lean system prompt: strict JSON, shorter text fields, canonical pools enforced.
     """
-    
-    # Format terminal plastics for prompt
+
+    # terminal plastics
     terminal_rules = []
     for lure, plastics in TERMINAL_PLASTIC_MAP.items():
-        terminal_rules.append(f"  - {lure}: {sorted(plastics)}")
-    
-    # Format trailer rules for prompt
-    trailer_rules = []
-    trailer_rules.append("  REQUIRED trailers:")
-    trailer_rules.append(f"    - chatterbait, swim jig: {CHATTER_SWIMJIG_TRAILERS}")
-    trailer_rules.append(f"    - casting jig, football jig: {JIG_TRAILERS}")
-    trailer_rules.append("  OPTIONAL trailers:")
-    trailer_rules.append(f"    - spinnerbait, buzzbait: {SPINNER_BUZZ_TRAILERS}")
-    
-    pattern_2_section = ""
-    if include_pattern_2:
-        pattern_2_section = """
-PATTERN 2 (SECONDARY) - THE PIVOT PLAN (MEMBERS ONLY):
-This is NOT a backup lure. This assumes your initial read was slightly off.
+        terminal_rules.append(f"- {lure}: {sorted(plastics)}")
 
-CRITICAL PATTERN ORDERING RULE:
-When you're choosing a SEARCH/MOVING bait (Horizontal Reaction, Topwater) paired with a BOTTOM CONTACT bait:
-- Pattern 1 MUST be the search/moving bait
-- Pattern 2 MUST be the bottom contact bait
-- This is the classic "search and destroy" → "pick apart" combo
-- In "why_this_works" for Pattern 2, explain: "Once you locate active fish with the [P1 lure], switch to this [P2 lure] to methodically pick apart the area."
+    # trailer rules (keep concise)
+    trailer_rules = [
+        "REQUIRED:",
+        f"- chatterbait, swim jig: {CHATTER_SWIMJIG_TRAILERS}",
+        f"- casting jig, football jig: {JIG_TRAILERS}",
+        "OPTIONAL:",
+        f"- spinnerbait, buzzbait: {SPINNER_BUZZ_TRAILERS}",
+    ]
 
-Example Search → Pick Apart Combos:
-✅ P1: Lipless crankbait (search) → P2: Texas rig (pick apart)
-✅ P1: Chatterbait (search) → P2: Jig (pick apart)
-✅ P1: Spinnerbait (search) → P2: Carolina rig (pick apart)
-✅ P1: Buzzbait (search) → P2: Texas rig (pick apart)
+    # compact dumps (save tokens)
+    def jdump(obj) -> str:
+        return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
-For OTHER pattern combos (not search → bottom contact):
-- Use normal pivot logic (different assumption about fish position)
-- Explain in "why_this_works" what different assumption you're making
-
-Pattern 2 Rules:
-- MUST use a different presentation family than Pattern 1
-- If it's a search → pick apart combo, explain the sequential relationship
-- If it's a different combo type, explain the pivot assumption
-
-Pattern 2 output format (add to JSON):
-"secondary": {
-  "presentation": "<different from primary>",
-  "base_lure": "<from LURE_POOL>",
-  "soft_plastic": "<OPTIONAL - only for terminal tackle>",
-  "soft_plastic_why": "<OPTIONAL - 1-2 sentences contextual to phase/temp/clarity>",
-  "trailer": "<OPTIONAL - only for jigs/chatterbait/etc>",
-  "trailer_why": "<OPTIONAL - 1-2 sentences contextual to conditions>",
-  "color_recommendations": ["<color1>", "<color2>"],
-  "targets": ["<target1>", "<target2>", "<target3>"],
-  "why_this_works": "<CONTEXT-DEPENDENT: If search→pick apart combo, explain the sequential relationship. Otherwise, explain the pivot assumption.>",
-  "work_it": ["<target + specific retrieve cadence>", "...", "..."],
-  "strategy": "<2-3 sentence paragraph - NO bullets>"
-}
-"""
-    
-    output_format = ""
     if include_pattern_2:
         output_format = """
-OUTPUT FORMAT (JSON only - no markdown, no explanation):
+
+If the chosen base_lure is terminal tackle, invert: set trailer: null and use soft_plastic.
+        
+RETURN JSON ONLY:
 {
-  "primary": {
-    "presentation": "<one from PRESENTATIONS>",
-    "base_lure": "<one from LURE_POOL>",
-    "soft_plastic": "<OPTIONAL - only for terminal tackle: texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head>",
-    "soft_plastic_why": "<OPTIONAL - contextual explanation why THIS plastic for THESE conditions>",
-    "trailer": "<OPTIONAL - only for: chatterbait, swim jig, spinnerbait, casting jig, football jig, buzzbait>",
-    "trailer_why": "<OPTIONAL - contextual explanation why THIS trailer for THESE conditions>",
-    "color_recommendations": ["<color1>", "<color2>"],
-    "targets": ["<target1>", "<target2>", "<target3>"],
-    "why_this_works": "<3-4 sentences: lure choice + MANDATORY 'Choose X if Y' color format + optional trailer color>",
-    "pattern_summary": "<2-3 sentences: presentation type + water column context + why this lure>",
-    "strategy": "<3-4 sentences: conversational, 'bass are likely' logic, proper spacing after periods>",
-    "work_it": ["<target + specific retrieve for this lure>", "...", "..."],
-    "work_it_cards": [
-      {
-        "name": "<TARGET NAME from targets list>",
-        "definition": "<1 sentence - what this target is>",
-        "how_to_fish": "<2-3 sentences - how to fish THIS target with THIS lure>"
-      }
-    ]
+  "primary":{
+    "presentation":"<from PRESENTATIONS>",
+    "base_lure":"<from LURE_POOL>",
+    "soft_plastic":null | "<allowed>",
+    "soft_plastic_why":null | "< 2 sentences>",
+    "trailer":"<ONLY if lure uses trailer>",
+    "trailer_why": "<ONLY if trailer used>"",
+    "color_recommendations":["<color1>","<color2?>"],
+    "targets":["<target>","<target>","<target>"],
+    "why_this_works":"<4-5 sentences total. MUST include: Choose X if Y. Choose X if Y.>",
+    "pattern_summary":"4 sentences>",
+    "strategy":" 3-4 sentences>",
+    "work_it":["<3 items>"],
+    "work_it_cards":[{"name":"<target>","definition":" 2 sentences>","how_to_fish":"3-4 sentences>"}, "3 total cards based on preselected targets"],
   },
-  "secondary": {
-    "presentation": "<different from primary>",
-    "base_lure": "<from LURE_POOL>",
-    "soft_plastic": "<OPTIONAL>",
-    "soft_plastic_why": "<OPTIONAL>",
-    "trailer": "<OPTIONAL>",
-    "trailer_why": "<OPTIONAL>",
-    "color_recommendations": ["<color1>", "<color2>"],
-    "targets": ["<target1>", "<target2>", "<target3>"],
-    "why_this_works": "<3-4 sentences: lure choice + MANDATORY 'Choose X if Y' color format + optional trailer color>",
-    "pattern_summary": "<2-3 sentences: presentation type + water column context + why this lure>",
-    "strategy": "<3-4 sentences: conversational, 'bass are likely' logic, proper spacing after periods>",
-    "work_it": ["<target + retrieve>", "...", "..."],
-    "work_it_cards": [
-      {
-        "name": "<TARGET NAME>",
-        "definition": "<what this target is>",
-        "how_to_fish": "<how to fish it>"
-      }
-    ]
+  "secondary":{
+    "presentation":"<different from primary>",
+    "base_lure":"<from LURE_POOL>",
+    "soft_plastic":null | "<allowed>",
+    "soft_plastic_why":null | "2 sentences>",
+    "trailer":"<ONLY if lure uses trailer>",
+    "trailer_why": "<ONLY if trailer used>",
+    "color_recommendations":["<color1>","<color2?>"],
+    "targets":["<target>","<target>","<target>"],
+    "why_this_works":"4-5 sentences total. MUST include: Choose X if Y. Choose X if Y.>",
+    "pattern_summary":"4 sentences>",
+    "strategy":"3-4 sentences>",
+    "work_it":["<3 items>"],
+    "work_it_cards":[{"name":"<target>","definition":" 2 sentences>","how_to_fish":"3-4 sentences>"}, "3 total cards based on preselected targets"],
   },
-  "day_progression": [
-    "Morning: <2-3 sentences with proper spacing>",
-    "Midday: <2-3 sentences with proper spacing>",
-    "Evening: <2-3 sentences with proper spacing>"
+  "day_progression":[
+    "Morning: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize",
+    "Midday: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>",
+    "Evening: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>"
   ],
-  "outlook_blurb": "<weather forecast only>"
+  "outlook_blurb":"3-4 sentences of weather, condition and phase related analysis and how it may effect bass activity. No exact numbers or strategy>"
 }
 """
     else:
         output_format = """
-OUTPUT FORMAT (JSON only - no markdown, no explanation):
+RETURN JSON ONLY:
 {
-  "presentation": "<one from PRESENTATIONS>",
-  "base_lure": "<one from LURE_POOL - must match presentation>",
-  "soft_plastic": "<OPTIONAL - only if terminal tackle>",
-  "soft_plastic_why": "<OPTIONAL - contextual to conditions>",
-  "trailer": "<OPTIONAL - only if needs trailer>",
-  "trailer_why": "<OPTIONAL - contextual to conditions>",
-  "color_recommendations": ["<color1>", "<color2>"],
-  "targets": ["<target1>", "<target2>", "<target3>"],
-  "why_this_works": "<2-3 sentences: lure choice + MANDATORY 'Choose X if Y' color format>",
-  "work_it": [
-    "<target name + specific retrieve cadence for this lure>",
-    "<target name + specific retrieve cadence>",
-    "<target name + specific retrieve cadence>"
+  "presentation":"<from PRESENTATIONS>",
+  "base_lure":"<from LURE_POOL>",
+  "soft_plastic":null | "<allowed>",
+  "soft_plastic_why":null | "2 sentences>",
+  "trailer":"<ONLY if lure uses trailer>",
+  "trailer_why": "<ONLY if trailer used>",
+  "color_recommendations":["<color1>","<color2?>"],
+  "targets":["<target>","<target>","<target>"],
+  "why_this_works":"4-5 sentences total. MUST include: Choose X if Y. Choose X if Y.>",
+  "pattern_summary":"4 sentences>",
+  "strategy":" 3-4 sentences>",
+  "work_it":["<3 items>"],
+  "work_it_cards":[{"name":"<target>","definition":" 2 sentences>","how_to_fish":"3-4 sentences>"}, "3 total cards based on preselected targets"],
+  "day_progression":[
+    "Morning: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize",
+    "Midday: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>",
+    "Evening: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>"
   ],
-  "work_it_cards": [
-    {
-      "name": "<TARGET NAME from targets list>",
-      "definition": "<1 sentence - what this target is>",
-      "how_to_fish": "<2-3 sentences - how to fish THIS target with THIS lure>"
-    }
-  ],
-  "day_progression": [
-    "Morning: <2-3 sentences with proper spacing after periods>",
-    "Midday: <2-3 sentences with proper spacing after periods>",
-    "Evening: <2-3 sentences with proper spacing after periods>"
-  ],
-  "outlook_blurb": "<weather forecast only - You can inlcude phase and regional logic related to bass activity, but NO bass strategy>"
+  "outlook_blurb":"3-4 sentences of weather, condition and phase related analysis and how it may effect bass activity. No exact numbers or strategy>"
 }
 """
-    
+
     return f"""You are BassFishingPlans (BFP), an expert bass fishing guide.
 
-Your job: Generate a complete bass fishing plan based on weather, location, and date.
+CRITICAL: Return a SINGLE JSON OBJECT only. No markdown. No extra keys. No "combo_a"/"combo_b".
 
-CRITICAL RULES - VIOLATE THESE AND THE PLAN IS REJECTED:
+HARD RULES (validator enforced):
+- Add a space after every period. "word. Word" not "word.Word"
+- No specific depths in feet for water depth (e.g., "in 10 feet of water").
+- outlook_blurb: weather-only, no exact numbers (no "55°F", no "8 mph"), no fishing strategy.
+- day_progression: exactly 3 lines (Morning/Midday/Evening). No colors mentioned.
+- Present in a conversational tone. Do not get overly technical, but also respect the intelligence of the user.
 
-0. CRITICAL FORMATTING RULES (STRICTLY ENFORCED):
-   - ALWAYS add a space after every period: "word. Word" NOT "word.Word"
-   - This is tested automatically - missing spaces = INSTANT REJECTION
-   - Check EVERY sentence in strategy, day_progression, why_this_works
-   
-1. COLOR EXPLANATION FORMAT (MANDATORY IN "why_this_works"):
-   - You MUST use "Choose X if Y" format for colors
-   - Format: "Choose [Color 1] if [water conditions]—[why it works]. Choose [Color 2] if [water conditions]—[why it works]."
-   - Example: "Choose pro blue if fishing clear water—realistic baitfish pattern triggers strikes from bass keying on shad. Choose chartreuse if water is stained—high visibility creates strong contrast bass can see from distance."
-   - This is NOT optional - every plan MUST include this color guidance
-   - Missing this format = INSTANT REJECTION
+PRESENTATIONS: {jdump(PRESENTATIONS)}
+LURES: {jdump(LURE_POOL)}
+LURE_TO_PRESENTATION: {jdump(LURE_TO_PRESENTATION)}
+CANONICAL_TARGETS: {jdump(CANONICAL_TARGETS)}
 
-2. PRESENTATIONS (choose ONE for primary pattern):
-{json.dumps(PRESENTATIONS, indent=2)}
+COLOR POOLS (must use the correct pool for chosen lure):
+RIG_COLORS: {jdump(RIG_COLORS)}
+BLADED_SKIRTED_COLORS: {jdump(BLADED_SKIRTED_COLORS)}
+SOFT_SWIMBAIT_COLORS: {jdump(SOFT_SWIMBAIT_COLORS)}
+CRANKBAIT_COLORS: {jdump(CRANKBAIT_COLORS)}
+JERKBAIT_COLORS: {jdump(JERKBAIT_COLORS)}
+TOPWATER_COLORS: {jdump(TOPWATER_COLORS)}
+FROG_COLORS: {jdump(FROG_COLORS)}
 
-3. ALLOWED LURES (choose from this list ONLY - exact strings):
-{json.dumps(LURE_POOL, indent=2)}
+COLOR VARIETY:
+- If you provide 2 colors, make them meaningfully different (not two near-identical greens, not shad+ghost shad, etc.).
 
-4. LURE → PRESENTATION MAPPING (lure MUST match its presentation):
-{json.dumps(LURE_TO_PRESENTATION, indent=2)}
+TERMINAL TACKLE:
+- If base_lure is terminal tackle, you MUST set soft_plastic and soft_plastic_why.
+Allowed plastics:
+{chr(10).join(terminal_rules)}
 
-5. LURE-SPECIFIC COLOR POOLS (choose 1-2 colors based on YOUR CHOSEN LURE):
-
-   RIG COLORS (for texas rig, carolina rig, shaky head, ned rig, neko rig, wacky rig, dropshot w/ finesse worm):
-   {json.dumps(RIG_COLORS, indent=2)}
-   
-   BLADED/SKIRTED COLORS (for chatterbait, spinnerbait, buzzbait, underspin, swim jig, football jig, casting jig):
-   {json.dumps(BLADED_SKIRTED_COLORS, indent=2)}
-   
-   SOFT SWIMBAIT COLORS (for soft jerkbait, paddle tail swimbait, dropshot w/ minnow):
-   {json.dumps(SOFT_SWIMBAIT_COLORS, indent=2)}
-   
-   CRANKBAIT COLORS (for shallow crankbait, mid crankbait, deep crankbait, lipless crankbait, wake bait, blade bait):
-   {json.dumps(CRANKBAIT_COLORS, indent=2)}
-   
-   JERKBAIT COLORS (for jerkbait ONLY):
-   {json.dumps(JERKBAIT_COLORS, indent=2)}
-   
-   TOPWATER COLORS (for walking bait, whopper plopper, popper):
-   {json.dumps(TOPWATER_COLORS, indent=2)}
-   
-   FROG COLORS (for hollow body frog, popping frog):
-   {json.dumps(FROG_COLORS, indent=2)}
-   
-   CRITICAL: You MUST use colors from the pool that matches YOUR CHOSEN LURE.
-   Example: If you choose "jerkbait", use JERKBAIT_COLORS only.
-   Example: If you choose "texas rig", use RIG_COLORS only.
-
-6. COLOR VARIETY RULE:
-   - When choosing 2 colors, they MUST be from different color families
-   - BAD: "watermelon" + "green pumpkin" (both natural greens)
-   - BAD: "shad" + "natural shad" (both shad colors)
-   - BAD: "chartreuse" + "chartreuse/white" (same base)
-   - GOOD: "watermelon" + "black/blue" (natural + contrast)
-   - GOOD: "shad" + "firetiger" (natural + high-contrast)
-   - GOOD: "green pumpkin" + "white" (natural + pelagic)
-   
-7. COLOR RESTRICTIONS:
-   - Metallic/firetiger colors (gold, bronze, silver, firetiger) can ONLY be used on hard baits: {sorted(HARDBAIT_LURES)}
-   - black/blue is NOT allowed on hard baits or jerkbaits
-   - For spinnerbait, color refers to SKIRT color (not blade finish)
-
-8. TERMINAL TACKLE SOFT PLASTIC RULES:
-   If you choose terminal tackle (texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head), you MUST include:
-   - soft_plastic: choose from allowed plastics for that lure
-   - soft_plastic_why: 1-2 sentences explaining why THIS plastic for THESE conditions (phase, temp, clarity)
-   
-   Allowed soft plastics by lure:
-    {chr(10).join(terminal_rules)}
-   
-   IMPORTANT: soft_plastic_why must be CONTEXTUAL, not generic
-   ✅ GOOD: "In late-fall with 68° water, creature baits create maximum displacement in stained conditions where bass locate by feel."
-   ❌ BAD: "Creature baits have lots of appendages" (this is generic knowledge)
-
-10. TRAILER RULES:
-   If you choose lures that need trailers (chatterbait, swim jig, spinnerbait, casting jig, football jig), you MUST include:
-   - trailer: choose from allowed trailers for that lure
-   - trailer_why: 1-2 sentences explaining why THIS trailer for THESE conditions
-   
-   Allowed trailers by lure:
+TRAILERS:
+- If base_lure needs a trailer, you MUST set trailer and trailer_why.
+Allowed trailers:
 {chr(10).join(trailer_rules)}
-   
-   IMPORTANT: trailer_why must relate to current conditions
-   ✅ GOOD: "With clear skies and calm water, a craw trailer keeps the profile compact for less aggressive fish in 68° water."
-   ❌ BAD: "Craws look like crawfish" (generic)
 
-   CRITICAL - FIELD USAGE:
-   ❌ NEVER put soft_plastic on jigs (casting jig, football jig, swim jig) - they use "trailer" field
-   ❌ NEVER put trailer on terminal tackle (carolina rig, texas rig, drop shot) - they use "soft_plastic" field
-   
-   When you choose a jig (casting jig, football jig, swim jig)  → set soft_plastic to null, use trailer field
-   When you choose terminal tackle → set trailer to null, use soft_plastic field
+✅ CRITICAL FIELD-USAGE RULE (must be impossible to miss)
+Terminal tackle (texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head):
+✅ uses soft_plastic
+❌ must set trailer: null
+Jig / skirted / bladed (football jig, casting jig, swim jig, chatterbait, spinnerbait, buzzbait):
+✅ uses trailer (required/optional per lure)
+❌ must set soft_plastic: null
+If you violate this, the plan is rejected.
 
-11. CANONICAL TARGETS (choose 3-5 from this list ONLY - exact strings):
-{json.dumps(CANONICAL_TARGETS, indent=2)}
-    CRITICAL - FIELD USAGE:
-    You must only use targets from the CANNONICAL_TARGETS pool
-    ❌ NEVER use "insulated target"
 
-12. DAY PROGRESSION (EXTENDED FORMAT):
-   - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
-   - Length: 2-3 sentences PER time block (not just 1 sentence)
-   - Each time block MUST start with "Morning:", "Midday:", or "Evening:" (or "Late:")
-   - NO colors in day progression (no parentheses, no "in green pumpkin")
-   
-   Each time block should cover:
-   - Where + Why: Location/target type and bass behavior at this time
-   - How: Tactical adjustment specific to this time period
-   - Key insight: What to expect or prioritize
-   
-   CRITICAL FORMATTING:
-   - Proper spacing after periods (this is frequently missed - ensure spaces!)
-   - Conversational tone
-   - Vary sentence structure (don't start multiple sentences the same way)
-   
-   GOOD Example:
-   ✅ "Morning: Start on main lake points where bass position to ambush baitfish moving with first light. Low light conditions allow fish to roam more aggressively, so cover water efficiently and focus on wind-blown banks where bait concentrates. Most strikes happen in the first hour as fish are actively feeding."
-   
-   BAD Examples:
-   ❌ "Morning: Main lake points" - way too brief
-   ❌ "Midday: Fish deeper using green pumpkin" - mentions colors (not allowed)
-   ❌ "Low light: hover higher.Set countdown rule..." - missing space after period
-   ❌ "Low light: hover higher. Low light extends roaming..." - repetitive starts
-
-13. WEATHER FORECAST (outlook_blurb):
-   - 3-4 sentences describing the WEATHER FORECAST for the fishing day
-   - Focus ONLY on weather conditions - General seasonal bass behavior, NO fishing strategy, NO lure advice
-   - Include: current conditions, how they might change throughout the day, and any factors that affect fishing
-   - Use descriptive weather language but DO NOT repeat exact numbers from conditions
-   - Mention things like: cloud cover changes, wind shifts, temperature trends, precipitation, pressure changes
-   - Max ~80 words
-   
-   GOOD Examples:
-   ✅ "Expect overcast skies throughout the morning with cloud cover gradually breaking up by early afternoon. Temperatures will climb from the low 50s to upper 60s as the day progresses. Light winds from the south will pick up to moderate speeds around midday. A warming trend is in effect, making afternoon conditions noticeably milder than morning."
-   ✅ "Clear skies and bright sun dominate the forecast with minimal cloud cover expected. Temperatures remain stable in the mid-70s throughout the day. Calm morning conditions will give way to a steady southerly breeze by late morning. No precipitation expected, with high pressure keeping conditions stable."
-   ✅ "Cloudy conditions persist all day with occasional breaks of filtered sunlight. A cold front passed overnight, leaving cooler temperatures and shifting winds. Morning starts calm but expect northwest winds to build through midday. Temperatures drop slightly as the day progresses - cooler afternoon than morning."
-   
-   BAD Examples (DO NOT DO THIS):
-   ❌ "Perfect for moving baits" - NO fishing strategy
-   ❌ "With 55°F and 8 mph winds..." - NO exact numbers
-   ❌ "Fish will be on points" - NO location advice
-
-14. WORK IT / HOW TO FISH:
-   - 3-5 tactical steps combining target + specific retrieve cadence
-   - Each step should reference a target and explain HOW to fish it with THIS lure
-   - Use specific retrieve instructions (drag-pause timing, twitch patterns, etc.)
-   - Example: "On secondary points, drag 2-3 feet then pause 3-5 seconds - most bites come when the bait settles into the contour."
-   - Example: "Work channel swings with a steady swim and brief stall when you tick cover - the pause triggers followers."
-   - Use natural capitalization (not ALL CAPS)
-
-15. WHY THIS WORKS:
-   - ONLY explain why THIS SPECIFIC LURE was chosen for these conditions
-   - Focus on: lure characteristics, presentation style
-   - MUST include color explanation using "Choose X if Y" format:
-     * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
-     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
-   - Add ONE sentence about soft plastic/trailer color choice if applicable.
-   - Length: 4-5 sentences total (lure choice + color explanation + optional trailer color)
-   - Format: End with something like "Go with [color1] in clearer water, [color2] when it's stained."
-   - 4-5 sentences total
-   
-   GOOD Examples:
-   ✅ "A chatterbait's vibration and flash mimics distressed baitfish, triggering reaction strikes from roaming bass in windward zones. Natural shad works in clear conditions, while chartreuse/white shines when visibility drops."
-   ✅ "The carolina rig allows slow bottom contact with a natural presentation, perfect for pressured fish holding on structure. Lean toward watermelon in clear water, black/blue when it's stained."
-   ✅ "Lipless cranks cover water fast and call fish from a distance with rattles—ideal for locating active winter bass. Ghost shad in clearer water, firetiger when visibility is low."
-   
-   BAD Examples:
-   ❌ "Bass are positioning around spawning areas" - this is strategic overview, not lure-specific
-   ❌ No mention of color guidance - MUST casually explain which color for which clarity
-   ❌ "The conditions favor moving baits" - too general, explain why THIS lure specifically
-
-16. PATTERN SUMMARY:
-   - 2-3 sentences introducing the presentation and lure choice
-   - MUST cover:
-     * What this presentation family is (e.g., "Vertical Reaction")
-     * If lure is for vertical/suspended presentations: mention water column ("works the water column", "targets suspended fish")
-     * Why THIS LURE was chosen for current conditions
-     * Key behavioral trigger
-   - Use positive framing only (don't say what it's NOT)
-   
-   GOOD Example:
-   ✅ "Vertical Reaction presentations work the water column with erratic stop-and-go action, targeting suspended bass and fish holding along depth transitions. A jerkbait excels in these post-frontal conditions because its suspending capability and darting motion pulls reaction strikes from fish in open water."
-   
-   BAD Examples:
-   ❌ "Vertical Reaction is not a bottom presentation" - negative framing
-   ❌ Missing water column context for vertical presentations
-
-17. STRATEGY PARAGRAPH:
-   - 3-4 sentences covering environmental/positional tactics
-   - Use "Bass are likely doing X because Y, so you do Z" logic
-   - CONVERSATIONAL tone: "give each spot a fair shake", "don't bail too quick", "if things go quiet"
-   - Must complement (NOT contradict) targets and day_progression sections
-   - Cover: mobility/pacing, light/shade, positioning, casting angles, adjustment protocol
-   - NO specific structure types (use "high-percentage areas", "productive water")
-   - NO retrieve mechanics (that's in work_it_cards)
-   - CRITICAL: Proper spacing after periods, vary sentence structure
-   
-   GOOD Example:
-   ✅ "Post-frontal conditions tend to scatter bass and push them into a neutral mood, so give each spot a fair shake—10 to 15 casts usually tells you if fish are home. Look for shade lines and depth breaks where bass can sit without working too hard, and position yourself to cast along these edges rather than across them. If things go quiet, don't bail too quick—bass often shift position with changing light, so try different angles and adjust where you're casting before moving on."
-   
-   BAD Examples:
-   ❌ "Fish points and ledges" - mentions specific structures
-   ❌ "Use a slow retrieve" - mentions retrieve mechanics
-   ❌ "Low light: hover higher.Set countdown rule..." - missing spaces, bad formatting
-   ❌ "Low light: hover higher. Low light extends..." - repetitive sentence starts
-
-18. CRITICAL DEPTH RULE:
-   - NEVER mention specific depths in feet (e.g., "15-30 feet", "8-12 feet")
-   - You don't know the depth of the user's water body
-   - Use RELATIVE depth language instead:
-     ✅ "deeper water"
-     ✅ "the first break"
-     ✅ "transition zones"
-     ✅ "offshore structure"
-     ✅ "shallow water"
-     ❌ "15-30 feet"
-     ❌ "8-12 feet deep"
-
-{pattern_2_section}
+MEMBER PLANS (if include_pattern_2): primary + secondary MUST have different presentations.
+Secondary is a complement: it should target bass differently than primary (not just a minor swap).
 
 {output_format}
-
-VALIDATION BEFORE RETURNING:
-- presentation is from PRESENTATIONS
-- base_lure is from LURE_POOL
-- base_lure matches its presentation in LURE_TO_PRESENTATION
-- colors are from COLOR_POOL (1-2 only)
-- colors follow hardbait/black-blue restrictions
-- targets are from CANONICAL_TARGETS (3-5 only)
-- soft plastics mentioned in work_it are valid for the chosen lure
-- trailers mentioned in work_it are valid for the chosen lure
-- day_progression has no colors
-- outlook_blurb has no exact temperature/wind numbers
-- NO specific depth mentions anywhere
-
-Use your bass fishing expertise to choose the BEST options from these pools based on bass seasonal phase and the user's local weather, conditions, and regional location for the day.`
 """
+
+
 
 
 # ----------------------------------------
 # LLM Caller
 # ----------------------------------------
+
+def _normalize_llm_output(
+    raw: Dict[str, Any],
+    *,
+    is_member: bool,
+    combo_a_weight: float = 0.80,      # 80/20
+    preview_alt_color_weight: float = 0.15,  # ~15% swap
+) -> Dict[str, Any]:
+    """
+    Normalize new LLM formats back into the legacy API contract expected by
+    validate_llm_plan() and the frontend.
+
+    - Members: accept either {primary, secondary, ...} OR {combo_a, combo_b, ...}
+      and return ONLY the chosen combo as {primary, secondary, ...}.
+    - Previews: accept either flat legacy OR optional color_recommendations_alt;
+      occasionally swap colors for variety.
+    """
+    if not isinstance(raw, dict):
+        return raw
+
+    # -------------------------
+    # MEMBER: combo_a/combo_b -> primary/secondary
+    # -------------------------
+    if is_member:
+        # If already normalized, do nothing.
+        if "primary" in raw and "secondary" in raw:
+            return raw
+
+        if "combo_a" in raw and "combo_b" in raw:
+            chosen_key = "combo_a" if random.random() < combo_a_weight else "combo_b"
+            chosen = raw.get(chosen_key, {}) or {}
+
+            # Chosen combo MUST contain primary/secondary blocks
+            primary = chosen.get("primary")
+            secondary = chosen.get("secondary")
+
+            # Build normalized member plan
+            normalized = {
+                "primary": primary,
+                "secondary": secondary,
+                "day_progression": raw.get("day_progression", []),
+                "outlook_blurb": raw.get("outlook_blurb", ""),
+            }
+
+            # Pass through optional shared fields if you ever add them later
+            for k in ("notes", "debug"):
+                if k in raw:
+                    normalized[k] = raw[k]
+
+            return normalized
+
+        # Unknown member shape; return as-is (validator will fail loudly)
+        return raw
+
+    # -------------------------
+    # PREVIEW: optional alt colors
+    # -------------------------
+    # If prompt returns a wrapper, normalize it here (optional; safe no-op if absent)
+    # Example accepted: {"plan": { ...flat... }}
+    if "plan" in raw and isinstance(raw["plan"], dict):
+        raw = raw["plan"]
+
+    # Occasionally swap in alt color pair if present
+    alt = raw.get("color_recommendations_alt")
+    if (
+        alt
+        and isinstance(alt, list)
+        and 1 <= len(alt) <= 2
+        and random.random() < preview_alt_color_weight
+    ):
+        # Only swap if it won't obviously violate your validator later.
+        # (Full validation still happens after this.)
+        raw["color_recommendations"] = alt
+
+    # Never leak the alt field to downstream consumers
+    if "color_recommendations_alt" in raw:
+        raw.pop("color_recommendations_alt", None)
+
+    return raw
+
+def extract_json_object(text: str) -> str:
+    text = text.strip()
+
+    start = text.find("{")
+    end = text.rfind("}")
+
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError("No JSON object found in LLM output")
+
+    return text[start:end + 1]
+
+
+def _extract_first_json_object(text: str) -> Optional[str]:
+    if not text:
+        return None
+    s = text.strip()
+
+    # strip code fences
+    if s.startswith("```"):
+        lines = s.splitlines()
+        # drop first fence line
+        lines = lines[1:]
+        # drop last fence if present
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        s = "\n".join(lines).strip()
+
+    # fast path
+    if s.startswith("{") and s.endswith("}"):
+        return s
+
+    # find first balanced object
+    start = s.find("{")
+    if start == -1:
+        return None
+
+    depth = 0
+    in_str = False
+    esc = False
+    for i in range(start, len(s)):
+        ch = s[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+        else:
+            if ch == '"':
+                in_str = True
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return s[start : i + 1]
+    return None
+
 async def call_openai_plan(
     weather: Dict[str, Any],
     location: str,
@@ -455,29 +350,22 @@ async def call_openai_plan(
     phase: str,
     is_member: bool = False,
 ) -> Optional[Dict[str, Any]]:
-    """
-    Call OpenAI to generate a plan.
-    Returns None if LLM is disabled or call fails.
-    
-    Args:
-        weather: Weather data dict
-        location: Location name
-        trip_date: Date string
-        phase: Bass phase (winter, spawn, etc.)
-        is_member: If True, generates primary + secondary patterns
-    """
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         print("LLM_PLAN: No API key")
         return None
-    
+
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
-    
-    # Build user input
+
+    # 80/20 variety without memory:
+    # 80% = "best", 20% = "alternate" (still must be good + valid)
+    variety_bias = "best" if random.random() < 0.8 else "alternate"
+
+    # trip_date is irrelevant now — keep signature, omit from payload to reduce tokens
     user_input = {
         "location": location,
-        "trip_date": trip_date,
         "phase": phase,
+        "variety_bias": variety_bias,
         "weather": {
             "temp_f": weather.get("temp_f"),
             "temp_high": weather.get("temp_high"),
@@ -485,13 +373,21 @@ async def call_openai_plan(
             "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
             "cloud_cover": weather.get("cloud_cover") or weather.get("sky_condition"),
             "clarity_estimate": weather.get("clarity_estimate"),
-        }
+        },
+        "instructions": (
+            "If variety_bias=best: choose the best primary + best complement secondary. "
+            "If variety_bias=alternate: choose a strong second-best primary + best complement secondary. "
+            "Do NOT output multiple combos."
+        ),
     }
-    
+
     system_prompt = build_system_prompt(include_pattern_2=is_member)
-    
+
+    max_tokens = 1700 if is_member else 1100
+
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        t0 = time.time()
+        async with httpx.AsyncClient(timeout=70.0) as client:
             response = await client.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
@@ -502,50 +398,56 @@ async def call_openai_plan(
                     "model": model,
                     "messages": [
                         {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": json.dumps(user_input, indent=2)},
+                        {"role": "user", "content": json.dumps(user_input, ensure_ascii=False)},
                     ],
-                    "max_completion_tokens": 2500 if is_member else 1500,  # More tokens for Pattern 2
+                    # key fix: force JSON object output
+                    "response_format": {"type": "json_object"},
+                    # keep it calmer for schema compliance, variety comes from variety_bias
+                    "temperature": 0.3,
+                    "max_completion_tokens": max_tokens,
                 },
             )
-            
-            if response.status_code != 200:
-                print(f"LLM_PLAN: HTTP {response.status_code}")
-                print(f"LLM_PLAN BODY: {response.text[:500]}")
-                return None
-            
-            data = response.json()
-            
-            # Debug: Log the raw response
-            print(f"LLM_PLAN: OpenAI response keys: {list(data.keys())}")
-            
-            if "choices" not in data or not data["choices"]:
-                print(f"LLM_PLAN ERROR: No choices in response: {data}")
-                return None
-            
-            content = data["choices"][0]["message"]["content"]
-            
-            # Debug: Log content length
-            print(f"LLM_PLAN: Content length: {len(content)} chars")
-            
-            if not content or not content.strip():
-                print(f"LLM_PLAN ERROR: Empty content from OpenAI")
-                return None
-            
-            # Strip markdown fences if present
-            content = content.strip()
-            if content.startswith("```"):
-                lines = content.split("\n")
-                content = "\n".join(lines[1:-1] if lines[-1].strip().startswith("```") else lines[1:])
-            
-            # Debug: Show first 200 chars before parsing
-            print(f"LLM_PLAN: Parsing JSON (first 200 chars): {content[:200]}")
-            
-            plan = json.loads(content)
-            return plan
-            
+
+        dt = time.time() - t0
+        print(f"LLM_PLAN: OpenAI call took {dt:.2f}s (bias={variety_bias})")
+
+        if response.status_code != 200:
+            print(f"LLM_PLAN: HTTP {response.status_code}")
+            print(f"LLM_PLAN BODY: {response.text[:800]}")
+            return None
+
+        data = response.json()
+        if "choices" not in data or not data["choices"]:
+            print(f"LLM_PLAN ERROR: No choices in response")
+            return None
+
+        content = data["choices"][0]["message"].get("content", "")
+        if not content or not content.strip():
+            print("LLM_PLAN ERROR: Empty content from OpenAI")
+            return None
+
+        extracted = _extract_first_json_object(content)
+        if not extracted:
+            print("LLM_PLAN ERROR: Could not extract JSON object")
+            print(f"LLM_PLAN: Content preview: {content[:400]}")
+            return None
+
+        try:
+            plan = json.loads(extracted)
+        except json.JSONDecodeError as e:
+            print("LLM_PLAN ERROR: JSONDecodeError after extraction")
+            print(f"LLM_PLAN JSON ERROR: {repr(e)}")
+            print(f"LLM_PLAN: Extracted preview: {extracted[:500]}")
+            return None
+
+        return plan
+
     except Exception as e:
-        print(f"LLM_PLAN ERROR: {e}")
+        print(f"LLM_PLAN ERROR: {type(e).__name__} {repr(e)}")
         return None
+
+
+
 
 
 # ----------------------------------------
@@ -756,6 +658,7 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
     return errors
 
 
+
 # ----------------------------------------
 # Public API
 # ----------------------------------------
@@ -783,6 +686,7 @@ async def generate_llm_plan_with_retries(
         plan = await call_openai_plan(weather, location, trip_date, phase, is_member=is_member)
         
         if not plan:
+            await asyncio.sleep(0.75 * (attempt + 1))
             print(f"LLM_PLAN: Attempt {attempt + 1} failed (no response)")
             continue
         
