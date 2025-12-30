@@ -1,0 +1,17 @@
+{
+  "id": "plan_hist_1767081126614",
+  "user_email": "ksagedeveloper@gmail.com",
+  "plan_link_id": "wsh0-gD2RaNc0-VNkGWJP2RZDelN5ZUa3SPYaB1jd-E",
+  "lake_name": "Lake Livingston",
+  "generation_date": "2025-12-30T07:52:06.614446+00:00",
+  "plan_type": "member",
+  "conditions": {
+    "temp_low": 38.88,
+    "temp_high": 50.88,
+    "sky_condition": "overcast",
+    "wind_speed": 9.26
+  },
+  "is_deleted": false,
+  "created_at": "2025-12-30T07:52:06.614457+00:00",
+  "expires_at": "2026-01-29T07:52:06.614464+00:00"
+}

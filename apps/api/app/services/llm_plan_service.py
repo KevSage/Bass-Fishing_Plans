@@ -45,6 +45,7 @@ from app.canon.validate import (
     validate_targets,
 )
 
+from app.render.retrieve_rules import LURE_TIP_BANK
 
 # ----------------------------------------
 # System Prompt (LOCKED RULES)
@@ -77,38 +78,38 @@ def build_system_prompt(include_pattern_2: bool = False) -> str:
         output_format = """
 
 If the chosen base_lure is terminal tackle, invert: set trailer: null and use soft_plastic.
-        
+
 RETURN JSON ONLY:
 {
   "primary":{
     "presentation":"<from PRESENTATIONS>",
     "base_lure":"<from LURE_POOL>",
-    "soft_plastic":null | "<allowed>",
+    "soft_plastic": "<OPTIONAL - ONLY for terminal tackle rigs; MUST be null for any jig>",
     "soft_plastic_why":null | "< 2 sentences>",
     "trailer":"<ONLY if lure uses trailer>",
     "trailer_why": "<ONLY if trailer used>"",
     "color_recommendations":["<color1>","<color2?>"],
     "targets":["<target>","<target>","<target>"],
-    "why_this_works":"<4-5 sentences total. MUST include: Choose X if Y. Choose X if Y.>",
+    "why_this_works":"4-5 sentences total. MUST explain why THIS SPECIFIC LURE was chosen for these conditions and season.",
     "pattern_summary":"4 sentences>",
     "strategy":" 3-4 sentences>",
-    "work_it":["<3 items>"],
-    "work_it_cards":[{"name":"<target>","definition":" 2 sentences>","how_to_fish":"3-4 sentences>"}, "3 total cards based on preselected targets"],
+    "work_it":["<target> + specific retrieve cadence from <LURE_TIP_BANK>", "...", "..."],
+    "work_it_cards":[{"name":"<target>","definition":" 2 sentences","how_to_fish":"3-4 sentences"}, "3 total cards based on preselected targets"],
   },
   "secondary":{
     "presentation":"<different from primary>",
     "base_lure":"<from LURE_POOL>",
-    "soft_plastic":null | "<allowed>",
+    "soft_plastic": "<OPTIONAL - ONLY for terminal tackle rigs; MUST be null for any jig>",
     "soft_plastic_why":null | "2 sentences>",
     "trailer":"<ONLY if lure uses trailer>",
     "trailer_why": "<ONLY if trailer used>",
     "color_recommendations":["<color1>","<color2?>"],
     "targets":["<target>","<target>","<target>"],
-    "why_this_works":"4-5 sentences total. MUST include: Choose X if Y. Choose X if Y.>",
+    "why_this_works":"4-5 sentences total. MUST explain why THIS SPECIFIC LURE was chosen for these conditions and season.",
     "pattern_summary":"4 sentences>",
     "strategy":"3-4 sentences>",
-    "work_it":["<3 items>"],
-    "work_it_cards":[{"name":"<target>","definition":" 2 sentences>","how_to_fish":"3-4 sentences>"}, "3 total cards based on preselected targets"],
+    "work_it":["<target> + specific retrieve cadence from <LURE_TIP_BANK>", "...", "..."],
+    "work_it_cards":[{"name":"<target>","definition":" 2 sentences","how_to_fish":"3-4 sentences"}, "3 total cards based on preselected targets"],
   },
   "day_progression":[
     "Morning: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize",
@@ -124,17 +125,17 @@ RETURN JSON ONLY:
 {
   "presentation":"<from PRESENTATIONS>",
   "base_lure":"<from LURE_POOL>",
-  "soft_plastic":null | "<allowed>",
+  "soft_plastic": "<OPTIONAL - ONLY for terminal tackle rigs; MUST be null for any jig>",
   "soft_plastic_why":null | "2 sentences>",
   "trailer":"<ONLY if lure uses trailer>",
   "trailer_why": "<ONLY if trailer used>",
   "color_recommendations":["<color1>","<color2?>"],
   "targets":["<target>","<target>","<target>"],
-  "why_this_works":"4-5 sentences total. MUST include: Choose X if Y. Choose X if Y.>",
+  "why_this_works":"4-5 sentences total. MUST explain why THIS SPECIFIC LURE was chosen for these conditions and season.",
   "pattern_summary":"4 sentences>",
   "strategy":" 3-4 sentences>",
-  "work_it":["<3 items>"],
-  "work_it_cards":[{"name":"<target>","definition":" 2 sentences>","how_to_fish":"3-4 sentences>"}, "3 total cards based on preselected targets"],
+  "work_it":["<target> + specific retrieve cadence from <LURE_TIP_BANK>", "...", "..."],
+  "work_it_cards":[{"name":"<target>","definition":" 2 sentences","how_to_fish":"3-4 sentences"}, "3 total cards based on preselected targets"],
   "day_progression":[
     "Morning: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize",
     "Midday: 3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>",
@@ -155,6 +156,43 @@ HARD RULES (validator enforced):
 - day_progression: exactly 3 lines (Morning/Midday/Evening). No colors mentioned.
 - Present in a conversational tone. Do not get overly technical, but also respect the intelligence of the user.
 
+COMPLEMENT RULE (SECONDARY / PIVOT):
+Secondary is not a backup lure. It assumes the initial read was slightly off and attacks fish a different way.
+- MUST use a different presentation family than Pattern 1
+- If it's a search → pick apart combo, explain the sequential relationship
+- If it's a different combo type, explain the pivot assumption
+- Pattern 2 should directly reference pattern 1 in the why this works section and the reason this may be effective as a complement or slight pivot from Pattern 1.
+
+VARIETY RULES (SOFT):
+- Try to vary color families between combo_a and combo_b when plausible.
+- Do NOT break lure/presentation/color legality to force variety.
+
+WHERE & HOW
+   - 3-5 tactical steps combining target + specific retrieve cadence
+   - Each step should reference a target and explain HOW to fish it with THIS lure
+   - Use specific retrieve instructions (Locate lure specific retrieves from LURE TIP BANK)
+   - Use natural capitalization (not ALL CAPS)
+
+WHY THIS WORKS:
+   - ONLY explain why THIS SPECIFIC LURE was chosen for these conditions
+   - Focus on: lure characteristics, presentation style
+   - MUST include color explanation using "Choose X if Y" format:
+     * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
+     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
+   - Add ONE sentence about soft plastic/trailer color choice if applicable.
+   - Length: 4-5 sentences total (lure choice + color explanation + optional trailer color)
+
+DAY PROGRESSION (EXTENDED FORMAT):
+   - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
+   - Length: 2-3 sentences PER time block (not just 1 sentence)
+   - Each time block MUST start with "Morning:", "Midday:", or "Evening:" (or "Late:")
+   - NO colors in day progression (no parentheses, no "in green pumpkin")
+   
+   Each time block should cover:
+   - Where + Why: Location/target type and bass behavior at this time
+   - How: Tactical adjustment specific to this time period
+   - Key insight: What to expect or prioritize. Reference which technique to use and when. Suggest when to switch from one presentation to another based on weather forecast and conditions.  
+
 PRESENTATIONS: {jdump(PRESENTATIONS)}
 LURES: {jdump(LURE_POOL)}
 LURE_TO_PRESENTATION: {jdump(LURE_TO_PRESENTATION)}
@@ -168,7 +206,7 @@ CRANKBAIT_COLORS: {jdump(CRANKBAIT_COLORS)}
 JERKBAIT_COLORS: {jdump(JERKBAIT_COLORS)}
 TOPWATER_COLORS: {jdump(TOPWATER_COLORS)}
 FROG_COLORS: {jdump(FROG_COLORS)}
-
+LURE_TIP_BANK: {jdump(LURE_TIP_BANK)}
 COLOR VARIETY:
 - If you provide 2 colors, make them meaningfully different (not two near-identical greens, not shad+ghost shad, etc.).
 
@@ -176,6 +214,19 @@ TERMINAL TACKLE:
 - If base_lure is terminal tackle, you MUST set soft_plastic and soft_plastic_why.
 Allowed plastics:
 {chr(10).join(terminal_rules)}
+If base_lure is dropshot, you MUST output soft_plastic and it must be one of the allowed dropshot plastics.
+“If you choose dropshot and soft_plastic is null/missing → response is rejected.”
+DROPSHOT SPECIAL CASE (STRICT):
+- If base_lure is "dropshot", you MUST set:
+  - presentation: "Hovering / Mid-Column Finesse"
+  - soft_plastic: REQUIRED and must be exactly ONE of:
+    • "finesse worm"
+    • "small minnow"
+- Dropshot colors depend on soft_plastic:
+  - If soft_plastic == "finesse worm": choose colors ONLY from RIG_COLORS
+  - If soft_plastic == "small minnow": choose colors ONLY from SOFT_SWIMBAIT_COLORS
+- Never use JERKBAIT_COLORS for dropshot.
+- Never omit soft_plastic for dropshot. Null/blank soft_plastic = invalid plan.
 
 TRAILERS:
 - If base_lure needs a trailer, you MUST set trailer and trailer_why.
@@ -357,9 +408,9 @@ async def call_openai_plan(
 
     model = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
 
-    # 80/20 variety without memory:
-    # 80% = "best", 20% = "alternate" (still must be good + valid)
-    variety_bias = "best" if random.random() < 0.8 else "alternate"
+    # 70/30 variety without memory:
+    # 70% = "best", 30% = "alternate" (still must be good + valid)
+    variety_bias = "best" if random.random() < 0.7 else "alternate"
 
     # trip_date is irrelevant now — keep signature, omit from payload to reduce tokens
     user_input = {

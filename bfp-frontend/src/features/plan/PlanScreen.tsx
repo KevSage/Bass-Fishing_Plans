@@ -1921,6 +1921,31 @@ function getColorHex(colorName: string): string {
     purple: "#663399",
     copper: "#b87333",
 
+    // Rig / Bottom contact
+    "red craw": "#8b2e1a",
+    "baby bass": "#7a8f6a",
+    "green pumpkin orange": "#6b5a33",
+    "peanut butter & jelly": "#5b2a5e",
+
+    // Crankbait / Hardbait
+    "sexy shad": "#bfc6cf",
+    "chartreuse/black back": "#b5d800",
+    "citrus shad": "#bcd94a",
+    chrome: "#c0c0c0",
+
+    // Jerkbait
+    "pro blue": "#3b5aa6", // optional tweak; yours is fine if you prefer darker
+    "table rock": "#7a6bd1",
+    "ghost minnow": "#dfe6ee",
+    transparent: "rgba(255,255,255,0.18)",
+
+    // Topwater
+    translucent: "rgba(255,255,255,0.18)",
+
+    // Frog colors
+    green: "#3f7a3a",
+    yellow: "#d9c300",
+
     // Default
     default: "#4A90E2",
   };
