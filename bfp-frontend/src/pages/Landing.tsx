@@ -90,7 +90,7 @@ export function Landing() {
               fontWeight: 500,
             }}
           >
-            Clarity every time you fish, everywhere you fish.
+            Clear fishing plans built from real conditions.
           </p>
 
           {/* What that means */}
@@ -105,9 +105,9 @@ export function Landing() {
               margin: "0 auto 20px",
             }}
           >
-            Clear strategy. Clear execution. Clear reasoning. <br></br>Know what
-            to throw, how to fish it, and why it works—for any lake, any
-            conditions, any season.
+            Bass Clarity interprets weather, season, and water conditions into a
+            cohesive fishing strategy - so you know where to start, how to fish
+            it, and when to adjust.
           </p>
 
           {/* Stats bar */}
@@ -125,7 +125,7 @@ export function Landing() {
           {/* CTA */}
           <Link
             className="btn primary"
-            to="/preview"
+            to="/subscribe"
             style={{
               fontSize: "1rem",
               padding: "20px 54px",
@@ -139,16 +139,6 @@ export function Landing() {
           >
             Get clarity for your next trip
           </Link>
-          <p
-            style={{
-              marginTop: 20,
-              fontSize: "1rem",
-              opacity: 0.5,
-              fontWeight: 400,
-            }}
-          >
-            No credit card required
-          </p>
         </div>
       </section>
 
@@ -185,8 +175,10 @@ export function Landing() {
               lineHeight: 1.6,
             }}
           >
-            Most apps dump data and leave you guessing. Bass Clarity cuts
-            through the noise and delivers clear answers.
+            Most fishing apps show data and leave interpretation up to you.{" "}
+            <br></br>
+            Bass Clarity turns that data into a clear, actionable fishing
+            strategy.
           </p>
 
           {/* Two column comparison */}
@@ -263,7 +255,7 @@ export function Landing() {
                   opacity: 0.9,
                 }}
               >
-                <li>✓ Clear strategy built FROM data</li>
+                <li>✓ Clear strategy interpreted from your conditions</li>
                 <li>✓ Specific lures matched to conditions</li>
                 <li>✓ Exactly what to throw and where</li>
                 <li>✓ Two focused approaches</li>
@@ -289,143 +281,61 @@ export function Landing() {
       {/* ============================================
           MOBILE PHONE MOCKUP - See The Clarity
           ============================================ */}
-      <section
+
+      <div
         style={{
-          padding: "140px 24px",
+          position: "relative",
+          maxWidth: 420,
+          margin: "0 auto",
         }}
       >
-        <div className="container" style={{ maxWidth: 1200 }}>
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 5vw, 3rem)",
-              fontWeight: 700,
-              textAlign: "center",
-              marginBottom: 24,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            See the Clarity
-          </h2>
+        {/* Phone Frame */}
+        <img
+          src="../../../public/images/iphone15.png"
+          alt="Bass Clarity mobile app"
+          style={{
+            width: "80%",
+            display: "block",
+            position: "relative",
+            left: "13%", // adjust once
 
-          <p
-            style={{
-              fontSize: "1.2rem",
-              textAlign: "center",
-              opacity: 0.7,
-              marginBottom: 80,
-              maxWidth: 720,
-              margin: "0 auto 80px",
-              lineHeight: 1.6,
-            }}
-          >
-            Complete strategic approach, ready to execute. Everything connects.
-          </p>
+            zIndex: 2,
+            pointerEvents: "none",
+            // width: "100%",
+            // height: "600px",
+            // objectFit: "cover",
+          }}
+        />
 
-          {/* iPhone Mockup Placeholder */}
-          <div
+        {/* Screen Content */}
+        <div
+          style={{
+            position: "absolute",
+            top: "3.8%", // adjust once
+            left: "21%", // adjust once
+            width: "80%",
+            height: "92%",
+            borderRadius: "22px",
+            overflow: "hidden",
+            zIndex: 1,
+            // background: "#000",
+          }}
+        >
+          <video
+            src="../../../public/video/BassClarity.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
             style={{
-              maxWidth: 400,
-              margin: "0 auto",
-              padding: "60px 40px",
-              background: "rgba(255,255,255,0.03)",
-              borderRadius: 24,
-              border: "2px dashed rgba(74, 144, 226, 0.3)",
-              textAlign: "center",
+              width: "80%",
+              height: "100%",
+              objectFit: "cover",
+              borderRadius: "25px",
             }}
-          >
-            <div
-              style={{
-                fontSize: "4rem",
-                marginBottom: 24,
-                opacity: 0.3,
-              }}
-            >
-              📱
-            </div>
-            <p
-              style={{
-                fontSize: "1.1rem",
-                opacity: 0.6,
-                marginBottom: 12,
-              }}
-            >
-              iPhone Mockup Placeholder
-            </p>
-            <p
-              style={{
-                fontSize: "0.95rem",
-                opacity: 0.4,
-                lineHeight: 1.6,
-              }}
-            >
-              TODO: Replace with scrolling plan screenshot showing:
-              <br />• Weather section
-              <br />• Pattern 1 + 2
-              <br />• Lure-specific retrieves
-              <br />• Download buttons
-            </p>
-          </div>
-
-          <div
-            style={{
-              marginTop: 80,
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 32,
-            }}
-          >
-            {[
-              {
-                title: "Everything Connects",
-                desc: "Pattern 2 complements Pattern 1. Gear matches technique. Strategic coherence.",
-              },
-              {
-                title: "Lure-Specific Retrieves",
-                desc: "Multiple ways to work each bait, matched to conditions and targets.",
-              },
-              {
-                title: "Clear Reasoning",
-                desc: "Understand why this approach works for these conditions.",
-              },
-              {
-                title: "Mobile Optimized",
-                desc: "Downloadable PDFs readable in direct sunlight.",
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: "28px 32px",
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: 14,
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  textAlign: "center",
-                }}
-              >
-                <h4
-                  style={{
-                    fontSize: "1.15rem",
-                    fontWeight: 600,
-                    marginBottom: 10,
-                    color: "#4A90E2",
-                  }}
-                >
-                  {item.title}
-                </h4>
-                <p
-                  style={{
-                    fontSize: "1rem",
-                    opacity: 0.7,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {item.desc}
-                </p>
-              </div>
-            ))}
-          </div>
+          />
         </div>
-      </section>
+      </div>
 
       {/* ============================================
           EVERYWHERE YOU FISH - 1000 Lakes

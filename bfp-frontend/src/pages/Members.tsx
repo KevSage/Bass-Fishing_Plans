@@ -1,16 +1,17 @@
 // src/pages/Members.tsx
-// Split modal design - form left, search right - authenticated members
+// Members-only map page: stable Mapbox lifecycle + Safari-safe event handling.
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { useNavigate } from "react-router-dom";
+
 import { generateMemberPlan } from "@/lib/api";
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 import { FishIcon } from "@/components/UnifiedIcons";
-import { useNavigate } from "react-router-dom";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -24,7 +25,6 @@ export function Members() {
   const navigate = useNavigate();
 
   const [showModal, setShowModal] = useState(false);
-  const [hoveredWater, setHoveredWater] = useState(false);
   const [waterName, setWaterName] = useState("");
   const [placeholder, setPlaceholder] = useState(
     "Lake Lanier, My secret pond..."
@@ -37,9 +37,15 @@ export function Members() {
   const [loading, setLoading] = useState(false);
 
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
-  const marker = useRef<mapboxgl.Marker | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
   const initialized = useRef(false);
+
+  // Prevent 60fps React re-render storms:
+  // - we only set hovered state when it changes
+  // - we throttle the handler with requestAnimationFrame
+  const hoverRef = useRef(false);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (
@@ -49,20 +55,24 @@ export function Members() {
       !isActive
     )
       return;
+
     initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    map.current = new mapboxgl.Map({
+    const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/outdoors-v12",
       center: [-86.7816, 33.5186],
       zoom: 6,
     });
 
-    map.current.dragRotate.disable();
-    map.current.touchZoomRotate.disableRotation();
-    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
-    map.current.addControl(
+    mapRef.current = m;
+
+    m.dragRotate.disable();
+    m.touchZoomRotate.disableRotation();
+
+    m.addControl(new mapboxgl.NavigationControl(), "top-right");
+    m.addControl(
       new mapboxgl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
         trackUserLocation: false,
@@ -71,57 +81,95 @@ export function Members() {
       "top-right"
     );
 
-    map.current.on("mousemove", (e) => {
-      if (!map.current) return;
-      const features = map.current.queryRenderedFeatures(e.point);
+    const onMove = (e: mapboxgl.MapMouseEvent) => {
+      if (rafRef.current) return;
+
+      rafRef.current = window.requestAnimationFrame(() => {
+        rafRef.current = null;
+        if (!mapRef.current) return;
+
+        const features = mapRef.current.queryRenderedFeatures(e.point);
+        const water = features.find(isWaterFeature);
+        const isHovering = !!water;
+
+        // Only update cursor + internal ref (no React state needed)
+        mapRef.current.getCanvas().style.cursor = isHovering ? "pointer" : "";
+
+        // If you ever want UI reactions to hovering later, this is where you'd
+        // set state, but ONLY on change:
+        // if (hoverRef.current !== isHovering) {
+        //   hoverRef.current = isHovering;
+        //   setHoveredWater(isHovering);
+        // }
+        hoverRef.current = isHovering;
+      });
+    };
+
+    const onClick = async (e: mapboxgl.MapMouseEvent) => {
+      if (!mapRef.current) return;
+
+      const features = mapRef.current.queryRenderedFeatures(e.point);
       const water = features.find(isWaterFeature);
-      setHoveredWater(!!water);
-      map.current.getCanvas().style.cursor = water ? "pointer" : "";
-    });
+      if (!water) return;
 
-    map.current.on("click", async (e) => {
-      if (!map.current) return;
-      const features = map.current.queryRenderedFeatures(e.point);
-      const water = features.find(isWaterFeature);
+      const { lng, lat } = e.lngLat;
 
-      if (water) {
-        const { lng, lat } = e.lngLat;
-        setSelectedCoords({ lat, lng });
-        setWaterName("");
-        setShowModal(true);
+      setSelectedCoords({ lat, lng });
+      setWaterName("");
+      setShowModal(true);
 
-        if (marker.current) marker.current.remove();
-        marker.current = new mapboxgl.Marker({ color: "#4A90E2" })
-          .setLngLat([lng, lat])
-          .addTo(map.current);
+      if (markerRef.current) markerRef.current.remove();
+      markerRef.current = new mapboxgl.Marker({ color: "#4A90E2" })
+        .setLngLat([lng, lat])
+        .addTo(mapRef.current);
 
-        try {
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
+        );
+        const data = await response.json();
+
+        const context = data?.features?.[0]?.context;
+        if (context) {
+          const city =
+            context.find((c: any) => String(c.id).startsWith("place"))?.text ||
+            "";
+          const state =
+            context
+              .find((c: any) => String(c.id).startsWith("region"))
+              ?.short_code?.replace("US-", "") || "";
+          setPlaceholder(
+            `Water body near ${[city, state].filter(Boolean).join(", ")}`
           );
-          const data = await response.json();
-
-          if (data.features?.[0]?.context) {
-            const context = data.features[0].context;
-            const city =
-              context.find((c: any) => c.id.startsWith("place"))?.text || "";
-            const state =
-              context
-                .find((c: any) => c.id.startsWith("region"))
-                ?.short_code?.replace("US-", "") || "";
-            setPlaceholder(
-              `Water body near ${[city, state].filter(Boolean).join(", ")}`
-            );
-          }
-        } catch (err) {
-          console.error("Geocode failed:", err);
         }
+      } catch (e2) {
+        console.error("Geocode failed:", e2);
       }
-    });
+    };
+
+    m.on("mousemove", onMove);
+    m.on("click", onClick);
 
     return () => {
-      map.current?.remove();
-      map.current = null;
+      // Cleanup RAF
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
+      // Remove handlers
+      m.off("mousemove", onMove);
+      m.off("click", onClick);
+
+      // Remove marker
+      markerRef.current?.remove();
+      markerRef.current = null;
+
+      // Remove map (WebGL cleanup)
+      m.remove();
+      mapRef.current = null;
+
+      initialized.current = false;
     };
   }, [isActive]);
 
@@ -133,17 +181,17 @@ export function Members() {
     setWaterName(location.name);
     setSelectedCoords({ lat: location.latitude, lng: location.longitude });
 
-    if (map.current) {
-      map.current.flyTo({
+    if (mapRef.current) {
+      mapRef.current.flyTo({
         center: [location.longitude, location.latitude],
         zoom: 13,
         duration: 1500,
       });
 
-      if (marker.current) marker.current.remove();
-      marker.current = new mapboxgl.Marker({ color: "#4A90E2" })
+      if (markerRef.current) markerRef.current.remove();
+      markerRef.current = new mapboxgl.Marker({ color: "#4A90E2" })
         .setLngLat([location.longitude, location.latitude])
-        .addTo(map.current);
+        .addTo(mapRef.current);
     }
   }
 
@@ -169,6 +217,7 @@ export function Members() {
           lon: selectedCoords.lng,
         },
       };
+
       const response = await generateMemberPlan(payload);
       navigate("/plan", { state: { planResponse: response } });
     } catch (e: any) {
@@ -177,9 +226,8 @@ export function Members() {
     }
   }
 
-  if (loading) {
-    return <PlanGenerationLoader lakeName={waterName} />;
-  }
+  // Loading states
+  if (loading) return <PlanGenerationLoader lakeName={waterName} />;
 
   if (statusLoading) {
     return (
@@ -189,6 +237,7 @@ export function Members() {
     );
   }
 
+  // Members gating
   if (!isActive) {
     return (
       <div style={{ padding: 100, textAlign: "center" }}>
@@ -203,12 +252,15 @@ export function Members() {
         >
           Members Only
         </div>
+
         <h1 style={{ fontSize: "2rem", marginBottom: 16 }}>
           Active subscription required
         </h1>
+
         <p style={{ marginBottom: 32, opacity: 0.7 }}>
           You need an active subscription to generate full fishing plans.
         </p>
+
         <a
           href="/subscribe"
           className="btn primary"
@@ -222,14 +274,14 @@ export function Members() {
 
   return (
     <div style={{ position: "relative", height: "100vh" }}>
-      {/* Header */}
+      {/* Header - keep zIndex modest so global overlays always beat it */}
       <div
         style={{
           position: "absolute",
           top: 0,
           left: 0,
           right: 0,
-          zIndex: 999,
+          zIndex: 30, // WAS 999 - this was part of your overlay conflict
           background:
             "linear-gradient(to bottom, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.85) 50%, rgba(10,10,10,0.4) 80%, transparent 100%)",
           paddingTop: "100px",
@@ -278,6 +330,7 @@ export function Members() {
 
       {/* Map */}
       <div style={{ width: "100%", height: "100%" }}>
+        {/* Push Mapbox controls below header */}
         <style>{`.mapboxgl-ctrl-top-right { top: 200px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
@@ -291,7 +344,7 @@ export function Members() {
             bottom: 20,
             left: "50%",
             transform: "translateX(-50%)",
-            zIndex: 1000,
+            zIndex: 40,
             background: "rgba(10, 10, 10, 0.95)",
             backdropFilter: "blur(20px)",
             border: "2px solid rgba(74, 144, 226, 0.4)",
@@ -312,7 +365,7 @@ export function Members() {
         </button>
       )}
 
-      {/* Split Modal */}
+      {/* Modal */}
       {showModal && (
         <div
           style={{
@@ -320,7 +373,9 @@ export function Members() {
             inset: 0,
             zIndex: 2000,
             background: "rgba(0,0,0,0.6)",
+            // blur is nice, but Safari + WebGL can glitch — keep it light:
             backdropFilter: "blur(4px)",
+            WebkitBackdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -383,7 +438,7 @@ export function Members() {
               </div>
             </div>
 
-            {/* Modal Content - Split Layout */}
+            {/* Modal Content */}
             <div
               style={{
                 display: "grid",
@@ -394,7 +449,7 @@ export function Members() {
                 flex: 1,
               }}
             >
-              {/* LEFT SIDE - FORM */}
+              {/* LEFT: FORM */}
               <div
                 style={{ display: "flex", flexDirection: "column", gap: 20 }}
               >
@@ -508,7 +563,8 @@ export function Members() {
                       setWaterName("");
                       setSelectedCoords(null);
                       setErr(null);
-                      if (marker.current) marker.current.remove();
+                      markerRef.current?.remove();
+                      markerRef.current = null;
                     }}
                     style={{
                       width: "100%",
@@ -527,7 +583,7 @@ export function Members() {
                 )}
               </div>
 
-              {/* RIGHT SIDE - SEARCH */}
+              {/* RIGHT: SEARCH */}
               <div
                 style={{
                   borderLeft: "1px solid rgba(0,0,0,0.1)",
@@ -547,6 +603,7 @@ export function Members() {
                 >
                   Search for a Lake
                 </label>
+
                 <div className="light-search-wrapper">
                   <style>{`
                     .light-search-wrapper input.input {
@@ -573,11 +630,13 @@ export function Members() {
                       opacity: 0.6 !important;
                     }
                   `}</style>
+
                   <LocationSearch
                     onSelect={handleSearchSelect}
                     placeholder="Lake Lanier, Lake Fork..."
                   />
                 </div>
+
                 <p
                   style={{
                     fontSize: "0.85rem",

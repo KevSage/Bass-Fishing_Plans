@@ -18,6 +18,40 @@ import {
   MapPinIcon,
   ActivityIcon,
 } from "@/components/UnifiedIcons";
+const ACCENT = "#4A90E2";
+
+const UI: Record<string, React.CSSProperties> = {
+  card: {
+    background:
+      "linear-gradient(135deg, rgba(74, 144, 226, 0.07) 0%, rgba(10, 10, 10, 0.45) 100%)",
+    border: "1px solid rgba(74, 144, 226, 0.22)",
+    borderRadius: 20,
+    padding: 24,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+  },
+
+  subcard: {
+    background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 16,
+    padding: 18,
+  },
+
+  eyebrow: {
+    fontSize: "0.72rem",
+    textTransform: "uppercase",
+    letterSpacing: "0.12em",
+    fontWeight: 700,
+    color: "rgba(255, 255, 255, 0.55)",
+    marginBottom: 10,
+  },
+
+  divider: {
+    height: 1,
+    background: "rgba(255,255,255,0.08)",
+    margin: "18px 0",
+  },
+};
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -518,11 +552,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
         </div>
 
         {/* Pattern Display */}
-        {is_member ? (
-          <MemberPatternView plan={plan as MemberPlan} />
-        ) : (
-          <PreviewPatternView plan={plan as PreviewPlan} />
-        )}
+        <MemberPatternView plan={plan as MemberPlan} />
       </div>
       <style>{`
       @media (min-width: 768px) {
@@ -540,585 +570,38 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   );
 }
 
-function PreviewPatternView({
-  plan,
-}: {
-  plan: Extract<Plan, { base_lure: string }>;
-}) {
-  return (
-    <div
-      className="card"
-      style={{
-        marginTop: 20,
-        background:
-          "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, var(--bg-card) 100%)",
-        border: "1px solid rgba(74, 144, 226, 0.2)",
-      }}
-    >
-      <div className="badge primary" style={{ marginBottom: 12 }}>
-        Preview Pattern
-      </div>
-      <h3 style={{ fontSize: "1.75em", fontWeight: 700, marginBottom: 20 }}>
-        {plan.presentation}
-      </h3>
-
-      {/* Lure Image */}
-      <div
-        style={{
-          position: "relative",
-          background:
-            "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.1) 0%, transparent 70%)",
-          borderRadius: 16,
-          marginBottom: 24,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: 200,
-            padding: 40,
-          }}
-        >
-          {plan.colors.asset_key ? (
-            <img
-              className="image-fade"
-              src={`/images/lures/${plan.colors.asset_key}`}
-              alt={plan.base_lure}
-              style={{
-                width: "100%",
-                maxWidth: 400,
-                height: "auto",
-                objectFit: "contain",
-                filter: "drop-shadow(0 8px 24px rgba(0, 0, 0, 0.5))",
-              }}
-              onError={(e) => {
-                e.currentTarget.src = "/images/jig_lure.jpeg";
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 300,
-                height: 200,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(255,255,255,0.05)",
-                borderRadius: 8,
-                opacity: 0.5,
-              }}
-            >
-              No image
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Lure Name */}
-      <div style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            fontSize: "0.7rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            fontWeight: 700,
-            color: "rgba(255, 255, 255, 0.5)",
-            marginBottom: 12,
-          }}
-        >
-          Lure
-        </div>
-        <div
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: 600,
-            textTransform: "capitalize",
-            color: "rgba(255, 255, 255, 0.95)",
-          }}
-        >
-          {plan.base_lure}
-        </div>
-      </div>
-
-      {/* Soft Plastic (if applicable) */}
-      {plan.soft_plastic && (
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              fontWeight: 700,
-              color: "rgba(255, 255, 255, 0.5)",
-              marginBottom: 12,
-            }}
-          >
-            Soft Plastic
-          </div>
-          <div
-            style={{
-              fontSize: "1.1rem",
-              fontWeight: 500,
-              textTransform: "capitalize",
-              marginBottom: 10,
-              color: "rgba(255, 255, 255, 0.95)",
-            }}
-          >
-            {plan.soft_plastic}
-          </div>
-          {plan.soft_plastic_why && (
-            <div
-              style={{
-                fontSize: "0.95rem",
-                opacity: 0.75,
-                lineHeight: 1.6,
-                fontStyle: "italic",
-              }}
-            >
-              {plan.soft_plastic_why}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Trailer (if applicable) */}
-      {plan.trailer && (
-        <div style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              fontWeight: 700,
-              color: "rgba(255, 255, 255, 0.5)",
-              marginBottom: 12,
-            }}
-          >
-            Trailer
-          </div>
-          <div
-            style={{
-              fontSize: "1.1rem",
-              fontWeight: 500,
-              textTransform: "capitalize",
-              marginBottom: 10,
-              color: "rgba(255, 255, 255, 0.95)",
-            }}
-          >
-            {plan.trailer}
-          </div>
-          {plan.trailer_why && (
-            <div
-              style={{
-                fontSize: "0.95rem",
-                opacity: 0.75,
-                lineHeight: 1.6,
-                fontStyle: "italic",
-              }}
-            >
-              {plan.trailer_why}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Color Swatches */}
-      {plan.color_recommendations && plan.color_recommendations.length > 0 && (
-        <div style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              fontWeight: 700,
-              color: "rgba(255, 255, 255, 0.5)",
-              marginBottom: 16,
-            }}
-          >
-            Colors
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: 20,
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            {plan.color_recommendations.map((color, i) => (
-              <div
-                key={i}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <div
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    background: getSwatchBackground(color),
-                    border: "2px solid rgba(255,255,255,0.25)",
-                    boxShadow:
-                      "0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)",
-                  }}
-                />
-                <span
-                  style={{
-                    fontWeight: 500,
-                    textTransform: "capitalize",
-                    fontSize: "0.95rem",
-                    color: "rgba(255, 255, 255, 0.9)",
-                  }}
-                >
-                  {color}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Why This Works */}
-      {plan.why_this_works && (
-        <div style={{ marginBottom: 32 }}>
-          <h4
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              marginBottom: 14,
-              color: "rgba(255, 255, 255, 0.95)",
-              display: "inline-block",
-              paddingBottom: "6px",
-              borderBottom: "3px solid rgb(74, 144, 226)",
-            }}
-          >
-            Why This Works
-          </h4>
-          <p
-            style={{
-              lineHeight: 1.6,
-              opacity: 0.88,
-              margin: 0,
-              fontSize: ".97rem",
-            }}
-          >
-            {plan.why_this_works}
-          </p>
-        </div>
-      )}
-
-      {/* Targets - HIDDEN: Now part of work_it_cards 
-      {plan.targets && plan.targets.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <h4 style={{ fontSize: "1.1em", fontWeight: 600, marginBottom: 12 }}>
-            Where to Fish
-          </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {plan.targets.map((target, i) => {
-              const targetName =
-                typeof target === "string" ? target : target.name;
-              const targetDef =
-                typeof target === "object" && target.definition
-                  ? target.definition
-                  : "";
-
-              return (
-                <div
-                  key={i}
-                  style={{
-                    padding: "12px 14px",
-                    background: "rgba(74, 144, 226, 0.08)",
-                    borderRadius: 6,
-                  }}
-                >
-                  <div
-                    style={{
-                      textTransform: "uppercase",
-                      fontSize: "0.85em",
-                      fontWeight: 600,
-                      letterSpacing: "0.05em",
-                      marginBottom: targetDef ? 6 : 0,
-                    }}
-                  >
-                    {targetName}
-                  </div>
-                  {targetDef && (
-                    <div
-                      style={{
-                        fontSize: "0.85em",
-                        opacity: 0.7,
-                        lineHeight: 1.5,
-                        textTransform: "none",
-                        letterSpacing: "normal",
-                        fontWeight: 400,
-                      }}
-                    >
-                      {targetDef}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            ))
-          </div>
-        </div>
-      )}
-      */}
-
-      {/* How to Work It */}
-      {plan.work_it && plan.work_it.length > 0 && (
-        <div style={{ marginBottom: 0 }}>
-          <h4
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              marginBottom: 16,
-              color: "rgba(255, 255, 255, 0.95)",
-              display: "inline-block",
-              paddingBottom: "6px",
-              borderBottom: "3px solid rgb(74, 144, 226)",
-            }}
-          >
-            Where & How
-          </h4>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {plan.work_it.map((item, i) => {
-              // Handle new object format
-              if (typeof item === "object" && item !== null && "name" in item) {
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      padding: "20px 24px",
-                      background: "rgba(255, 255, 255, 0.02)",
-                      borderRadius: 12,
-                      border: "1px solid rgba(255, 255, 255, 0.06)",
-                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
-                    {/* Target Name */}
-                    <h5
-                      style={{
-                        fontSize: ".95rem",
-                        fontWeight: 700,
-                        marginBottom: 8,
-                        color: "#4A90E2",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {item.name}
-                    </h5>
-
-                    {/* Definition */}
-                    <p
-                      style={{
-                        margin: "0 0 12px 0",
-                        lineHeight: 1.6,
-                        opacity: 0.7,
-                        fontSize: "0.8rem",
-                        fontStyle: "italic",
-                        color: "rgba(255, 255, 255, 0.8)",
-                      }}
-                    >
-                      {item.definition}
-                    </p>
-
-                    {/* How to Fish */}
-                    <p
-                      style={{
-                        margin: 0,
-                        paddingLeft: 10,
-                        borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
-                        lineHeight: 1.5,
-                        opacity: 0.92,
-                        fontSize: ".9rem",
-                        color: "rgba(255, 255, 255, 0.95)",
-                      }}
-                    >
-                      {item.how_to_fish}
-                    </p>
-                  </div>
-                );
-              }
-
-              // Handle legacy string format
-              return (
-                <div
-                  key={i}
-                  style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
-                >
-                  <div
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: "50%",
-                      background: "rgba(74, 144, 226, 0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.85em",
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {i + 1}
-                  </div>
-                  <p style={{ margin: 0, lineHeight: 1.6, opacity: 0.9 }}>
-                    {item}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Day Progression */}
-      {plan.day_progression && plan.day_progression.length > 0 && (
-        <div
-          className="card"
-          style={{
-            marginTop: 32,
-            position: "relative",
-            // Premium frosted glass effect with depth
-            // background: "rgba(255, 255, 255, 0.02)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: 24,
-            padding: "20px",
-            // Premium shadows (work in PDF)
-            boxShadow:
-              "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
-            background:
-              "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, var(--bg-card) 100%)",
-            display: "flex",
-            flexDirection: "column",
-            gap: 20,
-          }}
-        >
-          <h3 style={{ fontSize: "1.2em", fontWeight: 600, marginBottom: 16 }}>
-            Day Progression
-          </h3>
-          {(plan.day_progression as string[]).map((item, i) => (
-            <div
-              key={i}
-              style={{
-                padding: 10,
-                background: "rgba(255, 255, 255, 0.02)",
-
-                borderRadius: 12,
-                // borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  paddingLeft: 16,
-                  borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
-                  lineHeight: 1.7,
-                  opacity: 0.92,
-                  fontSize: "1.05rem",
-                  color: "rgba(255, 255, 255, 0.95)",
-                }}
-              >
-                {item}
-              </p>
-            </div>
-          ))}
-        </div>
-        // </div>
-      )}
-    </div>
-  );
-}
-
 function MemberPatternView({
   plan,
 }: {
   plan: Extract<Plan, { primary: any }>;
 }) {
   return (
-    <div
-      className="card"
-      style={{
-        marginTop: 20,
-        background:
-          "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, var(--bg-card) 100%)",
-        border: "1px solid rgba(74, 144, 226, 0.2)",
-      }}
-    >
-      {/* Primary Pattern */}
-      <PatternCard pattern={plan.primary} patternNumber={1} isPrimary={true} />
-
-      {/* Secondary Pattern */}
+    <div className="card" style={{ ...UI.card, marginTop: 20 }}>
+      <PatternCard pattern={plan.primary} patternNumber={1} isPrimary />
       <PatternCard
         pattern={plan.secondary}
         patternNumber={2}
         isPrimary={false}
       />
 
-      {/* Day Progression */}
       {plan.day_progression && plan.day_progression.length > 0 && (
-        <div
-          className="card"
-          style={{
-            marginTop: 32,
-            position: "relative",
-            // Premium frosted glass effect with depth
-            background:
-              "linear-gradient(145deg, rgba(255, 255, 255, 0.02) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(255, 255, 255, 0.01) 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: 24,
-            padding: "4px",
-            // Premium shadows (work in PDF)
-            boxShadow:
-              "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
-          }}
-        >
-          <h3 style={{ fontSize: "1.2em", fontWeight: 600, marginBottom: 16 }}>
+        <div style={{ marginTop: 28 }}>
+          <div style={UI.divider} />
+          <div style={{ ...UI.eyebrow, color: "rgba(74,144,226,0.9)" }}>
             Day Progression
-          </h3>
-          <div
-            className="card"
-            style={{
-              // padding: "20px 24px",
-              // // background: "rgba(255, 255, 255, 0.02)",
-              // borderRadius: 12,
-              // border: "1px solid rgba(255, 255, 255, 0.06)",
-              // boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 20,
-            }}
-          >
-            {(plan.day_progression as string[]).map((item, i) => (
-              <div
-                key={i}
-                style={{
-                  // padding: 20,
-                  background: "rgba(255, 255, 255, 0.02)",
+          </div>
 
-                  borderRadius: 12,
-                  // borderLeft: "4px solid rgba(74, 144, 226, 0.6)",
-                  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                }}
-              >
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {(plan.day_progression as string[]).map((item, i) => (
+              <div key={i} style={UI.subcard}>
                 <p
                   style={{
                     margin: 0,
-                    paddingLeft: 16,
-                    borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
+                    paddingLeft: 14,
+                    borderLeft: "3px solid rgba(74, 144, 226, 0.35)",
                     lineHeight: 1.7,
                     opacity: 0.92,
-                    fontSize: ".9rem",
+                    fontSize: "1.02rem",
                     color: "rgba(255, 255, 255, 0.95)",
                   }}
                 >
@@ -1236,7 +719,7 @@ function PatternCard({
         style={{
           height: 1,
           background:
-            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
+            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%)",
           margin: "0px 0",
         }}
       />
