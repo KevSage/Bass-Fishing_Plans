@@ -168,12 +168,12 @@ RETURN JSON ONLY:
   },
 
   "day_progression":[
-    "Morning: 2-3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize",
-    "Midday: 2-3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>",
-    "Evening: 2-3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>"
+    "Morning: 2-3 sentences. Where+why + tactical adjustment. No colors. No exact numbers.",
+    "Midday: 2-3 sentences. Where+why + tactical adjustment. No colors. No exact numbers.",
+    "Evening: 2-3 sentences. Where+why + tactical adjustment. No colors. No exact numbers."
   ],
 
-  "outlook_blurb":"3 sentences of weather, condition and phase related analysis and how it may effect bass activity. No exact numbers or strategy>"
+  "outlook_blurb":"2-3 sentences of weather/phase context only. No exact numbers. No fishing strategy."
 }
 """
     else:
@@ -252,19 +252,7 @@ HARD RULES (validator enforced):
 TARGETS (LOCKED):
 - targets must be exactly 3 items
 - Each target MUST be one of TARGET_DEFINITIONS keys (no invention, no paraphrase).
-- Each targets[i] MUST be an exact key from TARGET_DEFINITIONS (match spelling and spacing).
-
-WORK_IT_CARDS (STRICT)
-- You MUST generate exactly 3 cards.
-- For each card index i:
-- work_it_cards[i].name MUST equal targets[i] exactly (same string).
-- work_it_cards[i].definition MUST equal the value from the dictionary:
-- definition = TARGET_DEFINITIONS[targets[i]]
-- definition is never the target label; it is the full definition text stored in TARGET_DEFINITIONS.
-Example
-If targets[0] = "grass edges" then:
-work_it_cards[0].name = "grass edges"
-work_it_cards[0].definition = TARGET_DEFINITIONS["grass edges"] (the full definition sentence)
+- Each work_it_cards[].definition MUST match TARGET_DEFINITIONS[target] EXACTLY.
 
 COLOR SYSTEM (LOCKED):
 - You do not know real-time water clarity. Always output exactly TWO colors:
@@ -272,56 +260,14 @@ COLOR SYSTEM (LOCKED):
   2) Stained-to-muddy clarity option
 - Colors MUST come from the correct lure-specific color pool for the chosen base_lure.
 - In why_this_works, you MUST explain colors in “Choose A if… Choose B if…” format.
-- Light penetration `can modify which color you pick within each clarity lane:
+- Light penetration can modify which color you pick within each clarity lane:
   bright = subtler/cleaner; cloudy/low light = more visible/stronger contrast.
 - Do NOT output any other color structure (no zones, no asset keys, no nested color objects).
-
-
-WHERE & HOW
-   - 3 tactical steps combining target + specific retrieve cadence
-   - Each step should reference a target and explain HOW to fish it with THIS lure
-   - Use specific retrieve instructions (Locate lure specific retrieves from LURE TIP BANK)
-   - Use natural capitalization (not ALL CAPS)
-
-WHY THIS WORKS:
-   - ONLY explain why THIS SPECIFIC LURE was chosen for these conditions
-   - Focus on: lure characteristics, presentation style
-   - MUST include color explanation using "Choose X if Y" format:
-     * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
-     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
-   - Add ONE sentence about soft plastic/trailer color choice if applicable.
-   - Length: 2-3 sentences total (lure choice + color explanation + optional trailer color)
-
-DAY PROGRESSION (EXTENDED FORMAT):
-   - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
-   - Length: 2 sentences PER time block (not just 1 sentence)
-   - Each time block MUST start with "Morning:", "Midday:", or "Evening:" (or "Late:")
-   - NO colors in day progression (no parentheses, no "in green pumpkin")
-   
-   Each time block should cover:
-   - Where + Why: Location/target type and bass behavior at this time
-   - How: Tactical adjustment specific to this time period
-   - Key insight: What to expect or prioritize. Reference which technique to use and when. Suggest when to switch from one presentation to another based on weather forecast and conditions. 
-
 
 TERMINAL TACKLE:
 - If base_lure is terminal tackle, you MUST set soft_plastic and soft_plastic_why.
 Allowed plastics:
 {chr(10).join(terminal_rules)}
-
-If base_lure is dropshot, you MUST output soft_plastic and it must be one of the allowed dropshot plastics.
-“If you choose dropshot and soft_plastic is null/missing → response is rejected.”
-DROPSHOT SPECIAL CASE (STRICT):
-- If base_lure is "dropshot", you MUST set:
-  - presentation: "Hovering / Mid-Column Finesse"
-  - soft_plastic: REQUIRED and must be exactly ONE of:
-    • "finesse worm"
-    • "small minnow"
-- Dropshot colors depend on soft_plastic:
-  - If soft_plastic == "finesse worm": choose colors ONLY from RIG_COLORS
-  - If soft_plastic == "small minnow": choose colors ONLY from SOFT_SWIMBAIT_COLORS
-- Never use JERKBAIT_COLORS for dropshot.
-- Never omit soft_plastic for dropshot. Null/blank soft_plastic = invalid plan.
 
 TRAILERS:
 - If base_lure uses a trailer, you MUST set trailer and trailer_why.
@@ -411,61 +357,27 @@ def _extract_first_json_object(text: str) -> Optional[str]:
 
 
 
-# def expand_plan_color_zones(plan: Dict[str, Any], is_member: bool) -> Dict[str, Any]:
-#     """
-#     Expand LLM color arrays into the frontend-ready payload.
-#     Adds `color.asset_key` so PatternCard can render images.
-#     """
-#     if is_member:
-#         if "primary" in plan and isinstance(plan["primary"], dict):
-#             lure = plan["primary"].get("base_lure")
-#             colors = plan["primary"].get("color_recommendations", [])
-#             plan["primary"]["color"] = expand_color_zones(lure, colors)
-
-#         if "secondary" in plan and isinstance(plan["secondary"], dict):
-#             lure = plan["secondary"].get("base_lure")
-#             colors = plan["secondary"].get("color_recommendations", [])
-#             plan["secondary"]["color"] = expand_color_zones(lure, colors)
-#     else:
-#         lure = plan.get("base_lure")
-#         colors = plan.get("color_recommendations", [])
-#         plan["color"] = expand_color_zones(lure, colors)
-
-#     return plan
-
 def expand_plan_color_zones(plan: Dict[str, Any], is_member: bool) -> Dict[str, Any]:
     """
     Expand LLM color arrays into the frontend-ready payload.
-
-    Contract (frontend expects):
-      - non-member: plan["colors"]["asset_key"]
-      - member: plan["primary"]["colors"]["asset_key"] and plan["secondary"]["colors"]["asset_key"]
+    Adds `colors` containing at least `asset_key` so PatternCard can't crash.
     """
-    def _apply(obj: Dict[str, Any]) -> None:
-        if not isinstance(obj, dict):
-            return
-        lure = obj.get("base_lure")
-        colors = obj.get("color_recommendations") or []
-        if not lure:
-            return
-
-        # expand_color_zones may raise if lure/colors invalid; let caller handle/log
-        expanded = expand_color_zones(lure, colors)
-
-        # ✅ Canonical key for PlanScreen.tsx: pattern.colors.asset_key
-        obj["colors"] = expanded
-
-        # 🔒 Back-compat: if other code still reads `color`, keep it in sync
-        obj["color"] = expanded
-
     if is_member:
-        _apply(plan.get("primary", {}))
-        _apply(plan.get("secondary", {}))
+        if "primary" in plan and isinstance(plan["primary"], dict):
+            lure = plan["primary"].get("base_lure")
+            colors = plan["primary"].get("color_recommendations", [])
+            plan["primary"]["colors"] = expand_color_zones(lure, colors)
+
+        if "secondary" in plan and isinstance(plan["secondary"], dict):
+            lure = plan["secondary"].get("base_lure")
+            colors = plan["secondary"].get("color_recommendations", [])
+            plan["secondary"]["colors"] = expand_color_zones(lure, colors)
     else:
-        _apply(plan)
+        lure = plan.get("base_lure")
+        colors = plan.get("color_recommendations", [])
+        plan["colors"] = expand_color_zones(lure, colors)
 
     return plan
-
 
 
 
@@ -826,12 +738,7 @@ async def generate_llm_plan_with_retries(
         is_valid, errors = validate_llm_plan(plan, is_member=is_member)
 
         if is_valid:
-            try:
-                plan = expand_plan_color_zones(plan, is_member=is_member)
-            except Exception as e:
-                print(f"LLM_PLAN: Color zone expansion failed: {e}")
-                continue   # retry LLM, do NOT return unexpanded plan
-
+            print(f"LLM_PLAN: Success on attempt {attempt + 1}")
             return plan
 
         print(f"LLM_PLAN: Attempt {attempt + 1} validation failed:")
