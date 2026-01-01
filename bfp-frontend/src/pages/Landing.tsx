@@ -294,10 +294,10 @@ export function Landing() {
           src="../../../public/images/iphone15.png"
           alt="Bass Clarity mobile app"
           style={{
-            width: "80%",
+            width: "90%",
             display: "block",
             position: "relative",
-            left: "13%", // adjust once
+            left: "10%", // adjust once
 
             zIndex: 2,
             pointerEvents: "none",
@@ -312,8 +312,8 @@ export function Landing() {
           style={{
             position: "absolute",
             top: "3.8%", // adjust once
-            left: "21%", // adjust once
-            width: "80%",
+            left: "16%", // adjust once
+            width: "88%",
             height: "92%",
             borderRadius: "22px",
             overflow: "hidden",
@@ -328,9 +328,9 @@ export function Landing() {
             loop
             playsInline
             style={{
-              width: "80%",
+              width: "90%",
               height: "100%",
-              objectFit: "cover",
+              objectFit: "fill",
               borderRadius: "25px",
             }}
           />

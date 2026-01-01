@@ -94,7 +94,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     
     Flow:
     1. Check if user is subscriber
-    2. Check rate limits (30-day preview OR 3-hour member cooldown) - skipped with X-Admin-Override header
+    2. Check rate limits (30-day preview OR 1-hour member cooldown) - skipped with X-Admin-Override header
     3. Get weather + determine phase
     4. Generate plan (LLM with Pattern 2 for members)
     5. Save plan link
@@ -112,15 +112,20 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     # 2. Rate limiting (skip if admin override)
     if not admin_override:
         if is_member:
-            # Members: 3-hour cooldown
+            # Members: 1-hour cooldown
             allowed, seconds_remaining = rate_limits.check_member_cooldown(email)
             if not allowed:
+                minutes = seconds_remaining / 60
                 hours = seconds_remaining / 3600
+                if hours >= 1:
+                    time_msg = f"{hours:.1f} hours"
+                else:
+                    time_msg = f"{int(minutes)} minutes"
                 raise HTTPException(
                     status_code=429,
                     detail={
                         "error": "rate_limit_member",
-                        "message": f"Please wait {hours:.1f} hours between plan requests",
+                        "message": f"Please wait {time_msg} between plan requests. Plans are limited to one per hour.",
                         "seconds_remaining": seconds_remaining,
                     }
                 )
@@ -247,7 +252,6 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     return {
         "plan_url": plan_url,
         "token": token,
-        "is_member": is_member,
         "email_sent": email_sent,
         "plan": plan,
     }
@@ -270,60 +274,57 @@ async def plan_view(token: str):
     
     return {
         "plan": plan_data["plan"],
-        "is_member": plan_data["is_member"],
         "created_at": plan_data["created_at"],
         "views": plan_data["views"],
-        "download_urls": {
-            "mobile_dark": f"/plan/download/{token}/mobile",
-            "a4_printable": f"/plan/download/{token}/a4",
-        }
     }
 
 
 # ========================================
-# PLAN DOWNLOADS
+# PLAN DOWNLOADS - REMOVED
 # ========================================
+# PDF downloads have been removed as they were non-functional
+# and users have authenticated plan storage instead.
 
-@app.get("/plan/download/{token}/mobile")
-async def plan_download_mobile(token: str):
-    """
-    Download mobile-optimized dark theme HTML.
-    Can be converted to PDF client-side or served as HTML.
-    """
-    plan_data = plan_links.get_plan(token)
-    
-    if not plan_data:
-        raise HTTPException(status_code=404, detail="Plan not found")
-    
-    html = generate_mobile_dark_html(plan_data["plan"])
-    
-    return HTMLResponse(
-        content=html,
-        headers={
-            "Content-Disposition": f'attachment; filename="fishing_plan_mobile_{token[:8]}.html"'
-        }
-    )
+# @app.get("/plan/download/{token}/mobile")
+# async def plan_download_mobile(token: str):
+#     """
+#     Download mobile-optimized dark theme HTML.
+#     Can be converted to PDF client-side or served as HTML.
+#     """
+#     plan_data = plan_links.get_plan(token)
+#     
+#     if not plan_data:
+#         raise HTTPException(status_code=404, detail="Plan not found")
+#     
+#     html = generate_mobile_dark_html(plan_data["plan"])
+#     
+#     return HTMLResponse(
+#         content=html,
+#         headers={
+#             "Content-Disposition": f'attachment; filename="fishing_plan_mobile_{token[:8]}.html"'
+#         }
+#     )
 
 
-@app.get("/plan/download/{token}/a4")
-async def plan_download_a4(token: str):
-    """
-    Download A4 printable HTML.
-    Can be converted to PDF client-side or printed directly.
-    """
-    plan_data = plan_links.get_plan(token)
-    
-    if not plan_data:
-        raise HTTPException(status_code=404, detail="Plan not found")
-    
-    html = generate_a4_printable_html(plan_data["plan"])
-    
-    return HTMLResponse(
-        content=html,
-        headers={
-            "Content-Disposition": f'attachment; filename="fishing_plan_a4_{token[:8]}.html"'
-        }
-    )
+# @app.get("/plan/download/{token}/a4")
+# async def plan_download_a4(token: str):
+#     """
+#     Download A4 printable HTML.
+#     Can be converted to PDF client-side or printed directly.
+#     """
+#     plan_data = plan_links.get_plan(token)
+#     
+#     if not plan_data:
+#         raise HTTPException(status_code=404, detail="Plan not found")
+#     
+#     html = generate_a4_printable_html(plan_data["plan"])
+#     
+#     return HTMLResponse(
+#         content=html,
+#         headers={
+#             "Content-Disposition": f'attachment; filename="fishing_plan_a4_{token[:8]}.html"'
+#         }
+#     )
 
 
 # ========================================

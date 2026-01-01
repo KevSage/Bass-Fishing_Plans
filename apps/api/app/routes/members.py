@@ -218,8 +218,7 @@ async def get_plan_history(
                 "generation_date": "2024-12-27T14:30:00+00:00",
                 "plan_type": "member",
                 "conditions": {...},
-                "plan_url": "/plan/view/abc123",
-                "can_download_pdf": true
+                "plan_url": "/plan/view/abc123"
             }
         ],
         "total": 15,
@@ -261,7 +260,6 @@ async def get_plan_history(
                 "plan_type": plan["plan_type"],
                 "conditions": plan["conditions"],
                 "plan_url": f"/plan?token={plan['plan_link_id']}",
-                "can_download_pdf": True
             }
             for plan in plans
         ],

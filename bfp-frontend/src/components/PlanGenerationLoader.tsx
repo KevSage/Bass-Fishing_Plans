@@ -7,14 +7,14 @@ interface PlanGenerationLoaderProps {
 }
 
 const steps = [
-  { label: "Analyzing lake conditions", duration: 6000 },
-  { label: "Checking weather patterns", duration: 7000 },
-  { label: "Identifying bass patterns", duration: 7500 },
-  { label: "Analyzing water temperature", duration: 6500 },
-  { label: "Selecting optimal lures", duration: 8000 },
-  { label: "Matching color profiles", duration: 7000 },
-  { label: "Generating strategy", duration: 8000 },
-  { label: "Finalizing your plan", duration: 7000 },
+  { label: "Analyzing Your Location", duration: 5000 },
+  { label: "Checking Your Local Weather Conditions", duration: 6000 },
+  { label: "Identifying Bass Patterns for Current Phase", duration: 6500 },
+  { label: "Selecting Targets", duration: 5500 },
+  { label: "Selecting Optimal Lures", duration: 7000 },
+  { label: "Matching Color Profiles", duration: 6000 },
+  { label: "Generating Strategy", duration: 7000 },
+  { label: "Finalizing Your Plan", duration: 6000 },
 ];
 
 const totalDuration = steps.reduce((sum, step) => sum + step.duration, 0); // ~57 seconds
