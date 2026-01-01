@@ -22,6 +22,7 @@ PRESENTATIONS = [
 # ----------------------------------------
 # LURES (UNIFIED CATALOG)
 # ----------------------------------------
+
 LURE_POOL = [
     # Horizontal Reaction
     "shallow crankbait",
@@ -37,21 +38,22 @@ LURE_POOL = [
     # Vertical Reaction
     "jerkbait",
     "blade bait",
+    "jighead minnow",
 
-    # Bottom Contact - Dragging
+    # Bottom Contact - Both Dragging AND Hopping (except ned rig)
     "texas rig",
     "carolina rig",
     "football jig",
-    "shaky head",
-
-    # Bottom Contact - Hopping / Targeted
     "casting jig",
+    "shaky head",
+    
+    # Bottom Contact - Dragging ONLY (exposed hook = snag risk)
+    "ned rig",
 
     # Hovering / Mid-Column Finesse
     "neko rig",
     "wacky rig",
     "soft jerkbait",
-    "ned rig",
     "dropshot",
 
     # Topwater - Horizontal
@@ -501,6 +503,7 @@ BOTTOM_CONTACT_PLASTICS = [
     "stickbait",
     "finesse worm",
     "lizard",
+    "ned worm"
 ]
 
 BAITFISH_PLASTICS = [
@@ -527,7 +530,7 @@ TERMINAL_PLASTIC_MAP = {
         "stickbait", "finesse worm", "lizard",
     },
     "shaky head": {"stickbait", "finesse worm"},
-    "ned rig": {"finesse worm", "stickbait"},
+    "ned rig": {"ned worm", "ned craw"},
     "neko rig": {"stickbait", "finesse worm"},
     "wacky rig": {"stickbait", "finesse worm"},
     "dropshot": {"finesse worm", "small minnow"},  # STRICT
@@ -602,50 +605,106 @@ SPINNER_BUZZ_TRAILERS = [
 # ----------------------------------------
 # LURE → PRESENTATION MAP (LOCKED)
 # ----------------------------------------
+
 LURE_TO_PRESENTATION = {
-    # Horizontal Reaction
+    # ========================================
+    # HORIZONTAL REACTION
+    # ========================================
     "shallow crankbait": "Horizontal Reaction",
     "mid crankbait": "Horizontal Reaction",
     "deep crankbait": "Horizontal Reaction",
     "lipless crankbait": "Horizontal Reaction",
     "chatterbait": "Horizontal Reaction",
-    "swim jig": "Horizontal Reaction",
     "spinnerbait": "Horizontal Reaction",
     "underspin": "Horizontal Reaction",
     "paddle tail swimbait": "Horizontal Reaction",
+    
+    # Swim jig - primarily horizontal but can drag bottom
+    "swim jig": [
+        "Horizontal Reaction",
+        "Bottom Contact - Dragging",
+    ],
 
-    # Vertical Reaction
+    # ========================================
+    # VERTICAL REACTION
+    # ========================================
     "jerkbait": "Vertical Reaction",
     "blade bait": "Vertical Reaction",
+    "jighead minnow": "Vertical Reaction",
 
-  # Bottom Contact - BOTH dragging and hopping allowed
-    "texas rig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
-    "carolina rig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
-    "football jig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
-    "casting jig": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
-    "shaky head": ["Bottom Contact - Dragging", "Bottom Contact - Hopping / Targeted"],
+    # ========================================
+    # BOTTOM CONTACT - Both Dragging & Hopping
+    # (All except ned rig can be hopped or dragged)
+    # ========================================
+    "texas rig": [
+        "Bottom Contact - Dragging",
+        "Bottom Contact - Hopping / Targeted",
+    ],
+    "carolina rig": [
+        "Bottom Contact - Dragging",
+        "Bottom Contact - Hopping / Targeted",
+    ],
+    "football jig": [
+        "Bottom Contact - Dragging",
+        "Bottom Contact - Hopping / Targeted",
+    ],
+    "casting jig": [
+        "Bottom Contact - Dragging",
+        "Bottom Contact - Hopping / Targeted",
+    ],
+    "shaky head": [
+        "Bottom Contact - Dragging",
+        "Bottom Contact - Hopping / Targeted",
+    ],
+    
+    # Ned rig - HOPPING ONLY (exposed hook = snag risk when dragging on bottom)
+    "ned rig": "Bottom Contact - Hopping / Targeted",
 
-    # Bottom Contact - Hopping / Targeted
-    "casting jig": "Bottom Contact - Hopping / Targeted",
+    # ========================================
+    # HOVERING / MID-COLUMN FINESSE
+    # (Most can also work as vertical reaction)
+    # ========================================
+    
+    # Neko rig - can hover OR vertical jig
+    "neko rig": [
+        "Hovering / Mid-Column Finesse",
+        "Vertical Reaction",
+    ],
+    
+    # Wacky rig - can hover OR vertical shake
+    "wacky rig": [
+        "Hovering / Mid-Column Finesse",
+        "Vertical Reaction",
+    ],
+    
+    # Soft jerkbait - can hover OR dart/twitch
+    "soft jerkbait": [
+        "Hovering / Mid-Column Finesse",
+        "Vertical Reaction",
+    ],
+    
+    # Dropshot - can hover OR vertical jig (KEY FIX for LLM errors)
+    "dropshot": [
+        "Hovering / Mid-Column Finesse",
+        "Vertical Reaction",
+    ],
 
-    # Hovering / Mid-Column Finesse
-    "neko rig": "Hovering / Mid-Column Finesse",
-    "wacky rig": "Hovering / Mid-Column Finesse",
-    "soft jerkbait": "Hovering / Mid-Column Finesse",
-    "ned rig": "Hovering / Mid-Column Finesse",
-    "dropshot": "Hovering / Mid-Column Finesse",
-
-    # Topwater - Horizontal
+    # ========================================
+    # TOPWATER - HORIZONTAL
+    # ========================================
     "walking bait": "Topwater - Horizontal",
     "buzzbait": "Topwater - Horizontal",
     "whopper plopper": "Topwater - Horizontal",
     "wake bait": "Topwater - Horizontal",
 
-    # Topwater - Precision / Vertical Surface Work
+    # ========================================
+    # TOPWATER - PRECISION / VERTICAL SURFACE WORK
+    # ========================================
     "hollow body frog": "Topwater - Precision / Vertical Surface Work",
     "popping frog": "Topwater - Precision / Vertical Surface Work",
     "popper": "Topwater - Precision / Vertical Surface Work",
 }
+
 
 # ----------------------------------------
 # HARD RESTRICTIONS (LOCKED)
