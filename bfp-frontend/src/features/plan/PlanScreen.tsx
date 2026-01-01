@@ -2,14 +2,7 @@
 // Complete plan display: consolidated weather, per-pattern gear/strategy, downloads at bottom
 
 import React, { useEffect, useState, useRef } from "react";
-import type {
-  Plan,
-  PlanGenerateResponse,
-  Pattern,
-  MemberPlan,
-  PreviewPlan,
-} from "./types";
-import { isMemberPlan } from "./types";
+import type { Plan, PlanGenerateResponse, Pattern } from "./types";
 import {
   ThermometerIcon,
   WindIcon,
@@ -18,6 +11,7 @@ import {
   MapPinIcon,
   ActivityIcon,
 } from "@/components/UnifiedIcons";
+import { PlanNavigation } from "./PlanNavigation";
 const ACCENT = "#4A90E2";
 
 const UI: Record<string, React.CSSProperties> = {
@@ -38,7 +32,7 @@ const UI: Record<string, React.CSSProperties> = {
   },
 
   eyebrow: {
-    fontSize: "0.72rem",
+    fontSize: "0.75rem", // Increased from 0.72rem
     textTransform: "uppercase",
     letterSpacing: "0.12em",
     fontWeight: 700,
@@ -163,7 +157,7 @@ function getLakeZoom(lakeName: string): number {
 }
 
 export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
-  const { plan, is_member } = response;
+  const { plan } = response;
   const conditions = plan.conditions;
   const [locationCity, setLocationCity] = useState<string>("");
   const [locationState, setLocationState] = useState<string>("");
@@ -217,9 +211,12 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
 
   return (
     <>
-      <div style={{ marginTop: 18 }}>
+      <div style={{ marginTop: 18, paddingBottom: 100 }}>
+        {" "}
+        {/* Extra padding for mobile nav */}
         {/* Weather Forecast Panel - Premium with blue accents */}
         <div
+          id="weather"
           className="card"
           style={{
             marginTop: 0,
@@ -270,7 +267,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
                 position: "relative",
                 padding: "20px 20px 0",
                 marginBottom: 12,
-                fontSize: "0.85rem",
+                fontSize: "0.9rem", // Increased from 0.85rem
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 color: "#4A90E2",
@@ -328,7 +325,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
           {/* Weather Forecast Header */}
           <h3
             style={{
-              fontSize: "1.25em",
+              fontSize: "1.3em",
               fontWeight: 600,
               marginBottom: 18,
               color: "rgba(255, 255, 255, 0.95)",
@@ -370,7 +367,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
                 </div>
                 <div
                   style={{
-                    fontSize: "0.7rem",
+                    fontSize: ".9rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                     color: "rgba(255, 255, 255, 0.5)",
@@ -416,7 +413,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
                 </div>
                 <div
                   style={{
-                    fontSize: "0.7rem",
+                    fontSize: ".9rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                     color: "rgba(255, 255, 255, 0.5)",
@@ -460,7 +457,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
                 </div>
                 <div
                   style={{
-                    fontSize: "0.7rem",
+                    fontSize: ".9rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                     color: "rgba(255, 255, 255, 0.5)",
@@ -505,7 +502,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
                 </div>
                 <div
                   style={{
-                    fontSize: "0.7rem",
+                    fontSize: ".9rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                     color: "rgba(255, 255, 255, 0.5)",
@@ -533,7 +530,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
             <div>
               <h4
                 style={{
-                  fontSize: "1em",
+                  fontSize: "1.3em",
                   fontWeight: 600,
                   marginBottom: 10,
                   opacity: 0.8,
@@ -542,18 +539,82 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
                   borderBottom: "3px solid rgb(74, 144, 226)",
                 }}
               >
-                Forecast
+                Conditions & Outlook
               </h4>
-              <p style={{ lineHeight: 1.7, opacity: 0.9, margin: 0 }}>
+              <p
+                style={{
+                  lineHeight: 1.7,
+                  fontSize: "1.2em",
+                  opacity: 0.9,
+                  margin: 0,
+                }}
+              >
                 {plan.outlook_blurb}
               </p>
             </div>
           )}
         </div>
+        {/* Pattern 1 */}
+        <div id="pattern-1">
+          <PatternCard pattern={plan.primary} patternNumber={1} isPrimary />
+        </div>
+        {/* Pattern 2 */}
+        <div id="pattern-2">
+          <PatternCard
+            pattern={plan.secondary}
+            patternNumber={2}
+            isPrimary={false}
+          />
+        </div>
+        {/* Day Progression */}
+        {plan.day_progression && plan.day_progression.length > 0 && (
+          <div
+            id="day-progression"
+            className="card"
+            style={{ ...UI.card, marginTop: 32 }}
+          >
+            <div
+              style={{
+                ...UI.eyebrow,
+                fontSize: "1.1rem",
+                color: "rgba(74,144,226,0.9)",
+              }}
+            >
+              Day Progression
+            </div>
 
-        {/* Pattern Display */}
-        <MemberPatternView plan={plan as MemberPlan} />
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+                marginTop: 16,
+              }}
+            >
+              {(plan.day_progression as string[]).map((item, i) => (
+                <div key={i} style={UI.subcard}>
+                  <p
+                    style={{
+                      margin: 0,
+                      padding: 14,
+                      borderLeft: "3px solid rgba(74, 144, 226, 0.35)",
+                      lineHeight: 1.8,
+                      opacity: 0.92,
+                      fontSize: "1.1rem",
+                      color: "rgba(255, 255, 255, 0.95)",
+                    }}
+                  >
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      <PlanNavigation />
+
       <style>{`
       @media (min-width: 768px) {
         .weather-grid {
@@ -567,52 +628,6 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
       }
     `}</style>
     </>
-  );
-}
-
-function MemberPatternView({
-  plan,
-}: {
-  plan: Extract<Plan, { primary: any }>;
-}) {
-  return (
-    <div className="card" style={{ ...UI.card, marginTop: 20 }}>
-      <PatternCard pattern={plan.primary} patternNumber={1} isPrimary />
-      <PatternCard
-        pattern={plan.secondary}
-        patternNumber={2}
-        isPrimary={false}
-      />
-
-      {plan.day_progression && plan.day_progression.length > 0 && (
-        <div style={{ marginTop: 28 }}>
-          <div style={UI.divider} />
-          <div style={{ ...UI.eyebrow, color: "rgba(74,144,226,0.9)" }}>
-            Day Progression
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {(plan.day_progression as string[]).map((item, i) => (
-              <div key={i} style={UI.subcard}>
-                <p
-                  style={{
-                    margin: 0,
-                    paddingLeft: 14,
-                    borderLeft: "3px solid rgba(74, 144, 226, 0.35)",
-                    lineHeight: 1.7,
-                    opacity: 0.92,
-                    fontSize: "1.02rem",
-                    color: "rgba(255, 255, 255, 0.95)",
-                  }}
-                >
-                  {item}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -661,7 +676,7 @@ function PatternCard({
             ? "0 4px 16px rgba(74, 144, 226, 0.4)"
             : "0 4px 16px rgba(0, 0, 0, 0.3)",
           borderRadius: 8,
-          fontSize: "0.7rem",
+          fontSize: "0.8rem",
           textTransform: "uppercase",
           letterSpacing: "0.1em",
           fontWeight: 700,
@@ -674,7 +689,7 @@ function PatternCard({
       {/* Presentation Title - Premium typography */}
       <h3
         style={{
-          fontSize: "1.7rem",
+          fontSize: "1.5rem",
           fontWeight: 600,
           letterSpacing: "-0.02em",
           marginTop: 12,
@@ -703,7 +718,7 @@ function PatternCard({
             style={{
               lineHeight: 1.75,
               margin: 0,
-              fontSize: ".9rem",
+              fontSize: "1.1rem",
               fontWeight: 400,
               letterSpacing: "0.01em",
               color: "rgba(255, 255, 255, 0.92)",
@@ -802,7 +817,7 @@ function PatternCard({
       <div style={{ marginBottom: 16 }}>
         <div
           style={{
-            fontSize: "0.7rem",
+            fontSize: ".75rem",
             textTransform: "uppercase",
             letterSpacing: "0.12em",
             fontWeight: 700,
@@ -814,7 +829,7 @@ function PatternCard({
         </div>
         <div
           style={{
-            fontSize: "1.25rem",
+            fontSize: "1.3rem",
             fontWeight: 600,
             textTransform: "capitalize",
             color: "rgba(255, 255, 255, 0.95)",
@@ -853,7 +868,7 @@ function PatternCard({
           {pattern.soft_plastic_why && (
             <div
               style={{
-                fontSize: "0.95rem",
+                fontSize: "0.9rem",
                 opacity: 0.75,
                 lineHeight: 1.6,
                 fontStyle: "italic",
@@ -912,7 +927,7 @@ function PatternCard({
           <div style={{ marginBottom: 32 }}>
             <div
               style={{
-                fontSize: "0.7rem",
+                fontSize: "0.8rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.12em",
                 fontWeight: 700,
@@ -954,7 +969,7 @@ function PatternCard({
                     style={{
                       fontWeight: 500,
                       textTransform: "capitalize",
-                      fontSize: "0.95rem",
+                      fontSize: "1.2rem",
                       color: "rgba(255, 255, 255, 0.9)",
                     }}
                   >
@@ -991,7 +1006,7 @@ function PatternCard({
         >
           <h4
             style={{
-              fontSize: "1rem",
+              fontSize: "1.2rem",
               fontWeight: 600,
               marginBottom: 20,
               color: "rgba(255, 255, 255, 0.95)",
@@ -1012,7 +1027,7 @@ function PatternCard({
             >
               <span
                 style={{
-                  fontSize: "0.8rem",
+                  fontSize: "0.9rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(255, 255, 255, 0.5)",
@@ -1023,7 +1038,7 @@ function PatternCard({
               </span>
               <span
                 style={{
-                  fontSize: "0.85rem",
+                  fontSize: "0.9rem",
                   fontWeight: 600,
                   color: "rgba(255, 255, 255, 0.95)",
                 }}
@@ -1043,7 +1058,7 @@ function PatternCard({
             >
               <span
                 style={{
-                  fontSize: "0.8rem",
+                  fontSize: "0.9rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(255, 255, 255, 0.5)",
@@ -1054,7 +1069,7 @@ function PatternCard({
               </span>
               <span
                 style={{
-                  fontSize: ".85rem",
+                  fontSize: ".9rem",
                   fontWeight: 600,
                   color: "rgba(255, 255, 255, 0.95)",
                 }}
@@ -1072,7 +1087,7 @@ function PatternCard({
             >
               <span
                 style={{
-                  fontSize: "0.8rem",
+                  fontSize: "0.9rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(255, 255, 255, 0.5)",
@@ -1083,7 +1098,7 @@ function PatternCard({
               </span>
               <span
                 style={{
-                  fontSize: "0.85rem",
+                  fontSize: "0.9rem",
                   fontWeight: 600,
                   color: "rgba(255, 255, 255, 0.95)",
                   maxWidth: "70%",
@@ -1118,7 +1133,7 @@ function PatternCard({
               lineHeight: 1.6,
               opacity: 0.88,
               margin: 0,
-              fontSize: ".97rem",
+              fontSize: "1.2rem",
             }}
           >
             {pattern.why_this_works}
@@ -1147,7 +1162,7 @@ function PatternCard({
               lineHeight: 1.6,
               opacity: 0.88,
               margin: 0,
-              fontSize: ".97rem",
+              fontSize: "1.2rem",
             }}
           >
             {typeof pattern.strategy === "string"
@@ -1166,74 +1181,6 @@ function PatternCard({
           margin: "32px 0",
         }}
       />
-
-      {/* Targets - HIDDEN: Now part of work_it_cards
-      {pattern.targets && pattern.targets.length > 0 && (
-        <div style={{ marginBottom: 32 }}>
-          <h4
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              marginBottom: 16,
-              color: "rgba(255, 255, 255, 0.95)",
-            }}
-          >
-            Where to Fish
-          </h4>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {pattern.targets.map((target, i) => {
-              const targetName =
-                typeof target === "string" ? target : target.name;
-              const targetDef =
-                typeof target === "object" && target.definition
-                  ? target.definition
-                  : "";
-
-              return (
-                <div
-                  key={i}
-                  style={{
-                    padding: "18px 22px",
-                    background:
-                      "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(74, 144, 226, 0.04) 100%)",
-                    border: "1px solid rgba(74, 144, 226, 0.15)",
-                    borderRadius: 12,
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                  }}
-                >
-                  <div
-                    style={{
-                      textTransform: "uppercase",
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.1em",
-                      marginBottom: targetDef ? 8 : 0,
-                      color: "#4A90E2",
-                    }}
-                  >
-                    {targetName}
-                  </div>
-                  {targetDef && (
-                    <div
-                      style={{
-                        fontSize: "0.95rem",
-                        opacity: 0.75,
-                        lineHeight: 1.6,
-                        textTransform: "none",
-                        letterSpacing: "normal",
-                        fontWeight: 400,
-                      }}
-                    >
-                      {targetDef}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      */}
 
       {/* How to Work It - Premium step indicators */}
       {((pattern.work_it_cards && pattern.work_it_cards.length > 0) ||
@@ -1287,7 +1234,7 @@ function PatternCard({
                         margin: "0 0 12px 0",
                         lineHeight: 1.6,
                         opacity: 0.7,
-                        fontSize: "0.8rem",
+                        fontSize: "0.9rem",
                         fontStyle: "italic",
                         color: "rgba(255, 255, 255, 0.8)",
                       }}
@@ -1303,7 +1250,7 @@ function PatternCard({
                         borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
                         lineHeight: 1.5,
                         opacity: 0.92,
-                        fontSize: ".9rem",
+                        fontSize: "1.1rem",
                         color: "rgba(255, 255, 255, 0.95)",
                       }}
                     >

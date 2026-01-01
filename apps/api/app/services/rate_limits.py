@@ -2,7 +2,7 @@
 """
 Rate limiting for plan generation.
 - Non-members: 1 preview every 30 days
-- Members: Unlimited plans, but 3-hour cooldown between requests
+- Members: Unlimited plans, but 1-hour cooldown between requests
 """
 from __future__ import annotations
 
@@ -122,7 +122,7 @@ class RateLimitStore:
         if email.lower().strip() in bypass_emails:
             return (True, None)
         
-        THREE_HOURS = 3 * 60 * 60  # 3 hours in seconds
+        ONE_HOUR = 1 * 60 * 60  # 1 hour in seconds
         
         with self._conn() as conn:
             row = conn.execute(
@@ -138,12 +138,12 @@ class RateLimitStore:
             now = int(time.time())
             elapsed = now - last_request
             
-            if elapsed >= THREE_HOURS:
+            if elapsed >= ONE_HOUR:
                 # Cooldown period has passed
                 return (True, None)
             else:
                 # Still in cooldown
-                remaining = THREE_HOURS - elapsed
+                remaining = ONE_HOUR - elapsed
                 return (False, remaining)
     
     def record_member_request(self, email: str) -> None:
@@ -202,7 +202,7 @@ class RateLimitStore:
             last_request = row["last_request_at"]
             now = int(time.time())
             elapsed = now - last_request
-            remaining = max(0, (3 * 60 * 60) - elapsed)
+            remaining = max(0, (1 * 60 * 60) - elapsed)  # Changed from 3 hours to 1 hour
             
             return {
                 "email": email,

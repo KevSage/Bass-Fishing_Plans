@@ -1,5 +1,5 @@
 // src/features/plan/types.ts
-// Updated to match new backend API response
+// Updated: Removed PreviewPlan system - all users get full MemberPlan
 
 export type Geo = {
   zip?: string;
@@ -68,26 +68,8 @@ export type Pattern = {
   pattern_summary?: string;
 };
 
-// Preview plan (single pattern)
-export type PreviewPlan = {
-  presentation: string;
-  base_lure: string;
-  soft_plastic?: string;
-  soft_plastic_why?: string;
-  trailer?: string;
-  trailer_why?: string;
-  color_recommendations: string[];
-  colors: ColorZones;
-  targets?: Target[]; // Legacy
-  why_this_works?: string;
-  work_it: WorkItTarget[] | string[]; // Support both new and legacy formats
-  day_progression: string[]; // Array of strings (just longer now)
-  outlook_blurb: string;
-  conditions: PlanConditions;
-};
-
-// Member plan (dual patterns)
-export type MemberPlan = {
+// All plans are now MemberPlan format (dual patterns)
+export type Plan = {
   primary: Pattern;
   secondary: Pattern;
   day_progression?: string[]; // Array of strings (just longer now)
@@ -95,19 +77,10 @@ export type MemberPlan = {
   conditions: PlanConditions;
 };
 
-// Unified plan type
-export type Plan = PreviewPlan | MemberPlan;
-
-// Check if plan is member plan
-export function isMemberPlan(plan: Plan): plan is MemberPlan {
-  return "primary" in plan && "secondary" in plan;
-}
-
-// API Response from /plan/generate
+// API Response from /plan/generate (removed is_member field)
 export type PlanGenerateResponse = {
   plan_url: string;
   token: string;
-  is_member: boolean;
   email_sent: boolean;
   plan: Plan;
 };
@@ -115,21 +88,15 @@ export type PlanGenerateResponse = {
 // API Response from /plan/view/{token}
 export type PlanViewResponse = {
   plan: Plan;
-  is_member: boolean;
   created_at: number;
   views: number;
-  download_urls: {
-    mobile_dark: string;
-    a4_printable: string;
-  };
 };
 
 // Rate limit error response
 export type RateLimitError = {
-  error: "rate_limit_preview" | "rate_limit_member";
+  error: "rate_limit_member";
   message: string;
   seconds_remaining: number;
-  upgrade_url?: string;
 };
 
 // Legacy types for backward compatibility (can remove later)

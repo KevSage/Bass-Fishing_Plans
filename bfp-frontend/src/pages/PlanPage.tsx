@@ -4,7 +4,6 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import type { PlanGenerateResponse } from "@/features/plan/types";
-import { PlanDownloads } from "@/features/plan/PlanDownloads";
 import { PlanScreen } from "@/features/plan/PlanScreen";
 
 export function PlanPage() {
@@ -120,9 +119,6 @@ export function PlanPage() {
     <div className="container" style={{ paddingTop: 44, paddingBottom: 80 }}>
       {/* Plan Display */}
       <PlanScreen response={plan} />
-
-      {/* Downloads Section - MOVED TO BOTTOM */}
-      <PlanDownloads response={plan} />
 
       {/* Share Section */}
       {plan.plan_url && (
