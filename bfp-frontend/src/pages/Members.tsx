@@ -33,6 +33,7 @@ export function Members() {
     lat: number;
     lng: number;
   } | null>(null);
+  const [accessType, setAccessType] = useState<"boat" | "bank">("boat"); // ← NEW: Boat/bank selector
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -88,62 +89,73 @@ export function Members() {
         rafRef.current = null;
         if (!mapRef.current) return;
 
-        const features = mapRef.current.queryRenderedFeatures(e.point);
-        const water = features.find(isWaterFeature);
-        const isHovering = !!water;
+        // ✅ Safety check: don't query if map is being destroyed
+        try {
+          const features = mapRef.current.queryRenderedFeatures(e.point);
+          const water = features.find(isWaterFeature);
+          const isHovering = !!water;
 
-        // Only update cursor + internal ref (no React state needed)
-        mapRef.current.getCanvas().style.cursor = isHovering ? "pointer" : "";
+          // Only update cursor + internal ref (no React state needed)
+          mapRef.current.getCanvas().style.cursor = isHovering ? "pointer" : "";
 
-        // If you ever want UI reactions to hovering later, this is where you'd
-        // set state, but ONLY on change:
-        // if (hoverRef.current !== isHovering) {
-        //   hoverRef.current = isHovering;
-        //   setHoveredWater(isHovering);
-        // }
-        hoverRef.current = isHovering;
+          // If you ever want UI reactions to hovering later, this is where you'd
+          // set state, but ONLY on change:
+          // if (hoverRef.current !== isHovering) {
+          //   hoverRef.current = isHovering;
+          //   setHoveredWater(isHovering);
+          // }
+          hoverRef.current = isHovering;
+        } catch (err) {
+          // Map may have been destroyed, ignore error
+          console.debug("queryRenderedFeatures failed (map destroyed?)");
+        }
       });
     };
 
     const onClick = async (e: mapboxgl.MapMouseEvent) => {
       if (!mapRef.current) return;
 
-      const features = mapRef.current.queryRenderedFeatures(e.point);
-      const water = features.find(isWaterFeature);
-      if (!water) return;
-
-      const { lng, lat } = e.lngLat;
-
-      setSelectedCoords({ lat, lng });
-      setWaterName("");
-      setShowModal(true);
-
-      if (markerRef.current) markerRef.current.remove();
-      markerRef.current = new mapboxgl.Marker({ color: "#4A90E2" })
-        .setLngLat([lng, lat])
-        .addTo(mapRef.current);
-
       try {
-        const response = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
-        );
-        const data = await response.json();
+        const features = mapRef.current.queryRenderedFeatures(e.point);
+        const water = features.find(isWaterFeature);
+        if (!water) return;
 
-        const context = data?.features?.[0]?.context;
-        if (context) {
-          const city =
-            context.find((c: any) => String(c.id).startsWith("place"))?.text ||
-            "";
-          const state =
-            context
-              .find((c: any) => String(c.id).startsWith("region"))
-              ?.short_code?.replace("US-", "") || "";
-          setPlaceholder(
-            `Water body near ${[city, state].filter(Boolean).join(", ")}`
+        const { lng, lat } = e.lngLat;
+
+        setSelectedCoords({ lat, lng });
+        setWaterName("");
+        setShowModal(true);
+
+        if (markerRef.current) markerRef.current.remove();
+        markerRef.current = new mapboxgl.Marker({ color: "#4A90E2" })
+          .setLngLat([lng, lat])
+          .addTo(mapRef.current);
+
+        try {
+          const response = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
           );
+          const data = await response.json();
+
+          const context = data?.features?.[0]?.context;
+          if (context) {
+            const city =
+              context.find((c: any) => String(c.id).startsWith("place"))
+                ?.text || "";
+            const state =
+              context
+                .find((c: any) => String(c.id).startsWith("region"))
+                ?.short_code?.replace("US-", "") || "";
+            setPlaceholder(
+              `Water body near ${[city, state].filter(Boolean).join(", ")}`
+            );
+          }
+        } catch (e2) {
+          console.error("Geocode failed:", e2);
         }
-      } catch (e2) {
-        console.error("Geocode failed:", e2);
+      } catch (err) {
+        // Map destroyed or queryRenderedFeatures failed
+        console.debug("onClick failed (map destroyed?)");
       }
     };
 
@@ -216,6 +228,7 @@ export function Members() {
           lat: selectedCoords.lat,
           lon: selectedCoords.lng,
         },
+        access_type: accessType, // ← NEW: Send access type to API
       };
 
       const response = await generateMemberPlan(payload);
@@ -482,6 +495,88 @@ export function Members() {
                     }}
                     autoFocus
                   />
+                </div>
+
+                {/* ← NEW: BOAT/BANK SELECTOR */}
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.85rem",
+                      fontWeight: 600,
+                      color: "#000",
+                      marginBottom: 8,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Fishing From
+                  </label>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setAccessType("boat")}
+                      style={{
+                        flex: 1,
+                        padding: "12px 16px",
+                        background:
+                          accessType === "boat"
+                            ? "#4A90E2"
+                            : "rgba(74, 144, 226, 0.1)",
+                        border:
+                          accessType === "boat"
+                            ? "2px solid #4A90E2"
+                            : "2px solid rgba(0,0,0,0.1)",
+                        borderRadius: 8,
+                        color: accessType === "boat" ? "#fff" : "#000",
+                        fontSize: "1rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <span style={{ fontSize: "1.25rem" }}>🚤</span>
+                      Boat
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAccessType("bank")}
+                      style={{
+                        flex: 1,
+                        padding: "12px 16px",
+                        background:
+                          accessType === "bank"
+                            ? "#4A90E2"
+                            : "rgba(74, 144, 226, 0.1)",
+                        border:
+                          accessType === "bank"
+                            ? "2px solid #4A90E2"
+                            : "2px solid rgba(0,0,0,0.1)",
+                        borderRadius: 8,
+                        color: accessType === "bank" ? "#fff" : "#000",
+                        fontSize: "1rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <span style={{ fontSize: "1.25rem" }}>🎣</span>
+                      Bank
+                    </button>
+                  </div>
                 </div>
 
                 {selectedCoords && (

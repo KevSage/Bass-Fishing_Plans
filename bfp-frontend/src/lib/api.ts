@@ -1,5 +1,5 @@
 // src/lib/api.ts
-// Updated to use new backend /plan/generate endpoint
+// Updated to use new backend /plan/generate endpoint with access_type support
 import type {
   PlanGenerateResponse,
   PlanViewResponse,
@@ -77,6 +77,7 @@ export type GeneratePlanRequest = {
   latitude: number;
   longitude: number;
   location_name: string;
+  access_type?: "boat" | "bank"; // ← NEW: Optional boat/bank access
 };
 
 export async function generatePlan(
@@ -110,6 +111,7 @@ export async function generatePreview(
     longitude: payload.lon ?? payload.longitude ?? 0,
     location_name:
       payload.water?.name ?? payload.location_name ?? "Unknown Lake",
+    access_type: payload.access_type || "boat", // ← NEW: Default to boat
   };
 
   return await generatePlan(newPayload);
@@ -119,6 +121,7 @@ export type MembersRequest = {
   email: string;
   water: { name: string; lat: number; lon: number; mapbox_place_id?: string };
   trip_date?: string;
+  access_type?: "boat" | "bank"; // ← NEW: Optional boat/bank access
 };
 
 export async function generateMemberPlan(
@@ -130,6 +133,7 @@ export async function generateMemberPlan(
     latitude: payload.water.lat,
     longitude: payload.water.lon,
     location_name: payload.water.name,
+    access_type: payload.access_type || "boat", // ← NEW: Default to boat for backward compat
   };
 
   return await generatePlan(newPayload);

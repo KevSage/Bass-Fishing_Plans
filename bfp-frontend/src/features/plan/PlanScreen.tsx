@@ -969,7 +969,7 @@ function PatternCard({
                     style={{
                       fontWeight: 500,
                       textTransform: "capitalize",
-                      fontSize: "1.2rem",
+                      fontSize: ".9rem",
                       color: "rgba(255, 255, 255, 0.9)",
                     }}
                   >

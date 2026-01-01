@@ -77,6 +77,7 @@ class PlanGenerateRequest(BaseModel):
     latitude: float
     longitude: float
     location_name: str
+    access_type: str = "boat"  # "boat" or "bank" - defaults to boat for backward compatibility
 
 
 class SubscribeRequest(BaseModel):
@@ -93,23 +94,32 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     Unified plan generation endpoint.
     
     Flow:
-    1. Check if user is subscriber
-    2. Check rate limits (30-day preview OR 1-hour member cooldown) - skipped with X-Admin-Override header
-    3. Get weather + determine phase
-    4. Generate plan (LLM with Pattern 2 for members)
-    5. Save plan link
-    6. Send email (preview only)
-    7. Return plan URL + data
+    1. Validate access_type (boat or bank)
+    2. Check if user is subscriber
+    3. Check rate limits (30-day preview OR 1-hour member cooldown) - skipped with X-Admin-Override header
+    4. Get weather + determine phase
+    5. Generate plan with access-filtered targets (LLM with Pattern 2 for members)
+    6. Save plan link
+    7. Send email (preview only)
+    8. Return plan URL + data
     """
     email = body.email.lower().strip()
+    
+    # 1. Validate access_type
+    access_type = body.access_type.lower().strip()
+    if access_type not in ["boat", "bank"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid access_type: '{access_type}'. Must be 'boat' or 'bank'."
+        )
     
     # Check for admin override header
     admin_override = request.headers.get("X-Admin-Override") == "true"
     
-    # 1. Check subscription status
+    # 2. Check subscription status
     is_member = subs.is_active(email)
     
-    # 2. Rate limiting (skip if admin override)
+    # 3. Rate limiting (skip if admin override)
     if not admin_override:
         if is_member:
             # Members: 1-hour cooldown
@@ -144,7 +154,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
                     }
                 )
     
-    # 3. Get weather and determine phase
+    # 4. Get weather and determine phase
     try:
         weather = await get_weather_snapshot(body.latitude, body.longitude)
     except Exception as e:
@@ -158,7 +168,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         latitude=body.latitude,
     )
     
-    # 4. Generate plan (LLM with retries)
+    # 5. Generate plan (LLM with retries and access filtering)
     trip_date = datetime.now().strftime("%B %d, %Y")
     
     try:
@@ -167,6 +177,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             location=body.location_name,
             trip_date=trip_date,
             phase=phase,
+            access_type=access_type,  # ← NEW: Pass access type for target filtering
             is_member=is_member,
             max_retries=4,
         )
@@ -179,13 +190,13 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             detail="Plan generation temporarily unavailable. Please try again."
         )
     
-    # 4b. Enrich member plans with gear and strategy (deterministic)
+    # 5b. Enrich member plans with gear and strategy (deterministic)
     if is_member:
         plan = enrich_member_plan(plan, weather, phase)
     
     # Note: Target definitions are now included in work_it objects directly from LLM
     
-    # Add conditions to plan
+    # Add conditions to plan (including access_type)
     plan["conditions"] = {
         "location_name": body.location_name,
         "latitude": body.latitude,
@@ -198,9 +209,10 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "wind_speed": weather["wind_mph"],
         "sky_condition": weather["cloud_cover"],
         "subscriber_email": email if is_member else None,
+        "access_type": access_type,  # ← NEW: Track access type in plan
     }
     
-    # 5. Save plan link
+    # 6. Save plan link
     token = plan_links.save_plan(
         email=email,
         is_member=is_member,
@@ -209,7 +221,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     
     plan_url = f"{WEB_BASE_URL}/plan?token={token}"
     
-    # 5b. Add to plan history
+    # 6b. Add to plan history
     plan_history_store.add_plan(
         user_email=email,
         plan_link_id=token,
@@ -218,7 +230,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         conditions=plan["conditions"]
     )
     
-    # 6. Record request and send email (preview only)
+    # 7. Record request and send email (preview only)
     email_sent = False
     
     if is_member:
@@ -248,11 +260,12 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             print(f"Email send failed: {e}")
             # Don't fail the request if email fails
     
-    # 7. Return response
+    # 8. Return response
     return {
         "plan_url": plan_url,
         "token": token,
         "email_sent": email_sent,
+        "access_type": access_type,  # ← NEW: Include in response
         "plan": plan,
     }
 
