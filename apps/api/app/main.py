@@ -1,17 +1,24 @@
 # apps/api/app/main.py
 """
 Bass Clarity API - Complete Backend
-Unified plan generation with LLM, rate limiting, emails, and downloads.
+Unified plan generation with LLM, rate limiting, and plan history.
 """
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
-load_dotenv()
+from pathlib import Path
+
+# Get the directory where this file lives
+BASE_DIR = Path(__file__).resolve().parent.parent  # apps/api/
+ENV_PATH = BASE_DIR / ".env"
+
+# Load .env from the correct location
+load_dotenv(dotenv_path=ENV_PATH)
 
 from fastapi import FastAPI, HTTPException, Request, Response, Header
 from fastapi.middleware.cors import CORSMiddleware
@@ -69,6 +76,66 @@ WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
 
 # ========================================
+# VARIETY SYSTEM HELPER
+# ========================================
+
+def get_recent_primary_lures(
+    email: str,
+    limit: int = 2
+) -> list[str]:
+    """
+    Get user's N most recent primary lures from plan history.
+    
+    This is used for variety tie-breaking - if multiple lures are equally valid,
+    prefer alternatives to recently used lures.
+    
+    Args:
+        email: User's email address
+        limit: Number of recent plans to check (default 2)
+        
+    Returns:
+        List of recent primary lure names, e.g. ["carolina rig", "chatterbait"]
+    """
+    # Get recent plan history (last 7 days is enough for variety)
+    seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
+    
+    try:
+        recent_history = plan_history_store.get_user_plans(
+            email=email,
+            since=seven_days_ago,
+            limit=limit,
+            offset=0,
+            include_deleted=False
+        )
+    except Exception as e:
+        print(f"Failed to get plan history for {email}: {e}")
+        return []
+    
+    lures = []
+    for plan_hist in recent_history:
+        token = plan_hist.get("plan_link_id")
+        if not token:
+            continue
+        
+        try:
+            # Get full plan data using token
+            full_plan_data = plan_links.get_plan(token)
+            if not full_plan_data:
+                continue
+            
+            plan = full_plan_data.get("plan", {})
+            primary_lure = plan.get("primary", {}).get("base_lure")
+            
+            if primary_lure:
+                lures.append(primary_lure)
+        except Exception as e:
+            print(f"Failed to extract lure from plan {token}: {e}")
+            continue
+    
+    return lures
+
+
+# ========================================
 # REQUEST MODELS
 # ========================================
 
@@ -98,10 +165,11 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     2. Check if user is subscriber
     3. Check rate limits (30-day preview OR 1-hour member cooldown) - skipped with X-Admin-Override header
     4. Get weather + determine phase
-    5. Generate plan with access-filtered targets (LLM with Pattern 2 for members)
-    6. Save plan link
-    7. Send email (preview only)
-    8. Return plan URL + data
+    5. Get recent lures for variety (if available)
+    6. Generate plan with access-filtered targets and variety context
+    7. Save plan link
+    8. Record request (no emails for v1)
+    9. Return plan URL + data
     """
     email = body.email.lower().strip()
     
@@ -168,7 +236,19 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         latitude=body.latitude,
     )
     
-    # 5. Generate plan (LLM with retries and access filtering)
+    # After this line:
+    weather = await get_weather_snapshot(body.latitude, body.longitude)
+
+    # Add this:
+    print(f"WEATHER: temp={weather.get('temp_f')}°F, wind={weather.get('wind_mph')}mph, "
+      f"sky={weather.get('cloud_cover')}, phase={phase}")
+
+    # 5. Get recent lures for variety (if user has history)
+    recent_lures = get_recent_primary_lures(email, limit=2)
+    if recent_lures:
+        print(f"LLM_PLAN: Recent lures for {email}: {recent_lures}")
+    
+    # 6. Generate plan (LLM with retries, access filtering, and variety context)
     trip_date = datetime.now().strftime("%B %d, %Y")
     
     try:
@@ -177,8 +257,9 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             location=body.location_name,
             trip_date=trip_date,
             phase=phase,
-            access_type=access_type,  # ← NEW: Pass access type for target filtering
+            access_type=access_type,
             is_member=is_member,
+            recent_lures=recent_lures,  # ← NEW: Pass recent lures for variety
             max_retries=4,
         )
     except Exception as e:
@@ -190,7 +271,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             detail="Plan generation temporarily unavailable. Please try again."
         )
     
-    # 5b. Enrich member plans with gear and strategy (deterministic)
+    # 6b. Enrich member plans with gear and strategy (deterministic)
     if is_member:
         plan = enrich_member_plan(plan, weather, phase)
     
@@ -209,10 +290,10 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "wind_speed": weather["wind_mph"],
         "sky_condition": weather["cloud_cover"],
         "subscriber_email": email if is_member else None,
-        "access_type": access_type,  # ← NEW: Track access type in plan
+        "access_type": access_type,
     }
     
-    # 6. Save plan link
+    # 7. Save plan link
     token = plan_links.save_plan(
         email=email,
         is_member=is_member,
@@ -221,7 +302,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     
     plan_url = f"{WEB_BASE_URL}/plan?token={token}"
     
-    # 6b. Add to plan history
+    # 7b. Add to plan history
     plan_history_store.add_plan(
         user_email=email,
         plan_link_id=token,
@@ -230,42 +311,17 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         conditions=plan["conditions"]
     )
     
-    # 7. Record request and send email (preview only)
-    email_sent = False
-    
+    # 8. Record request (no emails for v1)
     if is_member:
-        # Record member request
         rate_limits.record_member_request(email)
     else:
-        # Record preview request
         rate_limits.record_preview(email)
-        
-        # Send preview email
-        try:
-            send_preview_plan_email(
-                to_email=email,
-                plan_url=plan_url,
-                location_name=body.location_name,
-                date=trip_date,
-            )
-            email_sent = True
-            
-            # Add to marketing audience
-            add_to_audience(
-                email=email,
-                tags=["preview_user", "not_subscribed"],
-                is_member=False,
-            )
-        except Exception as e:
-            print(f"Email send failed: {e}")
-            # Don't fail the request if email fails
     
-    # 8. Return response
+    # 9. Return response
     return {
         "plan_url": plan_url,
         "token": token,
-        "email_sent": email_sent,
-        "access_type": access_type,  # ← NEW: Include in response
+        "access_type": access_type,
         "plan": plan,
     }
 
@@ -290,54 +346,6 @@ async def plan_view(token: str):
         "created_at": plan_data["created_at"],
         "views": plan_data["views"],
     }
-
-
-# ========================================
-# PLAN DOWNLOADS - REMOVED
-# ========================================
-# PDF downloads have been removed as they were non-functional
-# and users have authenticated plan storage instead.
-
-# @app.get("/plan/download/{token}/mobile")
-# async def plan_download_mobile(token: str):
-#     """
-#     Download mobile-optimized dark theme HTML.
-#     Can be converted to PDF client-side or served as HTML.
-#     """
-#     plan_data = plan_links.get_plan(token)
-#     
-#     if not plan_data:
-#         raise HTTPException(status_code=404, detail="Plan not found")
-#     
-#     html = generate_mobile_dark_html(plan_data["plan"])
-#     
-#     return HTMLResponse(
-#         content=html,
-#         headers={
-#             "Content-Disposition": f'attachment; filename="fishing_plan_mobile_{token[:8]}.html"'
-#         }
-#     )
-
-
-# @app.get("/plan/download/{token}/a4")
-# async def plan_download_a4(token: str):
-#     """
-#     Download A4 printable HTML.
-#     Can be converted to PDF client-side or printed directly.
-#     """
-#     plan_data = plan_links.get_plan(token)
-#     
-#     if not plan_data:
-#         raise HTTPException(status_code=404, detail="Plan not found")
-#     
-#     html = generate_a4_printable_html(plan_data["plan"])
-#     
-#     return HTMLResponse(
-#         content=html,
-#         headers={
-#             "Content-Disposition": f'attachment; filename="fishing_plan_a4_{token[:8]}.html"'
-#         }
-#     )
 
 
 # ========================================
@@ -466,8 +474,6 @@ def root():
         "endpoints": {
             "generate_plan": "POST /plan/generate",
             "view_plan": "GET /plan/view/{token}",
-            "download_mobile": "GET /plan/download/{token}/mobile",
-            "download_a4": "GET /plan/download/{token}/a4",
             "subscribe": "POST /billing/subscribe",
             "health": "GET /health",
         }

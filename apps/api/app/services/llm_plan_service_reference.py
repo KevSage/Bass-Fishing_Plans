@@ -403,7 +403,7 @@ async def call_openai_plan(
     phase: str,
     is_member: bool = False,
 ) -> Optional[Dict[str, Any]]:
-    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("LLM_PLAN: No API key")
         return None
