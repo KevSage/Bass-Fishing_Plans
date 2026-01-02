@@ -275,17 +275,41 @@ Examples:
   primary: carolina rig + finesse worm
   secondary: dropshot + finesse worm (same soft plastic ❌)
 
-Common soft plastics to avoid duplicating:
-  - finesse worm
-  - stick worm
-  - creature bait
-  - craw
-  - small minnow
+  
+🚨 CRITICAL VALIDATION RULE #4 - CAROLINA RIG MUST BE EARNED:
+⚠️ SPECIAL CAROLINA RIG RULE:
+If user recently used Carolina rig (check VARIETY CONTEXT), you MUST use an alternative unless:
+1. Water temp < 45°F AND offshore structure selected (humps, ledges) AND no wind
+2. AND no other bottom-contact lure is viable
 
-Common trailers to avoid duplicating:
-  - chunk trailer
-  - swimbait trailer
-  - craw trailer
+Valid alternatives to Carolina rig for cold water bottom contact:
+✅ Texas rig (faster to fish, more versatile)
+✅ Football jig (better feel on rocky bottom)
+✅ Casting jig (can hop or drag)
+✅ Shaky head (finesse alternative)
+
+Default thought process:
+"Carolina rig was recently used → Can texas rig or jig work? → YES → Pick texas rig or jig"
+NOT: "Carolina rig works → Pick carolina rig"
+Carolina rig as PRIMARY is only justified when:
+✅ Conditions strongly indicate slow, methodical dragging (post-front, high pressure, very cold water <50°F)
+✅ At least one offshore target selected (humps, ledges, main-lake points, basin-adjacent structure)
+✅ Bass are clearly inactive or holding tight to deep structure
+
+Do NOT default to Carolina rig when:
+❌ Multiple bottom-contact options are equally valid → prefer texas rig, jig, shaky head
+❌ Boat access with only transition targets (points, breaks) → use more versatile presentations
+❌ Active conditions (wind, warming trend, pre-spawn movement) → choose reaction baits
+❌ Water temp >55°F with feeding activity → use faster-moving presentations
+
+Common mistake: "Carolina rig works everywhere, so I'll pick it"
+Correct approach: "Conditions X, Y, Z specifically demand slow dragging at distance → Carolina rig"
+
+If using Carolina rig as primary:
+- Explain WHY slow dragging is optimal for THESE SPECIFIC conditions
+- Reference which targets demand long-line presentations
+- Justify why faster presentations won't work
+  
 
 AUTHORITY / LANGUAGE (LOCKED):
 - Never state certainty about fish behavior. Use: may, might, can, suggests, tends to.
@@ -518,8 +542,9 @@ async def call_openai_plan(
     location: str,
     trip_date: str,
     phase: str,
-    access_type: str = "boat",  # ← NEW: "boat" or "bank"
+    access_type: str = "boat",
     is_member: bool = False,
+    recent_lures: list[str] = None,  # ← NEW: For variety tie-breaking
 ) -> Optional[Dict[str, Any]]:
     """
     Generate LLM plan with access filtering and variety system.
@@ -580,6 +605,25 @@ async def call_openai_plan(
         "target_definitions": accessible_target_defs,  # ← Full definitions for work_it_cards
         "variety_mode": variety_mode,
         "instructions": (
+            f"🚨 VARIETY REQUIREMENT (ABSOLUTE PRIORITY):\n"
+            f"{'User recently generated plans with primary lures: ' + ', '.join(recent_lures) if recent_lures else 'No recent plan history'}\n"
+            f"\n"
+            f"{'⛔ BANNED FROM PRIMARY (unless NO alternatives exist): ' + ', '.join(recent_lures) if recent_lures else ''}\n"
+            f"\n"
+            f"{'DECISION RULE:' if recent_lures else ''}\n"
+            f"{'1. Evaluate conditions and identify viable presentation families' if recent_lures else ''}\n"
+            f"{'2. For each presentation, list ALL valid lures' if recent_lures else ''}\n"
+            f"{'3. If multiple lures are viable, EXCLUDE recently used lures from consideration' if recent_lures else ''}\n"
+            f"{'4. Only repeat a recent lure if it is the SOLE option that works' if recent_lures else ''}\n"
+            f"\n"
+            f"{'EXAMPLE FOR YOUR REFERENCE:' if recent_lures else ''}\n"
+            f"{'Conditions: 37°F, no wind, winter, Bottom Contact - Dragging optimal' if recent_lures else ''}\n"
+            f"{'Valid lures: texas rig, carolina rig, football jig (all work)' if recent_lures else ''}\n"
+            f"{'Recent lures: [carolina rig, carolina rig]' if recent_lures else ''}\n"
+            f"{'✅ CORRECT: Pick texas rig or football jig (avoid recently used carolina rig)' if recent_lures else ''}\n"
+            f"{'❌ WRONG: Pick carolina rig again (ignores variety requirement)' if recent_lures else ''}\n"
+            f"\n"
+            f"\n"
             f"ACCESSIBLE TARGETS (based on {access_type} access):\n"
             f"- You MUST choose 3 targets ONLY from the accessible_targets list\n"
             f"- Available targets: {accessible_targets}\n"
@@ -603,9 +647,87 @@ async def call_openai_plan(
             f"\n"
             f"VARIETY NOTE:\n"
             f"- Variety mode is '{variety_mode}' but you should choose the optimal lure\n"
-            f"- Variety will be applied in post-processing"
+            f"- Variety will be applied in post-processing\n"
         ),
     }
+    temp_current = weather.get("temp_f", 60)
+    temp_high = weather.get("temp_high", temp_current)
+    temp_low = weather.get("temp_low", temp_current)
+    temp_swing = temp_high - temp_low
+    # Add temp swing guidance if significant
+    if temp_swing >= 10:
+        swing_category = (
+            "MODERATE" if temp_swing < 15 else 
+            "WIDE" if temp_swing < 20 else 
+            "EXTREME"
+        )
+        
+        user_input["instructions"] += f"""
+🌡️ TEMPERATURE SWING DETECTED ({swing_category}):
+Current temp: {temp_current}°F
+Today's range: {temp_low}°F (morning) → {temp_high}°F (afternoon)
+Temperature swing: {temp_swing}°F
+
+LURE SELECTION STRATEGY FOR TEMP SWINGS:
+
+MODERATE SWING (10-15°F):
+- Choose a lure that works effectively across the temperature range
+- Versatile options are preferred over narrow-range specialists
+- Example: Texas rig works 45-65°F (versatile) vs Carolina rig optimal <50°F only (narrow)
+
+WIDE/EXTREME SWING (15°F+):
+- PRIMARY LURE must work at BOTH morning and afternoon temps OR
+- Day progression must explain when/how to transition between techniques
+- Avoid narrow-range specialists unless you explain the transition strategy
+
+Examples of versatile vs narrow-range lures:
+
+VERSATILE (work across wide temp ranges):
+✅ Texas rig (35-65°F)
+✅ Jig (35-65°F)  
+✅ Chatterbait (50-75°F)
+✅ Spinnerbait (50-80°F)
+
+NARROW-RANGE (optimal in specific conditions):
+⚠️ Carolina rig (optimal 35-48°F, less effective >50°F)
+⚠️ Blade bait (optimal 38-52°F, less effective >55°F)
+⚠️ Jerkbait (optimal 45-58°F, less effective <45°F or >60°F)
+⚠️ Topwater (optimal >65°F, ineffective <60°F)
+
+DECISION RULE:
+1. Calculate effective temp range for the day ({temp_low}°F - {temp_high}°F)
+2. If considering a narrow-range lure (e.g., carolina rig):
+   - Check if ENTIRE day's range falls within optimal window
+   - If NO → choose versatile alternative OR explain transition in day progression
+3. If swing is {temp_swing}°F, strongly prefer versatile lures
+
+EXAMPLE for your conditions:
+- If morning is {temp_low}°F and afternoon is {temp_high}°F:
+- Carolina rig works morning but NOT afternoon → Choose texas rig instead (works all day)
+- OR use carolina rig BUT explain "switch to jig as water warms past {temp_low + 12}°F" in day progression
+"""
+    
+    # Add boat advantage strategic requirements
+    if access_type == "boat":
+        user_input["instructions"] += f"""
+        
+🚤 BOAT ACCESS STRATEGIC REQUIREMENTS:
+You have {len(accessible_targets)} targets available (including offshore/transition structure).
+
+Required strategic approach:
+- Include at least 1 transition or offshore target in your 3 targets:
+  * Transition: points, channel swings, breaks, first depth break, outside bends, transitions
+  * Offshore: humps, ledges, main-lake points, roadbeds, saddles, basin-adjacent structure
+- Don't default to bank-fishing techniques from a boat
+- Leverage boat positioning advantages (can fish multiple zones, access deeper water)
+
+Good boat plans demonstrate:
+- Offshore structure usage when appropriate (humps, ledges, main-lake points)
+- Deep transition zones (channel swings, steep breaks, outside bends)
+- Vertical or deep presentations when conditions warrant
+
+Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access provides offshore options
+"""
 
     system_prompt = build_system_prompt(include_pattern_2=True)  # Always dual pattern
     max_tokens = 1700
@@ -1018,8 +1140,9 @@ async def generate_llm_plan_with_retries(
     location: str,
     trip_date: str,
     phase: str,
-    access_type: str = "boat",  # ← NEW: "boat" or "bank"
+    access_type: str = "boat",
     is_member: bool = False,
+    recent_lures: list[str] = None,  # ← NEW: For variety tie-breaking
     max_retries: int = 2,
 ) -> Optional[Dict[str, Any]]:
     """
@@ -1041,8 +1164,9 @@ async def generate_llm_plan_with_retries(
             location, 
             trip_date, 
             phase,
-            access_type=access_type,  # ← Pass access type
-            is_member=is_member
+            access_type=access_type,
+            is_member=is_member,
+            recent_lures=recent_lures,  # ← NEW: Pass for variety
         )
 
         if not plan:
