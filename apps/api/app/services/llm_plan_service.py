@@ -555,7 +555,7 @@ def expand_plan_color_zones(plan: Dict[str, Any], is_member: bool) -> Dict[str, 
 # ============================================================================
 # PART 2: call_openai_plan function
 # ============================================================================
-# This is the FIXED version with access_type and dual lure variety
+# UPDATED: Now includes enhanced weather data (pressure, moon, precipitation, UV, humidity)
 
 async def call_openai_plan(
     weather: dict,
@@ -578,7 +578,7 @@ async def call_openai_plan(
     4. Return plan (variety swaps happen in generate_llm_plan_with_retries)
     
     Args:
-        weather: Weather data
+        weather: Weather data (enhanced with pressure, moon, precipitation, UV, humidity)
         location: Location name
         latitude: Latitude
         longitude: Longitude
@@ -613,16 +613,36 @@ async def call_openai_plan(
     variety_mode = get_variety_mode()
     print("LLM_PLAN: Variety mode=" + variety_mode)
 
-    # ✅ STEP 3: Build user input with accessible targets
+    # ✅ STEP 3: Build user input with accessible targets and ENHANCED WEATHER
     user_input = {
         "location": location,
         "phase": phase,
         "weather": {
+            # Temperature
             "temp_f": weather.get("temp_f"),
             "temp_high": weather.get("temp_high"),
             "temp_low": weather.get("temp_low"),
+            
+            # Wind & Sky
             "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
             "cloud_cover": weather.get("cloud_cover") or weather.get("sky_condition"),
+            
+            # Barometric Pressure (CRITICAL for bass activity)
+            "pressure_mb": weather.get("pressure_mb"),
+            "pressure_trend": weather.get("pressure_trend"),
+            
+            # Precipitation
+            "precipitation_1h": weather.get("precipitation_1h", 0),
+            "has_recent_rain": weather.get("has_recent_rain", False),
+            
+            # Light & Moon
+            "uv_index": weather.get("uv_index"),
+            "moon_phase": weather.get("moon_phase"),
+            "moon_illumination": weather.get("moon_illumination"),
+            "is_major_period": weather.get("is_major_period", False),
+            
+            # Other
+            "humidity": weather.get("humidity"),
             "clarity_estimate": weather.get("clarity_estimate"),
         },
         "accessible_targets": accessible_targets,
@@ -714,6 +734,157 @@ Both patterns should show variety INDEPENDENTLY.
         "- Variety mode is '" + variety_mode + "' but you should choose the optimal lure\n" +
         "- Variety will be applied in post-processing\n"
     )
+    
+    # ===================================================================
+    # ENHANCED WEATHER ANALYSIS INJECTION
+    # ===================================================================
+    
+    # Extract enhanced weather data
+    pressure_mb = weather.get("pressure_mb")
+    pressure_trend = weather.get("pressure_trend")
+    moon_phase = weather.get("moon_phase")
+    is_major_period = weather.get("is_major_period", False)
+    has_recent_rain = weather.get("has_recent_rain", False)
+    uv_index = weather.get("uv_index")
+    humidity = weather.get("humidity")
+    
+    # Build dynamic weather guidance based on actual conditions
+    weather_guidance = "\n🌡️ ENHANCED WEATHER ANALYSIS:\n\n"
+    
+    # Barometric Pressure Analysis (HIGHEST PRIORITY)
+    if pressure_mb and pressure_trend:
+        weather_guidance += f"BAROMETRIC PRESSURE: {pressure_mb}mb ({pressure_trend})\n"
+        
+        if pressure_trend == "falling":
+            weather_guidance += """
+✅ FALLING PRESSURE = AGGRESSIVE FEEDING WINDOW
+- Bass sense approaching weather change and feed heavily
+- POWER FISHING optimal: chatterbait, lipless crank, swim jig, spinnerbait
+- Faster retrieves, cover water quickly, reaction presentations
+- Target shallow cover and transitions
+- Strategy tone: "Falling pressure triggers aggressive feeding—bass will chase reaction baits"
+
+"""
+        elif pressure_trend == "rising":
+            weather_guidance += """
+✅ RISING PRESSURE = ACTIVE FEEDING
+- Bass feed well before conditions stabilize
+- REACTION BAITS effective: crankbait, chatterbait, spinnerbait, topwater (if warm)
+- Normal to slightly faster retrieves
+- Strategy tone: "Rising pressure indicates active bass—expect strikes on moving baits"
+
+"""
+        else:  # stable
+            weather_guidance += """
+✅ STABLE PRESSURE = NORMAL CONDITIONS
+- Use PHASE-APPROPRIATE presentations
+- Cold water (<50°F): Bottom contact (texas rig, jig, carolina rig)
+- Warm water (>60°F): Reaction baits (chatterbait, crankbait, topwater)
+- Transition temps (50-60°F): Match presentation to phase and structure
+
+"""
+    
+    # Moon Phase & Solunar Analysis
+    if moon_phase:
+        weather_guidance += f"MOON PHASE: {moon_phase}"
+        if is_major_period:
+            weather_guidance += " (MAJOR SOLUNAR PERIOD - ACTIVE FEEDING WINDOW)\n"
+            weather_guidance += """
+🌙 CRITICAL FEEDING WINDOW ACTIVE
+- You're fishing during peak solunar activity (moon overhead/underfoot)
+- Bass will be actively feeding for next 2 hours
+- Use aggressive presentations, don't be subtle
+- Strategy tone: "You're fishing during a major solunar period—bass are in an active feeding window"
+
+"""
+        else:
+            weather_guidance += "\n"
+            if "full" in moon_phase or "gibbous" in moon_phase:
+                weather_guidance += "- Increased feeding activity, especially dawn/dusk\n"
+            elif "new" in moon_phase or "crescent" in moon_phase:
+                weather_guidance += "- Minimal moonlight, bass feed during daylight hours\n"
+            weather_guidance += "\n"
+    
+    # Precipitation Analysis
+    if has_recent_rain:
+        weather_guidance += """
+💧 RECENT RAIN DETECTED
+- Water clarity likely REDUCED (stained or muddy)
+- Oxygen levels INCREASED (active bass)
+- SHIFT COLORS toward high-visibility options:
+  * Use chartreuse, white, bright colors for BOTH recommendations
+  * Even in "clear water" lane, pick brighter options (white vs pearl, chartreuse vs green pumpkin)
+- LOUDER BAITS more effective: chatterbait, spinnerbait (Colorado blade), lipless crank
+- Target creek mouths, points, runoff areas (bass follow baitfish)
+- Strategy tone: "Recent rain has stained the water—bright colors improve visibility in reduced clarity"
+
+"""
+    
+    # UV Index Analysis
+    if uv_index is not None:
+        weather_guidance += f"UV INDEX: {uv_index}\n"
+        if uv_index > 7:
+            weather_guidance += """
+☀️ HIGH UV = BASS SEEK SHADE
+- Strong light penetration drives bass under cover
+- PRIORITIZE shaded targets: docks, laydowns, overhangs, grass mats, undercut banks
+- In target selection, favor cover-oriented structure over open water
+- Natural/translucent colors in clear water
+- Strategy tone: "High UV index drives bass to shade—focus on docks and overhead cover"
+
+"""
+        elif uv_index < 3:
+            weather_guidance += """
+☁️ LOW UV = BASS ROAM OPEN WATER
+- Overcast/low light allows bass to leave heavy cover
+- Can target flats, transitions, open-water structure
+- REACTION BAITS more effective (bass less cover-dependent)
+- Chatterbait, crankbait, spinnerbait excel in low light
+- Strategy tone: "Low light conditions reduce cover dependency—bass will roam more freely"
+
+"""
+        weather_guidance += "\n"
+    
+    # Humidity Analysis (topwater indicator)
+    if humidity is not None and humidity > 70:
+        weather_guidance += f"""
+💨 HIGH HUMIDITY ({humidity}%)
+- Increased insect activity on water surface
+- TOPWATER opportunities if water temp > 60°F
+- Popper, walking bait, or frog (if grass/pads present)
+- Strategy tone: "High humidity increases insect activity—topwater baits mimic surface prey"
+
+"""
+    
+    # Integration rules
+    weather_guidance += """
+🎯 INTEGRATION RULES:
+1. Pressure trend OVERRIDES moon phase for activity level
+   - Falling pressure + new moon = STILL aggressive (pressure wins)
+   - Rising pressure + full moon = EXTREMELY aggressive (both align)
+   - Stable pressure + major period = normal to active
+
+2. Recent rain MODIFIES all color selections
+   - Shift BOTH color recommendations toward high-visibility
+   - "Clear water" colors become "stained water" equivalents
+
+3. UV index REFINES target selection
+   - High UV (>7) → favor shaded targets in your 3 selections
+   - Low UV (<3) → can include open-water targets
+
+4. Combine indicators for strategy tone:
+   - Falling pressure + major period = "Ideal feeding conditions"
+   - Stable pressure + low UV = "Normal conditions with good roaming activity"
+   - Rising pressure + recent rain = "Active bass in stained water—use bright reaction baits"
+
+"""
+    
+    # Append weather guidance to instructions
+    user_input["instructions"] += weather_guidance
+    
+    # ===================================================================
+    # TEMPERATURE SWING ANALYSIS (existing logic)
+    # ===================================================================
     
     temp_current = weather.get("temp_f", 60)
     temp_high = weather.get("temp_high", temp_current)
@@ -860,8 +1031,11 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
     except Exception as e:
         print("LLM_PLAN ERROR: " + type(e).__name__ + " " + repr(e))
         return None
-    
-    # ============================================================================
+
+
+
+
+
 # PART 3: Post-processing and Validation functions
 # ============================================================================
 
