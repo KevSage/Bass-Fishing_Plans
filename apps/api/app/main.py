@@ -79,12 +79,13 @@ WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 # VARIETY SYSTEM HELPER
 # ========================================
 
-def get_recent_primary_lures(
+
+def get_recent_lures(
     email: str,
     limit: int = 2
-) -> list[str]:
+) -> dict[str, list[str]]:
     """
-    Get user's N most recent primary lures from plan history.
+    Get user's N most recent primary AND secondary lures from plan history.
     
     This is used for variety tie-breaking - if multiple lures are equally valid,
     prefer alternatives to recently used lures.
@@ -94,7 +95,11 @@ def get_recent_primary_lures(
         limit: Number of recent plans to check (default 2)
         
     Returns:
-        List of recent primary lure names, e.g. ["carolina rig", "chatterbait"]
+        Dict with primary and secondary lure lists:
+        {
+            "primary": ["carolina rig", "chatterbait"],
+            "secondary": ["texas rig", "jig"]
+        }
     """
     # Get recent plan history (last 7 days is enough for variety)
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
@@ -109,9 +114,11 @@ def get_recent_primary_lures(
         )
     except Exception as e:
         print(f"Failed to get plan history for {email}: {e}")
-        return []
+        return {"primary": [], "secondary": []}
     
-    lures = []
+    primary_lures = []
+    secondary_lures = []
+    
     for plan_hist in recent_history:
         token = plan_hist.get("plan_link_id")
         if not token:
@@ -124,17 +131,25 @@ def get_recent_primary_lures(
                 continue
             
             plan = full_plan_data.get("plan", {})
-            primary_lure = plan.get("primary", {}).get("base_lure")
             
+            # Extract primary lure
+            primary_lure = plan.get("primary", {}).get("base_lure")
             if primary_lure:
-                lures.append(primary_lure)
+                primary_lures.append(primary_lure)
+            
+            # Extract secondary lure
+            secondary_lure = plan.get("secondary", {}).get("base_lure")
+            if secondary_lure:
+                secondary_lures.append(secondary_lure)
+                
         except Exception as e:
-            print(f"Failed to extract lure from plan {token}: {e}")
+            print(f"Failed to extract lures from plan {token}: {e}")
             continue
     
-    return lures
-
-
+    return {
+        "primary": primary_lures,
+        "secondary": secondary_lures
+    }
 # ========================================
 # REQUEST MODELS
 # ========================================
@@ -244,7 +259,9 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
       f"sky={weather.get('cloud_cover')}, phase={phase}")
 
     # 5. Get recent lures for variety (if user has history)
-    recent_lures = get_recent_primary_lures(email, limit=2)
+    recent_lures = get_recent_lures(email, limit=2)
+    # logger.info(f"LLM_PLAN: Recent lures for {email}: primary={recent_lures['primary']}, secondary={recent_lures['secondary']}")
+
     if recent_lures:
         print(f"LLM_PLAN: Recent lures for {email}: {recent_lures}")
     
@@ -254,13 +271,14 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     try:
         plan = await generate_llm_plan_with_retries(
             weather=weather,
-            location=body.location_name,
-            trip_date=trip_date,
             phase=phase,
-            access_type=access_type,
+            location=body.location_name,
+            latitude=body.latitude,
+            longitude=body.longitude,
+            access_type=access_type,  # ← ADD THIS LINE
             is_member=is_member,
-            recent_lures=recent_lures,  # ← NEW: Pass recent lures for variety
-            max_retries=4,
+            recent_primary_lures=recent_lures["primary"],
+            recent_secondary_lures=recent_lures["secondary"],
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Plan generation error: {e}")

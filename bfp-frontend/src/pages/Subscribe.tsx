@@ -86,7 +86,7 @@ export function Subscribe() {
               letterSpacing: "-0.02em",
             }}
           >
-            $15/month
+            $10/month
           </h1>
           <p
             style={{
@@ -134,7 +134,7 @@ export function Subscribe() {
             <li>✓ Two complementary patterns</li>
             <li>✓ Matched gear specifications</li>
             <li>✓ Day progression guidance</li>
-            <li>✓ Downloadable PDFs</li>
+            <li>✓ Lure Specific Retrieve Guidance</li>
             <li>✓ 1000+ lakes across all 50 states</li>
           </ul>
         </div>

@@ -1,4 +1,3 @@
-# apps/api/app/services/llm_plan_service.py
 """
 LLM Plan Generator with Strict Guardrails
 100% LLM-driven, but ONLY chooses from canonical pools.
@@ -400,20 +399,37 @@ TERMINAL TACKLE:
 Allowed plastics:
 {chr(10).join(terminal_rules)}
 
-If base_lure is dropshot, you MUST output soft_plastic and it must be one of the allowed dropshot plastics.
-"If you choose dropshot and soft_plastic is null/missing → response is rejected."
 DROPSHOT SPECIAL CASE (STRICT):
 - If base_lure is "dropshot", you MUST set:
-  - presentation: "Hovering / Mid-Column Finesse"
+  - presentation: "Hovering / Mid-Column Finesse"  
   - soft_plastic: REQUIRED and must be exactly ONE of:
     • "finesse worm"
     • "small minnow"
-- Dropshot colors depend on soft_plastic:
-  - If soft_plastic == "finesse worm": choose colors ONLY from RIG_COLORS
-  - If soft_plastic == "small minnow": choose colors ONLY from SOFT_SWIMBAIT_COLORS
-- Never use JERKBAIT_COLORS for dropshot.
-- Never omit soft_plastic for dropshot. Null/blank soft_plastic = invalid plan.
 
+🚨 DROPSHOT COLOR RULES (CRITICAL - Follow EXACTLY):
+
+If soft_plastic == "finesse worm":
+  - Colors MUST come from RIG_COLORS pool
+  - Allowed: green pumpkin, black/blue, junebug, baby bass, watermelon red, red craw, black, green pumpkin orange, peanut butter & jelly
+  - DO NOT use: pearl, white, shad (these are minnow colors only)
+
+If soft_plastic == "small minnow":
+  - Colors MUST come from SOFT_SWIMBAIT_COLORS pool
+  - Allowed: white, shad, pearl, bluegill, green pumpkin
+  - DO NOT use: junebug, peanut butter & jelly, red craw (these are worm colors only)
+
+COMMON ERROR:
+❌ dropshot + small minnow + junebug (WRONG - junebug is for worms)
+❌ dropshot + finesse worm + pearl (WRONG - pearl is for minnows)
+✅ dropshot + small minnow + pearl (CORRECT)
+✅ dropshot + finesse worm + green pumpkin (CORRECT)
+
+If you pick dropshot as a pattern, carefully check:
+1. What soft_plastic did you choose?
+2. Does your color match that soft_plastic's pool?
+3. If not, either change color OR change soft_plastic
+
+Never omit soft_plastic for dropshot. Null/blank soft_plastic = invalid plan.
 TRAILERS:
 - If base_lure uses a trailer, you MUST set trailer and trailer_why.
 Allowed trailers:
@@ -536,16 +552,22 @@ def expand_plan_color_zones(plan: Dict[str, Any], is_member: bool) -> Dict[str, 
 
     return plan
 
+# ============================================================================
+# PART 2: call_openai_plan function
+# ============================================================================
+# This is the FIXED version with access_type and dual lure variety
 
 async def call_openai_plan(
-    weather: Dict[str, Any],
-    location: str,
-    trip_date: str,
+    weather: dict,
     phase: str,
+    location: str,
+    latitude: float,
+    longitude: float,
     access_type: str = "boat",
     is_member: bool = False,
-    recent_lures: list[str] = None,  # ← NEW: For variety tie-breaking
-) -> Optional[Dict[str, Any]]:
+    recent_primary_lures: list[str] = None,
+    recent_secondary_lures: list[str] = None,
+) -> dict:
     """
     Generate LLM plan with access filtering and variety system.
     
@@ -558,10 +580,12 @@ async def call_openai_plan(
     Args:
         weather: Weather data
         location: Location name
-        trip_date: Trip date (kept for signature compatibility)
-        phase: Bass phase
+        latitude: Latitude
+        longitude: Longitude
         access_type: "boat" or "bank" - determines which targets are accessible
         is_member: All users are members now (kept for compatibility)
+        recent_primary_lures: List of recently used primary lures
+        recent_secondary_lures: List of recently used secondary lures
     
     Returns:
         LLM-generated plan or None
@@ -575,7 +599,7 @@ async def call_openai_plan(
 
     # ✅ STEP 1: Filter targets by access type
     accessible_targets = filter_targets_by_access(access_type)
-    print(f"LLM_PLAN: Access={access_type}, {len(accessible_targets)} accessible targets")
+    print("LLM_PLAN: Access=" + access_type + ", " + str(len(accessible_targets)) + " accessible targets")
     
     # Build target definitions dict for only accessible targets
     from app.canon.target_definitions import TARGET_DEFINITIONS
@@ -587,7 +611,7 @@ async def call_openai_plan(
     
     # ✅ STEP 2: Get variety mode (40% best, 40% alternate, 20% deep_cut)
     variety_mode = get_variety_mode()
-    print(f"LLM_PLAN: Variety mode={variety_mode}")
+    print("LLM_PLAN: Variety mode=" + variety_mode)
 
     # ✅ STEP 3: Build user input with accessible targets
     user_input = {
@@ -601,59 +625,101 @@ async def call_openai_plan(
             "cloud_cover": weather.get("cloud_cover") or weather.get("sky_condition"),
             "clarity_estimate": weather.get("clarity_estimate"),
         },
-        "accessible_targets": accessible_targets,  # ← List of target names
-        "target_definitions": accessible_target_defs,  # ← Full definitions for work_it_cards
+        "accessible_targets": accessible_targets,
+        "target_definitions": accessible_target_defs,
         "variety_mode": variety_mode,
-        "instructions": (
-            f"🚨 VARIETY REQUIREMENT (ABSOLUTE PRIORITY):\n"
-            f"{'User recently generated plans with primary lures: ' + ', '.join(recent_lures) if recent_lures else 'No recent plan history'}\n"
-            f"\n"
-            f"{'⛔ BANNED FROM PRIMARY (unless NO alternatives exist): ' + ', '.join(recent_lures) if recent_lures else ''}\n"
-            f"\n"
-            f"{'DECISION RULE:' if recent_lures else ''}\n"
-            f"{'1. Evaluate conditions and identify viable presentation families' if recent_lures else ''}\n"
-            f"{'2. For each presentation, list ALL valid lures' if recent_lures else ''}\n"
-            f"{'3. If multiple lures are viable, EXCLUDE recently used lures from consideration' if recent_lures else ''}\n"
-            f"{'4. Only repeat a recent lure if it is the SOLE option that works' if recent_lures else ''}\n"
-            f"\n"
-            f"{'EXAMPLE FOR YOUR REFERENCE:' if recent_lures else ''}\n"
-            f"{'Conditions: 37°F, no wind, winter, Bottom Contact - Dragging optimal' if recent_lures else ''}\n"
-            f"{'Valid lures: texas rig, carolina rig, football jig (all work)' if recent_lures else ''}\n"
-            f"{'Recent lures: [carolina rig, carolina rig]' if recent_lures else ''}\n"
-            f"{'✅ CORRECT: Pick texas rig or football jig (avoid recently used carolina rig)' if recent_lures else ''}\n"
-            f"{'❌ WRONG: Pick carolina rig again (ignores variety requirement)' if recent_lures else ''}\n"
-            f"\n"
-            f"\n"
-            f"ACCESSIBLE TARGETS (based on {access_type} access):\n"
-            f"- You MUST choose 3 targets ONLY from the accessible_targets list\n"
-            f"- Available targets: {accessible_targets}\n"
-            f"- These are the targets the angler can realistically reach from {access_type}\n"
-            f"- For work_it_cards definitions, use target_definitions[target_name]\n"
-            f"\n"
-            f"ANALYSIS ORDER (NON-NEGOTIABLE):\n"
-            f"1. Analyze season/phase and current conditions\n"
-            f"2. Identify 3 targets from accessible_targets list where bass are likely positioned\n"
-            f"3. Determine best presentation family for those targets\n"
-            f"4. Select lure that best executes that presentation\n"
-            f"\n"
-            f"PRIMARY PATTERN (Confidence Anchor):\n"
-            f"- Choose presentation that represents highest-probability way bass should feed\n"
-            f"- This is the truth-telling pattern\n"
-            f"\n"
-            f"SECONDARY PATTERN (Intentional Complement):\n"
-            f"- MUST use DIFFERENT presentation than primary\n"
-            f"- Either: ALTERNATIVE (different bass position) OR COMPLEMENT (search + cleanup)\n"
-            f"- Explain the relationship to primary in why_this_works\n"
-            f"\n"
-            f"VARIETY NOTE:\n"
-            f"- Variety mode is '{variety_mode}' but you should choose the optimal lure\n"
-            f"- Variety will be applied in post-processing\n"
-        ),
+        "instructions": "",
     }
+    
+    # Build variety context for BOTH patterns
+    variety_instructions = "🚨 VARIETY REQUIREMENT (ABSOLUTE PRIORITY):\n\n"
+    
+    if recent_primary_lures:
+        variety_instructions += "RECENT PRIMARY LURES: " + ', '.join(recent_primary_lures) + "\n"
+        variety_instructions += "⛔ DO NOT use these lures for PRIMARY pattern unless NO alternatives exist\n\n"
+    
+    if recent_secondary_lures:
+        variety_instructions += "RECENT SECONDARY LURES: " + ', '.join(recent_secondary_lures) + "\n"
+        variety_instructions += "⛔ DO NOT use these lures for SECONDARY pattern unless NO alternatives exist\n\n"
+    
+    if not recent_primary_lures and not recent_secondary_lures:
+        variety_instructions += "No recent plan history - you have full freedom of lure selection.\n\n"
+    else:
+        primary_list = ', '.join(recent_primary_lures) if recent_primary_lures else 'none'
+        secondary_list = ', '.join(recent_secondary_lures) if recent_secondary_lures else 'none'
+        
+        variety_instructions += """
+DECISION RULE (APPLIES TO BOTH PATTERNS INDEPENDENTLY):
+
+For PRIMARY pattern:
+1. Evaluate conditions → identify viable presentation families
+2. List ALL valid lures for chosen presentation
+3. EXCLUDE recent primary lures: """ + primary_list + """
+4. Pick from remaining lures
+5. Only repeat if it's the SOLE viable option
+
+For SECONDARY pattern:
+1. Evaluate conditions → identify viable presentation families (DIFFERENT from primary)
+2. List ALL valid lures for chosen presentation
+3. EXCLUDE recent secondary lures: """ + secondary_list + """
+4. Pick from remaining lures
+5. Only repeat if it's the SOLE viable option
+
+EXAMPLE:
+Conditions: 37°F, no wind, winter
+Recent Primary: [carolina rig, texas rig]
+Recent Secondary: [jig, chatterbait]
+
+PRIMARY Analysis:
+- Bottom Contact optimal for conditions
+- Valid lures: carolina rig, texas rig, jig (all work)
+- Recent primary: carolina rig, texas rig
+- ✅ CORRECT: Pick jig (avoid recent primary lures)
+- ❌ WRONG: Pick carolina rig (ignores variety requirement)
+
+SECONDARY Analysis:
+- Reaction presentation for pivot
+- Valid lures: jig, chatterbait, lipless crank
+- Recent secondary: jig, chatterbait  
+- ✅ CORRECT: Pick lipless crank (avoid recent secondary lures)
+- ❌ WRONG: Pick jig (ignores variety requirement)
+
+Both patterns should show variety INDEPENDENTLY.
+"""
+    
+    user_input["instructions"] = (
+        variety_instructions + "\n\n" +
+        "ACCESSIBLE TARGETS (based on " + access_type + " access):\n" +
+        "- You MUST choose 3 targets ONLY from the accessible_targets list\n" +
+        "- Available targets: " + str(accessible_targets) + "\n" +
+        "- These are the targets the angler can realistically reach from " + access_type + "\n" +
+        "- For work_it_cards definitions, use target_definitions[target_name]\n" +
+        "\n" +
+        "ANALYSIS ORDER (NON-NEGOTIABLE):\n" +
+        "1. Analyze season/phase and current conditions\n" +
+        "2. Identify 3 targets from accessible_targets list where bass are likely positioned\n" +
+        "3. Determine best presentation family for those targets\n" +
+        "4. Select lure that best executes that presentation\n" +
+        "\n" +
+        "PRIMARY PATTERN (Confidence Anchor):\n" +
+        "- Choose presentation that represents highest-probability way bass should feed\n" +
+        "- This is the truth-telling pattern\n" +
+        "\n" +
+        "SECONDARY PATTERN (Intentional Complement):\n" +
+        "- MUST use DIFFERENT presentation than primary\n" +
+        "- Either: ALTERNATIVE (different bass position) OR COMPLEMENT (search + cleanup)\n" +
+        "- Explain the relationship to primary in why_this_works\n" +
+        "\n" +
+        "VARIETY NOTE:\n" +
+        "- Variety mode is '" + variety_mode + "' but you should choose the optimal lure\n" +
+        "- Variety will be applied in post-processing\n"
+    )
+    
     temp_current = weather.get("temp_f", 60)
     temp_high = weather.get("temp_high", temp_current)
     temp_low = weather.get("temp_low", temp_current)
     temp_swing = temp_high - temp_low
+    
     # Add temp swing guidance if significant
     if temp_swing >= 10:
         swing_category = (
@@ -662,11 +728,11 @@ async def call_openai_plan(
             "EXTREME"
         )
         
-        user_input["instructions"] += f"""
-🌡️ TEMPERATURE SWING DETECTED ({swing_category}):
-Current temp: {temp_current}°F
-Today's range: {temp_low}°F (morning) → {temp_high}°F (afternoon)
-Temperature swing: {temp_swing}°F
+        temp_swing_instructions = """
+🌡️ TEMPERATURE SWING DETECTED (""" + swing_category + """):
+Current temp: """ + str(temp_current) + """°F
+Today's range: """ + str(temp_low) + """°F (morning) → """ + str(temp_high) + """°F (afternoon)
+Temperature swing: """ + str(temp_swing) + """°F
 
 LURE SELECTION STRATEGY FOR TEMP SWINGS:
 
@@ -695,24 +761,25 @@ NARROW-RANGE (optimal in specific conditions):
 ⚠️ Topwater (optimal >65°F, ineffective <60°F)
 
 DECISION RULE:
-1. Calculate effective temp range for the day ({temp_low}°F - {temp_high}°F)
+1. Calculate effective temp range for the day (""" + str(temp_low) + """°F - """ + str(temp_high) + """°F)
 2. If considering a narrow-range lure (e.g., carolina rig):
    - Check if ENTIRE day's range falls within optimal window
    - If NO → choose versatile alternative OR explain transition in day progression
-3. If swing is {temp_swing}°F, strongly prefer versatile lures
+3. If swing is """ + str(temp_swing) + """°F, strongly prefer versatile lures
 
 EXAMPLE for your conditions:
-- If morning is {temp_low}°F and afternoon is {temp_high}°F:
+- If morning is """ + str(temp_low) + """°F and afternoon is """ + str(temp_high) + """°F:
 - Carolina rig works morning but NOT afternoon → Choose texas rig instead (works all day)
-- OR use carolina rig BUT explain "switch to jig as water warms past {temp_low + 12}°F" in day progression
+- OR use carolina rig BUT explain "switch to jig as water warms past """ + str(temp_low + 12) + """°F" in day progression
 """
+        user_input["instructions"] += temp_swing_instructions
     
     # Add boat advantage strategic requirements
     if access_type == "boat":
-        user_input["instructions"] += f"""
+        boat_instructions = """
         
 🚤 BOAT ACCESS STRATEGIC REQUIREMENTS:
-You have {len(accessible_targets)} targets available (including offshore/transition structure).
+You have """ + str(len(accessible_targets)) + """ targets available (including offshore/transition structure).
 
 Required strategic approach:
 - Include at least 1 transition or offshore target in your 3 targets:
@@ -728,8 +795,9 @@ Good boat plans demonstrate:
 
 Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access provides offshore options
 """
+        user_input["instructions"] += boat_instructions
 
-    system_prompt = build_system_prompt(include_pattern_2=True)  # Always dual pattern
+    system_prompt = build_system_prompt(include_pattern_2=True)
     max_tokens = 1700
 
     try:
@@ -738,7 +806,7 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
             response = await client.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {api_key}",
+                    "Authorization": "Bearer " + api_key,
                     "Content-Type": "application/json",
                 },
                 json={
@@ -748,17 +816,17 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
                         {"role": "user", "content": json.dumps(user_input, ensure_ascii=False)},
                     ],
                     "response_format": {"type": "json_object"},
-                    "temperature": 0.6,  # Allow natural variety in lure/color selection while maintaining quality
+                    "temperature": 0.6,
                     "max_completion_tokens": max_tokens,
                 },
             )
 
         dt = time.time() - t0
-        print(f"LLM_PLAN: OpenAI call took {dt:.2f}s (mode={variety_mode})")
+        print("LLM_PLAN: OpenAI call took " + str(round(dt, 2)) + "s (mode=" + variety_mode + ")")
 
         if response.status_code != 200:
-            print(f"LLM_PLAN: HTTP {response.status_code}")
-            print(f"LLM_PLAN BODY: {response.text[:800]}")
+            print("LLM_PLAN: HTTP " + str(response.status_code))
+            print("LLM_PLAN BODY: " + response.text[:800])
             return None
 
         data = response.json()
@@ -774,25 +842,28 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
         extracted = _extract_first_json_object(content)
         if not extracted:
             print("LLM_PLAN ERROR: Could not extract JSON object")
-            print(f"LLM_PLAN: Content preview: {content[:400]}")
+            print("LLM_PLAN: Content preview: " + content[:400])
             return None
 
         try:
             plan = json.loads(extracted)
         except json.JSONDecodeError as e:
             print("LLM_PLAN ERROR: JSONDecodeError after extraction")
-            print(f"LLM_PLAN JSON ERROR: {repr(e)}")
-            print(f"LLM_PLAN: Extracted preview: {extracted[:500]}")
+            print("LLM_PLAN JSON ERROR: " + repr(e))
+            print("LLM_PLAN: Extracted preview: " + extracted[:500])
             return None
 
         # Return plan with variety_mode attached for post-processing
-        plan["_variety_mode"] = variety_mode  # Internal field for swap functions
+        plan["_variety_mode"] = variety_mode
         return plan
 
     except Exception as e:
-        print(f"LLM_PLAN ERROR: {type(e).__name__} {repr(e)}")
+        print("LLM_PLAN ERROR: " + type(e).__name__ + " " + repr(e))
         return None
-
+    
+    # ============================================================================
+# PART 3: Post-processing and Validation functions
+# ============================================================================
 
 # ============================================================================
 # POST-PROCESSING: LURE VARIETY SWAP
@@ -849,7 +920,7 @@ def swap_lures_for_variety(
         if alternatives and current_lure not in alternatives:
             new_lure = random.choice(alternatives)
             pattern["base_lure"] = new_lure
-            print(f"LLM_PLAN: {pattern_name} lure swap: {current_lure} → {new_lure} ({variety_mode})")
+            print("LLM_PLAN: " + pattern_name + " lure swap: " + current_lure + " → " + new_lure + " (" + variety_mode + ")")
             
             # Important: Clear soft_plastic and trailer when swapping lures
             # The LLM will have set these for the original lure
@@ -910,7 +981,7 @@ def apply_color_variety(
             if stained_options:
                 pattern["color_recommendations"][1] = random.choice(stained_options)
             
-            print(f"LLM_PLAN: {pattern_name} color variety ({variety_mode}): {pattern['color_recommendations']}")
+            print("LLM_PLAN: " + pattern_name + " color variety (" + variety_mode + "): " + str(pattern["color_recommendations"]))
     
     # Apply to both patterns (always dual-pattern now)
     if "primary" in plan:
@@ -954,7 +1025,7 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
         # shared fields
         for field in ("day_progression", "outlook_blurb"):
             if field not in plan:
-                errors.append(f"Missing required shared field: {field}")
+                errors.append("Missing required shared field: " + field)
     else:
         required = [
             "presentation",
@@ -968,16 +1039,15 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
         ]
         for field in required:
             if field not in plan:
-                errors.append(f"Missing required field: {field}")
+                errors.append("Missing required field: " + field)
         if not errors:
             errors.extend(_validate_pattern(plan, "plan"))
 
     # day progression
     day_prog = plan.get("day_progression", [])
     if not isinstance(day_prog, list) or len(day_prog) != 3:
-        errors.append(
-            f"day_progression must have exactly 3 lines, got {len(day_prog) if isinstance(day_prog, list) else 'not a list'}"
-        )
+        length_str = str(len(day_prog)) if isinstance(day_prog, list) else "not a list"
+        errors.append("day_progression must have exactly 3 lines, got " + length_str)
     else:
         for i, line in enumerate(day_prog):
             if i == 0 and not str(line).startswith("Morning:"):
@@ -989,7 +1059,7 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
 
             # crude color check (no parentheses / no "in green pumpkin" patterns)
             if "(" in str(line) or ") in " in str(line).lower():
-                errors.append(f"day_progression line {i} contains color (not allowed)")
+                errors.append("day_progression line " + str(i) + " contains color (not allowed)")
 
     # outlook blurb
     outlook = plan.get("outlook_blurb", "")
@@ -1032,7 +1102,7 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
     for text in all_text_fields:
         m = re.search(depth_pattern, text, re.IGNORECASE)
         if m:
-            errors.append(f"Plan contains specific depth mention (not allowed): {m.group()}")
+            errors.append("Plan contains specific depth mention (not allowed): " + m.group())
             break
 
     return (len(errors) == 0), errors
@@ -1045,66 +1115,61 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
     required = ["presentation", "base_lure", "color_recommendations", "targets", "why_this_works", "work_it"]
     for field in required:
         if field not in pattern:
-            errors.append(f"{pattern_name}: Missing required field: {field}")
+            errors.append(pattern_name + ": Missing required field: " + field)
 
     if errors:
         return errors
 
     # presentation validity
     if pattern["presentation"] not in PRESENTATIONS:
-        errors.append(f"{pattern_name}: Invalid presentation: {pattern['presentation']}")
+        errors.append(pattern_name + ": Invalid presentation: " + pattern["presentation"])
 
     # lure validity
     base_lure = pattern["base_lure"]
     if base_lure not in LURE_POOL:
-        errors.append(f"{pattern_name}: Invalid base_lure: {base_lure}")
+        errors.append(pattern_name + ": Invalid base_lure: " + base_lure)
 
     # lure matches presentation
     lure_errs = validate_lure_and_presentation(base_lure, pattern["presentation"])
-    errors.extend([f"{pattern_name}: {err}" for err in lure_errs])
+    errors.extend([pattern_name + ": " + err for err in lure_errs])
 
     # colors: 1-2 allowed by validator, but Bass Clarity prompt should provide exactly 2
     colors = pattern["color_recommendations"]
     if not isinstance(colors, list) or not (1 <= len(colors) <= 2):
-        errors.append(
-            f"{pattern_name}: color_recommendations must be 1-2 colors, got {len(colors) if isinstance(colors, list) else 'not a list'}"
-        )
+        length_str = str(len(colors)) if isinstance(colors, list) else "not a list"
+        errors.append(pattern_name + ": color_recommendations must be 1-2 colors, got " + length_str)
     else:
         soft_plastic = pattern.get("soft_plastic", None)
         valid_colors = get_color_pool_for_lure(base_lure, soft_plastic)
 
         for color in colors:
             if color not in valid_colors:
-                errors.append(
-                    f"{pattern_name}: Invalid color '{color}' for {base_lure}. Allowed colors: {valid_colors}"
-                )
+                errors.append(pattern_name + ": Invalid color '" + color + "' for " + base_lure + ". Allowed colors: " + str(valid_colors))
 
         # additional lure/color compatibility checks
         color_errs = validate_colors_for_lure(base_lure, colors, soft_plastic)
-        errors.extend([f"{pattern_name}: {err}" for err in color_errs])
+        errors.extend([pattern_name + ": " + err for err in color_errs])
 
     # targets: canonical = TARGET_DEFINITIONS.keys()
     targets = pattern["targets"]
     if not isinstance(targets, list):
-        errors.append(f"{pattern_name}: targets must be a list")
+        errors.append(pattern_name + ": targets must be a list")
     else:
         if len(targets) != 3:
-            errors.append(f"{pattern_name}: targets must have exactly 3 items, got {len(targets)}")
+            errors.append(pattern_name + ": targets must have exactly 3 items, got " + str(len(targets)))
         canonical_targets = set(TARGET_DEFINITIONS.keys())
         for t in targets:
             if t not in canonical_targets:
-                errors.append(f"{pattern_name}: Invalid target '{t}' (must be from TARGET_DEFINITIONS keys)")
+                errors.append(pattern_name + ": Invalid target '" + t + "' (must be from TARGET_DEFINITIONS keys)")
 
     # soft_plastic rules
     if "soft_plastic" in pattern and pattern["soft_plastic"]:
         if base_lure in TERMINAL_PLASTIC_MAP:
             allowed_plastics = TERMINAL_PLASTIC_MAP[base_lure]
             if pattern["soft_plastic"] not in allowed_plastics:
-                errors.append(
-                    f"{pattern_name}: soft_plastic '{pattern['soft_plastic']}' not allowed for {base_lure}. Allowed: {sorted(list(allowed_plastics))}"
-                )
+                errors.append(pattern_name + ": soft_plastic '" + pattern["soft_plastic"] + "' not allowed for " + base_lure + ". Allowed: " + str(sorted(list(allowed_plastics))))
         else:
-            errors.append(f"{pattern_name}: {base_lure} does not use soft_plastic field")
+            errors.append(pattern_name + ": " + base_lure + " does not use soft_plastic field")
 
     # trailer rules
     if "trailer" in pattern and pattern["trailer"]:
@@ -1119,32 +1184,31 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
                 allowed_trailers = SPINNER_BUZZ_TRAILERS
             else:
                 allowed_trailers = []
-                errors.append(f"{pattern_name}: Unknown trailer bucket '{bucket_name}'")
+                errors.append(pattern_name + ": Unknown trailer bucket '" + bucket_name + "'")
 
             if pattern["trailer"] not in allowed_trailers:
-                errors.append(
-                    f"{pattern_name}: trailer '{pattern['trailer']}' not allowed for {base_lure}. Allowed: {sorted(list(allowed_trailers))}"
-                )
+                errors.append(pattern_name + ": trailer '" + pattern["trailer"] + "' not allowed for " + base_lure + ". Allowed: " + str(sorted(list(allowed_trailers))))
         else:
-            errors.append(f"{pattern_name}: {base_lure} does not use trailer field")
+            errors.append(pattern_name + ": " + base_lure + " does not use trailer field")
 
     return errors
 
-
-# ----------------------------------------
-# Public API
-# ----------------------------------------
+# ============================================================================
+# PART 4: Main generation function with retries
+# ============================================================================
 
 async def generate_llm_plan_with_retries(
-    weather: Dict[str, Any],
-    location: str,
-    trip_date: str,
+    weather: dict,
     phase: str,
+    location: str,
+    latitude: float,
+    longitude: float,
     access_type: str = "boat",
     is_member: bool = False,
-    recent_lures: list[str] = None,  # ← NEW: For variety tie-breaking
-    max_retries: int = 2,
-) -> Optional[Dict[str, Any]]:
+    recent_primary_lures: list[str] = None,
+    recent_secondary_lures: list[str] = None,
+    max_attempts: int = 5,
+) -> dict:
     """
     Generate LLM plan with validation and retries.
     Returns validated plan or None.
@@ -1152,26 +1216,30 @@ async def generate_llm_plan_with_retries(
     Args:
         weather: Weather data
         location: Location name
-        trip_date: Date string (kept for signature compatibility)
-        phase: Bass phase
+        latitude: Latitude
+        longitude: Longitude
         access_type: "boat" or "bank" - filters accessible targets
         is_member: All users are members now (kept for compatibility)
-        max_retries: Number of retry attempts
+        recent_primary_lures: List of recently used primary lures
+        recent_secondary_lures: List of recently used secondary lures
+        max_attempts: Number of retry attempts
     """
-    for attempt in range(max_retries):
+    for attempt in range(max_attempts):
         plan = await call_openai_plan(
-            weather, 
-            location, 
-            trip_date, 
-            phase,
+            weather=weather,
+            phase=phase,
+            location=location,
+            latitude=latitude,
+            longitude=longitude,
             access_type=access_type,
             is_member=is_member,
-            recent_lures=recent_lures,  # ← NEW: Pass for variety
+            recent_primary_lures=recent_primary_lures,
+            recent_secondary_lures=recent_secondary_lures,
         )
 
         if not plan:
             await asyncio.sleep(0.75 * (attempt + 1))
-            print(f"LLM_PLAN: Attempt {attempt + 1} failed (no response)")
+            print("LLM_PLAN: Attempt " + str(attempt + 1) + " failed (no response)")
             continue
 
         # Extract variety mode from plan (attached in call_openai_plan)
@@ -1199,14 +1267,14 @@ async def generate_llm_plan_with_retries(
             try:
                 plan = expand_plan_color_zones(plan, is_member=is_member)
             except Exception as e:
-                print(f"LLM_PLAN: Color zone expansion failed: {e}")
+                print("LLM_PLAN: Color zone expansion failed: " + str(e))
                 continue   # retry LLM, do NOT return unexpanded plan
 
             return plan
 
-        print(f"LLM_PLAN: Attempt {attempt + 1} validation failed:")
+        print("LLM_PLAN: Attempt " + str(attempt + 1) + " validation failed:")
         for err in errors[:6]:
-            print(f"  - {err}")
+            print("  - " + err)
 
         await asyncio.sleep(0.75 * (attempt + 1))
 

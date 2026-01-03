@@ -116,7 +116,6 @@ LURE_ZONE_SCHEMA = {
     # primary = skirt/body, secondary optional = skirt accent, accent = blade finish (metallic)
     "chatterbait": {"primary": True, "secondary": False, "accent": True},
     "spinnerbait": {"primary": True, "secondary": False, "accent": True},
-    "underspin": {"primary": True, "secondary": False, "accent": True},
     
     # Buzzbait: body + hardware/prop finish
     # primary = body, accent = hardware/prop finish (metallic)
@@ -143,7 +142,7 @@ LURE_ZONE_SCHEMA = {
     "dropshot": {"primary": True, "secondary": False, "accent": False},
     
     # ========================================
-    # E) SOFT PLASTIC BODIES - 2 lures
+    # E) SOFT PLASTIC BODIES - 4 lures
     # ========================================
     # Standalone plastic (not rigs)
     # Zones: primary, secondary optional, accent optional (tail/belly)
@@ -151,7 +150,9 @@ LURE_ZONE_SCHEMA = {
     
     "soft jerkbait": {"primary": True, "secondary": False, "accent": False},
     "paddle tail swimbait": {"primary": True, "secondary": False, "accent": False},
-    
+    "jighead minnow": {"primary": True, "secondary": False, "accent": False},
+    "underspin": {"primary": True, "secondary": False, "accent": True},
+
     # ========================================
     # F) JIGS - 3 lures
     # ========================================
@@ -193,6 +194,7 @@ RIG_ICON_LURES = {
 SOFT_PLASTIC_BODY_LURES = {
     "soft jerkbait",
     "paddle tail swimbait",
+    "jighead minnow"
 }
 
 # Lures that are FROGS (soft-bodied topwater, NO metallics)
@@ -309,14 +311,16 @@ LURE_COLOR_POOL_MAP = {
     "chatterbait": BLADED_SKIRTED_COLORS,
     "spinnerbait": BLADED_SKIRTED_COLORS,
     "buzzbait": BLADED_SKIRTED_COLORS,
-    "underspin": BLADED_SKIRTED_COLORS,
     "swim jig": BLADED_SKIRTED_COLORS,
     "football jig": BLADED_SKIRTED_COLORS,
     "casting jig": BLADED_SKIRTED_COLORS,
     
     # Soft Swimbaits
+    "underspin": SOFT_SWIMBAIT_COLORS,
     "soft jerkbait": SOFT_SWIMBAIT_COLORS,
     "paddle tail swimbait": SOFT_SWIMBAIT_COLORS,
+    "jighead minnow": SOFT_SWIMBAIT_COLORS,
+
     # dropshot with minnow uses SOFT_SWIMBAIT_COLORS
     
     # Crankbaits
