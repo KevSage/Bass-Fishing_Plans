@@ -338,19 +338,19 @@ export function StrategicClarityPage() {
                 >
                   {[
                     {
-                      title: "A plan shape, not a list",
+                      title: "A Plan, Not a List",
                       desc: "A short strategy summary that describes the day’s intended pace and positioning — without turning into a lecture.",
                     },
                     {
-                      title: "A few high-signal targets",
-                      desc: "Targets are narrowed to the places most likely to hold fish based on today’s conditions.",
+                      title: "High-Signal Targets",
+                      desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
                     },
                     {
-                      title: "Retrieve guidance you can repeat",
-                      desc: "Notes are written for execution — steady, controlled, and easy to learn from.",
+                      title: "Retrieve Guidance",
+                      desc: "Lure/Target Specific  generated for execution — steady, controlled, and easy to learn from.",
                     },
                     {
-                      title: "A simple progression view",
+                      title: "Full Day Progression",
                       desc: "Early / Midday / Late gives you a coherent plan arc without constant second-guessing.",
                     },
                   ].map((x, i) => (
@@ -401,16 +401,9 @@ export function StrategicClarityPage() {
         </div>
         <div style={{ height: 46 }} />
 
-        {/* SECOND PHONE + 2x2 CARDS SECTION */}
-        {/* <section
-        style={{
-          padding: sectionPad,
-          borderTop: sectionTopBorder,
-        }}
-      > */}
         <div className="container" style={container(1200)}>
+          {/* Mobile: phone first, then 2x2 cards */}
           {/* Desktop: 2x2 cards left, phone right */}
-          {/* Mobile: Stack vertically */}
           <div
             style={{
               display: "grid",
@@ -420,79 +413,7 @@ export function StrategicClarityPage() {
             }}
             className="strategy-layout"
           >
-            {/* 2x2 Card Grid */}
-            {/* <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: 18,
-              }}
-            >
-              {[
-                {
-                  Icon: CompassIcon,
-                  title: "Strategy",
-                  desc: "Complete strategy based on weather + seasonal context. Written for execution, not theory.",
-                },
-                {
-                  Icon: TargetIcon,
-                  title: "Targets",
-                  desc: "High-signal targets based on season and conditions. Recognizable on the water.",
-                },
-                {
-                  Icon: LayersIcon,
-                  title: "Retrieves",
-                  desc: "Specific cadence and control notes. Simple enough to repeat, fits the day.",
-                },
-                {
-                  Icon: BarChartIcon,
-                  title: "Day Progression",
-                  desc: "Early / Midday / Late. Explains shifts between approaches intentionally.",
-                },
-              ].map((c, i) => (
-                <div
-                  key={i}
-                  style={{
-                    ...card,
-                    padding: 20,
-                    background: "rgba(255,255,255,0.02)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      marginBottom: 12,
-                    }}
-                  >
-                    <div style={iconBadge}>
-                      <c.Icon
-                        style={{
-                          width: 18,
-                          height: 18,
-                          color: "rgba(74,144,226,0.95)",
-                        }}
-                      />
-                    </div>
-                    <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
-                      {c.title}
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      opacity: 0.82,
-                      lineHeight: 1.75,
-                      fontSize: "1.02rem",
-                    }}
-                  >
-                    {c.desc}
-                  </div>
-                </div>
-              ))}
-            </div> */}
-
-            {/* Phone Mock */}
+            {/* Phone Mock - first on mobile, second on desktop */}
             <div
               style={{
                 position: "relative",
@@ -500,6 +421,7 @@ export function StrategicClarityPage() {
                 margin: "0 auto",
                 justifySelf: "center",
               }}
+              className="strategy-phone"
             >
               <img
                 src="/images/iphone15.png"
@@ -538,135 +460,103 @@ export function StrategicClarityPage() {
                 }}
               />
             </div>
-          </div>
-        </div>
 
-        {/* Desktop-specific styling */}
-        <style>{`
-          @media (min-width: 1024px) {
-            .strategy-layout {
-              grid-template-columns: 1.2fr 1fr !important;
-            }
-            .strategy-layout > div:last-child {
-              order: 2;
-            }
-            .strategy-layout > div:first-child {
-              order: 1;
-            }
-          }
-        `}</style>
-      </section>
-
-      {/* WHAT YOU SEE (Cards + Expansion) */}
-      <section
-        style={{
-          padding: sectionPad,
-          background: "rgba(74, 144, 226, 0.02)",
-          borderTop: sectionTopBorder,
-          borderBottom: sectionTopBorder,
-        }}
-      >
-        <div className="container" style={container(1200)}>
-          <h2 style={h2Style}>What you see in the plan</h2>
-          <p style={leadStyle}>
-            Four cards keep the section short. Expansions add just enough detail
-            to execute — tied to today’s conditions — without turning into a
-            lecture.
-          </p>
-
-          <div style={{ height: 46 }} />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 14,
-            }}
-          >
-            {[
-              {
-                Icon: CompassIcon,
-                title: "Strategy",
-                bullets: [
-                  "Complete strategy, based on weather + seasonal context",
-                  "Written for execution (not theory)",
-                  "Natural understandable language",
-                ],
-              },
-              {
-                Icon: TargetIcon,
-                title: "Targets",
-                bullets: [
-                  "High-signal targets based on season and your conditions",
-                  "Brief target descriptions",
-                  "Recognizable on the water",
-                  "Helps you to narrow the water",
-                ],
-              },
-              {
-                Icon: LayersIcon,
-                title: "Retrieves",
-                bullets: [
-                  "Hundreds of retrieves specific to your lure",
-                  "Cadence + control notes",
-                  "Simple enough to repeat",
-                  "Fits the presentation and feel of the day",
-                ],
-              },
-              {
-                Icon: BarChartIcon,
-                title: "Day progression",
-                bullets: [
-                  "Early / Midday / Late",
-                  "Explains likely shifts between approaches",
-                  "Keeps adjustments intentional",
-                  "Teaches when to use what, and why",
-                ],
-              },
-            ].map((c, i) => (
-              <div
-                key={i}
-                style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={iconBadge}>
-                    <c.Icon
-                      style={{
-                        width: 18,
-                        height: 18,
-                        color: "rgba(74,144,226,0.95)",
-                      }}
-                    />
-                  </div>
-                  <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
-                    {c.title}
-                  </div>
-                </div>
-
-                <ul
+            {/* 2x2 Card Grid - second on mobile, first on desktop */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: 18,
+              }}
+              className="strategy-cards"
+            >
+              {[
+                {
+                  Icon: CompassIcon,
+                  title: "Strategy",
+                  bullets: [
+                    "Complete strategy, based on weather + seasonal context",
+                    "Written for execution (not theory)",
+                    "Natural understandable language",
+                  ],
+                },
+                {
+                  Icon: TargetIcon,
+                  title: "Targets",
+                  bullets: [
+                    "High-signal targets based on season and your conditions",
+                    "Brief target descriptions",
+                    "Recognizable on the water",
+                    "Helps you to narrow the water",
+                  ],
+                },
+                {
+                  Icon: LayersIcon,
+                  title: "Retrieves",
+                  bullets: [
+                    "Hundreds of retrieves specific to your lure",
+                    "Cadence + control notes",
+                    "Simple enough to repeat",
+                    "Fits the presentation and feel of the day",
+                  ],
+                },
+                {
+                  Icon: BarChartIcon,
+                  title: "Day progression",
+                  bullets: [
+                    "Early / Midday / Late",
+                    "Explains likely shifts between approaches",
+                    "Keeps adjustments intentional",
+                    "Teaches when to use what, and why",
+                  ],
+                },
+              ].map((c, i) => (
+                <div
+                  key={i}
                   style={{
-                    marginTop: 14,
-                    paddingLeft: 18,
-                    lineHeight: 1.8,
-                    opacity: 0.82,
-                    fontSize: "1.02rem",
+                    ...card,
+                    padding: 18,
+                    background: "rgba(255,255,255,0.02)",
                   }}
                 >
-                  {c.bullets.map((b, idx) => (
-                    <li key={idx}>{b}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 10 }}
+                  >
+                    <div style={iconBadge}>
+                      <c.Icon
+                        style={{
+                          width: 18,
+                          height: 18,
+                          color: "rgba(74,144,226,0.95)",
+                        }}
+                      />
+                    </div>
+                    <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
+                      {c.title}
+                    </div>
+                  </div>
+
+                  <ul
+                    style={{
+                      marginTop: 14,
+                      paddingLeft: 18,
+                      lineHeight: 1.8,
+                      opacity: 0.82,
+                      fontSize: "1.02rem",
+                    }}
+                  >
+                    {c.bullets.map((b, idx) => (
+                      <li key={idx}>{b}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div style={{ height: 48 }} />
 
-          {/* "Why this stays calm" section with better spacing */}
+          {/* "Why this stays calm" section */}
           <div
             style={{
               ...softCard,
@@ -691,6 +581,32 @@ export function StrategicClarityPage() {
             </p>
           </div>
         </div>
+
+        {/* Responsive styling */}
+        <style>{`
+          /* Mobile: phone first (order: 1), then 2x2 cards below (order: 2) */
+          .strategy-phone {
+            order: 1;
+          }
+          .strategy-cards {
+            order: 2;
+            grid-template-columns: repeat(2, 1fr);
+          }
+          
+          /* Desktop: 2x2 cards left (order: 1), phone right (order: 2) */
+          @media (min-width: 1024px) {
+            .strategy-layout {
+              grid-template-columns: 1.2fr 1fr !important;
+            }
+            .strategy-phone {
+              order: 2;
+            }
+            .strategy-cards {
+              order: 1;
+              grid-template-columns: repeat(2, 1fr) !important;
+            }
+          }
+        `}</style>
       </section>
 
       {/* BOTTOM NAV: next pages */}
