@@ -379,15 +379,15 @@ export function PresentationClarityPage() {
                   }}
                 >
                   <Bullet
-                    title="A clear presentation label"
+                    title="A Clear Presentation"
                     desc="You’re not left guessing how the bait should be worked — the plan names the style first."
                   />
                   <Bullet
-                    title="A complete lure system"
+                    title="A Complete Lure System"
                     desc="When “the lure” requires a soft plastic or trailer, that pairing is part of the recommendation."
                   />
                   <Bullet
-                    title="Two usable color options"
+                    title="Two Color Options, Optimized"
                     desc="One for clearer water, one for reduced visibility — chosen from realistic, lure‑specific pools."
                   />
                 </ul>

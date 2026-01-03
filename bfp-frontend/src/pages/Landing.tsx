@@ -122,9 +122,9 @@ export function Landing() {
           }}
         >
           <h1 style={h1Style}>
-            Clear Fishing Decisions.
+            Clarity on the Water.
             <br />
-            Without the Guesswork.
+            No Guesswork.
           </h1>
 
           <p
@@ -173,7 +173,7 @@ export function Landing() {
               marginBottom: 36,
             }}
           >
-            Most fishing apps give you more data than direction.
+            Less Data, More Direction.
           </h2>
 
           <p style={{ ...leadStyle, marginBottom: "clamp(36px, 7vw, 64px)" }}>

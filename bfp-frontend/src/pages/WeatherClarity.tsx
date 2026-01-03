@@ -162,9 +162,11 @@ export function WeatherClarityPage() {
             </div>
 
             <h1 style={h1Style}>
-              Weather you can use.
+              No Dashboards.
               <br />
-              Without turning fishing into a dashboard.
+              No Charts.
+              <br />
+              Weather You Can Use.
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
@@ -540,18 +542,6 @@ export function WeatherClarityPage() {
                     <li key={idx}>{b}</li>
                   ))}
                 </ul>
-
-                <div
-                  style={{
-                    marginTop: 14,
-                    fontSize: "0.95rem",
-                    opacity: 0.65,
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
-                    paddingTop: 12,
-                  }}
-                >
-                  Tap-to-expand keeps the plan clean on mobile.
-                </div>
               </div>
             ))}
           </div>
