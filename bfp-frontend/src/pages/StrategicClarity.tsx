@@ -280,12 +280,12 @@ export function StrategicClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Strategy.png"
+                  src="/images/mobile_screenshots/WTW_Strategy.png"
                   alt="Strategy cards and progression"
                   style={{
                     width: "100%",
                     height: "100%",
-                    objectFit: "cover",
+                    objectFit: "contain",
                     filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
                   }}
                 />
@@ -398,83 +398,163 @@ export function StrategicClarityPage() {
             The goal is simple: turn conditions into a coherent plan you can
             execute — targets, retrieves, and a day progression — without noise.
           </p>
+        </div>
+        <div style={{ height: 46 }} />
 
-          <div style={{ height: 46 }} />
-
+        {/* SECOND PHONE + 2x2 CARDS SECTION */}
+        {/* <section
+        style={{
+          padding: sectionPad,
+          borderTop: sectionTopBorder,
+        }}
+      > */}
+        <div className="container" style={container(1200)}>
+          {/* Desktop: 2x2 cards left, phone right */}
+          {/* Mobile: Stack vertically */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 14,
+              gridTemplateColumns: "1fr",
+              gap: "clamp(32px, 6vw, 64px)",
+              alignItems: "center",
             }}
+            className="strategy-layout"
           >
-            {[
-              {
-                title: "1) Start from the same snapshot",
-                desc: "Your weather snapshot + seasonal context + plan scope — the same foundation the rest of the plan uses.",
-              },
-              {
-                title: "2) Translate into fish behavior assumptions",
-                desc: "Positioning and activity assumptions based on stability, wind context, light, and recent change.",
-              },
-              {
-                title: "3) Narrow to a few targets",
-                desc: "A small set of high-signal areas that match the day — not a map of everything that could be true.",
-              },
-              {
-                title: "4) Output execution guidance",
-                desc: "A strategy summary, retrieve notes, and a simple progression so the plan stays readable on a phone.",
-              },
-            ].map((x, i) => (
-              <div
-                key={i}
-                style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 750,
-                    letterSpacing: "-0.01em",
-                    marginBottom: 8,
-                    color: "rgba(255,255,255,0.92)",
-                  }}
-                >
-                  {x.title}
-                </div>
-                <div style={{ opacity: 0.78, lineHeight: 1.75 }}>{x.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ height: 22 }} />
-
-          <div
-            style={{
-              ...softCard,
-              padding: "clamp(18px, 3.5vw, 26px)",
-              maxWidth: 980,
-              margin: "0 auto",
-            }}
-          >
-            <div
+            {/* 2x2 Card Grid */}
+            {/* <div
               style={{
-                ...eyebrow,
-                marginBottom: 10,
-                color: "rgba(74,144,226,0.95)",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: 18,
               }}
             >
-              Why this stays calm
+              {[
+                {
+                  Icon: CompassIcon,
+                  title: "Strategy",
+                  desc: "Complete strategy based on weather + seasonal context. Written for execution, not theory.",
+                },
+                {
+                  Icon: TargetIcon,
+                  title: "Targets",
+                  desc: "High-signal targets based on season and conditions. Recognizable on the water.",
+                },
+                {
+                  Icon: LayersIcon,
+                  title: "Retrieves",
+                  desc: "Specific cadence and control notes. Simple enough to repeat, fits the day.",
+                },
+                {
+                  Icon: BarChartIcon,
+                  title: "Day Progression",
+                  desc: "Early / Midday / Late. Explains shifts between approaches intentionally.",
+                },
+              ].map((c, i) => (
+                <div
+                  key={i}
+                  style={{
+                    ...card,
+                    padding: 20,
+                    background: "rgba(255,255,255,0.02)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <div style={iconBadge}>
+                      <c.Icon
+                        style={{
+                          width: 18,
+                          height: 18,
+                          color: "rgba(74,144,226,0.95)",
+                        }}
+                      />
+                    </div>
+                    <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
+                      {c.title}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      opacity: 0.82,
+                      lineHeight: 1.75,
+                      fontSize: "1.02rem",
+                    }}
+                  >
+                    {c.desc}
+                  </div>
+                </div>
+              ))}
+            </div> */}
+
+            {/* Phone Mock */}
+            <div
+              style={{
+                position: "relative",
+                maxWidth: 420,
+                margin: "0 auto",
+                justifySelf: "center",
+              }}
+            >
+              <img
+                src="/images/iphone15.png"
+                alt="Bass Clarity strategy view"
+                style={{
+                  width: "100%",
+                  display: "block",
+                  position: "relative",
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+              />
+              <img
+                src="/images/mobile_screenshots/Targets.png"
+                alt="Strategy cards interface"
+                style={{
+                  position: "absolute",
+                  top: "4%",
+                  left: "6.2%",
+                  width: "87.6%",
+                  height: "92.8%",
+                  borderRadius: "clamp(24px, 4vw, 40px)",
+                  objectFit: "contain",
+                  zIndex: 1,
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: "-15%",
+                  background:
+                    "radial-gradient(circle, rgba(74, 144, 226, 0.14) 0%, transparent 70%)",
+                  filter: "blur(60px)",
+                  zIndex: 0,
+                  pointerEvents: "none",
+                }}
+              />
             </div>
-            <p style={{ ...pStyle, opacity: 0.86 }}>
-              Strategic Clarity is designed to prevent option overload. The plan
-              narrows down to a few decisions you can repeat, so you learn
-              faster and stop chasing a moving target.
-            </p>
           </div>
         </div>
+
+        {/* Desktop-specific styling */}
+        <style>{`
+          @media (min-width: 1024px) {
+            .strategy-layout {
+              grid-template-columns: 1.2fr 1fr !important;
+            }
+            .strategy-layout > div:last-child {
+              order: 2;
+            }
+            .strategy-layout > div:first-child {
+              order: 1;
+            }
+          }
+        `}</style>
       </section>
 
       {/* WHAT YOU SEE (Cards + Expansion) */}
@@ -508,24 +588,26 @@ export function StrategicClarityPage() {
                 Icon: CompassIcon,
                 title: "Strategy",
                 bullets: [
-                  "A plain-English plan shape",
-                  "Keeps the day coherent",
+                  "Complete strategy, based on weather + seasonal context",
                   "Written for execution (not theory)",
+                  "Natural understandable language",
                 ],
               },
               {
                 Icon: TargetIcon,
                 title: "Targets",
                 bullets: [
-                  "A few high-signal places",
+                  "High-signal targets based on season and your conditions",
+                  "Brief target descriptions",
                   "Recognizable on the water",
-                  "Aligned to light, wind, season, change",
+                  "Helps you to narrow the water",
                 ],
               },
               {
                 Icon: LayersIcon,
                 title: "Retrieves",
                 bullets: [
+                  "Hundreds of retrieves specific to your lure",
                   "Cadence + control notes",
                   "Simple enough to repeat",
                   "Fits the presentation and feel of the day",
@@ -536,8 +618,9 @@ export function StrategicClarityPage() {
                 title: "Day progression",
                 bullets: [
                   "Early / Midday / Late",
-                  "Explains likely shifts",
+                  "Explains likely shifts between approaches",
                   "Keeps adjustments intentional",
+                  "Teaches when to use what, and why",
                 ],
               },
             ].map((c, i) => (
@@ -577,23 +660,36 @@ export function StrategicClarityPage() {
                     <li key={idx}>{b}</li>
                   ))}
                 </ul>
-
-                <div
-                  style={{
-                    marginTop: 14,
-                    fontSize: "0.95rem",
-                    opacity: 0.65,
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
-                    paddingTop: 12,
-                  }}
-                >
-                  Tap-to-expand keeps the plan clean on mobile.
-                </div>
               </div>
             ))}
           </div>
 
-          <div style={{ height: 26 }} />
+          <div style={{ height: 48 }} />
+
+          {/* "Why this stays calm" section with better spacing */}
+          <div
+            style={{
+              ...softCard,
+              padding: "clamp(28px, 4.5vw, 38px)",
+              maxWidth: 980,
+              margin: "0 auto",
+            }}
+          >
+            <div
+              style={{
+                ...eyebrow,
+                marginBottom: 16,
+                color: "rgba(74,144,226,0.95)",
+              }}
+            >
+              Why this stays calm
+            </div>
+            <p style={{ ...pStyle, opacity: 0.86, marginTop: 0 }}>
+              Strategic Clarity is designed to prevent option overload. The plan
+              narrows down to a few decisions you can repeat, so you learn
+              faster and stop chasing a moving target.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -625,7 +721,7 @@ export function StrategicClarityPage() {
                 a calm, readable format with plain-language expansions.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/weather-clarity" style={smallCta}>
+                <Link to="/weather" style={smallCta}>
                   Go to Weather Clarity →
                 </Link>
               </div>
