@@ -165,7 +165,6 @@ class PlanGenerateRequest(BaseModel):
 class SubscribeRequest(BaseModel):
     email: EmailStr
 
-
 # ========================================
 # PLAN GENERATION (UNIFIED ENDPOINT)
 # ========================================
@@ -251,16 +250,13 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         latitude=body.latitude,
     )
     
-    # After this line:
-    weather = await get_weather_snapshot(body.latitude, body.longitude)
-
-    # Add this:
+    # Debug logging
     print(f"WEATHER: temp={weather.get('temp_f')}°F, wind={weather.get('wind_mph')}mph, "
-      f"sky={weather.get('cloud_cover')}, phase={phase}")
+          f"pressure={weather.get('pressure_mb')}mb ({weather.get('pressure_trend')}), "
+          f"sky={weather.get('cloud_cover')}, phase={phase}")
 
     # 5. Get recent lures for variety (if user has history)
     recent_lures = get_recent_lures(email, limit=2)
-    # logger.info(f"LLM_PLAN: Recent lures for {email}: primary={recent_lures['primary']}, secondary={recent_lures['secondary']}")
 
     if recent_lures:
         print(f"LLM_PLAN: Recent lures for {email}: {recent_lures}")
@@ -275,7 +271,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             location=body.location_name,
             latitude=body.latitude,
             longitude=body.longitude,
-            access_type=access_type,  # ← ADD THIS LINE
+            access_type=access_type,
             is_member=is_member,
             recent_primary_lures=recent_lures["primary"],
             recent_secondary_lures=recent_lures["secondary"],
@@ -293,22 +289,48 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     if is_member:
         plan = enrich_member_plan(plan, weather, phase)
     
-    # Note: Target definitions are now included in work_it objects directly from LLM
-    
-    # Add conditions to plan (including access_type)
+    # ✅ FIXED: Add ALL weather data to conditions (flattened)
     plan["conditions"] = {
+        # Location & Date
         "location_name": body.location_name,
         "latitude": body.latitude,
         "longitude": body.longitude,
         "trip_date": trip_date,
+        "access_type": access_type,
+        "subscriber_email": email if is_member else None,
+        
+        # Phase
         "phase": phase,
+        
+        # ✅ ALL ENHANCED WEATHER DATA (flattened from weather snapshot)
         "temp_f": weather["temp_f"],
         "temp_high": weather["temp_high"],
         "temp_low": weather["temp_low"],
-        "wind_speed": weather["wind_mph"],
-        "sky_condition": weather["cloud_cover"],
-        "subscriber_email": email if is_member else None,
-        "access_type": access_type,
+        "wind_mph": weather["wind_mph"],
+        "cloud_cover": weather["cloud_cover"],
+        
+        # ✅ Barometric Pressure (CRITICAL - was missing)
+        "pressure_mb": weather["pressure_mb"],
+        "pressure_trend": weather["pressure_trend"],
+        
+        # ✅ Light & UV (NEW)
+        "uv_index": weather["uv_index"],
+        
+        # ✅ Precipitation (NEW)
+        "precipitation_1h": weather["precipitation_1h"],
+        "has_recent_rain": weather["has_recent_rain"],
+        
+        # ✅ Moon & Solunar (NEW)
+        "moon_phase": weather["moon_phase"],
+        "moon_illumination": weather["moon_illumination"],
+        "is_major_period": weather["is_major_period"],
+        
+        # ✅ Other (NEW)
+        "humidity": weather["humidity"],
+        
+        # ✅ LEGACY FIELDS (for backward compatibility with old frontend)
+        "wind_speed": weather["wind_mph"],  # Alias for old field name
+        "sky_condition": weather["cloud_cover"],  # Alias for old field name
     }
     
     # 7. Save plan link
@@ -342,7 +364,6 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "access_type": access_type,
         "plan": plan,
     }
-
 
 # ========================================
 # PLAN VIEWING
