@@ -22,8 +22,8 @@ export function Navigation() {
     () => [
       { to: "/", label: "Home" },
       { to: "/weather", label: "Weather" },
-      { to: "/what-your-plan-includes", label: "What You Get" },
-      { to: "/how-to-use", label: "How to Use" },
+      { to: "/presentation", label: "Presentation" },
+      { to: "/strategy", label: "Strategy" },
       { to: "/about", label: "About" },
       { to: "/faq", label: "FAQ" },
     ],
