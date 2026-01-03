@@ -1,15 +1,23 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import {
+  CompassIcon,
+  TargetIcon,
+  LayersIcon,
+  BarChartIcon,
+  CheckCircleIcon,
+} from "../components/UnifiedIcons";
 
 /**
- * Weather Clarity Page
- * - Mobile-first, responsive up to wide screens
- * - Styled to match the Landing page (dark gradient, soft blue accents, calm typography)
- * - Focus: Weather/Conditions only (no preview/member language)
+ * Strategic Clarity Page
+ * - Uses WeatherClarity.tsx as the visual + layout source of truth:
+ *   dark gradient, soft-blue accents, calm typography, section rhythm,
+ *   hero + phone mock, and tight, readable cards.
+ * - Focus: strategy (targets, retrieves, day progression) — no hype.
  */
-export function WeatherClarityPage() {
+export function StrategicClarityPage() {
   // -----------------------------
-  // Shared typography + layout
+  // Shared typography + layout (match WeatherClarity)
   // -----------------------------
   const sectionPadY = "clamp(76px, 10vw, 132px)";
   const sectionPadX = "clamp(18px, 4vw, 24px)";
@@ -129,6 +137,36 @@ export function WeatherClarityPage() {
 
   const sectionTopBorder = "1px solid rgba(255,255,255,0.06)";
 
+  const iconBadge = {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background:
+      "linear-gradient(135deg, rgba(74,144,226,0.22) 0%, rgba(74,144,226,0.06) 100%)",
+    border: "1px solid rgba(74,144,226,0.20)",
+  } as const;
+
+  const pillIcon = (Icon: any) => (
+    <span
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 999,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(74,144,226,0.16)",
+        border: "1px solid rgba(74,144,226,0.18)",
+        boxShadow: "0 10px 22px rgba(74,144,226,0.10)",
+      }}
+    >
+      <Icon style={{ width: 14, height: 14, color: "rgba(74,144,226,0.95)" }} />
+    </span>
+  );
+
   return (
     <div
       style={{
@@ -155,22 +193,24 @@ export function WeatherClarityPage() {
             pointerEvents: "none",
           }}
         />
+
         <div className="container" style={container(1100)}>
           <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
             <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
-              Weather Clarity
+              Strategic Clarity
             </div>
 
             <h1 style={h1Style}>
-              Weather you can use.
+              Fish a plan you can actually run.
               <br />
-              Without turning fishing into a dashboard.
+              Without improvising all day.
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              Bass Clarity keeps the important numbers visible — like
-              temperature and wind speed — but explains what they mean in plain
-              language so the day feels understandable instead of overwhelming.
+              Bass Clarity doesn’t hand you a pile of info and hope you
+              interpret it. It turns conditions into a tight, actionable plan —
+              a clear strategy summary, a few high-signal targets, retrieve
+              guidance, and a simple day progression.
             </p>
 
             <div
@@ -182,10 +222,22 @@ export function WeatherClarityPage() {
                 flexWrap: "wrap",
               }}
             >
-              <span style={pill}>🌡️ Temperature</span>
-              <span style={pill}>💨 Wind + Safety</span>
-              <span style={pill}>📉 Pressure</span>
-              <span style={pill}>☁️ Sky + Precip</span>
+              <span style={pill}>
+                {pillIcon(CompassIcon)}
+                Strategy
+              </span>
+              <span style={pill}>
+                {pillIcon(TargetIcon)}
+                Targets
+              </span>
+              <span style={pill}>
+                {pillIcon(LayersIcon)}
+                Retrieves
+              </span>
+              <span style={pill}>
+                {pillIcon(BarChartIcon)}
+                Day progression
+              </span>
             </div>
           </div>
 
@@ -228,8 +280,8 @@ export function WeatherClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Weather.png"
-                  alt="Weather cards and outlook"
+                  src="/images/mobile_screenshots/Strategy.png"
+                  alt="Strategy cards and progression"
                   style={{
                     width: "100%",
                     height: "100%",
@@ -286,16 +338,20 @@ export function WeatherClarityPage() {
                 >
                   {[
                     {
-                      title: "4 focused cards",
-                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
+                      title: "A plan shape, not a list",
+                      desc: "A short strategy summary that describes the day’s intended pace and positioning — without turning into a lecture.",
                     },
                     {
-                      title: "Plain-language expansions",
-                      desc: "More detail than the card, tied to your actual conditions (not generic definitions).",
+                      title: "A few high-signal targets",
+                      desc: "Targets are narrowed to the places most likely to hold fish based on today’s conditions.",
                     },
                     {
-                      title: "A daily outlook blurb",
-                      desc: "A short synthesis that connects the dots across the whole weather snapshot.",
+                      title: "Retrieve guidance you can repeat",
+                      desc: "Notes are written for execution — steady, controlled, and easy to learn from.",
+                    },
+                    {
+                      title: "A simple progression view",
+                      desc: "Early / Midday / Late gives you a coherent plan arc without constant second-guessing.",
                     },
                   ].map((x, i) => (
                     <li
@@ -328,31 +384,19 @@ export function WeatherClarityPage() {
                     </li>
                   ))}
                 </ul>
-
-                <div style={{ height: 18 }} />
-
-                {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Link to="/subscribe" style={primaryCta}>
-                    Start Your Free Trial
-                  </Link>
-                  <Link to="/how-it-works" style={smallCta}>
-                    See how it works
-                  </Link>
-                </div> */}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS (Weather Engine) */}
+      {/* HOW IT WORKS (Strategy Engine) */}
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>How Weather Clarity is generated</h2>
+          <h2 style={h2Style}>How Strategic Clarity is generated</h2>
           <p style={leadStyle}>
-            The goal is simple: keep the important numbers visible, then
-            translate the rest into meaning — so the day feels readable without
-            becoming a data dump.
+            The goal is simple: turn conditions into a coherent plan you can
+            execute — targets, retrieves, and a day progression — without noise.
           </p>
 
           <div style={{ height: 46 }} />
@@ -366,20 +410,20 @@ export function WeatherClarityPage() {
           >
             {[
               {
-                title: "1) Capture a weather snapshot",
-                desc: "A single, consistent read of your location for today — temperature, wind, pressure, and sky/precip, plus supporting signals used internally.",
+                title: "1) Start from the same snapshot",
+                desc: "Your weather snapshot + seasonal context + plan scope — the same foundation the rest of the plan uses.",
               },
               {
-                title: "2) Compute derived signals",
-                desc: "Trends like temperature swing, wind context, pressure movement, and stability indicators.",
+                title: "2) Translate into fish behavior assumptions",
+                desc: "Positioning and activity assumptions based on stability, wind context, light, and recent change.",
               },
               {
-                title: "3) Present it in two layers",
-                desc: "Cards for glanceable numbers + tap-to-expand detail in natural language tied to your actual conditions.",
+                title: "3) Narrow to a few targets",
+                desc: "A small set of high-signal areas that match the day — not a map of everything that could be true.",
               },
               {
-                title: "4) Synthesize an outlook blurb",
-                desc: "A short, calm summary that connects the snapshot to what it implies for bass activity and the feel of the day.",
+                title: "4) Output execution guidance",
+                desc: "A strategy summary, retrieve notes, and a simple progression so the plan stays readable on a phone.",
               },
             ].map((x, i) => (
               <div
@@ -425,10 +469,9 @@ export function WeatherClarityPage() {
               Why this stays calm
             </div>
             <p style={{ ...pStyle, opacity: 0.86 }}>
-              You’re still seeing what matters — like temperature and wind speed
-              — but the experience stays quiet. The system emphasizes safety
-              when wind is a factor, reduces noise elsewhere, and gives you
-              detail only when you ask for it.
+              Strategic Clarity is designed to prevent option overload. The plan
+              narrows down to a few decisions you can repeat, so you learn
+              faster and stop chasing a moving target.
             </p>
           </div>
         </div>
@@ -446,9 +489,9 @@ export function WeatherClarityPage() {
         <div className="container" style={container(1200)}>
           <h2 style={h2Style}>What you see in the plan</h2>
           <p style={leadStyle}>
-            Four cards keep the section short. Expansions add detail in natural
-            language — tied to today’s numbers — so it feels informative without
-            turning into a dashboard.
+            Four cards keep the section short. Expansions add just enough detail
+            to execute — tied to today’s conditions — without turning into a
+            lecture.
           </p>
 
           <div style={{ height: 46 }} />
@@ -462,39 +505,39 @@ export function WeatherClarityPage() {
           >
             {[
               {
-                icon: "🌡️",
-                title: "Temperature",
+                Icon: CompassIcon,
+                title: "Strategy",
                 bullets: [
-                  "High / low + swing",
-                  "Expansion references today’s temps",
-                  "Outlook pulls it in when it matters",
+                  "A plain-English plan shape",
+                  "Keeps the day coherent",
+                  "Written for execution (not theory)",
                 ],
               },
               {
-                icon: "💨",
-                title: "Wind",
+                Icon: TargetIcon,
+                title: "Targets",
                 bullets: [
-                  "Speed + direction",
-                  "Safety-forward when wind is strong",
-                  "Expansion explains how the day feels",
+                  "A few high-signal places",
+                  "Recognizable on the water",
+                  "Aligned to light, wind, season, change",
                 ],
               },
               {
-                icon: "📉",
-                title: "Pressure",
+                Icon: LayersIcon,
+                title: "Retrieves",
                 bullets: [
-                  "Current + trend context",
-                  "Interprets stability vs change",
-                  "Explained without solunar clutter",
+                  "Cadence + control notes",
+                  "Simple enough to repeat",
+                  "Fits the presentation and feel of the day",
                 ],
               },
               {
-                icon: "☁️",
-                title: "Sky + Precip",
+                Icon: BarChartIcon,
+                title: "Day progression",
                 bullets: [
-                  "Cloud cover + rain",
-                  "Simple phrasing (no noise)",
-                  "Outlook mentions rain/moon only if relevant",
+                  "Early / Midday / Late",
+                  "Explains likely shifts",
+                  "Keeps adjustments intentional",
                 ],
               },
             ].map((c, i) => (
@@ -507,20 +550,14 @@ export function WeatherClarityPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 14,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background:
-                        "linear-gradient(135deg, rgba(74,144,226,0.22) 0%, rgba(74,144,226,0.06) 100%)",
-                      border: "1px solid rgba(74,144,226,0.20)",
-                    }}
-                  >
-                    <span style={{ fontSize: "1.15rem" }}>{c.icon}</span>
+                  <div style={iconBadge}>
+                    <c.Icon
+                      style={{
+                        width: 18,
+                        height: 18,
+                        color: "rgba(74,144,226,0.95)",
+                      }}
+                    />
                   </div>
                   <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
                     {c.title}
@@ -565,9 +602,9 @@ export function WeatherClarityPage() {
         <div className="container" style={container(1100)}>
           <h2 style={h2Style}>Next: the rest of the system</h2>
           <p style={leadStyle}>
-            Weather is one layer of clarity. The next pages cover how Bass
-            Clarity turns conditions into technique decisions — and then into a
-            coherent, fishable strategy.
+            Strategy is where the plan becomes executable. The other pages cover
+            the inputs (weather) and the technique layer that turns conditions
+            into presentation decisions.
           </p>
 
           <div style={{ height: 34 }} />
@@ -581,15 +618,15 @@ export function WeatherClarityPage() {
           >
             <div style={{ ...softCard, padding: 20 }}>
               <div style={{ fontWeight: 780, marginBottom: 10 }}>
-                Technique / Presentation Clarity
+                Weather Clarity
               </div>
               <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                How the plan selects technique families, lures, colors, and gear
-                as a coherent set — not random suggestions.
+                The core numbers — temperature, wind, pressure, sky/precip — in
+                a calm, readable format with plain-language expansions.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/presentation" style={smallCta}>
-                  Go to Presentation Clarity →
+                <Link to="/weather-clarity" style={smallCta}>
+                  Go to Weather Clarity →
                 </Link>
               </div>
             </div>
@@ -602,15 +639,15 @@ export function WeatherClarityPage() {
               }}
             >
               <div style={{ fontWeight: 780, marginBottom: 10 }}>
-                Strategic Clarity
+                Technique / Presentation Clarity
               </div>
               <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                Targets, retrieves, and day progression — the parts that make
-                the plan executable on the water.
+                How the plan selects technique families and related choices as a
+                coherent set — not random suggestions.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/strategy" style={smallCta}>
-                  Go to Strategic Clarity →
+                <Link to="/presentation" style={smallCta}>
+                  Go to Presentation Clarity →
                 </Link>
               </div>
             </div>
