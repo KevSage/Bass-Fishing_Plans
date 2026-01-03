@@ -240,7 +240,7 @@ export function FAQ() {
             Try a free preview plan and see Bass Clarity in action.
           </p>
           <Link
-            to="/preview"
+            to="/subscribe"
             className="btn primary"
             style={{
               fontSize: "1.2rem",
@@ -253,12 +253,9 @@ export function FAQ() {
               boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
-            Try Free Preview
+            5 Day Free Trial
           </Link>
           <div>
-            <p style={{ opacity: 0.5, fontSize: "1rem", marginBottom: 16 }}>
-              No credit card required
-            </p>
             <p style={{ opacity: 0.6, fontSize: "1rem" }}>
               Or email us at{" "}
               <a

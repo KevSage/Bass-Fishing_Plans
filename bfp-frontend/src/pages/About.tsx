@@ -457,7 +457,7 @@ export function About() {
             free.
           </p>
           <Link
-            to="/preview"
+            to="/subscribe"
             className="btn primary"
             style={{
               fontSize: "1.2rem",
@@ -470,11 +470,9 @@ export function About() {
               boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
-            Try Free Preview
+            5-Day Free Trial
           </Link>
-          <p style={{ opacity: 0.5, fontSize: "1rem" }}>
-            No credit card required
-          </p>
+          <p style={{ opacity: 0.5, fontSize: "1rem" }}>Get Clarity</p>
         </div>
       </section>
     </div>
