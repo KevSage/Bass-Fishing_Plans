@@ -21,7 +21,7 @@ export function Navigation() {
   const publicLinks = useMemo(
     () => [
       { to: "/", label: "Home" },
-      { to: "/features", label: "Features" },
+      { to: "/weather", label: "Weather" },
       { to: "/what-your-plan-includes", label: "What You Get" },
       { to: "/how-to-use", label: "How to Use" },
       { to: "/about", label: "About" },

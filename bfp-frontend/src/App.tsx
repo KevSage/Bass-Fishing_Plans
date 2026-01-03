@@ -21,6 +21,7 @@ import { VerifyEmail } from "./pages/VerifyEmail";
 import "./complete-styles.css";
 
 import { PlanPage } from "./pages/PlanPage";
+import { WeatherClarityPage } from "./pages/WeatherClarity";
 
 function TopBar() {
   return (
@@ -75,7 +76,7 @@ export default function App() {
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/features" element={<WhatsIncluded />} />
+        <Route path="/weather" element={<WeatherClarityPage />} />
 
         <Route
           path="/members"
