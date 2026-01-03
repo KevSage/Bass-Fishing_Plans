@@ -324,7 +324,7 @@ export function PresentationClarityPage() {
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "6.2%",
+                  left: "6.9%",
                   width: "87.6%",
                   height: "92.4%",
                   borderRadius: "42px",
@@ -334,12 +334,12 @@ export function PresentationClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/PatternCard.png"
+                  src="/images/mobile_screenshots/hero_jig1.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    height: "101%",
+                    objectFit: "contain",
                     filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
                   }}
                 />
@@ -367,12 +367,6 @@ export function PresentationClarityPage() {
                   What you’ll notice
                 </div>
 
-                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
-                  The card stays simple.
-                  <br />
-                  The reasoning stays readable.
-                </p>
-
                 <div style={{ height: 14 }} />
 
                 <ul
@@ -399,21 +393,6 @@ export function PresentationClarityPage() {
                 </ul>
 
                 <div style={{ height: 18 }} />
-
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Link to="/subscribe" style={primaryCta}>
-                    Start Your Free Trial
-                  </Link>
-                  <Link to="/weather-clarity" style={smallCta}>
-                    See Weather Clarity
-                  </Link>
-                </div>
-
-                <div
-                  style={{ marginTop: 12, fontSize: "0.95rem", opacity: 0.62 }}
-                >
-                  $10 / month • Includes a 5‑day free trial • Cancel anytime
-                </div>
               </div>
             </div>
           </div>
@@ -421,110 +400,6 @@ export function PresentationClarityPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
-        <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>How Presentation Clarity is generated</h2>
-          <p style={leadStyle}>
-            The plan doesn’t start with a bait name. It starts with the job.
-            Then it builds the rest of the recommendation around that one
-            coherent decision.
-          </p>
-
-          <div style={{ height: 46 }} />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 14,
-            }}
-          >
-            {[
-              {
-                title: "1) Choose a presentation family",
-                desc: "Bottom contact, horizontal reaction, mid‑column finesse, topwater, and more — the plan picks the movement + water column first.",
-                icon: "presentation" as IconName,
-              },
-              {
-                title: "2) Select the best lure system",
-                desc: "A specific lure (or rig + plastic / skirted bait + trailer) that best expresses the presentation for today’s conditions.",
-                icon: "lure" as IconName,
-              },
-              {
-                title: "3) Provide usable color options",
-                desc: "Two choices based on visibility: one for clearer water, one for reduced visibility — kept realistic to the bait category.",
-                icon: "color" as IconName,
-              },
-              {
-                title: "4) Explain the reasoning in plain English",
-                desc: "Short logic that connects conditions to how the bait works — confident, but never absolute.",
-                icon: "logic" as IconName,
-              },
-              {
-                title: "5) Align gear when it matters",
-                desc: "Rod / reel / line recommendations that match the presentation so the setup feels as intentional as the bait choice.",
-                icon: "gear" as IconName,
-              },
-            ].map((x, i) => (
-              <div
-                key={i}
-                style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div
-                  style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
-                >
-                  <UnifiedIcon name={x.icon} />
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: 750,
-                        letterSpacing: "-0.01em",
-                        marginBottom: 8,
-                        color: "rgba(255,255,255,0.92)",
-                      }}
-                    >
-                      {x.title}
-                    </div>
-                    <div style={{ opacity: 0.78, lineHeight: 1.75 }}>
-                      {x.desc}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ height: 22 }} />
-
-          <div
-            style={{
-              ...softCard,
-              padding: "clamp(18px, 3.5vw, 26px)",
-              maxWidth: 980,
-              margin: "0 auto",
-            }}
-          >
-            <div
-              style={{
-                ...eyebrow,
-                marginBottom: 10,
-                color: "rgba(74,144,226,0.95)",
-              }}
-            >
-              Why this stays calm
-            </div>
-            <p style={{ ...pStyle, opacity: 0.86 }}>
-              The plan gives you specificity without a pile of options. It names
-              the presentation, picks the best expression of it, then explains
-              the choice in normal language you can actually use on the water.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* WHAT YOU SEE */}
       <section
@@ -558,16 +433,16 @@ export function PresentationClarityPage() {
                 bullets: [
                   "Names the style (not just the bait).",
                   "Helps you fish it correctly on purpose.",
-                  "Makes substitutions easier if needed.",
+                  "The plan picks the movement + water column first.",
                 ],
               },
               {
                 icon: "lure" as IconName,
-                title: "Featured lure (or rig system)",
+                title: "Featured Lure",
                 bullets: [
                   "A specific lure type for the day.",
                   "If needed: rig + plastic or trailer pairing.",
-                  "Chosen to match the presentation’s job.",
+                  "Best expresses the presentation for today’s conditions",
                 ],
               },
               {
@@ -575,7 +450,7 @@ export function PresentationClarityPage() {
                 title: "Color guidance",
                 bullets: [
                   "Two options based on visibility.",
-                  "Chosen from realistic, bait‑specific pools.",
+                  "Chosen from realistic, bait-specific colors, not random.",
                   "Simple enough to act on immediately.",
                 ],
               },
@@ -583,9 +458,9 @@ export function PresentationClarityPage() {
                 icon: "logic" as IconName,
                 title: "Why this fits today",
                 bullets: [
-                  "2–3 sentences of reasoning.",
+                  "Explains the reasoning in plain English",
                   "Connects conditions to lure behavior.",
-                  "Avoids certainty; uses “may / tends to”.",
+                  "Lures always refereneced contextually, based on your local conditions",
                 ],
               },
               {
@@ -635,23 +510,34 @@ export function PresentationClarityPage() {
                     <li key={idx}>{b}</li>
                   ))}
                 </ul>
-
-                <div
-                  style={{
-                    marginTop: 14,
-                    fontSize: "0.95rem",
-                    opacity: 0.65,
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
-                    paddingTop: 12,
-                  }}
-                >
-                  Designed to feel specific — without feeling busy.
-                </div>
               </div>
             ))}
           </div>
 
           <div style={{ height: 26 }} />
+        </div>
+        <div
+          style={{
+            ...softCard,
+            padding: "clamp(18px, 3.5vw, 26px)",
+            maxWidth: 980,
+            margin: "0 auto",
+          }}
+        >
+          <div
+            style={{
+              ...eyebrow,
+              marginBottom: 10,
+              color: "rgba(74,144,226,0.95)",
+            }}
+          >
+            Why this stays calm
+          </div>
+          <p style={{ ...pStyle, opacity: 0.86 }}>
+            The plan gives you specificity without a pile of options. It names
+            the presentation, picks the best expression of it, then explains the
+            choice in normal language you can actually use on the water.
+          </p>
         </div>
       </section>
 
@@ -683,7 +569,7 @@ export function PresentationClarityPage() {
                 the plan fishable on the water.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/strategic-clarity" style={smallCta}>
+                <Link to="/strategy" style={smallCta}>
                   Go to Strategic Clarity{" "}
                   <span
                     style={{
@@ -713,7 +599,7 @@ export function PresentationClarityPage() {
                 readable without turning fishing into a dashboard.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/weather-clarity" style={smallCta}>
+                <Link to="/weather" style={smallCta}>
                   Back to Weather Clarity
                 </Link>
               </div>
