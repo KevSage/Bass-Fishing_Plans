@@ -237,7 +237,6 @@ export function HowToUse() {
                     opacity: 0.75,
                   }}
                 >
-                  <li>→ Preview: ONE focused pattern</li>
                   <li>→ Members: TWO complementary approaches</li>
                   <li>→ Lure, colors, retrieves, targets</li>
                   <li>→ Clear reasoning for every decision</li>
@@ -279,71 +278,6 @@ export function HowToUse() {
                     margin: 0,
                   }}
                 >
-                  Download + Take It On the Water
-                </h2>
-              </div>
-              <div style={{ marginLeft: 76 }}>
-                <p
-                  style={{
-                    fontSize: "1.15rem",
-                    lineHeight: 1.7,
-                    opacity: 0.85,
-                    marginBottom: 20,
-                  }}
-                >
-                  Download your plan as a PDF. Readable on your phone in direct
-                  sunlight or print it out.
-                </p>
-                <ul
-                  style={{
-                    listStyle: "none",
-                    padding: 0,
-                    fontSize: "1.05rem",
-                    lineHeight: 2,
-                    opacity: 0.75,
-                  }}
-                >
-                  <li>→ Full plan PDF</li>
-                  <li>→ Quick reference card</li>
-                  <li>→ Mobile-optimized format</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Step 5 */}
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 20,
-                  marginBottom: 24,
-                }}
-              >
-                <div
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "1.5rem",
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  5
-                </div>
-                <h2
-                  style={{
-                    fontSize: "2rem",
-                    fontWeight: 700,
-                    margin: 0,
-                  }}
-                >
                   Execute With Confidence
                 </h2>
               </div>
@@ -375,7 +309,7 @@ export function HowToUse() {
               </div>
             </div>
 
-            {/* Step 6 */}
+            {/* Step 5 */}
             <div>
               <div
                 style={{
@@ -400,7 +334,7 @@ export function HowToUse() {
                     flexShrink: 0,
                   }}
                 >
-                  6
+                  5
                 </div>
                 <h2
                   style={{

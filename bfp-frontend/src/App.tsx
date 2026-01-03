@@ -13,6 +13,7 @@ import { FAQ } from "./pages/FAQ";
 import SignInPage from "./pages/signIn";
 import SignUpPage from "./pages/signUp";
 import { Admin } from "./pages/Admin";
+import { WhatsIncluded } from "./pages/Features";
 import { Success } from "./pages/Success";
 import { Account } from "./pages/Account";
 import { NotFound } from "./pages/NotFound";
@@ -74,6 +75,8 @@ export default function App() {
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/features" element={<WhatsIncluded />} />
+
         <Route
           path="/members"
           element={

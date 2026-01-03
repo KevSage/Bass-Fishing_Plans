@@ -757,7 +757,7 @@ export function Landing() {
               margin: "0 auto 14px",
             }}
           >
-            5-day free trial
+            5-Day Free Trial
           </p>
 
           <p
