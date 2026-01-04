@@ -288,7 +288,7 @@ export function LocationClarityPage() {
                     },
                     {
                       title: "Fishing a smaller water body?",
-                      desc: "Skip the search. Find your water on tha map, Tab and label.",
+                      desc: "Skip the search. Find your water on tha map, tap and label.",
                     },
                     {
                       title: "Conditions & Outlook",

@@ -257,17 +257,15 @@ export function PresentationClarityPage() {
             </div>
 
             <h1 style={h1Style}>
-              Not a Pattern —
+              Not Just a Pattern.
               <br />A Customized Approach.
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              We use your local conditions combined with seasonal bass fishing
-              data to select specific targets, presentations, then lures
-              complete with type and color suggestions.
+              Two Complementary Approaches.
               <br />
-              Not random or one size fits all. This approach is designed for
-              you.
+              Our Engine synthesizes hundreds of potential variables to
+              determine the most effective strategy for the day.
             </p>
 
             <div
@@ -284,13 +282,16 @@ export function PresentationClarityPage() {
                 family
               </span>
               <span style={pill}>
-                <UnifiedIcon name="lure" size={26} /> Lure + rig pairing
+                <UnifiedIcon name="lure" size={20} /> Lure + rig pairing
               </span>
               <span style={pill}>
-                <UnifiedIcon name="color" size={26} /> Color guidance
+                <UnifiedIcon name="color" size={20} /> Color guidance
               </span>
               <span style={pill}>
-                <UnifiedIcon name="logic" size={26} /> Plain‑English reasoning
+                <UnifiedIcon name="logic" size={20} /> Plain English reasoning
+              </span>
+              <span style={pill}>
+                <UnifiedIcon name="gear" size={20} /> Gear Recommendation
               </span>
             </div>
           </div>
@@ -335,7 +336,7 @@ export function PresentationClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/hero_jig1.png"
+                  src="/images/mobile_screenshots/Primary.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -365,7 +366,7 @@ export function PresentationClarityPage() {
                     color: "rgba(255,255,255,0.68)",
                   }}
                 >
-                  What you’ll notice
+                  Primary (Pattern 1)
                 </div>
 
                 <div style={{ height: 14 }} />
@@ -380,16 +381,231 @@ export function PresentationClarityPage() {
                   }}
                 >
                   <Bullet
-                    title="A Clear Presentation"
-                    desc="You’re not left guessing how the bait should be worked — the plan names the style first."
+                    title="Anchors Your Day"
+                    desc="The primary pattern is meant to serve as the best starting point, based on your current conditions"
                   />
                   <Bullet
-                    title="A Complete Lure System"
-                    desc="When “the lure” requires a soft plastic or trailer, that pairing is part of the recommendation."
+                    title="Based on Real Angler Logic"
+                    desc="Our Engine synthesizes hundreds of potential variables (location, water, temp, wind, season etc) to determine the most effective strategy for the day. "
                   />
                   <Bullet
-                    title="Two Color Options, Optimized"
-                    desc="One for clearer water, one for reduced visibility — chosen from realistic, lure‑specific pools."
+                    title="Pattern Summary"
+                    desc="Each pattern provides a brief summary of the presentation. We explain why we chose this presentation and why it makes sense for you today in easy to understand language."
+                  />
+                  <Bullet
+                    title="Fish with Confidence"
+                    desc="No Decision Paralysis. Figuring out which presentation best suits your conditions is no longer a struggle."
+                  />
+                </ul>
+              </div>
+              <div style={{ height: 24 }} />
+            </div>
+          </div>
+          {/* Phone + Quick explainer */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
+              gap: "clamp(22px, 5vw, 54px)",
+              alignItems: "center",
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
+            }}
+          >
+            {/* Phone mock */}
+            <div
+              style={{ position: "relative", maxWidth: 420, margin: "0 auto" }}
+            >
+              <img
+                src="/images/iphone15.png"
+                alt="Bass Clarity on mobile"
+                style={{
+                  width: "100%",
+                  display: "block",
+                  position: "relative",
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "3.8%",
+                  left: "6.9%",
+                  width: "87.6%",
+                  height: "92.4%",
+                  borderRadius: "42px",
+                  overflow: "hidden",
+                  zIndex: 1,
+                  background: "rgba(0,0,0,0.25)",
+                }}
+              >
+                <img
+                  src="/images/mobile_screenshots/Pivot.png"
+                  alt="Pattern card (example)"
+                  style={{
+                    width: "100%",
+                    height: "101%",
+                    objectFit: "contain",
+                    filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Text block */}
+            <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
+              <div style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}>
+                <div
+                  style={{
+                    ...eyebrow,
+                    marginBottom: 12,
+                    color: "rgba(255,255,255,0.68)",
+                  }}
+                >
+                  Pivot (Pattern 2)
+                </div>
+
+                <div style={{ height: 14 }} />
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "grid",
+                    gap: 14,
+                  }}
+                >
+                  <Bullet
+                    title="A Powerful Alternate "
+                    desc="Don't think of the secondary pattern as a backup. It's a stretegic complement to the primary pattern that will serve as either a pivot or as a tandem search and pick apart combination used by the pros."
+                  />
+                  <Bullet
+                    title="The Pivot"
+                    desc="When bass are less active and your primary pattern isn't producing as expected, Bass Clarity creates a strategic pivot that targets bass in a different water column."
+                  />
+                  <Bullet
+                    title="Search and Destroy"
+                    desc="If your primary pattern is a Search Bait/Surface Ambush (chatterbait, shallow crank, whopper plopper etc), pattern 2 will often serve as the followup/pick apart presentation once active bass are located. "
+                  />
+                  <Bullet
+                    title="What You'll Notice (Real Intelligence)"
+                    desc="The Pattern summary directly references not only your conditions, but it also references the primary pattern. Explains in plain language the role of this presentation in relation to the first."
+                  />
+                </ul>
+
+                <div style={{ height: 18 }} />
+              </div>
+            </div>
+          </div>
+          {/* Phone + Quick explainer */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
+              gap: "clamp(22px, 5vw, 54px)",
+              alignItems: "center",
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
+            }}
+          >
+            {/* Phone mock */}
+            <div
+              style={{ position: "relative", maxWidth: 420, margin: "0 auto" }}
+            >
+              <img
+                src="/images/iphone15.png"
+                alt="Bass Clarity on mobile"
+                style={{
+                  width: "100%",
+                  display: "block",
+                  position: "relative",
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "3.8%",
+                  left: "6.9%",
+                  width: "87.6%",
+                  height: "92.4%",
+                  borderRadius: "42px",
+                  overflow: "hidden",
+                  zIndex: 1,
+                  background: "rgba(0,0,0,0.25)",
+                }}
+              >
+                <img
+                  src="/images/mobile_screenshots/WhyThisWorks.png"
+                  alt="Pattern card (example)"
+                  style={{
+                    width: "100%",
+                    height: "101%",
+                    objectFit: "contain",
+                    filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Text block */}
+            <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
+              <div style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}>
+                <div
+                  style={{
+                    ...eyebrow,
+                    marginBottom: 12,
+                    color: "rgba(255,255,255,0.68)",
+                  }}
+                >
+                  Sound Reasoning and Expert Tuning
+                </div>
+
+                <div style={{ height: 14 }} />
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "grid",
+                    gap: 14,
+                  }}
+                >
+                  <Bullet
+                    title="Why This Works"
+                    desc="Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning."
+                  />
+                  <Bullet
+                    title="Soft Plastic/Trailer Guidance"
+                    desc="We also give you specific soft bait advice. Plastic recommendations based on forage, profile and season."
+                  />
+                  <Bullet
+                    title="Color Suggestions"
+                    desc="We don't just leave it at lure suggestion, we also tell you which colors make sense. Color tuneing based on water clarity and light penetration."
+                  />
+                  <Bullet
+                    title="Gear Recommendations"
+                    desc="No presentation is complete without the appropriate gear to support it. Gear recommendation optimized for each approach, includes Rod/Reel/Line recommendations"
                   />
                 </ul>
 
@@ -447,12 +663,30 @@ export function PresentationClarityPage() {
                 ],
               },
               {
+                icon: "pattern" as IconName,
+                title: "Pattern Summary",
+                bullets: [
+                  "The big-picture read on the day.",
+                  "What the plan suggests fish may do.",
+                  "Keeps expectations realistic and calm.",
+                ],
+              },
+              {
                 icon: "color" as IconName,
-                title: "Color guidance",
+                title: "Color Guidance",
                 bullets: [
                   "Two options based on visibility.",
                   "Chosen from realistic, bait-specific colors, not random.",
                   "Simple enough to act on immediately.",
+                ],
+              },
+              {
+                icon: "gear" as IconName,
+                title: "Gear Alignment",
+                bullets: [
+                  "Rod / reel / line recommendations.",
+                  "Matches the presentation’s demands.",
+                  "Keeps the setup coherent end‑to‑end.",
                 ],
               },
               {
@@ -462,24 +696,6 @@ export function PresentationClarityPage() {
                   "Explains the reasoning in plain English",
                   "Connects conditions to lure behavior.",
                   "Lures always refereneced contextually, based on your local conditions",
-                ],
-              },
-              {
-                icon: "summary" as IconName,
-                title: "Pattern summary",
-                bullets: [
-                  "The big-picture read on the day.",
-                  "What the plan suggests fish may do.",
-                  "Keeps expectations realistic and calm.",
-                ],
-              },
-              {
-                icon: "gear" as IconName,
-                title: "Gear alignment",
-                bullets: [
-                  "Rod / reel / line recommendations.",
-                  "Matches the presentation’s demands.",
-                  "Keeps the setup coherent end‑to‑end.",
                 ],
               },
             ].map((c, i) => (

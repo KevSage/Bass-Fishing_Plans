@@ -201,16 +201,15 @@ export function StrategicClarityPage() {
             </div>
 
             <h1 style={h1Style}>
-              Fish a plan you can actually run.
+              Fish With Intention.
               <br />
-              Without improvising all day.
+              Every Cast Deliberate.
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              Bass Clarity doesn’t hand you a pile of info and hope you
-              interpret it. It turns conditions into a tight, actionable plan —
-              a clear strategy summary, a few high-signal targets, retrieve
-              guidance, and a simple day progression.
+              No datapoints, charts, or graphs. Bass Clarity is the only Bass
+              Fishing App that not only gives you data, but a complete
+              actionable strategy.
             </p>
 
             <div
