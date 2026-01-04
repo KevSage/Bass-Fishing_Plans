@@ -30,6 +30,8 @@ def create_checkout_session(*, email: str) -> str:
     # IMPORTANT:
     # - Put email into BOTH session metadata and subscription metadata.
     # - This allows customer.subscription.* webhooks to include a reliable email pointer.
+    print("Stripe key prefix:", stripe.api_key[:7], "price_id:", price_id)
+
     session = stripe.checkout.Session.create(
         mode="subscription",
         payment_method_types=["card"],
