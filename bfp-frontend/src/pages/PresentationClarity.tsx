@@ -577,7 +577,7 @@ export function PresentationClarityPage() {
                     color: "rgba(255,255,255,0.68)",
                   }}
                 >
-                  Sound Reasoning and Expert Tuning
+                  Expert Tuning
                 </div>
 
                 <div style={{ height: 14 }} />
@@ -591,10 +591,6 @@ export function PresentationClarityPage() {
                     gap: 14,
                   }}
                 >
-                  <Bullet
-                    title="Why This Works"
-                    desc="Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning."
-                  />
                   <Bullet
                     title="Soft Plastic/Trailer Guidance"
                     desc="We also give you specific soft bait advice. Plastic recommendations based on forage, profile and season."
@@ -754,6 +750,34 @@ export function PresentationClarityPage() {
             The plan gives you specificity without a pile of options. It names
             the presentation, picks the best expression of it, then explains the
             choice in normal language you can actually use on the water.
+          </p>
+        </div>
+      </section>
+
+      {/* ============================================
+          WHO THIS IS FOR
+          ============================================ */}
+      <section
+        style={{
+          padding: `clamp(72px, 9vw, 100px) ${sectionPadX}`,
+          background: "rgba(74, 144, 226, 0.02)",
+        }}
+      >
+        <div className="container" style={container(820)}>
+          <p
+            style={{
+              fontSize: "clamp(1.15rem, 2.6vw, 1.4rem)",
+              textAlign: "center",
+              opacity: 0.85,
+              lineHeight: 1.85,
+              margin: 0,
+            }}
+          >
+            Less than the last Jackhammer you snagged.
+            <br />
+            Less than the Vision 110 that you launched due to a bad tie.
+            <br />
+            $10 a month for clarity you won't find anywhere else.
           </p>
         </div>
       </section>

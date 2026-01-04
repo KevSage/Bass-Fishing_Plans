@@ -171,9 +171,7 @@ export function WeatherClarityPage() {
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               No Dashboards. No Charts. No Overlays.
               <br />
-              Bass Clarity pulls live weather data directly from your location,
-              but that's just the beginning.
-              <br />
+              Bass Clarity pulls live weather data directly from your location.
               We then take that data, analyze and create an actionable strategy
               for the water you're fishing. <br />
               Only important data visible — so you can keep your mind on the
@@ -235,12 +233,12 @@ export function WeatherClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Weather.png"
+                  src="/images/mobile_screenshots/Weather1.png"
                   alt="Weather cards and outlook"
                   style={{
                     width: "100%",
                     height: "100%",
-                    objectFit: "cover",
+                    objectFit: "fill",
                     filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
                   }}
                 />
@@ -287,7 +285,7 @@ export function WeatherClarityPage() {
                 >
                   {[
                     {
-                      title: "4 Focused Cards",
+                      title: "Four Data Cards",
                       desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
                     },
                     {
@@ -356,15 +354,168 @@ export function WeatherClarityPage() {
       {/* HOW IT WORKS (Weather Engine) */}
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>How Weather Clarity is generated</h2>
+          <h2 style={h2Style}>More Context, When You Need It</h2>
           <p style={leadStyle}>
             The goal is simple: keep the important numbers visible, then
             translate the rest into meaning — so the day feels readable without
-            becoming a data dump.
+            becoming a data dump. Just tap one of the cards for more clarity.
           </p>
 
           <div style={{ height: 46 }} />
+          {/* Phone + Quick explainer */}
+          <div
+            style={{
+              ...grid2,
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
+            }}
+          >
+            {/* Phone mock */}
+            <div
+              style={{ position: "relative", maxWidth: 420, margin: "0 auto" }}
+            >
+              {/* Frame */}
+              <img
+                src="/images/iphone15.png"
+                alt="Bass Clarity on mobile"
+                style={{
+                  width: "100%",
+                  display: "block",
+                  position: "relative",
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+              />
+              {/* Screen */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "3.8%",
+                  left: "6.2%",
+                  width: "87.6%",
+                  height: "92.4%",
+                  borderRadius: "42px",
+                  overflow: "hidden",
+                  zIndex: 1,
+                  background: "rgba(0,0,0,0.25)",
+                }}
+              >
+                <img
+                  src="/images/mobile_screenshots/WhatThisMeansToday.png"
+                  alt="Weather cards and outlook"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                  }}
+                />
+                {/* Subtle overlay to keep it calm */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.28) 100%)",
+                  }}
+                />
+              </div>
+            </div>
 
+            {/* Text block */}
+            <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
+              <div
+                style={{
+                  ...softCard,
+                  padding: "clamp(18px, 3.5vw, 28px)",
+                }}
+              >
+                <div
+                  style={{
+                    ...eyebrow,
+                    marginBottom: 12,
+                    color: "rgba(255,255,255,0.68)",
+                  }}
+                >
+                  What you’ll notice
+                </div>
+
+                <div style={{ height: 14 }} />
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "grid",
+                    gap: 14,
+                  }}
+                >
+                  {[
+                    {
+                      title: "Want a Deeper Dive?",
+                      desc: "A quick tap expands the cards and explains how these conditions impact your day on the water.",
+                    },
+                    {
+                      title: "4 Focused Cards",
+                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
+                    },
+                    {
+                      title: "Conditions & Outlook",
+                      desc: "Your Weather outlook explains your day ahead and how it may effect bass behavior, explained in natural langauge.",
+                    },
+                  ].map((x, i) => (
+                    <li
+                      key={i}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 999,
+                          marginTop: 8,
+                          background: "rgba(74,144,226,0.95)",
+                          boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 720, opacity: 0.92 }}>
+                          {x.title}
+                        </div>
+                        <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
+                          {x.desc}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ height: 18 }} />
+
+                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
+                  Only the Information You Need.
+                  <br />
+                  No translation required.
+                </p>
+
+                <div style={{ height: 18 }} />
+
+                {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <Link to="/subscribe" style={primaryCta}>
+                    Start Your Free Trial
+                  </Link>
+                  <Link to="/how-it-works" style={smallCta}>
+                    See how it works
+                  </Link>
+                </div> */}
+              </div>
+            </div>
+          </div>
           <div
             style={{
               display: "grid",
