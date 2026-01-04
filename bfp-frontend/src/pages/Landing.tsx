@@ -133,9 +133,10 @@ export function Landing() {
               fontWeight: 400,
             }}
           >
-            Bass Clarity interprets season, conditions, and fish positioning
-            into a focused, actionable fishing strategy — so you know where to
-            fish, how to fish it, and why it works.
+            Bass Clarity is an intelligent Bass Fishing App that interprets
+            season, conditions, and fish positioning into a focused, actionable
+            fishing strategy — so you know where to fish, how to fish it, and
+            why it works.
           </p>
 
           <Link
