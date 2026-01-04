@@ -315,17 +315,10 @@ export function StrategicClarityPage() {
                     color: "rgba(255,255,255,0.68)",
                   }}
                 >
-                  What you’ll notice
+                  Sound Reasoning. None of the Noise.
                 </div>
 
-                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
-                  The face of each card is a glance.
-                  <br />
-                  Tap to expand when you want more context.
-                </p>
-
                 <div style={{ height: 14 }} />
-
                 <ul
                   style={{
                     listStyle: "none",
@@ -337,11 +330,11 @@ export function StrategicClarityPage() {
                 >
                   {[
                     {
-                      title: "A Plan, Not a List",
-                      desc: "A short strategy summary that describes the day’s intended pace and positioning — without turning into a lecture.",
+                      title: "Why This Works",
+                      desc: "Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning.",
                     },
                     {
-                      title: "High-Signal Targets",
+                      title: "Strategic Clarity",
                       desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
                     },
                     {

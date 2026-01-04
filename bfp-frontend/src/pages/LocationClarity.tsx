@@ -126,6 +126,13 @@ export function LocationClarityPage() {
     whiteSpace: "nowrap" as const,
   } as const;
 
+  const grid2Col = {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+    gap: "clamp(28px, 6vw, 64px)",
+    alignItems: "center",
+  } as const;
+
   const sectionTopBorder = "1px solid rgba(255,255,255,0.06)";
 
   return (
@@ -170,9 +177,7 @@ export function LocationClarityPage() {
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               Select from our database of over 1,000 lakes.
               <br />
-              Bass Clarity pulls live weather data directly from your location,
-              but that's just the beginning.
-              <br />
+              Bass Clarity pulls live weather data directly from your location.
               We then take that data, analyze and create an actionable strategy
               for the water you're fishing. <br />
             </p>
@@ -267,7 +272,7 @@ export function LocationClarityPage() {
                     color: "rgba(255,255,255,0.68)",
                   }}
                 >
-                  What you’ll notice
+                  What you'll notice
                 </div>
 
                 <div style={{ height: 14 }} />
@@ -284,15 +289,15 @@ export function LocationClarityPage() {
                   {[
                     {
                       title: "Lake Search",
-                      desc: "Seearch our database of 0ver 1000 lakes and reservoirs.",
+                      desc: "Seearch our database of 0ver 1000 lakes and reservoirs. You can also search by city or state.",
                     },
                     {
                       title: "Fishing a smaller water body?",
-                      desc: "Skip the search. Find your water on tha map, tap and label.",
+                      desc: "Skip the search. Find your water on the map, tap and label.",
                     },
                     {
-                      title: "Conditions & Outlook",
-                      desc: "Your Weather outlook explains your day ahead and how it may effect bass behavior, explained in natural langauge.",
+                      title: "Boat and Bank Friendly",
+                      desc: "Your strategy is generated based on access. If you're a bank angler, we'll make sure that your targets are accessible and your approach matches your access",
                     },
                   ].map((x, i) => (
                     <li
@@ -327,228 +332,265 @@ export function LocationClarityPage() {
                 </ul>
                 <div style={{ height: 18 }} />
 
-                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
-                  Only the Information You Need.
-                  <br />
-                  No translation required.
-                </p>
-
                 <div style={{ height: 18 }} />
-
-                {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Link to="/subscribe" style={primaryCta}>
-                    Start Your Free Trial
-                  </Link>
-                  <Link to="/how-it-works" style={smallCta}>
-                    See how it works
-                  </Link>
-                </div> */}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS (Weather Engine) */}
-      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
+      {/* HERO */}
+      <section
+        style={{
+          padding: `clamp(54px, 8vh, 96px) ${sectionPadX} 0`,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Soft gradient wash */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "radial-gradient(circle at 25% 18%, rgba(74, 144, 226, 0.10) 0%, transparent 68%)",
+            pointerEvents: "none",
+          }}
+        />
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>How Weather Clarity is generated</h2>
-          <p style={leadStyle}>
-            The goal is simple: keep the important numbers visible, then
-            translate the rest into meaning — so the day feels readable without
-            becoming a data dump.
-          </p>
+          <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
+            <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
+              Location Clarity
+            </div>
 
-          <div style={{ height: 46 }} />
+            <h1 style={h1Style}>
+              Real World Strategy
+              <br />
+              Requires Real World Intelligence.
+              <br />
+            </h1>
 
+            <p style={{ ...leadStyle, maxWidth: 980 }}>
+              We're not anti data. Data plays a significant role in our
+              analysis. Behind the scenes, Bass Clarity evaluates thousands of
+              condition-to-outcome relationships to eliminate what doesn't
+              matter. <br />
+              The goal is simple: turn conditions into a coherent plan you can
+              execute.{" "}
+            </p>
+          </div>
+
+          {/* Phone + Quick explainer */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 14,
+              ...grid2,
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
             }}
           >
-            {[
-              {
-                title: "1) Capture a weather snapshot",
-                desc: "A single, consistent read of your location for today — temperature, wind, pressure, and sky/precip, plus supporting signals used internally.",
-              },
-              {
-                title: "2) Compute derived signals",
-                desc: "Trends like temperature swing, wind context, pressure movement, and stability indicators.",
-              },
-              {
-                title: "3) Present it in two layers",
-                desc: "Cards for glanceable numbers + tap-to-expand detail in natural language tied to your actual conditions.",
-              },
-              {
-                title: "4) Synthesize an outlook blurb",
-                desc: "A short, calm summary that connects the snapshot to what it implies for bass activity and the feel of the day.",
-              },
-            ].map((x, i) => (
-              <div
-                key={i}
+            {/* Phone mock */}
+            <div
+              style={{ position: "relative", maxWidth: 420, margin: "0 auto" }}
+            >
+              {/* Frame */}
+              <img
+                src="/images/iphone15.png"
+                alt="Bass Clarity on mobile"
                 style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
+                  width: "100%",
+                  display: "block",
+                  position: "relative",
+                  zIndex: 2,
+                  pointerEvents: "none",
+                }}
+              />
+              {/* Screen */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "3.8%",
+                  left: "6.2%",
+                  width: "87.6%",
+                  height: "92.4%",
+                  borderRadius: "42px",
+                  overflow: "hidden",
+                  zIndex: 1,
+                  background: "rgba(0,0,0,0.25)",
+                }}
+              >
+                <video
+                  src="/video/bass-clarity-loading.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "fill",
+                  }}
+                />
+                {/* Subtle overlay to keep it calm */}
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.28) 100%)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Text block */}
+            <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
+              <div
+                style={{
+                  ...softCard,
+                  padding: "clamp(18px, 3.5vw, 28px)",
                 }}
               >
                 <div
                   style={{
-                    fontWeight: 750,
-                    letterSpacing: "-0.01em",
-                    marginBottom: 8,
-                    color: "rgba(255,255,255,0.92)",
+                    ...eyebrow,
+                    marginBottom: 12,
+                    color: "rgba(255,255,255,0.68)",
                   }}
                 >
-                  {x.title}
+                  What you'll notice
                 </div>
-                <div style={{ opacity: 0.78, lineHeight: 1.75 }}>{x.desc}</div>
+
+                <div style={{ height: 14 }} />
+
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "grid",
+                    gap: 14,
+                  }}
+                >
+                  {[
+                    {
+                      title: "Regional Awareness",
+                      desc: "We understand that Winter in Florida is much different than a Winter in the Northeast.",
+                    },
+                    {
+                      title: "We Consider Your Location",
+                      desc: "A single, consistent read of your water today based on your location's recent weather trends",
+                    },
+                    {
+                      title: "Capture a weather snapshot",
+                      desc: "Temperature, wind, pressure, and sky/precip, plus supporting signals used internally",
+                    },
+                    {
+                      title: "Compute derived signals",
+                      desc: "Trends like temperature swing, wind context, pressure movement, and stability indicators.",
+                    },
+                  ].map((x, i) => (
+                    <li
+                      key={i}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 999,
+                          marginTop: 8,
+                          background: "rgba(74,144,226,0.95)",
+                          boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 720, opacity: 0.92 }}>
+                          {x.title}
+                        </div>
+                        <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
+                          {x.desc}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ height: 18 }} />
+
+                <div style={{ height: 18 }} />
               </div>
-            ))}
-          </div>
-
-          <div style={{ height: 22 }} />
-
-          <div
-            style={{
-              ...softCard,
-              padding: "clamp(18px, 3.5vw, 26px)",
-              maxWidth: 980,
-              margin: "0 auto",
-            }}
-          >
-            <div
-              style={{
-                ...eyebrow,
-                marginBottom: 10,
-                color: "rgba(74,144,226,0.95)",
-              }}
-            >
-              Why this stays calm
             </div>
-            <p style={{ ...pStyle, opacity: 0.86 }}>
-              You’re still seeing what matters — like temperature and wind speed
-              — but the experience stays quiet. The system emphasizes safety
-              when wind is a factor, reduces noise elsewhere, and gives you
-              detail only when you ask for it.
-            </p>
           </div>
         </div>
       </section>
 
-      {/* WHAT YOU SEE (Cards + Expansion) */}
-      <section
-        style={{
-          padding: sectionPad,
-          background: "rgba(74, 144, 226, 0.02)",
-          borderTop: sectionTopBorder,
-          borderBottom: sectionTopBorder,
-        }}
-      >
-        <div className="container" style={container(1200)}>
-          <h2 style={h2Style}>What you see in the plan</h2>
-          <p style={leadStyle}>
-            Four cards keep the section short. Expansions add detail in natural
-            language — tied to today’s numbers — so it feels informative without
-            turning into a dashboard.
-          </p>
-
-          <div style={{ height: 46 }} />
-
-          <div
+      {/* ============================================
+                PRICING SECTION
+                ============================================ */}
+      <section style={{ padding: sectionPad }}>
+        <div
+          className="container"
+          style={{ ...container(700), textAlign: "center" }}
+        >
+          <h2
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 14,
+              fontSize: "clamp(3.25rem, 7vw, 5rem)",
+              fontWeight: 700,
+              marginBottom: 18,
+              letterSpacing: "-0.03em",
+              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+              textAlign: "center",
             }}
           >
-            {[
-              {
-                icon: "🌡️",
-                title: "Temperature",
-                bullets: [
-                  "High / low + swing",
-                  "Expansion references today’s temps",
-                  "Outlook pulls it in when it matters",
-                ],
-              },
-              {
-                icon: "💨",
-                title: "Wind",
-                bullets: [
-                  "Speed + direction",
-                  "Safety-forward when wind is strong",
-                  "Expansion explains how the day feels",
-                ],
-              },
-              {
-                icon: "📉",
-                title: "Pressure",
-                bullets: [
-                  "Current + trend context",
-                  "Interprets stability vs change",
-                  "Explained without solunar clutter",
-                ],
-              },
-              {
-                icon: "☁️",
-                title: "Sky + Precip",
-                bullets: [
-                  "Cloud cover + rain",
-                  "Simple phrasing (no noise)",
-                  "Outlook mentions rain/moon only if relevant",
-                ],
-              },
-            ].map((c, i) => (
-              <div
-                key={i}
-                style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 14,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background:
-                        "linear-gradient(135deg, rgba(74,144,226,0.22) 0%, rgba(74,144,226,0.06) 100%)",
-                      border: "1px solid rgba(74,144,226,0.20)",
-                    }}
-                  >
-                    <span style={{ fontSize: "1.15rem" }}>{c.icon}</span>
-                  </div>
-                  <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
-                    {c.title}
-                  </div>
-                </div>
+            $10/month
+          </h2>
 
-                <ul
-                  style={{
-                    marginTop: 14,
-                    paddingLeft: 18,
-                    lineHeight: 1.8,
-                    opacity: 0.82,
-                    fontSize: "1.02rem",
-                  }}
-                >
-                  {c.bullets.map((b, idx) => (
-                    <li key={idx}>{b}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          <p
+            style={{
+              fontSize: "1.15rem",
+              lineHeight: 1.7,
+              opacity: 0.75,
+              margin: "0 auto 14px",
+            }}
+          >
+            5-Day Free Trial
+          </p>
 
-          <div style={{ height: 26 }} />
+          <p
+            style={{
+              fontSize: "1.05rem",
+              opacity: 0.65,
+              margin: "0 auto 44px",
+              lineHeight: 1.8,
+            }}
+          >
+            Unlimited plan generation.
+            <br />
+            Cancel anytime.
+          </p>
+
+          <Link
+            className="btn primary"
+            to="/subscribe"
+            style={{
+              fontSize: "1.15rem",
+              padding: "20px 58px",
+              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              borderRadius: 16,
+              fontWeight: 600,
+              display: "inline-block",
+              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
+            }}
+          >
+            Start Your Free Trial
+          </Link>
         </div>
       </section>
 
@@ -594,15 +636,15 @@ export function LocationClarityPage() {
               }}
             >
               <div style={{ fontWeight: 780, marginBottom: 10 }}>
-                Strategic Clarity
+                Weather Clarity
               </div>
               <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                Targets, retrieves, and day progression — the parts that make
-                the plan executable on the water.
+                The weather snapshot and tap-to-expand cards that keep the day
+                readable without turning fishing into a dashboard.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/strategy" style={smallCta}>
-                  Go to Strategic Clarity →
+                <Link to="/weather" style={smallCta}>
+                  Back to Weather Clarity
                 </Link>
               </div>
             </div>
@@ -630,6 +672,10 @@ export function LocationClarityPage() {
           </div>
         </div>
       </section>
+
+      {/* ============================================
+          HOW IT THINKS - With Visual Proof
+          ============================================ */}
 
       {/* Minimal footer */}
       <footer
