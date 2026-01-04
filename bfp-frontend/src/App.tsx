@@ -5,15 +5,15 @@ import { Navigation } from "./components/Navigation";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
 import { Subscribe } from "./pages/Subscribe";
-import { PreviewEnhanced } from "./pages/Preview";
+// import { PreviewEnhanced } from "./pages/Preview";
 import { Members } from "./pages/Members";
-import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
-import { HowToUse } from "./pages/HowToUse";
+// import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
+// import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
-import SignInPage from "./pages/signIn";
-import SignUpPage from "./pages/signUp";
+import SignInPage from "./pages/SignIn";
+import SignUpPage from "./pages/SignUp";
 import { Admin } from "./pages/Admin";
-import { WhatsIncluded } from "./pages/Features";
+// import { WhatsIncluded } from "./pages/Features";
 import { Success } from "./pages/Success";
 import { Account } from "./pages/Account";
 import { NotFound } from "./pages/NotFound";
@@ -73,7 +73,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/subscribe" element={<Subscribe />} />
-        <Route path="/preview" element={<PreviewEnhanced />} />
+        {/* <Route path="/preview" element={<PreviewEnhanced />} /> */}
         <Route path="/sign-in" element={<SignInPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
@@ -97,9 +97,9 @@ export default function App() {
         />
         <Route
           path="/what-your-plan-includes"
-          element={<WhatYourPlanIncludes />}
+          // element={<WhatYourPlanIncludes />}
         />
-        <Route path="/how-to-use" element={<HowToUse />} />
+        {/* <Route path="/how-to-use" element={<HowToUse />} /> */}
         <Route path="/faq" element={<FAQ />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/success" element={<Success />} />
