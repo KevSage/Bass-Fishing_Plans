@@ -162,17 +162,22 @@ export function WeatherClarityPage() {
             </div>
 
             <h1 style={h1Style}>
-              No Dashboards.
+              Not Just Weather
               <br />
-              No Charts.
+              Your Weather
               <br />
-              Weather You Can Use.
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              Bass Clarity keeps the important numbers visible — like
-              temperature and wind speed — but explains what they mean in plain
-              language so the day feels understandable instead of overwhelming.
+              No Dashboards. No Charts. No Overlays.
+              <br />
+              Bass Clarity pulls live weather data directly from your location,
+              but that's just the beginning.
+              <br />
+              We then take that data, analyze and create an actionable strategy
+              for the water you're fishing. <br />
+              Only important data visible — so you can keep your mind on the
+              water and not a screen. <br />
             </p>
 
             <div
@@ -269,12 +274,6 @@ export function WeatherClarityPage() {
                   What you’ll notice
                 </div>
 
-                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
-                  The face of each card is a glance.
-                  <br />
-                  Tap to expand when you want more context.
-                </p>
-
                 <div style={{ height: 14 }} />
 
                 <ul
@@ -288,16 +287,16 @@ export function WeatherClarityPage() {
                 >
                   {[
                     {
-                      title: "4 focused cards",
+                      title: "4 Focused Cards",
                       desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
                     },
                     {
-                      title: "Plain-language expansions",
-                      desc: "More detail than the card, tied to your actual conditions (not generic definitions).",
+                      title: "Want a Deeper Dive?",
+                      desc: "A quick tap expands the cards and explains how these conditions impact your day on the water.",
                     },
                     {
-                      title: "A daily outlook blurb",
-                      desc: "A short synthesis that connects the dots across the whole weather snapshot.",
+                      title: "Conditions & Outlook",
+                      desc: "Your Weather outlook explains your day ahead and how it may effect bass behavior, explained in natural langauge.",
                     },
                   ].map((x, i) => (
                     <li
@@ -330,6 +329,13 @@ export function WeatherClarityPage() {
                     </li>
                   ))}
                 </ul>
+                <div style={{ height: 18 }} />
+
+                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
+                  Only the Information You Need.
+                  <br />
+                  No translation required.
+                </p>
 
                 <div style={{ height: 18 }} />
 

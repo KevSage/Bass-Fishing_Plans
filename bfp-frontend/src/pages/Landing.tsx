@@ -121,11 +121,7 @@ export function Landing() {
             padding: `0 ${sectionPadX}`,
           }}
         >
-          <h1 style={h1Style}>
-            Clarity on the Water.
-            <br />
-            No Guesswork.
-          </h1>
+          <h1 style={h1Style}>Clarity on the Water.</h1>
 
           <p
             style={{
@@ -162,89 +158,6 @@ export function Landing() {
       </section>
 
       {/* ============================================
-          THE PROBLEM
-          ============================================ */}
-      <section style={{ padding: sectionPad }}>
-        <div className="container" style={container(1100)}>
-          <h2
-            style={{
-              ...h2Style,
-              fontSize: "clamp(2.25rem, 5.5vw, 3.5rem)",
-              marginBottom: 36,
-            }}
-          >
-            Less Data, More Direction.
-          </h2>
-
-          <p style={{ ...leadStyle, marginBottom: "clamp(36px, 7vw, 64px)" }}>
-            Charts, bite scores, forecasts, and bait lists. Plenty of
-            information — but still no clear plan.
-          </p>
-
-          <div style={{ ...grid2Col, marginBottom: "clamp(32px, 6vw, 56px)" }}>
-            {/* Confused app image (quieted) */}
-            <div style={{ maxWidth: "min(420px, 100%)", margin: "0 auto" }}>
-              <img
-                src="/images/confused-fishing-app.png"
-                alt="Overwhelming fishing app with data"
-                style={{
-                  width: "100%",
-                  borderRadius: 20,
-                  boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
-                  filter: "grayscale(0.4) brightness(0.75)",
-                }}
-              />
-            </div>
-
-            {/* Questions as a single flowing block */}
-            <div style={{ maxWidth: 560, margin: "0 auto" }}>
-              <p
-                style={{
-                  fontSize: "clamp(1.2rem, 2.6vw, 1.45rem)",
-                  lineHeight: 1.8,
-                  opacity: 0.8,
-                  margin: 0,
-                }}
-              >
-                You still end up asking the same questions on the water.
-                <br />
-                <br />
-                Where should I actually be fishing?
-                <br />
-                Why isn’t this working?
-                <br />
-                What should I change — and when?
-              </p>
-            </div>
-          </div>
-
-          <p
-            style={{
-              fontSize: "1.35rem",
-              textAlign: "center",
-              opacity: 0.75,
-              fontWeight: 500,
-              marginBottom: 12,
-            }}
-          >
-            Information doesn’t fish for you. Decisions do.
-          </p>
-
-          <p
-            style={{
-              ...bodyCenter,
-              opacity: 0.6,
-              fontStyle: "italic",
-              maxWidth: 880,
-            }}
-          >
-            Bass Clarity exists because fishing decisions aren’t made on
-            spreadsheets — they’re made on the water.
-          </p>
-        </div>
-      </section>
-
-      {/* ============================================
           THE DIFFERENCE - With Phone Mockup
           ============================================ */}
       <section
@@ -273,8 +186,8 @@ export function Landing() {
               marginBottom: "clamp(44px, 8vw, 72px)",
             }}
           >
-            Bass Clarity interprets season, conditions, and fish positioning
-            into a focused, actionable fishing strategy
+            Bass Clarity interprets your Weather, Conditions, and Seasonal Bass
+            Data to create your personal, actionable fishing strategy.
             <br />
           </p>
 
@@ -337,7 +250,7 @@ export function Landing() {
                   "Daily Weather Outlook",
                   "Techniques that fit the situation",
                   "Dynamic Approaches That Complement One Another",
-                  "Lures That Express Those approaches including soft plastic, trailer, and color and gear recommendations.",
+                  "Soft plastic, trailer, color and gear recommendations.",
                   "Suggested Targets and Other High Producing Areas Based on Season and Your Conditions",
                   "Lure Specific Retrieves that explain how to execute for each given target",
                   "A Full Day Progression plan that outlines your day from first light, to your last cast. ",
@@ -381,6 +294,89 @@ export function Landing() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ============================================
+          THE PROBLEM
+          ============================================ */}
+      <section style={{ padding: sectionPad }}>
+        <div className="container" style={container(1100)}>
+          <h2
+            style={{
+              ...h2Style,
+              fontSize: "clamp(2.25rem, 5.5vw, 3.5rem)",
+              marginBottom: 36,
+            }}
+          >
+            Less Data, More Direction.
+          </h2>
+
+          <p style={{ ...leadStyle, marginBottom: "clamp(36px, 7vw, 64px)" }}>
+            Charts, bite scores, forecasts, and bait lists. Plenty of
+            information — but still no clear plan.
+          </p>
+
+          <div style={{ ...grid2Col, marginBottom: "clamp(32px, 6vw, 56px)" }}>
+            {/* Confused app image (quieted) */}
+            <div style={{ maxWidth: "min(420px, 100%)", margin: "0 auto" }}>
+              <img
+                src="/images/confused-fishing-app.png"
+                alt="Overwhelming fishing app with data"
+                style={{
+                  width: "100%",
+                  borderRadius: 20,
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                  filter: "grayscale(0.4) brightness(0.75)",
+                }}
+              />
+            </div>
+
+            {/* Questions as a single flowing block */}
+            <div style={{ maxWidth: 560, margin: "0 auto" }}>
+              <p
+                style={{
+                  fontSize: "clamp(1.2rem, 2.6vw, 1.45rem)",
+                  lineHeight: 1.8,
+                  opacity: 0.8,
+                  margin: 0,
+                }}
+              >
+                You still end up asking the same questions on the water.
+                <br />
+                <br />
+                Where should I actually be fishing?
+                <br />
+                Why isn't this working?
+                <br />
+                What should I change — and when?
+              </p>
+            </div>
+          </div>
+
+          <p
+            style={{
+              fontSize: "1.35rem",
+              textAlign: "center",
+              opacity: 0.75,
+              fontWeight: 500,
+              marginBottom: 12,
+            }}
+          >
+            Information doesn't fish for you. Decisions do.
+          </p>
+
+          <p
+            style={{
+              ...bodyCenter,
+              opacity: 0.6,
+              fontStyle: "italic",
+              maxWidth: 880,
+            }}
+          >
+            Bass Clarity exists because fishing decisions aren’t made on
+            spreadsheets — they’re made on the water.
+          </p>
         </div>
       </section>
 

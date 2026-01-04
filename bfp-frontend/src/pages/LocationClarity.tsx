@@ -2,88 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 
 /**
- * Presentation Clarity Page
- * - Matches WeatherClarityPage structure + visual language (inline styles, calm spacing, dark gradient, soft blue accents).
- * - Uses a small "UnifiedIcon" stub (NOT emoji). Swap to your real unified icon system.
- * - Focus: Technique / Presentation intelligence (presentation family → lure/rig pairing → color guidance → plain-English reasoning).
- *
- * Routes referenced:
- *  - /subscribe
- *  - /weather-clarity
- *  - /strategic-clarity
- *  - / (landing)
- *
- * Image placeholders:
- *  - /images/iphone15.png
- *  - /images/mobile_screenshots/PatternCard.png (or update path to your real screenshot)
+ * Location Clarity Page
+ * - Mobile-first, responsive up to wide screens
+ * - Styled to match the Landing page (dark gradient, soft blue accents, calm typography)
  */
-
-type IconName =
-  | "presentation"
-  | "lure"
-  | "rig"
-  | "color"
-  | "logic"
-  | "summary"
-  | "gear"
-  | "arrowRight";
-
-function UnifiedIcon({ name, size = 40 }: { name: IconName; size?: number }) {
-  // Stub: Replace with your canonical unified icon component.
-  // Example swap:
-  //   import { UnifiedIcon } from "@/components/icons/UnifiedIcon";
-  //   return <UnifiedIcon name={name} size={size} />;
-  const label = (() => {
-    switch (name) {
-      case "presentation":
-        return "PF";
-      case "lure":
-        return "LR";
-      case "rig":
-        return "RG";
-      case "color":
-        return "CL";
-      case "logic":
-        return "LG";
-      case "summary":
-        return "SM";
-      case "gear":
-        return "GR";
-      case "arrowRight":
-        return "→";
-      default:
-        return "•";
-    }
-  })();
-
-  return (
-    <div
-      aria-hidden="true"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 14,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background:
-          "linear-gradient(135deg, rgba(74,144,226,0.22) 0%, rgba(74,144,226,0.06) 100%)",
-        border: "1px solid rgba(74,144,226,0.20)",
-        boxShadow: "0 10px 26px rgba(74,144,226,0.14)",
-        color: "rgba(255,255,255,0.92)",
-        fontWeight: 800,
-        letterSpacing: "0.08em",
-        fontSize: name === "arrowRight" ? "1rem" : "0.78rem",
-      }}
-    >
-      {label}
-    </div>
-  );
-}
-
-export function PresentationClarityPage() {
+export function LocationClarityPage() {
   // -----------------------------
-  // Shared typography + layout (mirrors WeatherClarityPage)
+  // Shared typography + layout
   // -----------------------------
   const sectionPadY = "clamp(76px, 10vw, 132px)";
   const sectionPadX = "clamp(18px, 4vw, 24px)";
@@ -203,26 +128,6 @@ export function PresentationClarityPage() {
 
   const sectionTopBorder = "1px solid rgba(255,255,255,0.06)";
 
-  const Bullet = ({ title, desc }: { title: string; desc: string }) => (
-    <li style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-      <div
-        style={{
-          width: 10,
-          height: 10,
-          borderRadius: 999,
-          marginTop: 8,
-          background: "rgba(74,144,226,0.95)",
-          boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
-          flexShrink: 0,
-        }}
-      />
-      <div>
-        <div style={{ fontWeight: 720, opacity: 0.92 }}>{title}</div>
-        <div style={{ opacity: 0.78, lineHeight: 1.7 }}>{desc}</div>
-      </div>
-    </li>
-  );
-
   return (
     <div
       style={{
@@ -249,25 +154,27 @@ export function PresentationClarityPage() {
             pointerEvents: "none",
           }}
         />
-
         <div className="container" style={container(1100)}>
           <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
             <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
-              Technique / Presentation Clarity
+              Location Clarity
             </div>
 
             <h1 style={h1Style}>
-              Not a Pattern —
-              <br />A Customized Approach.
+              Choose Your Water.
+              <br />
+              Any Water.
+              <br />
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              We use your local conditions combined with seasonal bass fishing
-              data to select specific targets, presentations, then lures
-              complete with type and color suggestions.
+              Select from our database of over 1,000 lakes.
               <br />
-              Not random or one size fits all. This approach is designed for
-              you.
+              Bass Clarity pulls live weather data directly from your location,
+              but that's just the beginning.
+              <br />
+              We then take that data, analyze and create an actionable strategy
+              for the water you're fishing. <br />
             </p>
 
             <div
@@ -279,29 +186,16 @@ export function PresentationClarityPage() {
                 flexWrap: "wrap",
               }}
             >
-              <span style={pill}>
-                <UnifiedIcon name="presentation" size={26} /> Presentation
-                family
-              </span>
-              <span style={pill}>
-                <UnifiedIcon name="lure" size={26} /> Lure + rig pairing
-              </span>
-              <span style={pill}>
-                <UnifiedIcon name="color" size={26} /> Color guidance
-              </span>
-              <span style={pill}>
-                <UnifiedIcon name="logic" size={26} /> Plain‑English reasoning
-              </span>
+              <span style={pill}>Bass Boat</span>
+              <span style={pill}>Kayak</span>
+              <span style={pill}>Bank</span>
             </div>
           </div>
 
           {/* Phone + Quick explainer */}
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
-              gap: "clamp(22px, 5vw, 54px)",
-              alignItems: "center",
+              ...grid2,
               marginTop: "clamp(34px, 6vw, 54px)",
               paddingBottom: "clamp(48px, 7vw, 72px)",
             }}
@@ -310,6 +204,7 @@ export function PresentationClarityPage() {
             <div
               style={{ position: "relative", maxWidth: 420, margin: "0 auto" }}
             >
+              {/* Frame */}
               <img
                 src="/images/iphone15.png"
                 alt="Bass Clarity on mobile"
@@ -321,11 +216,12 @@ export function PresentationClarityPage() {
                   pointerEvents: "none",
                 }}
               />
+              {/* Screen */}
               <div
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "6.9%",
+                  left: "6.2%",
                   width: "87.6%",
                   height: "92.4%",
                   borderRadius: "42px",
@@ -335,21 +231,22 @@ export function PresentationClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/hero_jig1.png"
-                  alt="Pattern card (example)"
+                  src="/images/mobile_screenshots/Location.png"
+                  alt="Weather cards and outlook"
                   style={{
                     width: "100%",
-                    height: "101%",
-                    objectFit: "contain",
+                    height: "100%",
+                    objectFit: "cover",
                     filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
                   }}
                 />
+                {/* Subtle overlay to keep it calm */}
                 <div
                   style={{
                     position: "absolute",
                     inset: 0,
                     background:
-                      "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)",
+                      "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.28) 100%)",
                   }}
                 />
               </div>
@@ -357,7 +254,12 @@ export function PresentationClarityPage() {
 
             {/* Text block */}
             <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
-              <div style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}>
+              <div
+                style={{
+                  ...softCard,
+                  padding: "clamp(18px, 3.5vw, 28px)",
+                }}
+              >
                 <div
                   style={{
                     ...eyebrow,
@@ -379,30 +281,164 @@ export function PresentationClarityPage() {
                     gap: 14,
                   }}
                 >
-                  <Bullet
-                    title="A Clear Presentation"
-                    desc="You’re not left guessing how the bait should be worked — the plan names the style first."
-                  />
-                  <Bullet
-                    title="A Complete Lure System"
-                    desc="When “the lure” requires a soft plastic or trailer, that pairing is part of the recommendation."
-                  />
-                  <Bullet
-                    title="Two Color Options, Optimized"
-                    desc="One for clearer water, one for reduced visibility — chosen from realistic, lure‑specific pools."
-                  />
+                  {[
+                    {
+                      title: "Lake Search",
+                      desc: "Seearch our database of 0ver 1000 lakes and reservoirs.",
+                    },
+                    {
+                      title: "Fishing a smaller water body?",
+                      desc: "Skip the search. Find your water on tha map, Tab and label.",
+                    },
+                    {
+                      title: "Conditions & Outlook",
+                      desc: "Your Weather outlook explains your day ahead and how it may effect bass behavior, explained in natural langauge.",
+                    },
+                  ].map((x, i) => (
+                    <li
+                      key={i}
+                      style={{
+                        display: "flex",
+                        gap: 12,
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 999,
+                          marginTop: 8,
+                          background: "rgba(74,144,226,0.95)",
+                          boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 720, opacity: 0.92 }}>
+                          {x.title}
+                        </div>
+                        <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
+                          {x.desc}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
                 </ul>
+                <div style={{ height: 18 }} />
+
+                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
+                  Only the Information You Need.
+                  <br />
+                  No translation required.
+                </p>
 
                 <div style={{ height: 18 }} />
+
+                {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <Link to="/subscribe" style={primaryCta}>
+                    Start Your Free Trial
+                  </Link>
+                  <Link to="/how-it-works" style={smallCta}>
+                    See how it works
+                  </Link>
+                </div> */}
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
+      {/* HOW IT WORKS (Weather Engine) */}
+      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
+        <div className="container" style={container(1100)}>
+          <h2 style={h2Style}>How Weather Clarity is generated</h2>
+          <p style={leadStyle}>
+            The goal is simple: keep the important numbers visible, then
+            translate the rest into meaning — so the day feels readable without
+            becoming a data dump.
+          </p>
 
-      {/* WHAT YOU SEE */}
+          <div style={{ height: 46 }} />
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: 14,
+            }}
+          >
+            {[
+              {
+                title: "1) Capture a weather snapshot",
+                desc: "A single, consistent read of your location for today — temperature, wind, pressure, and sky/precip, plus supporting signals used internally.",
+              },
+              {
+                title: "2) Compute derived signals",
+                desc: "Trends like temperature swing, wind context, pressure movement, and stability indicators.",
+              },
+              {
+                title: "3) Present it in two layers",
+                desc: "Cards for glanceable numbers + tap-to-expand detail in natural language tied to your actual conditions.",
+              },
+              {
+                title: "4) Synthesize an outlook blurb",
+                desc: "A short, calm summary that connects the snapshot to what it implies for bass activity and the feel of the day.",
+              },
+            ].map((x, i) => (
+              <div
+                key={i}
+                style={{
+                  ...card,
+                  padding: 18,
+                  background: "rgba(255,255,255,0.02)",
+                }}
+              >
+                <div
+                  style={{
+                    fontWeight: 750,
+                    letterSpacing: "-0.01em",
+                    marginBottom: 8,
+                    color: "rgba(255,255,255,0.92)",
+                  }}
+                >
+                  {x.title}
+                </div>
+                <div style={{ opacity: 0.78, lineHeight: 1.75 }}>{x.desc}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ height: 22 }} />
+
+          <div
+            style={{
+              ...softCard,
+              padding: "clamp(18px, 3.5vw, 26px)",
+              maxWidth: 980,
+              margin: "0 auto",
+            }}
+          >
+            <div
+              style={{
+                ...eyebrow,
+                marginBottom: 10,
+                color: "rgba(74,144,226,0.95)",
+              }}
+            >
+              Why this stays calm
+            </div>
+            <p style={{ ...pStyle, opacity: 0.86 }}>
+              You’re still seeing what matters — like temperature and wind speed
+              — but the experience stays quiet. The system emphasizes safety
+              when wind is a factor, reduces noise elsewhere, and gives you
+              detail only when you ask for it.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT YOU SEE (Cards + Expansion) */}
       <section
         style={{
           padding: sectionPad,
@@ -412,10 +448,11 @@ export function PresentationClarityPage() {
         }}
       >
         <div className="container" style={container(1200)}>
-          <h2 style={h2Style}>What you see in the pattern card</h2>
+          <h2 style={h2Style}>What you see in the plan</h2>
           <p style={leadStyle}>
-            A few focused fields make the card glanceable. The explanation stays
-            short — but it’s detailed enough to build confidence.
+            Four cards keep the section short. Expansions add detail in natural
+            language — tied to today’s numbers — so it feels informative without
+            turning into a dashboard.
           </p>
 
           <div style={{ height: 46 }} />
@@ -429,57 +466,39 @@ export function PresentationClarityPage() {
           >
             {[
               {
-                icon: "presentation" as IconName,
-                title: "Presentation family",
+                icon: "🌡️",
+                title: "Temperature",
                 bullets: [
-                  "Names the style (not just the bait).",
-                  "Helps you fish it correctly on purpose.",
-                  "The plan picks the movement + water column first.",
+                  "High / low + swing",
+                  "Expansion references today’s temps",
+                  "Outlook pulls it in when it matters",
                 ],
               },
               {
-                icon: "lure" as IconName,
-                title: "Featured Lure",
+                icon: "💨",
+                title: "Wind",
                 bullets: [
-                  "A specific lure type for the day.",
-                  "If needed: rig + plastic or trailer pairing.",
-                  "Best expresses the presentation for today’s conditions",
+                  "Speed + direction",
+                  "Safety-forward when wind is strong",
+                  "Expansion explains how the day feels",
                 ],
               },
               {
-                icon: "color" as IconName,
-                title: "Color guidance",
+                icon: "📉",
+                title: "Pressure",
                 bullets: [
-                  "Two options based on visibility.",
-                  "Chosen from realistic, bait-specific colors, not random.",
-                  "Simple enough to act on immediately.",
+                  "Current + trend context",
+                  "Interprets stability vs change",
+                  "Explained without solunar clutter",
                 ],
               },
               {
-                icon: "logic" as IconName,
-                title: "Why this fits today",
+                icon: "☁️",
+                title: "Sky + Precip",
                 bullets: [
-                  "Explains the reasoning in plain English",
-                  "Connects conditions to lure behavior.",
-                  "Lures always refereneced contextually, based on your local conditions",
-                ],
-              },
-              {
-                icon: "summary" as IconName,
-                title: "Pattern summary",
-                bullets: [
-                  "The big-picture read on the day.",
-                  "What the plan suggests fish may do.",
-                  "Keeps expectations realistic and calm.",
-                ],
-              },
-              {
-                icon: "gear" as IconName,
-                title: "Gear alignment",
-                bullets: [
-                  "Rod / reel / line recommendations.",
-                  "Matches the presentation’s demands.",
-                  "Keeps the setup coherent end‑to‑end.",
+                  "Cloud cover + rain",
+                  "Simple phrasing (no noise)",
+                  "Outlook mentions rain/moon only if relevant",
                 ],
               },
             ].map((c, i) => (
@@ -492,7 +511,21 @@ export function PresentationClarityPage() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <UnifiedIcon name={c.icon} />
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 14,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background:
+                        "linear-gradient(135deg, rgba(74,144,226,0.22) 0%, rgba(74,144,226,0.06) 100%)",
+                      border: "1px solid rgba(74,144,226,0.20)",
+                    }}
+                  >
+                    <span style={{ fontSize: "1.15rem" }}>{c.icon}</span>
+                  </div>
                   <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
                     {c.title}
                   </div>
@@ -517,39 +550,16 @@ export function PresentationClarityPage() {
 
           <div style={{ height: 26 }} />
         </div>
-        <div
-          style={{
-            ...softCard,
-            padding: "clamp(18px, 3.5vw, 26px)",
-            maxWidth: 980,
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              ...eyebrow,
-              marginBottom: 10,
-              color: "rgba(74,144,226,0.95)",
-            }}
-          >
-            Why this stays calm
-          </div>
-          <p style={{ ...pStyle, opacity: 0.86 }}>
-            The plan gives you specificity without a pile of options. It names
-            the presentation, picks the best expression of it, then explains the
-            choice in normal language you can actually use on the water.
-          </p>
-        </div>
       </section>
 
       {/* BOTTOM NAV: next pages */}
       <section style={{ padding: sectionPad }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>Next: Strategic Clarity</h2>
+          <h2 style={h2Style}>Next: the rest of the system</h2>
           <p style={leadStyle}>
-            Presentation tells you how to fish the bait. Strategic Clarity turns
-            the day into targets, retrieves, and a progression that feels
-            executable.
+            Weather is one layer of clarity. The next pages cover how Bass
+            Clarity turns conditions into technique decisions — and then into a
+            coherent, fishable strategy.
           </p>
 
           <div style={{ height: 34 }} />
@@ -563,24 +573,15 @@ export function PresentationClarityPage() {
           >
             <div style={{ ...softCard, padding: 20 }}>
               <div style={{ fontWeight: 780, marginBottom: 10 }}>
-                Strategic Clarity
+                Technique / Presentation Clarity
               </div>
               <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                Targets, retrieves, and day progression — the parts that make
-                the plan fishable on the water.
+                How the plan selects technique families, lures, colors, and gear
+                as a coherent set — not random suggestions.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/strategy" style={smallCta}>
-                  Go to Strategic Clarity{" "}
-                  <span
-                    style={{
-                      marginLeft: 10,
-                      display: "inline-flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <UnifiedIcon name="arrowRight" size={26} />
-                  </span>
+                <Link to="/presentation" style={smallCta}>
+                  Go to Presentation Clarity →
                 </Link>
               </div>
             </div>
@@ -593,15 +594,15 @@ export function PresentationClarityPage() {
               }}
             >
               <div style={{ fontWeight: 780, marginBottom: 10 }}>
-                Weather Clarity
+                Strategic Clarity
               </div>
               <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                The weather snapshot and tap-to-expand cards that keep the day
-                readable without turning fishing into a dashboard.
+                Targets, retrieves, and day progression — the parts that make
+                the plan executable on the water.
               </div>
               <div style={{ marginTop: 14 }}>
-                <Link to="/weather" style={smallCta}>
-                  Back to Weather Clarity
+                <Link to="/strategy" style={smallCta}>
+                  Go to Strategic Clarity →
                 </Link>
               </div>
             </div>
