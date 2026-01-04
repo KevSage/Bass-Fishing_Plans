@@ -24,6 +24,7 @@ import { PlanPage } from "./pages/PlanPage";
 import { WeatherClarityPage } from "./pages/WeatherClarity";
 import { PresentationClarityPage } from "./pages/PresentationClarity";
 import { StrategicClarityPage } from "./pages/StrategicClarity";
+import { LocationClarityPage } from "./pages/LocationClarity";
 
 function TopBar() {
   return (
@@ -78,6 +79,7 @@ export default function App() {
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/location" element={<LocationClarityPage />} />
         <Route path="/weather" element={<WeatherClarityPage />} />
         <Route path="/presentation" element={<PresentationClarityPage />} />
         <Route path="/strategy" element={<StrategicClarityPage />} />
