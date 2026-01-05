@@ -224,22 +224,22 @@ export function LocationClarityPage() {
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "6.2%",
-                  width: "87.6%",
+                  left: "4.2%",
+                  width: "93.6%",
                   height: "92.4%",
-                  borderRadius: "42px",
+                  borderRadius: "60px",
                   overflow: "hidden",
                   zIndex: 1,
                   background: "rgba(0,0,0,0.25)",
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Location.png"
+                  src="/images/mobile_screenshots/Location1.png"
                   alt="Weather cards and outlook"
                   style={{
                     width: "100%",
                     height: "100%",
-                    objectFit: "cover",
+                    objectFit: "contain",
                     filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
                   }}
                 />
@@ -406,25 +406,25 @@ export function LocationClarityPage() {
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "6.2%",
-                  width: "87.6%",
+                  left: "1.1%",
+                  width: "97%",
                   height: "92.4%",
-                  borderRadius: "42px",
+                  borderRadius: "80px",
                   overflow: "hidden",
                   zIndex: 1,
                   background: "rgba(0,0,0,0.25)",
                 }}
               >
                 <video
-                  src="/video/bass-clarity-loading.mp4"
+                  src="/video/bass-clarity-loading.mov"
                   autoPlay
                   muted
                   loop
                   playsInline
                   style={{
-                    width: "100%",
+                    width: "102.6%",
                     height: "100%",
-                    objectFit: "fill",
+                    objectFit: "contain",
                   }}
                 />
                 {/* Subtle overlay to keep it calm */}
@@ -594,11 +594,10 @@ export function LocationClarityPage() {
       {/* BOTTOM NAV: next pages */}
       <section style={{ padding: sectionPad }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>Next: the rest of the system</h2>
+          <h2 style={h2Style}>Next: Weather</h2>
           <p style={leadStyle}>
-            Weather is one layer of clarity. The next pages cover how Bass
-            Clarity turns conditions into technique decisions — and then into a
-            coherent, fishable strategy.
+            The weather snapshot and tap-to-expand cards that keep the day
+            readable without turning fishing into a dashboard.
           </p>
 
           <div style={{ height: 34 }} />
@@ -610,7 +609,7 @@ export function LocationClarityPage() {
               gap: 14,
             }}
           >
-            <div style={{ ...softCard, padding: 20 }}>
+            {/* <div style={{ ...softCard, padding: 20 }}>
               <div style={{ fontWeight: 780, marginBottom: 10 }}>
                 Technique / Presentation Clarity
               </div>
@@ -623,7 +622,7 @@ export function LocationClarityPage() {
                   Go to Presentation Clarity →
                 </Link>
               </div>
-            </div>
+            </div> */}
 
             <div
               style={{
@@ -636,12 +635,12 @@ export function LocationClarityPage() {
                 Weather Clarity
               </div>
               <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                The weather snapshot and tap-to-expand cards that keep the day
-                readable without turning fishing into a dashboard.
+                The core numbers — temperature, wind, pressure, sky/precip — in
+                a calm, readable format with plain-language expansions.
               </div>
               <div style={{ marginTop: 14 }}>
                 <Link to="/weather" style={smallCta}>
-                  Back to Weather Clarity
+                  Go to Weather Clarity →
                 </Link>
               </div>
             </div>

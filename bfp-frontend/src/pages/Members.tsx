@@ -296,8 +296,8 @@ export function Members() {
           right: 0,
           zIndex: 30, // WAS 999 - this was part of your overlay conflict
           background:
-            "linear-gradient(to bottom, rgba(10,10,10,0.98) 0%, rgba(10,10,10,0.85) 50%, rgba(10,10,10,0.4) 80%, transparent 100%)",
-          paddingTop: "100px",
+            "linear-gradient(to bottom, rgba(10,10,10,0.98) 20%, rgba(10,10,10,0.85) 40%, rgba(10,10,10,0.4) 70%, transparent 100%)",
+          paddingTop: "70px",
           paddingBottom: "48px",
           paddingLeft: "20px",
           paddingRight: "20px",

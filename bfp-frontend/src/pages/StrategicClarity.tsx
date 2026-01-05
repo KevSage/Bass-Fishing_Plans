@@ -200,44 +200,12 @@ export function StrategicClarityPage() {
               Strategic Clarity
             </div>
 
-            <h1 style={h1Style}>
-              Fish With Intention.
-              <br />
-              Every Cast Deliberate.
-            </h1>
+            <h1 style={h1Style}>Fish With Intention.</h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              No datapoints, charts, or graphs. Bass Clarity is the only Bass
-              Fishing App that not only gives you data, but a complete
-              actionable strategy.
+              Know exactly what to do, and why you're doing it. No datapoints,
+              charts, or graphs.
             </p>
-
-            <div
-              style={{
-                marginTop: 26,
-                display: "flex",
-                justifyContent: "center",
-                gap: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              <span style={pill}>
-                {pillIcon(CompassIcon)}
-                Strategy
-              </span>
-              <span style={pill}>
-                {pillIcon(TargetIcon)}
-                Targets
-              </span>
-              <span style={pill}>
-                {pillIcon(LayersIcon)}
-                Retrieves
-              </span>
-              <span style={pill}>
-                {pillIcon(BarChartIcon)}
-                Day progression
-              </span>
-            </div>
           </div>
 
           {/* Phone + Quick explainer */}
@@ -334,16 +302,16 @@ export function StrategicClarityPage() {
                       desc: "Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning.",
                     },
                     {
-                      title: "Strategic Clarity",
+                      title: "Strategy",
                       desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
                     },
                     {
                       title: "Retrieve Guidance",
-                      desc: "Lure/Target Specific  generated for execution — steady, controlled, and easy to learn from.",
+                      desc: "More than 130+ lure specific retrieves that adjusts for targets and conditions",
                     },
                     {
                       title: "Full Day Progression",
-                      desc: "Early / Midday / Late gives you a coherent plan arc without constant second-guessing.",
+                      desc: "A coherent plan arc without constant second-guessing.",
                     },
                   ].map((x, i) => (
                     <li
@@ -385,10 +353,10 @@ export function StrategicClarityPage() {
       {/* HOW IT WORKS (Strategy Engine) */}
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>How Strategic Clarity is generated</h2>
+          <h2 style={h2Style}> Make Every Cast Deliberate.</h2>
           <p style={leadStyle}>
-            The goal is simple: turn conditions into a coherent plan you can
-            execute — targets, retrieves, and a day progression — without noise.
+            Target areas include lure specific retrieve and cadence guidance
+            that you will not get anywhere else.
           </p>
         </div>
         <div style={{ height: 46 }} />
@@ -427,7 +395,7 @@ export function StrategicClarityPage() {
                 }}
               />
               <img
-                src="/images/mobile_screenshots/Targets.png"
+                src="/images/mobile_screenshots/Targets1.png"
                 alt="Strategy cards interface"
                 style={{
                   position: "absolute",
@@ -467,8 +435,7 @@ export function StrategicClarityPage() {
                   Icon: CompassIcon,
                   title: "Strategy",
                   bullets: [
-                    "Complete strategy, based on weather + seasonal context",
-                    "Written for execution (not theory)",
+                    "Complete strategy written for execution (not theory)",
                     "Natural understandable language",
                   ],
                 },
@@ -476,9 +443,8 @@ export function StrategicClarityPage() {
                   Icon: TargetIcon,
                   title: "Targets",
                   bullets: [
-                    "High-signal targets based on season and your conditions",
-                    "Brief target descriptions",
-                    "Recognizable on the water",
+                    "Targets based on season and your conditions",
+
                     "Helps you to narrow the water",
                   ],
                 },
@@ -488,18 +454,13 @@ export function StrategicClarityPage() {
                   bullets: [
                     "Hundreds of retrieves specific to your lure",
                     "Cadence + control notes",
-                    "Simple enough to repeat",
-                    "Fits the presentation and feel of the day",
                   ],
                 },
                 {
                   Icon: BarChartIcon,
                   title: "Day progression",
                   bullets: [
-                    "Early / Midday / Late",
-                    "Explains likely shifts between approaches",
-                    "Keeps adjustments intentional",
-                    "Teaches when to use what, and why",
+                    "Explains when to shift between approaches keeping adjustments intentional, not random",
                   ],
                 },
               ].map((c, i) => (
@@ -568,8 +529,7 @@ export function StrategicClarityPage() {
             </div>
             <p style={{ ...pStyle, opacity: 0.86, marginTop: 0 }}>
               Strategic Clarity is designed to prevent option overload. The plan
-              narrows down to a few decisions you can repeat, so you learn
-              faster and stop chasing a moving target.
+              narrows down to a few decisions.
             </p>
           </div>
         </div>
@@ -600,6 +560,157 @@ export function StrategicClarityPage() {
           }
         `}</style>
       </section>
+
+      <div className="container" style={container(1100)}>
+        <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
+          <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
+            Strategic Clarity
+          </div>
+
+          <h2 style={h2Style}>Full Day Progression.</h2>
+
+          <p style={{ ...leadStyle, maxWidth: 980 }}>
+            Know where to start, transition and adjust. Clear actionable
+            guidance, from daybreak, to last cast.
+          </p>
+        </div>
+
+        {/* Phone + Quick explainer */}
+        <div
+          style={{
+            ...grid2,
+            marginTop: "clamp(34px, 6vw, 54px)",
+            paddingBottom: "clamp(48px, 7vw, 72px)",
+          }}
+        >
+          {/* Phone mock */}
+          <div
+            style={{ position: "relative", maxWidth: 420, margin: "0 auto" }}
+          >
+            {/* Frame */}
+            <img
+              src="/images/iphone15.png"
+              alt="Bass Clarity on mobile"
+              style={{
+                width: "100%",
+                display: "block",
+                position: "relative",
+                zIndex: 2,
+                pointerEvents: "none",
+              }}
+            />
+            {/* Screen */}
+            <div
+              style={{
+                position: "absolute",
+                top: "3.8%",
+                left: "6.2%",
+                width: "89.6%",
+                height: "92.4%",
+                borderRadius: "42px",
+                overflow: "hidden",
+                zIndex: 1,
+                background: "rgba(0,0,0,0.25)",
+              }}
+            >
+              <img
+                src="/images/mobile_screenshots/DayProgression.png"
+                alt="Strategy' cards and progression"
+                style={{
+                  width: "102%",
+                  height: "100%",
+                  objectFit: "contain",
+                  filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                }}
+              />
+              {/* Subtle overlay to keep it calm */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.28) 100%)",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Text block */}
+          <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
+            <div
+              style={{
+                ...softCard,
+                padding: "clamp(18px, 3.5vw, 28px)",
+              }}
+            >
+              <div
+                style={{
+                  ...eyebrow,
+                  marginBottom: 12,
+                  color: "rgba(255,255,255,0.68)",
+                }}
+              >
+                Clarity leads to Confidence.
+              </div>
+
+              <div style={{ height: 14 }} />
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "grid",
+                  gap: 14,
+                }}
+              >
+                {[
+                  {
+                    title: "Where To Start",
+                    desc: "Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning.",
+                  },
+                  {
+                    title: "What to Expect",
+                    desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
+                  },
+                  {
+                    title: "Transitions and Adjustments",
+                    desc: "More than 130+ lure specific retrieves that adjusts for targets and conditions",
+                  },
+                ].map((x, i) => (
+                  <li
+                    key={i}
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: 999,
+                        marginTop: 8,
+                        background: "rgba(74,144,226,0.95)",
+                        boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
+                        flexShrink: 0,
+                      }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 720, opacity: 0.92 }}>
+                        {x.title}
+                      </div>
+                      <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
+                        {x.desc}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* BOTTOM NAV: next pages */}
       <section style={{ padding: sectionPad }}>
