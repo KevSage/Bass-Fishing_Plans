@@ -928,7 +928,7 @@ export function Landing() {
               margin: 0,
             }}
           >
-            Not a map app, not a weather app, not a social media. No bite scores
+            Not a map app, not a weather app, not social media. No bite scores
             and bait lists. Bass Clarity is built for anglers who want to
             understand why something works — not just what to throw.
           </p>
