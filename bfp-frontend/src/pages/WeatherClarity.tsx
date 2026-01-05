@@ -1,6 +1,12 @@
 import React from "react";
 import { Link } from "react-router-dom";
-
+import {
+  ThermometerIcon,
+  WindIcon,
+  CloudIcon,
+  MapPinIcon,
+  ActivityIcon,
+} from "@/components/UnifiedIcons";
 /**
  * Weather Clarity Page
  * - Mobile-first, responsive up to wide screens
@@ -184,10 +190,19 @@ export function WeatherClarityPage() {
                 flexWrap: "wrap",
               }}
             >
-              <span style={pill}>🌡️ Temperature</span>
-              <span style={pill}>💨 Wind + Safety</span>
-              <span style={pill}>📉 Pressure</span>
-              <span style={pill}>☁️ Sky + Precip</span>
+              <span style={pill}>
+                <ThermometerIcon size={20} /> Temperature
+              </span>
+              <span style={pill}>
+                <WindIcon size={20} /> Wind + Safety
+              </span>
+              <span style={pill}>
+                <ActivityIcon size={20} /> Pressure
+              </span>
+              <span style={pill}>
+                <CloudIcon size={20} />
+                Sky + Precipitation
+              </span>
             </div>
           </div>
 
