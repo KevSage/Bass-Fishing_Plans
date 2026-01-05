@@ -371,3 +371,7 @@ button:focus-visible {
   );
   mask-image: radial-gradient(ellipse at center, black 72%, transparent 100%);
 }
+
+* {
+  outline: 1px solid rgba(255, 0, 0, 0.15);
+}
