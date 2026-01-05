@@ -162,18 +162,15 @@ export function WeatherClarityPage() {
             </div>
 
             <h1 style={h1Style}>
-              Not Just Weather
-              <br />
-              Your Weather
+              {/* Not Just Weather
+              <br /> */}
+              Your Weather, Simplified
               <br />
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               No Dashboards. No Charts. No Overlays.
               <br />
-              Bass Clarity pulls live weather data directly from your location.
-              We then take that data, analyze and create an actionable strategy
-              for the water you're fishing. <br />
               Only important data visible — so you can keep your mind on the
               water and not a screen. <br />
             </p>
@@ -329,11 +326,11 @@ export function WeatherClarityPage() {
                 </ul>
                 <div style={{ height: 18 }} />
 
-                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
+                {/* <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
                   Only the Information You Need.
                   <br />
                   No translation required.
-                </p>
+                </p> */}
 
                 <div style={{ height: 18 }} />
 
@@ -357,8 +354,8 @@ export function WeatherClarityPage() {
           <h2 style={h2Style}>More Context, When You Need It</h2>
           <p style={leadStyle}>
             The goal is simple: keep the important numbers visible, then
-            translate the rest into meaning — so the day feels readable without
-            becoming a data dump. Just tap one of the cards for more clarity.
+            translate the rest into meaning. Just tap one of the cards for more
+            clarity.
           </p>
 
           <div style={{ height: 46 }} />
@@ -497,11 +494,11 @@ export function WeatherClarityPage() {
                 </ul>
                 <div style={{ height: 18 }} />
 
-                <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
+                {/* <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
                   Only the Information You Need.
                   <br />
                   No translation required.
-                </p>
+                </p> */}
 
                 <div style={{ height: 18 }} />
 

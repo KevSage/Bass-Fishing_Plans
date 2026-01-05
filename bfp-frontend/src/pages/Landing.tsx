@@ -273,8 +273,9 @@ export function Landing() {
           }}
         >
           <h1 style={h1Style}>Clarity on the Water.</h1>
+          <div style={{ height: 46 }} />
 
-          <p
+          {/* <p
             style={{
               fontSize: "clamp(1.1rem, 2.5vw, 1.35rem)",
               lineHeight: 1.65,
@@ -285,10 +286,8 @@ export function Landing() {
             }}
           >
             Bass Clarity is an intelligent Bass Fishing App that interprets
-            season, conditions, and fish positioning into a focused, actionable
-            fishing strategy — so you know where to fish, how to fish it, and
-            why it works.
-          </p>
+            season and conditions into a focused, actionable fishing strategy.
+          </p> */}
 
           <Link
             className="btn primary"
@@ -326,9 +325,7 @@ export function Landing() {
               marginBottom: 28,
             }}
           >
-            Bass Clarity doesn't show you data.
-            <br />
-            It interprets it.
+            Bass Fishing, Clarified
           </h2>
 
           <p
@@ -338,8 +335,8 @@ export function Landing() {
               marginBottom: "clamp(44px, 8vw, 72px)",
             }}
           >
-            Bass Clarity interprets your weather, conditions, and seasonal bass
-            data to create your personal, actionable fishing strategy.
+            Bass Clarity is an intelligent Bass Fishing App that interprets
+            season and conditions into a focused, actionable fishing strategy.
             <br />
           </p>
 
@@ -464,9 +461,8 @@ export function Landing() {
           </h2>
 
           <p style={{ ...leadStyle, marginBottom: "clamp(36px, 7vw, 64px)" }}>
-            Other apps overwhelm with data but its left up to you to intrepret
-            what they mean. You still end up asking the same questions when
-            approaching a new body of water.
+            Other apps overwhelm with data leaving it up to you to figure out
+            what it all means. You still end up asking the same questions.
           </p>
 
           <div style={{ ...grid2Col, marginBottom: "clamp(32px, 6vw, 56px)" }}>
@@ -540,9 +536,8 @@ export function Landing() {
               maxWidth: 880,
             }}
           >
-            Overwhelming data creates more questions than answers. Bass Clarity
-            exists because fishing decisions aren't made on spreadsheets —
-            they're made on the water.
+            Bass Clarity exists because fishing decisions aren't made on
+            spreadsheets — they're made on the water.
           </p>
         </div>
       </section>
@@ -550,11 +545,10 @@ export function Landing() {
       {/* HOW IT WORKS (Strategy Engine) */}
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>Built to Turn Data Into Decisions</h2>
+          <h2 style={h2Style}>Data Into Decisions</h2>
           <p style={leadStyle}>
-            Bass Clarity ingests the same environmental, regional, seasonal, and
-            situational data serious anglers already respect. Then we synthesize
-            it into a cohesive plan.
+            Environmental, regional, seasonal, and situational data synthesized
+            into a cohesive plan.
           </p>
         </div>
         <div style={{ height: 46 }} />
@@ -633,7 +627,7 @@ export function Landing() {
                   Icon: BarChartIcon,
                   title: "Two Dynamic Approaches",
                   bullets: [
-                    "Primary and Secondary Approaches",
+                    // "Primary and Secondary Approaches",
                     "Suggestions for Lures, Plastics and Gear",
                     "Color recommendations based on your conditions",
                   ],
@@ -642,7 +636,7 @@ export function Landing() {
                   Icon: CompassIcon,
                   title: "Strategy",
                   bullets: [
-                    "Complete strategy, based on weather + seasonal context",
+                    // "Complete strategy, based on weather + seasonal context",
                     "Written for execution (not theory)",
                     "Natural understandable language",
                   ],
@@ -651,7 +645,7 @@ export function Landing() {
                   Icon: TargetIcon,
                   title: "Targets & Retrieves",
                   bullets: [
-                    "Descriptions for all target areas and exactly how to approach them",
+                    "Target Descriptions and Lure Specific Retrieves",
                     "Helps you to narrow the water, so that you focus on the most productive areas",
                   ],
                 },
@@ -661,7 +655,7 @@ export function Landing() {
                   bullets: [
                     "Early / Midday / Late",
                     "When to shift between approaches keeping adjustments intentional and not random",
-                    "Teaches when to use what, and why",
+                    // "Teaches when to use what, and why",
                   ],
                 },
               ].map((c, i) => (
@@ -766,7 +760,7 @@ export function Landing() {
       {/* ============================================
           BUILT FOR HOW ANGLERS ACTUALLY FISH
           ============================================ */}
-      <section
+      {/* <section
         style={{
           padding: sectionPad,
           background: "rgba(74, 144, 226, 0.02)",
@@ -841,7 +835,7 @@ export function Landing() {
             unfolds differently than expected.
           </p>
         </div>
-      </section>
+      </section> */}
 
       {/* ============================================
           PRICING SECTION
@@ -928,9 +922,8 @@ export function Landing() {
               margin: 0,
             }}
           >
-            Not a map app, not a weather app, not social media. No bite scores
-            and bait lists. Bass Clarity is built for anglers who want to
-            understand why something works — not just what to throw.
+            Bass Clarity is built for anglers who want to understand why
+            something works — not just what to throw.
           </p>
         </div>
       </section>
