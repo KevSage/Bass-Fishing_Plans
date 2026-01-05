@@ -25,6 +25,7 @@ import { WeatherClarityPage } from "./pages/WeatherClarity";
 import { PresentationClarityPage } from "./pages/PresentationClarity";
 import { StrategicClarityPage } from "./pages/StrategicClarity";
 import { LocationClarityPage } from "./pages/LocationClarity";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 function TopBar() {
   return (
@@ -70,6 +71,7 @@ export default function App() {
   return (
     <>
       <Navigation />
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
