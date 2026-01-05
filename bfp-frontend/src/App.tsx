@@ -75,8 +75,8 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/subscribe" element={<Subscribe />} />
         {/* <Route path="/preview" element={<PreviewEnhanced />} /> */}
-        <Route path="/sign-in" element={<SignInPage />} />
-        <Route path="/sign-up" element={<SignUpPage />} />
+        <Route path="/sign-in/*" element={<SignInPage />} />
+        <Route path="/sign-up/*" element={<SignUpPage />} />
         <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/location" element={<LocationClarityPage />} />
