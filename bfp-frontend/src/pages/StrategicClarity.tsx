@@ -722,53 +722,9 @@ export function StrategicClarityPage() {
             into presentation decisions.
           </p>
 
-          <div style={{ height: 34 }} />
+          <div style={{ height: 24 }} />
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 14,
-            }}
-          >
-            <div style={{ ...softCard, padding: 20 }}>
-              <div style={{ fontWeight: 780, marginBottom: 10 }}>
-                Weather Clarity
-              </div>
-              <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                The core numbers — temperature, wind, pressure, sky/precip — in
-                a calm, readable format with plain-language expansions.
-              </div>
-              <div style={{ marginTop: 14 }}>
-                <Link to="/weather" style={smallCta}>
-                  Go to Weather Clarity →
-                </Link>
-              </div>
-            </div>
-
-            <div
-              style={{
-                ...card,
-                padding: 20,
-                background: "rgba(255,255,255,0.02)",
-              }}
-            >
-              <div style={{ fontWeight: 780, marginBottom: 10 }}>
-                Technique / Presentation Clarity
-              </div>
-              <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                How the plan selects technique families and related choices as a
-                coherent set — not random suggestions.
-              </div>
-              <div style={{ marginTop: 14 }}>
-                <Link to="/presentation" style={smallCta}>
-                  Go to Presentation Clarity →
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ height: 26 }} />
+          {/* <div style={{ height: 26 }} /> */}
 
           {/* Unobtrusive subscribe footer row */}
           <div
@@ -785,7 +741,7 @@ export function StrategicClarityPage() {
               Start Your Free Trial
             </Link>
             <Link to="/" style={smallCta}>
-              Back to Landing
+              Back Home
             </Link>
           </div>
         </div>

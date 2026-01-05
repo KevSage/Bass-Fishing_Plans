@@ -454,7 +454,7 @@ export function LocationClarityPage() {
                     color: "rgba(255,255,255,0.68)",
                   }}
                 >
-                  What you'll notice
+                  Real Time Data-Analysis
                 </div>
 
                 <div style={{ height: 14 }} />
@@ -477,12 +477,12 @@ export function LocationClarityPage() {
                       title: "We Consider Your Location",
                       desc: "A single, consistent read of your water today based on your location's recent weather trends",
                     },
+                    // {
+                    //   title: "Your Weather Snapshot",
+                    //   desc: "Temperature, wind, pressure, and sky/precip, plus supporting signals used internally",
+                    // },
                     {
-                      title: "Capture a weather snapshot",
-                      desc: "Temperature, wind, pressure, and sky/precip, plus supporting signals used internally",
-                    },
-                    {
-                      title: "Compute derived signals",
+                      title: "Your Weather Snapshot",
                       desc: "Trends like temperature swing, wind context, pressure movement, and stability indicators.",
                     },
                   ].map((x, i) => (

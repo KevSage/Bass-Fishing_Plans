@@ -192,6 +192,9 @@ export function Navigation() {
         style={{
           position: "sticky",
           top: 0,
+          // ✅ Force full-bleed width in all environments (including prod/Vercel quirks)
+          width: "100vw",
+          marginLeft: "calc(50% - 50vw)",
           zIndex: 11000, // Above overlay padding area; overlay itself is 10000 full-screen
           background: "rgba(10, 10, 10, 0.95)",
           backdropFilter: "blur(10px)",
@@ -204,8 +207,12 @@ export function Navigation() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px 20px",
+            paddingTop: 16,
+            paddingBottom: 16,
             gap: 14,
+            // ✅ iOS safe-area support (notch)
+            paddingLeft: "calc(20px + env(safe-area-inset-left))",
+            paddingRight: "calc(20px + env(safe-area-inset-right))",
           }}
         >
           {/* Logo */}
