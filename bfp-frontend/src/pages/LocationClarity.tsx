@@ -175,8 +175,6 @@ export function LocationClarityPage() {
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              Select from our database of over 1,000 lakes.
-              <br />
               Bass Clarity pulls live weather data directly from your location.
               We then take that data, analyze and create an actionable strategy
               for the water you're fishing. <br />
@@ -364,19 +362,18 @@ export function LocationClarityPage() {
             </div>
 
             <h1 style={h1Style}>
-              Real World Strategy
+              Real Strategy
               <br />
-              Requires Real World Intelligence.
+              Requires Real Intelligence.
               <br />
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              We're not anti data. Data plays a significant role in our
-              analysis. Behind the scenes, Bass Clarity evaluates thousands of
+              Behind the scenes, Bass Clarity evaluates thousands of
               condition-to-outcome relationships to eliminate what doesn't
               matter. <br />
-              The goal is simple: turn conditions into a coherent plan you can
-              execute.{" "}
+              {/* The goal is simple: turn conditions into a coherent plan you can
+              execute.{" "} */}
             </p>
           </div>
 

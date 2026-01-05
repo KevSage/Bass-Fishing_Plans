@@ -256,13 +256,10 @@ export function PresentationClarityPage() {
               Technique / Presentation Clarity
             </div>
 
-            <h1 style={h1Style}>
-              Not Just a Pattern.
-              <br />A Customized Approach.
-            </h1>
+            <h1 style={h1Style}>Two Complementary Approaches.</h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              Two Complementary Approaches.
+              {/* Two Complementary Approaches. */}
               <br />
               Our Engine synthesizes hundreds of potential variables to
               determine the most effective strategy for the day.
