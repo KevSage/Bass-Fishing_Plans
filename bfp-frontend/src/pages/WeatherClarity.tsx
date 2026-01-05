@@ -220,22 +220,22 @@ export function WeatherClarityPage() {
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "6.2%",
-                  width: "87.6%",
+                  left: "4.2%",
+                  width: "92.6%",
                   height: "92.4%",
-                  borderRadius: "42px",
+                  borderRadius: "70px",
                   overflow: "hidden",
                   zIndex: 1,
                   background: "rgba(0,0,0,0.25)",
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Weather1.png"
+                  src="/images/mobile_screenshots/Weather2.png"
                   alt="Weather cards and outlook"
                   style={{
-                    width: "100%",
+                    width: "102%",
                     height: "100%",
-                    objectFit: "fill",
+                    objectFit: "contain",
                     filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
                   }}
                 />
@@ -398,12 +398,12 @@ export function WeatherClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/WhatThisMeansToday.png"
+                  src="/images/mobile_screenshots/LightData.png"
                   alt="Weather cards and outlook"
                   style={{
                     width: "100%",
                     height: "100%",
-                    objectFit: "cover",
+                    objectFit: "contain",
                     filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
                   }}
                 />
@@ -418,147 +418,6 @@ export function WeatherClarityPage() {
                 />
               </div>
             </div>
-
-            {/* Text block */}
-            <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
-              <div
-                style={{
-                  ...softCard,
-                  padding: "clamp(18px, 3.5vw, 28px)",
-                }}
-              >
-                <div
-                  style={{
-                    ...eyebrow,
-                    marginBottom: 12,
-                    color: "rgba(255,255,255,0.68)",
-                  }}
-                >
-                  What you’ll notice
-                </div>
-
-                <div style={{ height: 14 }} />
-
-                <ul
-                  style={{
-                    listStyle: "none",
-                    padding: 0,
-                    margin: 0,
-                    display: "grid",
-                    gap: 14,
-                  }}
-                >
-                  {[
-                    {
-                      title: "Want a Deeper Dive?",
-                      desc: "A quick tap expands the cards and explains how these conditions impact your day on the water.",
-                    },
-                    {
-                      title: "4 Focused Cards",
-                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
-                    },
-                    {
-                      title: "Conditions & Outlook",
-                      desc: "Your Weather outlook explains your day ahead and how it may effect bass behavior, explained in natural langauge.",
-                    },
-                  ].map((x, i) => (
-                    <li
-                      key={i}
-                      style={{
-                        display: "flex",
-                        gap: 12,
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: 999,
-                          marginTop: 8,
-                          background: "rgba(74,144,226,0.95)",
-                          boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
-                          flexShrink: 0,
-                        }}
-                      />
-                      <div>
-                        <div style={{ fontWeight: 720, opacity: 0.92 }}>
-                          {x.title}
-                        </div>
-                        <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                          {x.desc}
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ height: 18 }} />
-
-                {/* <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
-                  Only the Information You Need.
-                  <br />
-                  No translation required.
-                </p> */}
-
-                <div style={{ height: 18 }} />
-
-                {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <Link to="/subscribe" style={primaryCta}>
-                    Start Your Free Trial
-                  </Link>
-                  <Link to="/how-it-works" style={smallCta}>
-                    See how it works
-                  </Link>
-                </div> */}
-              </div>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 14,
-            }}
-          >
-            {[
-              {
-                title: "1) Capture a weather snapshot",
-                desc: "A single, consistent read of your location for today — temperature, wind, pressure, and sky/precip, plus supporting signals used internally.",
-              },
-              {
-                title: "2) Compute derived signals",
-                desc: "Trends like temperature swing, wind context, pressure movement, and stability indicators.",
-              },
-              {
-                title: "3) Present it in two layers",
-                desc: "Cards for glanceable numbers + tap-to-expand detail in natural language tied to your actual conditions.",
-              },
-              {
-                title: "4) Synthesize an outlook blurb",
-                desc: "A short, calm summary that connects the snapshot to what it implies for bass activity and the feel of the day.",
-              },
-            ].map((x, i) => (
-              <div
-                key={i}
-                style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 750,
-                    letterSpacing: "-0.01em",
-                    marginBottom: 8,
-                    color: "rgba(255,255,255,0.92)",
-                  }}
-                >
-                  {x.title}
-                </div>
-                <div style={{ opacity: 0.78, lineHeight: 1.75 }}>{x.desc}</div>
-              </div>
-            ))}
           </div>
 
           <div style={{ height: 22 }} />
@@ -590,129 +449,15 @@ export function WeatherClarityPage() {
         </div>
       </section>
 
-      {/* WHAT YOU SEE (Cards + Expansion) */}
-      <section
-        style={{
-          padding: sectionPad,
-          background: "rgba(74, 144, 226, 0.02)",
-          borderTop: sectionTopBorder,
-          borderBottom: sectionTopBorder,
-        }}
-      >
-        <div className="container" style={container(1200)}>
-          <h2 style={h2Style}>What you see in the plan</h2>
-          <p style={leadStyle}>
-            Four cards keep the section short. Expansions add detail in natural
-            language — tied to today’s numbers — so it feels informative without
-            turning into a dashboard.
-          </p>
-
-          <div style={{ height: 46 }} />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 14,
-            }}
-          >
-            {[
-              {
-                icon: "🌡️",
-                title: "Temperature",
-                bullets: [
-                  "High / low + swing",
-                  "Expansion references today’s temps",
-                  "Outlook pulls it in when it matters",
-                ],
-              },
-              {
-                icon: "💨",
-                title: "Wind",
-                bullets: [
-                  "Speed + direction",
-                  "Safety-forward when wind is strong",
-                  "Expansion explains how the day feels",
-                ],
-              },
-              {
-                icon: "📉",
-                title: "Pressure",
-                bullets: [
-                  "Current + trend context",
-                  "Interprets stability vs change",
-                  "Explained without solunar clutter",
-                ],
-              },
-              {
-                icon: "☁️",
-                title: "Sky + Precip",
-                bullets: [
-                  "Cloud cover + rain",
-                  "Simple phrasing (no noise)",
-                  "Outlook mentions rain/moon only if relevant",
-                ],
-              },
-            ].map((c, i) => (
-              <div
-                key={i}
-                style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 14,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background:
-                        "linear-gradient(135deg, rgba(74,144,226,0.22) 0%, rgba(74,144,226,0.06) 100%)",
-                      border: "1px solid rgba(74,144,226,0.20)",
-                    }}
-                  >
-                    <span style={{ fontSize: "1.15rem" }}>{c.icon}</span>
-                  </div>
-                  <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
-                    {c.title}
-                  </div>
-                </div>
-
-                <ul
-                  style={{
-                    marginTop: 14,
-                    paddingLeft: 18,
-                    lineHeight: 1.8,
-                    opacity: 0.82,
-                    fontSize: "1.02rem",
-                  }}
-                >
-                  {c.bullets.map((b, idx) => (
-                    <li key={idx}>{b}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ height: 26 }} />
-        </div>
-      </section>
-
       {/* BOTTOM NAV: next pages */}
       <section style={{ padding: sectionPad }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>Next: the rest of the system</h2>
-          <p style={leadStyle}>
+          <h2 style={h2Style}>Next: Presentation Clarity</h2>
+          {/* <p style={leadStyle}>
             Weather is one layer of clarity. The next pages cover how Bass
             Clarity turns conditions into technique decisions — and then into a
             coherent, fishable strategy.
-          </p>
+          </p> */}
 
           <div style={{ height: 34 }} />
 
@@ -738,7 +483,7 @@ export function WeatherClarityPage() {
               </div>
             </div>
 
-            <div
+            {/* <div
               style={{
                 ...card,
                 padding: 20,
@@ -757,7 +502,7 @@ export function WeatherClarityPage() {
                   Go to Strategic Clarity →
                 </Link>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <div style={{ height: 26 }} />

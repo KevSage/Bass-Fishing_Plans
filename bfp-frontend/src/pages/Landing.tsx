@@ -374,7 +374,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Weather1.png"
+                  src="/images/mobile_screenshots/Weather2.png"
                   style={{
                     width: "100%",
                     height: "100%",
@@ -587,7 +587,7 @@ export function Landing() {
                 }}
               />
               <img
-                src="/images/mobile_screenshots/Jerkbait.png"
+                src="/images/mobile_screenshots/Texas.png"
                 alt="Strategy cards interface"
                 style={{
                   position: "absolute",
@@ -628,8 +628,7 @@ export function Landing() {
                   title: "Two Dynamic Approaches",
                   bullets: [
                     // "Primary and Secondary Approaches",
-                    "Suggestions for Lures, Plastics and Gear",
-                    "Color recommendations based on your conditions",
+                    "Suggestions for Lures, Plastics and Gear. Color recommendations based on your conditions",
                   ],
                 },
                 {
@@ -637,24 +636,21 @@ export function Landing() {
                   title: "Strategy",
                   bullets: [
                     // "Complete strategy, based on weather + seasonal context",
-                    "Written for execution (not theory)",
-                    "Natural understandable language",
+                    "Written for execution, presented in natural understandable language",
                   ],
                 },
                 {
                   Icon: TargetIcon,
                   title: "Targets & Retrieves",
                   bullets: [
-                    "Target Descriptions and Lure Specific Retrieves",
-                    "Helps you to narrow the water, so that you focus on the most productive areas",
+                    "Target descriptions and lure specific retrieves helps you narrow the water, so that you focus on the most productive areas",
                   ],
                 },
                 {
                   Icon: LayersIcon,
-                  title: "Day Progression Guidance",
+                  title: "Full Day Progression",
                   bullets: [
-                    "Early / Midday / Late",
-                    "When to shift between approaches keeping adjustments intentional and not random",
+                    "Tells you when to shift between approaches keeping adjustments intentional and not random",
                     // "Teaches when to use what, and why",
                   ],
                 },
@@ -900,6 +896,84 @@ export function Landing() {
           >
             Start Your Free Trial
           </Link>
+        </div>
+      </section>
+      {/* BOTTOM NAV: next pages */}
+      <section style={{ padding: sectionPad }}>
+        <div className="container" style={container(1100)}>
+          <h2 style={h2Style}>Next: Location</h2>
+          <p style={leadStyle}>
+            Bass Clarity is built for anglers who want to understand why
+            something works — not just what to throw. Clarity begins with
+            knowing where you are.
+          </p>
+
+          <div style={{ height: 34 }} />
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 14,
+            }}
+          >
+            {/* <div style={{ ...softCard, padding: 20 }}>
+                    <div style={{ fontWeight: 780, marginBottom: 10 }}>
+                      Technique / Presentation Clarity
+                    </div>
+                    <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
+                      How the plan selects technique families, lures, colors, and gear
+                      as a coherent set — not random suggestions.
+                    </div>
+                    <div style={{ marginTop: 14 }}>
+                      <Link to="/presentation" style={smallCta}>
+                        Go to Presentation Clarity →
+                      </Link>
+                    </div>
+                  </div> */}
+
+            <div
+              style={{
+                ...card,
+                padding: 20,
+                background: "rgba(255,255,255,0.02)",
+              }}
+            >
+              <div style={{ fontWeight: 780, marginBottom: 10 }}>
+                Location Clarity
+              </div>
+              <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
+                First, find your water on the map or search our lake databese
+                with more than 1,000 recognized lakes.
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <Link to="/location" style={smallCta}>
+                  Go to Location Clarity →
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ height: 26 }} />
+
+          {/* Unobtrusive subscribe footer row */}
+          <div
+            style={{
+              marginTop: 10,
+              display: "flex",
+              justifyContent: "center",
+              gap: 10,
+              flexWrap: "wrap",
+              opacity: 0.98,
+            }}
+          >
+            <Link to="/subscribe" style={primaryCta}>
+              Start Your Free Trial
+            </Link>
+            <Link to="/" style={smallCta}>
+              Back to Landing
+            </Link>
+          </div>
         </div>
       </section>
 

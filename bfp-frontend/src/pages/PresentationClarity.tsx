@@ -256,41 +256,14 @@ export function PresentationClarityPage() {
               Technique / Presentation Clarity
             </div>
 
-            <h1 style={h1Style}>Two Complementary Approaches.</h1>
+            <h1 style={h1Style}>Complementary Approaches.</h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               {/* Two Complementary Approaches. */}
               <br />
               Our Engine synthesizes hundreds of potential variables to
-              determine the most effective strategy for the day.
+              determine the two most effective strategies for the day.
             </p>
-
-            <div
-              style={{
-                marginTop: 26,
-                display: "flex",
-                justifyContent: "center",
-                gap: 10,
-                flexWrap: "wrap",
-              }}
-            >
-              <span style={pill}>
-                <UnifiedIcon name="presentation" size={26} /> Presentation
-                family
-              </span>
-              <span style={pill}>
-                <UnifiedIcon name="lure" size={20} /> Lure + rig pairing
-              </span>
-              <span style={pill}>
-                <UnifiedIcon name="color" size={20} /> Color guidance
-              </span>
-              <span style={pill}>
-                <UnifiedIcon name="logic" size={20} /> Plain English reasoning
-              </span>
-              <span style={pill}>
-                <UnifiedIcon name="gear" size={20} /> Gear Recommendation
-              </span>
-            </div>
           </div>
 
           {/* Phone + Quick explainer */}
@@ -333,7 +306,7 @@ export function PresentationClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Primary.png"
+                  src="/images/mobile_screenshots/Primary1.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -379,11 +352,7 @@ export function PresentationClarityPage() {
                 >
                   <Bullet
                     title="Anchors Your Day"
-                    desc="The primary pattern is meant to serve as the best starting point, based on your current conditions"
-                  />
-                  <Bullet
-                    title="Based on Real Angler Logic"
-                    desc="Our Engine synthesizes hundreds of potential variables (location, water, temp, wind, season etc) to determine the most effective strategy for the day. "
+                    desc="Based on real angler logic, the primary pattern is meant to serve as the best starting point, based on your current weather, season and conditions"
                   />
                   <Bullet
                     title="Pattern Summary"
@@ -438,7 +407,7 @@ export function PresentationClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Pivot.png"
+                  src="/images/mobile_screenshots/Pivot1.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -484,19 +453,19 @@ export function PresentationClarityPage() {
                 >
                   <Bullet
                     title="A Powerful Alternate "
-                    desc="Don't think of the secondary pattern as a backup. It's a stretegic complement to the primary pattern that will serve as either a pivot or as a tandem search and pick apart combination used by the pros."
+                    desc="A stretegic complement to the primary pattern that serves as either a pivot or as a tandem search and pick apart combination, as used by the pros."
                   />
                   <Bullet
                     title="The Pivot"
-                    desc="When bass are less active and your primary pattern isn't producing as expected, Bass Clarity creates a strategic pivot that targets bass in a different water column."
+                    desc="When bass are less active, Bass Clarity utilizes Pattern 2 as a strategic pivot that targets bass in a different water column."
                   />
                   <Bullet
                     title="Search and Destroy"
-                    desc="If your primary pattern is a Search Bait/Surface Ambush (chatterbait, shallow crank, whopper plopper etc), pattern 2 will often serve as the followup/pick apart presentation once active bass are located. "
+                    desc="If your primary pattern is a Search Bait/Surface Ambush (chatterbait, shallow crank, whopper plopper etc), pattern 2 will often serve as the followup. "
                   />
                   <Bullet
                     title="What You'll Notice (Real Intelligence)"
-                    desc="The Pattern summary directly references not only your conditions, but it also references the primary pattern. Explains in plain language the role of this presentation in relation to the first."
+                    desc="Not only does it reference your conditions, but it also references the primary pattern and explains in plain language its role and relation to the first."
                   />
                 </ul>
 
@@ -544,7 +513,7 @@ export function PresentationClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/WhyThisWorks.png"
+                  src="/images/mobile_screenshots/WhyThisWorks1.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -598,7 +567,7 @@ export function PresentationClarityPage() {
                   />
                   <Bullet
                     title="Gear Recommendations"
-                    desc="No presentation is complete without the appropriate gear to support it. Gear recommendation optimized for each approach, includes Rod/Reel/Line recommendations"
+                    desc="Gear recommendation optimized for each approach, includes Rod/Reel/Line recommendations"
                   />
                 </ul>
 
@@ -607,125 +576,7 @@ export function PresentationClarityPage() {
             </div>
           </div>
         </div>
-      </section>
 
-      {/* HOW IT WORKS */}
-
-      {/* WHAT YOU SEE */}
-      <section
-        style={{
-          padding: sectionPad,
-          background: "rgba(74, 144, 226, 0.02)",
-          borderTop: sectionTopBorder,
-          borderBottom: sectionTopBorder,
-        }}
-      >
-        <div className="container" style={container(1200)}>
-          <h2 style={h2Style}>What you see in the pattern card</h2>
-          <p style={leadStyle}>
-            A few focused fields make the card glanceable. The explanation stays
-            short — but it’s detailed enough to build confidence.
-          </p>
-
-          <div style={{ height: 46 }} />
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 14,
-            }}
-          >
-            {[
-              {
-                icon: "presentation" as IconName,
-                title: "Presentation family",
-                bullets: [
-                  "Names the style (not just the bait).",
-                  "Helps you fish it correctly on purpose.",
-                  "The plan picks the movement + water column first.",
-                ],
-              },
-              {
-                icon: "lure" as IconName,
-                title: "Featured Lure",
-                bullets: [
-                  "A specific lure type for the day.",
-                  "If needed: rig + plastic or trailer pairing.",
-                  "Best expresses the presentation for today’s conditions",
-                ],
-              },
-              {
-                icon: "pattern" as IconName,
-                title: "Pattern Summary",
-                bullets: [
-                  "The big-picture read on the day.",
-                  "What the plan suggests fish may do.",
-                  "Keeps expectations realistic and calm.",
-                ],
-              },
-              {
-                icon: "color" as IconName,
-                title: "Color Guidance",
-                bullets: [
-                  "Two options based on visibility.",
-                  "Chosen from realistic, bait-specific colors, not random.",
-                  "Simple enough to act on immediately.",
-                ],
-              },
-              {
-                icon: "gear" as IconName,
-                title: "Gear Alignment",
-                bullets: [
-                  "Rod / reel / line recommendations.",
-                  "Matches the presentation’s demands.",
-                  "Keeps the setup coherent end‑to‑end.",
-                ],
-              },
-              {
-                icon: "logic" as IconName,
-                title: "Why this fits today",
-                bullets: [
-                  "Explains the reasoning in plain English",
-                  "Connects conditions to lure behavior.",
-                  "Lures always refereneced contextually, based on your local conditions",
-                ],
-              },
-            ].map((c, i) => (
-              <div
-                key={i}
-                style={{
-                  ...card,
-                  padding: 18,
-                  background: "rgba(255,255,255,0.02)",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <UnifiedIcon name={c.icon} />
-                  <div style={{ fontWeight: 780, fontSize: "1.1rem" }}>
-                    {c.title}
-                  </div>
-                </div>
-
-                <ul
-                  style={{
-                    marginTop: 14,
-                    paddingLeft: 18,
-                    lineHeight: 1.8,
-                    opacity: 0.82,
-                    fontSize: "1.02rem",
-                  }}
-                >
-                  {c.bullets.map((b, idx) => (
-                    <li key={idx}>{b}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ height: 26 }} />
-        </div>
         <div
           style={{
             ...softCard,
@@ -751,10 +602,14 @@ export function PresentationClarityPage() {
         </div>
       </section>
 
+      {/* HOW IT WORKS */}
+
+      {/* WHAT YOU SEE */}
+
       {/* ============================================
           WHO THIS IS FOR
           ============================================ */}
-      <section
+      {/* <section
         style={{
           padding: `clamp(72px, 9vw, 100px) ${sectionPadX}`,
           background: "rgba(74, 144, 226, 0.02)",
@@ -770,26 +625,19 @@ export function PresentationClarityPage() {
               margin: 0,
             }}
           >
-            Less than the last Jackhammer you snagged.
+            Less than a Jackhammer.
             <br />
-            Less than the Vision 110 that you launched due to a bad tie.
+            Less than a Vision 110.
             <br />
             $10 a month for clarity you won't find anywhere else.
           </p>
         </div>
-      </section>
+      </section> */}
 
       {/* BOTTOM NAV: next pages */}
       <section style={{ padding: sectionPad }}>
         <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>Next: Strategic Clarity</h2>
-          <p style={leadStyle}>
-            Presentation tells you how to fish the bait. Strategic Clarity turns
-            the day into targets, retrieves, and a progression that feels
-            executable.
-          </p>
-
-          <div style={{ height: 34 }} />
+          {/* <div style={{ height: 34 }} /> */}
 
           <div
             style={{
@@ -803,8 +651,8 @@ export function PresentationClarityPage() {
                 Strategic Clarity
               </div>
               <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                Targets, retrieves, and day progression — the parts that make
-                the plan fishable on the water.
+                Strategic Clarity turns the day into targets, retrieves, and a
+                progression that feels executable.
               </div>
               <div style={{ marginTop: 14 }}>
                 <Link to="/strategy" style={smallCta}>
@@ -822,7 +670,7 @@ export function PresentationClarityPage() {
               </div>
             </div>
 
-            <div
+            {/* <div
               style={{
                 ...card,
                 padding: 20,
@@ -841,7 +689,7 @@ export function PresentationClarityPage() {
                   Back to Weather Clarity
                 </Link>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <div style={{ height: 26 }} />
