@@ -21,3 +21,4 @@ stripe
 svix
 PyJWT
 email-validator
+psycopg[binary]==3.2.3
