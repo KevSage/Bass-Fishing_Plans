@@ -212,6 +212,9 @@ export function Landing() {
       style={{
         background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
         color: "#fff",
+        // ✅ Prevent landing-only horizontal “page widening” on iOS Safari
+        width: "100%",
+        overflowX: "clip", // best modern option
       }}
     >
       {/* ============================================
