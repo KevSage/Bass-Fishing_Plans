@@ -334,7 +334,7 @@ export function About() {
                   color: "#4A90E2",
                 }}
               >
-                Two Complementary Approaches (Members)
+                Two Complementary Approaches
               </h3>
               <p
                 style={{
