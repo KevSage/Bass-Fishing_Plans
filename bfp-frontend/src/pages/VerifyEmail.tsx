@@ -1,31 +1,65 @@
 // src/pages/VerifyEmail.tsx
 import React from "react";
-import { useClerk } from "@clerk/clerk-react";
+import { useClerk, useSignUp } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
 
 export function VerifyEmail() {
+  const { isLoaded, signUp, setActive } = useSignUp();
   const { user } = useClerk();
   const navigate = useNavigate();
+
+  const [code, setCode] = React.useState("");
+  const [verifying, setVerifying] = React.useState(false);
   const [resending, setResending] = React.useState(false);
   const [resent, setResent] = React.useState(false);
+  const [error, setError] = React.useState("");
 
-  // If user is already verified, redirect to members
+  // Redirect if already verified
   React.useEffect(() => {
     if (user?.emailAddresses[0]?.verification?.status === "verified") {
       navigate("/members", { replace: true });
     }
   }, [user, navigate]);
 
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isLoaded) return;
+
+    setVerifying(true);
+    setError("");
+
+    try {
+      // Use the signUp object to attempt verification
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code,
+      });
+
+      if (completeSignUp.status === "complete") {
+        // Set the session as active and redirect
+        await setActive({ session: completeSignUp.createdSessionId });
+        navigate("/members");
+      } else {
+        console.error("Incomplete signup status:", completeSignUp.status);
+      }
+    } catch (err: any) {
+      setError(
+        err.errors?.[0]?.message ||
+          "Verification failed. Please check the code."
+      );
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const handleResend = async () => {
+    if (!isLoaded) return;
     setResending(true);
     try {
-      await user?.emailAddresses[0]?.prepareVerification({
-        strategy: "email_code",
-      });
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setResent(true);
       setTimeout(() => setResent(false), 3000);
-    } catch (error) {
-      console.error("Failed to resend:", error);
+    } catch (err) {
+      console.error("Failed to resend:", err);
     } finally {
       setResending(false);
     }
@@ -44,144 +78,72 @@ export function VerifyEmail() {
     >
       <div
         className="card"
-        style={{
-          maxWidth: 480,
-          width: "100%",
-          textAlign: "center",
-        }}
+        style={{ maxWidth: 480, width: "100%", textAlign: "center" }}
       >
-        {/* Icon */}
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            margin: "0 auto 24px",
-            background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-            borderRadius: "50%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
-          }}
-        >
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
-          </svg>
-        </div>
-
-        {/* Title */}
-        <h1
-          style={{
-            fontSize: "1.75rem",
-            fontWeight: 700,
-            marginBottom: 12,
-          }}
-        >
-          Check Your Email
+        <h1 style={{ fontSize: "1.75rem", fontWeight: 700, marginBottom: 12 }}>
+          Enter Verification Code
         </h1>
-
-        {/* Description */}
-        <p
-          style={{
-            fontSize: "1rem",
-            opacity: 0.8,
-            lineHeight: 1.6,
-            marginBottom: 24,
-          }}
-        >
-          We've sent a verification link to{" "}
-          <strong style={{ color: "#4A90E2" }}>
-            {user?.emailAddresses[0]?.emailAddress}
-          </strong>
+        <p style={{ fontSize: "1rem", opacity: 0.8, marginBottom: 24 }}>
+          We sent a code to{" "}
+          <strong style={{ color: "#4A90E2" }}>{signUp?.emailAddress}</strong>
         </p>
 
-        {/* Instructions */}
-        <div
-          style={{
-            background: "rgba(74, 144, 226, 0.1)",
-            border: "1px solid rgba(74, 144, 226, 0.2)",
-            borderRadius: 12,
-            padding: "16px 20px",
-            marginBottom: 24,
-            textAlign: "left",
-          }}
-        >
-          <p
+        <form onSubmit={handleVerify}>
+          <input
+            type="text"
+            placeholder="6-digit code"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
             style={{
-              fontSize: "0.9rem",
-              opacity: 0.9,
-              lineHeight: 1.6,
-              margin: 0,
+              width: "100%",
+              padding: "12px",
+              borderRadius: "8px",
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.05)",
+              color: "white",
+              fontSize: "1.2rem",
+              textAlign: "center",
+              letterSpacing: "4px",
+              marginBottom: "16px",
             }}
-          >
-            Click the link in the email to verify your account and start
-            generating fishing plans. The link will expire in 24 hours.
-          </p>
-        </div>
+            required
+          />
 
-        {/* Resend Button */}
+          {error && (
+            <p
+              style={{
+                color: "#ff4d4d",
+                fontSize: "0.9rem",
+                marginBottom: "16px",
+              }}
+            >
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={verifying || code.length < 6}
+            className="btn"
+            style={{ width: "100%", marginBottom: 16 }}
+          >
+            {verifying ? "Verifying..." : "Verify Account"}
+          </button>
+        </form>
+
         <button
           onClick={handleResend}
           disabled={resending || resent}
-          className="btn"
           style={{
-            width: "100%",
-            marginBottom: 16,
-            background: resent
-              ? "rgba(76, 175, 80, 0.2)"
-              : "rgba(255, 255, 255, 0.05)",
-            border: resent
-              ? "1px solid rgba(76, 175, 80, 0.3)"
-              : "1px solid rgba(255, 255, 255, 0.1)",
+            background: "none",
+            border: "none",
+            color: "#4A90E2",
+            cursor: "pointer",
+            textDecoration: "underline",
           }}
         >
-          {resent ? "✓ Email Sent!" : resending ? "Sending..." : "Resend Email"}
+          {resent ? "Code Sent!" : "Resend Code"}
         </button>
-
-        {/* Divider */}
-        <div
-          style={{
-            height: 1,
-            background: "rgba(255, 255, 255, 0.1)",
-            margin: "24px 0",
-          }}
-        />
-
-        {/* Help Text */}
-        <p
-          style={{
-            fontSize: "0.85rem",
-            opacity: 0.6,
-            lineHeight: 1.6,
-          }}
-        >
-          Didn't receive the email? Check your spam folder or{" "}
-          <button
-            onClick={handleResend}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#4A90E2",
-              textDecoration: "underline",
-              cursor: "pointer",
-              padding: 0,
-              fontSize: "inherit",
-            }}
-          >
-            resend verification email
-          </button>
-          .
-        </p>
       </div>
     </div>
   );
