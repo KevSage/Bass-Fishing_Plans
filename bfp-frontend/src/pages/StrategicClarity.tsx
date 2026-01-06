@@ -435,32 +435,28 @@ export function StrategicClarityPage() {
                   Icon: CompassIcon,
                   title: "Strategy",
                   bullets: [
-                    "Complete strategy written for execution (not theory)",
-                    "Natural understandable language",
+                    "Complete strategy written for execution in easy to understand language",
                   ],
                 },
                 {
                   Icon: TargetIcon,
                   title: "Targets",
                   bullets: [
-                    "Targets based on season and your conditions",
-
-                    "Helps you to narrow the water",
+                    "Targets based on season and your conditions helping you narrow the water",
                   ],
                 },
                 {
                   Icon: LayersIcon,
                   title: "Retrieves",
                   bullets: [
-                    "Hundreds of retrieves specific to your lure",
-                    "Cadence + control notes",
+                    "Hundreds of retrieves specific to your lure with retrieve cadence + control notes",
                   ],
                 },
                 {
                   Icon: BarChartIcon,
                   title: "Day progression",
                   bullets: [
-                    "Explains when to shift between approaches keeping adjustments intentional, not random",
+                    "When to shift between approaches keeping adjustments intentional, not random",
                   ],
                 },
               ].map((c, i) => (
