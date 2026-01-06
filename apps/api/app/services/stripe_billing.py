@@ -44,7 +44,11 @@ def create_checkout_session(*, email: str) -> str:
         metadata={"email": email},
         subscription_data={
             "metadata": {"email": email},
-            "trial_period_days": 5},
+            "trial_settings": {
+                "end_behavior": {"missing_payment_method": "cancel"}
+            },
+            "trial_period_days": 5,  # keep if it’s working for you; if not, remove and set trial_end instead
+        },
     )
     return session.url
 
