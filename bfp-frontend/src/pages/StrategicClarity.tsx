@@ -238,7 +238,7 @@ export function StrategicClarityPage() {
                   position: "absolute",
                   top: "3.8%",
                   left: "6.2%",
-                  width: "87.6%",
+                  width: "90.6%",
                   height: "92.4%",
                   borderRadius: "42px",
                   overflow: "hidden",
@@ -247,7 +247,7 @@ export function StrategicClarityPage() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/WTW_Strategy.png"
+                  src="/images/mobile_screenshots/WTW2.png"
                   alt="Strategy cards and progression"
                   style={{
                     width: "100%",
