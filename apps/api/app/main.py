@@ -29,7 +29,7 @@ from pydantic import BaseModel, EmailStr
 from app.services.subscribers import SubscriberStore
 from app.services.rate_limits import RateLimitStore
 from app.services.plan_links import PlanLinkStore
-from app.services.plan_history import plan_history_store
+from app.services.plan_history import PlanHistoryStore
 from app.services.weather import get_weather_snapshot
 from app.services.phase_logic import determine_phase
 from app.services.llm_plan_service import generate_llm_plan_with_retries
