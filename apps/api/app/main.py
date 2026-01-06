@@ -58,14 +58,25 @@ from app.routes import clerk_webhooks, members
 subs = SubscriberStore()
 rate_limits = RateLimitStore()
 plan_links = PlanLinkStore()
+# ✅ FIXED: Initialized plan_history_store to resolve 'undefined' error
+plan_history_store = PlanHistoryStore() 
 
 # FastAPI app
 app = FastAPI(title="Bass Clarity API")
 
-# CORS
+# ✅ PRODUCTION CORS CONFIGURATION
+# List specific domains to allow browser access from your live site
+origins = [
+    "https://www.bassclarity.com",
+    "https://bassclarity.com",
+    "https://bassclarity.vercel.app",  # Support Vercel previews
+    "http://localhost:3000",           # Local development
+    "http://localhost:5173",           # Vite default port
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -74,11 +85,9 @@ app.add_middleware(
 # Environment
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
-
 # ========================================
 # VARIETY SYSTEM HELPER
 # ========================================
-
 
 def get_recent_lures(
     email: str,
@@ -86,25 +95,11 @@ def get_recent_lures(
 ) -> dict[str, list[str]]:
     """
     Get user's N most recent primary AND secondary lures from plan history.
-    
-    This is used for variety tie-breaking - if multiple lures are equally valid,
-    prefer alternatives to recently used lures.
-    
-    Args:
-        email: User's email address
-        limit: Number of recent plans to check (default 2)
-        
-    Returns:
-        Dict with primary and secondary lure lists:
-        {
-            "primary": ["carolina rig", "chatterbait"],
-            "secondary": ["texas rig", "jig"]
-        }
     """
-    # Get recent plan history (last 7 days is enough for variety)
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     
     try:
+        # Uses the newly initialized plan_history_store
         recent_history = plan_history_store.get_user_plans(
             email=email,
             since=seven_days_ago,
@@ -125,19 +120,15 @@ def get_recent_lures(
             continue
         
         try:
-            # Get full plan data using token
             full_plan_data = plan_links.get_plan(token)
             if not full_plan_data:
                 continue
             
             plan = full_plan_data.get("plan", {})
-            
-            # Extract primary lure
             primary_lure = plan.get("primary", {}).get("base_lure")
             if primary_lure:
                 primary_lures.append(primary_lure)
             
-            # Extract secondary lure
             secondary_lure = plan.get("secondary", {}).get("base_lure")
             if secondary_lure:
                 secondary_lures.append(secondary_lure)
@@ -150,6 +141,7 @@ def get_recent_lures(
         "primary": primary_lures,
         "secondary": secondary_lures
     }
+
 # ========================================
 # REQUEST MODELS
 # ========================================
@@ -159,8 +151,7 @@ class PlanGenerateRequest(BaseModel):
     latitude: float
     longitude: float
     location_name: str
-    access_type: str = "boat"  # "boat" or "bank" - defaults to boat for backward compatibility
-
+    access_type: str = "boat" 
 
 class SubscribeRequest(BaseModel):
     email: EmailStr
@@ -171,23 +162,8 @@ class SubscribeRequest(BaseModel):
 
 @app.post("/plan/generate")
 async def plan_generate(body: PlanGenerateRequest, request: Request):
-    """
-    Unified plan generation endpoint.
-    
-    Flow:
-    1. Validate access_type (boat or bank)
-    2. Check if user is subscriber
-    3. Check rate limits (30-day preview OR 1-hour member cooldown) - skipped with X-Admin-Override header
-    4. Get weather + determine phase
-    5. Get recent lures for variety (if available)
-    6. Generate plan with access-filtered targets and variety context
-    7. Save plan link
-    8. Record request (no emails for v1)
-    9. Return plan URL + data
-    """
     email = body.email.lower().strip()
     
-    # 1. Validate access_type
     access_type = body.access_type.lower().strip()
     if access_type not in ["boat", "bank"]:
         raise HTTPException(
@@ -195,34 +171,25 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             detail=f"Invalid access_type: '{access_type}'. Must be 'boat' or 'bank'."
         )
     
-    # Check for admin override header
     admin_override = request.headers.get("X-Admin-Override") == "true"
-    
-    # 2. Check subscription status
     is_member = subs.is_active(email)
     
-    # 3. Rate limiting (skip if admin override)
     if not admin_override:
         if is_member:
-            # Members: 1-hour cooldown
             allowed, seconds_remaining = rate_limits.check_member_cooldown(email)
             if not allowed:
                 minutes = seconds_remaining / 60
                 hours = seconds_remaining / 3600
-                if hours >= 1:
-                    time_msg = f"{hours:.1f} hours"
-                else:
-                    time_msg = f"{int(minutes)} minutes"
+                time_msg = f"{hours:.1f} hours" if hours >= 1 else f"{int(minutes)} minutes"
                 raise HTTPException(
                     status_code=429,
                     detail={
                         "error": "rate_limit_member",
-                        "message": f"Please wait {time_msg} between plan requests. Plans are limited to one per hour.",
+                        "message": f"Please wait {time_msg} between plan requests.",
                         "seconds_remaining": seconds_remaining,
                     }
                 )
         else:
-            # Non-members: 30-day preview limit
             allowed, seconds_remaining = rate_limits.check_preview_limit(email)
             if not allowed:
                 days = seconds_remaining / (24 * 3600)
@@ -230,19 +197,18 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
                     status_code=429,
                     detail={
                         "error": "rate_limit_preview",
-                        "message": f"You can request one preview every 30 days. Next available in {days:.1f} days.",
+                        "message": f"Next preview available in {days:.1f} days.",
                         "seconds_remaining": seconds_remaining,
                         "upgrade_url": f"{WEB_BASE_URL}/subscribe?email={email}"
                     }
                 )
     
-    # 4. Get weather and determine phase
     try:
+        # Note: Requires OPENWEATHER_API_KEY in Render Env
         weather = await get_weather_snapshot(body.latitude, body.longitude)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Weather service error: {e}")
     
-    # Determine phase using regional logic
     current_month = datetime.now().month
     phase = determine_phase(
         temp_f=weather["temp_f"],
@@ -250,18 +216,8 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         latitude=body.latitude,
     )
     
-    # Debug logging
-    print(f"WEATHER: temp={weather.get('temp_f')}°F, wind={weather.get('wind_mph')}mph, "
-          f"pressure={weather.get('pressure_mb')}mb ({weather.get('pressure_trend')}), "
-          f"sky={weather.get('cloud_cover')}, phase={phase}")
-
-    # 5. Get recent lures for variety (if user has history)
     recent_lures = get_recent_lures(email, limit=2)
 
-    if recent_lures:
-        print(f"LLM_PLAN: Recent lures for {email}: {recent_lures}")
-    
-    # 6. Generate plan (LLM with retries, access filtering, and variety context)
     trip_date = datetime.now().strftime("%B %d, %Y")
     
     try:
@@ -280,60 +236,37 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         raise HTTPException(status_code=500, detail=f"Plan generation error: {e}")
     
     if not plan:
-        raise HTTPException(
-            status_code=503,
-            detail="Plan generation temporarily unavailable. Please try again."
-        )
+        raise HTTPException(status_code=503, detail="Plan generation temporarily unavailable.")
     
-    # 6b. Enrich member plans with gear and strategy (deterministic)
     if is_member:
         plan = enrich_member_plan(plan, weather, phase)
     
-    # ✅ FIXED: Add ALL weather data to conditions (flattened)
     plan["conditions"] = {
-        # Location & Date
         "location_name": body.location_name,
         "latitude": body.latitude,
         "longitude": body.longitude,
         "trip_date": trip_date,
         "access_type": access_type,
         "subscriber_email": email if is_member else None,
-        
-        # Phase
         "phase": phase,
-        
-        # ✅ ALL ENHANCED WEATHER DATA (flattened from weather snapshot)
         "temp_f": weather["temp_f"],
         "temp_high": weather["temp_high"],
         "temp_low": weather["temp_low"],
         "wind_mph": weather["wind_mph"],
         "cloud_cover": weather["cloud_cover"],
-        
-        # ✅ Barometric Pressure (CRITICAL - was missing)
         "pressure_mb": weather["pressure_mb"],
         "pressure_trend": weather["pressure_trend"],
-        
-        # ✅ Light & UV (NEW)
         "uv_index": weather["uv_index"],
-        
-        # ✅ Precipitation (NEW)
         "precipitation_1h": weather["precipitation_1h"],
         "has_recent_rain": weather["has_recent_rain"],
-        
-        # ✅ Moon & Solunar (NEW)
         "moon_phase": weather["moon_phase"],
         "moon_illumination": weather["moon_illumination"],
         "is_major_period": weather["is_major_period"],
-        
-        # ✅ Other (NEW)
         "humidity": weather["humidity"],
-        
-        # ✅ LEGACY FIELDS (for backward compatibility with old frontend)
-        "wind_speed": weather["wind_mph"],  # Alias for old field name
-        "sky_condition": weather["cloud_cover"],  # Alias for old field name
+        "wind_speed": weather["wind_mph"],  
+        "sky_condition": weather["cloud_cover"],  
     }
     
-    # 7. Save plan link
     token = plan_links.save_plan(
         email=email,
         is_member=is_member,
@@ -342,7 +275,6 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     
     plan_url = f"{WEB_BASE_URL}/plan?token={token}"
     
-    # 7b. Add to plan history
     plan_history_store.add_plan(
         user_email=email,
         plan_link_id=token,
@@ -351,13 +283,11 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         conditions=plan["conditions"]
     )
     
-    # 8. Record request (no emails for v1)
     if is_member:
         rate_limits.record_member_request(email)
     else:
         rate_limits.record_preview(email)
     
-    # 9. Return response
     return {
         "plan_url": plan_url,
         "token": token,
@@ -371,21 +301,14 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
 
 @app.get("/plan/view/{token}")
 async def plan_view(token: str):
-    """
-    View a saved plan by token.
-    Anyone with the link can view.
-    """
     plan_data = plan_links.get_plan(token)
-    
     if not plan_data:
         raise HTTPException(status_code=404, detail="Plan not found")
-    
     return {
         "plan": plan_data["plan"],
         "created_at": plan_data["created_at"],
         "views": plan_data["views"],
     }
-
 
 # ========================================
 # BILLING / STRIPE
@@ -393,120 +316,71 @@ async def plan_view(token: str):
 
 @app.post("/billing/subscribe")
 def billing_subscribe(body: SubscribeRequest):
-    """
-    Create Stripe checkout session for subscription.
-    """
     email = body.email.strip().lower()
-    
     try:
         checkout_url = create_checkout_session(email=email)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Billing error: {e}")
-    
     return {"checkout_url": checkout_url}
-
 
 @app.post("/billing/portal")
 async def billing_portal(authorization: Optional[str] = Header(None)):
-    """
-    Create Stripe Customer Portal session for subscription management.
-    Requires authentication.
-    """
     from app.routes.members import verify_clerk_session
-    
-    # Verify user is authenticated
     email = await verify_clerk_session(authorization)
-    
-    # Get subscriber to find customer_id
     subscriber = subs.get(email)
     if not subscriber or not subscriber.stripe_customer_id:
         raise HTTPException(status_code=404, detail="No subscription found")
-    
     try:
         portal_url = create_portal_session(customer_id=subscriber.stripe_customer_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Portal error: {e}")
-    
     return {"portal_url": portal_url}
-
 
 @app.post("/webhooks/stripe")
 async def stripe_webhook(request: Request):
-    """
-    Handle Stripe webhooks for subscription events.
-    """
     payload = await request.body()
     sig = request.headers.get("stripe-signature")
-    
     try:
         event = verify_webhook_and_parse_event(payload=payload, stripe_signature=sig)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Webhook verification failed: {e}")
     
-    # Extract subscription state
     update = extract_subscription_state(event)
-    
     if update:
         email, active, customer_id, subscription_id = update
-        
-        # Update subscriber status
         subs.upsert_active(
             email=email,
             active=active,
             stripe_customer_id=customer_id,
             stripe_subscription_id=subscription_id,
         )
-        
-        # Send welcome email for new subscribers
         if active and event.get("type") == "checkout.session.completed":
             try:
                 send_welcome_email(email)
             except Exception as e:
                 print(f"Welcome email failed for {email}: {e}")
-    
     return {"ok": True}
 
-
 # ========================================
-# HEALTH CHECK
+# HEALTH CHECK & ROOT
 # ========================================
 
 @app.get("/health")
+@app.head("/health") # Support HEAD for Render
 def health_check():
-    """
-    Simple health check endpoint.
-    """
     return {
         "status": "healthy",
         "services": {
             "subscribers": "ok",
             "rate_limits": "ok",
             "plan_links": "ok",
+            "plan_history": "ok"
         }
     }
 
-
-# ========================================
-# CLERK & MEMBER ROUTES
-# ========================================
-
-app.include_router(clerk_webhooks.router, tags=["clerk"])
-app.include_router(members.router, tags=["members"])
-
-# DEBUG: Print all registered routes
-print("\n" + "="*50)
-print("REGISTERED ROUTES:")
-for route in app.routes:
-    if hasattr(route, 'path') and hasattr(route, 'methods'):
-        print(f"  {list(route.methods)} {route.path}")
-print("="*50 + "\n")
-
-
 @app.get("/")
+@app.head("/") # Clear 405 Method Not Allowed error
 def root():
-    """
-    Root endpoint.
-    """
     return {
         "service": "Bass Clarity API",
         "version": "2.0",
@@ -517,3 +391,10 @@ def root():
             "health": "GET /health",
         }
     }
+
+# ========================================
+# CLERK & MEMBER ROUTES
+# ========================================
+
+app.include_router(clerk_webhooks.router, tags=["clerk"])
+app.include_router(members.router, tags=["members"])
