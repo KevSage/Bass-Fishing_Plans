@@ -10,11 +10,7 @@ export function FAQ() {
       answer:
         "Bass Clarity analyzes current weather, seasonal phase, and regional patterns to generate a complete fishing strategy. You select your lake, we analyze conditions, and deliver a plan with specific lures, retrieves, targets, and reasoning—all in about 30 seconds.",
     },
-    {
-      question: "What's the difference between Preview and Members?",
-      answer:
-        "Preview gives you ONE focused pattern with weather analysis, lures, colors, targets, and retrieves. Members get TWO complementary patterns, matched gear specifications (rod/reel/line), pattern summaries, strategy tips, day progression, and unlimited plan generation. Preview users can generate one plan every 30 days; members have no limits.",
-    },
+
     {
       question: "How many lakes are in your database?",
       answer:
@@ -30,25 +26,16 @@ export function FAQ() {
       answer:
         "Members can generate a new plan right from the water. Wind picks up? Clouds roll in? Water gets choppy? Check if conditions warrant a different approach. Clarity when you need it most.",
     },
-    {
-      question: "Do I need cell service to view my plan?",
-      answer:
-        "No. Download your plan as a PDF before you launch. It works offline, is readable in direct sunlight, and you can print it if you prefer paper on the water.",
-    },
+
     {
       question: "How accurate is the seasonal data?",
       answer:
         "Our seasonal logic accounts for regional variation. Late-fall in Texas is different from late-fall in Michigan. We don't use one-size-fits-all calendar dates—your plan adapts to your region and current phase.",
     },
     {
-      question: "What lure brands do you recommend?",
-      answer:
-        "We specify lure types (crankbait, Texas rig, chatterbait), colors, and trailers—not specific brands. This gives you flexibility to use what you already own or trust.",
-    },
-    {
       question: "Can I save my plans?",
       answer:
-        "Yes. Every plan has a unique link emailed to you. You can access past plans anytime, and members can save PDFs for offline reference.",
+        "Yes. You can view the 10 most recent plans you've generated for reference, directly from your account page",
     },
     {
       question: "What if I fish small ponds or private lakes?",
@@ -58,7 +45,7 @@ export function FAQ() {
     {
       question: "How do I know which pattern to start with?",
       answer:
-        "Members get both Pattern 1 (primary) and Pattern 2 (complementary pivot). Start with Pattern 1. If it slows or conditions change, switch to Pattern 2. They're designed to work together, not compete.",
+        "Pattern 1 (primary) and Pattern 2 (complementary pivot). Start with Pattern 1. If it slows or conditions change, switch to Pattern 2. They're designed to work together, not compete.",
     },
     {
       question: "What kind of gear specs do members get?",
@@ -68,15 +55,10 @@ export function FAQ() {
     {
       question: "Can I cancel anytime?",
       answer:
-        "Yes. Cancel your $15/month membership anytime. No contracts, no hassle.",
+        "Yes. Cancel your $10/month membership anytime. No contracts, no hassle.",
     },
     {
-      question: "Do you cover saltwater fishing?",
-      answer:
-        "Not yet. Bass Clarity is currently focused exclusively on largemouth and smallmouth bass in freshwater.",
-    },
-    {
-      question: "What if my lake isn't working?",
+      question: "What if my lake isn't in the database?",
       answer:
         "Contact us. We're constantly expanding our database and want to know which lakes matter to you.",
     },

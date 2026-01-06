@@ -42,7 +42,9 @@ def create_checkout_session(*, email: str) -> str:
         allow_promotion_codes=False,
         client_reference_id=email,
         metadata={"email": email},
-        subscription_data={"metadata": {"email": email}},
+        subscription_data={
+            "metadata": {"email": email},
+            "trial_period_days": 5},
     )
     return session.url
 
