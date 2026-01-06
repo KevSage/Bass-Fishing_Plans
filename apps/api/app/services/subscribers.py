@@ -33,6 +33,7 @@ class SubscriberStore:
             self._init_pg()
         else:
             self._init_sqlite()
+        print(f"[SubscriberStore] use_pg={self._use_pg} has_DATABASE_URL={bool(self._pg_url)}")
 
     # -------------------------
     # Postgres
