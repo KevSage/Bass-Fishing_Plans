@@ -86,60 +86,25 @@ def verify_webhook_and_parse_event(
         secret=wh_secret,
     )
     return event
+# apps/api/app/services/stripe_billing.py
 
-
-def extract_subscription_state(
-    event: Dict[str, Any]
-) -> Optional[Tuple[str, bool, Optional[str], Optional[str]]]:
-    """
-    Returns (email, active, customer_id, subscription_id) if event is relevant.
-    Otherwise returns None.
-    """
-    etype = event.get("type")
-    obj = event.get("data", {}).get("object", {}) or {}
-
-    # ----------------------------
-    # 1) Checkout completed
-    # ----------------------------
-    # Guardrail:
-    # Some Stripe CLI fixtures can emit checkout.session.completed WITHOUT a real subscription.
-    # We only treat checkout completion as activation if subscription_id is present.
-    if etype == "checkout.session.completed":
-        subscription_id = obj.get("subscription")
-        if not subscription_id:
-            return None  # <-- critical fix (prevents fixture noise from "activating" anyone)
-
-        email = (
-            (obj.get("customer_details", {}) or {}).get("email")
-            or obj.get("customer_email")
-            or (obj.get("metadata", {}) or {}).get("email")
-        )
+def extract_subscription_state(event: Dict[str, Any]):
+    # ... existing code ...
+    if etype in ("customer.subscription.created", "customer.subscription.updated"):
+        obj = event.get("data", {}).get("object", {})
         customer_id = obj.get("customer")
-        if email:
-            return (email, True, customer_id, subscription_id)
-        return None
-
-    # ----------------------------
-    # 2) Subscription lifecycle = source of truth
-    # ----------------------------
-    if etype in (
-        "customer.subscription.created",
-        "customer.subscription.updated",
-        "customer.subscription.deleted",
-    ):
-        customer_id = obj.get("customer")
-        subscription_id = obj.get("id")
-        status = (obj.get("status") or "").lower()
-
-        # Stripe statuses that should be considered "active access"
-        active = status in ("active", "trialing")
-
-        # Email comes from metadata we set in create_checkout_session(subscription_data.metadata)
+        
+        # Try metadata first
         email = (obj.get("metadata", {}) or {}).get("email")
+        
+        # FALLBACK: If metadata is empty (as seen in your event JSON)
+        if not email and customer_id:
+            import stripe
+            customer = stripe.Customer.retrieve(customer_id)
+            email = getattr(customer, 'email', None)
+            
         if email:
-            return (email, active, customer_id, subscription_id)
-
-        # If metadata isn't present (older subs), do nothing rather than guessing.
-        return None
-
+            status = (obj.get("status") or "").lower()
+            active = status in ("active", "trialing")
+            return (email.lower().strip(), active, customer_id, obj.get("id"))
     return None
