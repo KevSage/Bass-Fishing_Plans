@@ -400,10 +400,10 @@ export function Landing() {
                 }}
               >
                 {[
-                  "A Bass-Centric Daily Weather Outlook",
+                  "Daily Weather Outlook focused on bass activity",
                   "Curated list of target areas based on season and your conditions.",
                   "Two complementary approaches based on your targets.",
-                  "Soft plastic, trailer, color and gear recommendations based on the approaches.",
+                  "Soft plastic/trailer, color and gear recommendations based on the approaches.",
                   "Lure Specific Retrieves that explain how to execute and when to adjust.",
                   "A Full Day Progression plan that outlines your day from first light, to your last cast. ",
                 ].map((item, i) => (
@@ -629,10 +629,9 @@ export function Landing() {
               {[
                 {
                   Icon: BarChartIcon,
-                  title: "Two Dynamic Approaches",
+                  title: "The Approach",
                   bullets: [
-                    // "Primary and Secondary Approaches",
-                    "Suggestions for Lures, Plastics and Gear. Color recommendations based on your conditions",
+                    "Primary and Secondary presentations optimized for your current conditions",
                   ],
                 },
                 {
@@ -640,7 +639,7 @@ export function Landing() {
                   title: "Strategy",
                   bullets: [
                     // "Complete strategy, based on weather + seasonal context",
-                    "Written for execution, presented in natural understandable language",
+                    "Your strategy is generated for your water, written for execution, presented in natural understandable language",
                   ],
                 },
                 {
