@@ -124,10 +124,32 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
     email = await verify_clerk_session(authorization)
     
     # Check subscriber status
+    # Check subscriber status
     subscriber = subscriber_store.get(email)
-    is_member = subscriber and subscriber.active
+
+    # Default membership decision from stored flag
+    is_member = bool(subscriber and subscriber.active)
     has_subscription = subscriber is not None
-    
+
+    # If we have a Stripe subscription id, trust Stripe status (includes trialing)
+    if subscriber and subscriber.stripe_subscription_id:
+        try:
+            subscription = stripe.Subscription.retrieve(subscriber.stripe_subscription_id)
+
+            status = (
+                subscription.get("status")
+                if hasattr(subscription, "get")
+                else getattr(subscription, "status", None)
+            )
+            status_norm = (status or "").lower()
+
+            # ✅ Trial users count as members
+            if status_norm in ("active", "trialing"):
+                is_member = True
+
+        except Exception as e:
+            print(f"Failed to fetch Stripe subscription status for {email}: {str(e)}")
+        
     # Check rate limit
     if is_member:
         allowed, seconds_remaining = rate_limit_store.check_member_cooldown(email)
