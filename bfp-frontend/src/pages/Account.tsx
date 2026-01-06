@@ -90,7 +90,7 @@ export function Account() {
               year: "numeric",
             }),
             plan: data.plan_interval === "year" ? "Annual" : "Monthly",
-            price: `$${data.plan_amount || 15}/${
+            price: `$${data.plan_amount || 10}/${
               data.plan_interval || "month"
             }`,
           });
@@ -98,7 +98,7 @@ export function Account() {
           setSubscription({
             status: "inactive",
             plan: data.plan_interval === "year" ? "Annual" : "Monthly",
-            price: `$${data.plan_amount || 15}/${
+            price: `$${data.plan_amount || 10}/${
               data.plan_interval || "month"
             }`,
           });
