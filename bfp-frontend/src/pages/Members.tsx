@@ -7,7 +7,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useNavigate } from "react-router-dom";
 
-import { generateMemberPlan } from "@/lib/api";
+import { generateMemberPlan, RateLimitError } from "@/lib/api";
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
@@ -23,7 +23,37 @@ export function Members() {
   const { user } = useUser();
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
+  // ✅ ADD: State for the cooldown info
+  const [rateLimitInfo, setRateLimitInfo] = useState<{
+    message: string;
+    secondsRemaining: number;
+  } | null>(null);
 
+  // ✅ ADD: The Countdown Timer Effect
+  // This runs every second when a rate limit is hit
+  useEffect(() => {
+    if (!rateLimitInfo || rateLimitInfo.secondsRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setRateLimitInfo((prev) => {
+        if (!prev || prev.secondsRemaining <= 1) {
+          clearInterval(timer);
+          return null;
+        }
+        return { ...prev, secondsRemaining: prev.secondsRemaining - 1 };
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [rateLimitInfo]);
+
+  // Helper to format seconds into M:S
+  const formatTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`;
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}m ${secs}s`;
+  };
   const [showModal, setShowModal] = useState(false);
   const [waterName, setWaterName] = useState("");
   const [placeholder, setPlaceholder] = useState(
@@ -207,34 +237,35 @@ export function Members() {
     }
   }
 
+  // ✅ UPDATE: Your handleGenerate function
   async function handleGenerate() {
-    if (!user?.primaryEmailAddress?.emailAddress) {
-      setErr("Email not found");
-      return;
-    }
-    if (!waterName || !selectedCoords) {
-      setErr("Please enter a lake name");
-      return;
-    }
+    if (!user?.primaryEmailAddress?.emailAddress || !selectedCoords) return;
 
     setErr(null);
+    setRateLimitInfo(null); // Reset previous limit info
     setLoading(true);
 
     try {
-      const payload = {
+      const response = await generateMemberPlan({
         email: user.primaryEmailAddress.emailAddress,
         water: {
           name: waterName,
           lat: selectedCoords.lat,
           lon: selectedCoords.lng,
         },
-        access_type: accessType, // ← NEW: Send access type to API
-      };
-
-      const response = await generateMemberPlan(payload);
+        access_type: accessType,
+      });
       navigate("/plan", { state: { planResponse: response } });
     } catch (e: any) {
-      setErr(e?.message ?? "Failed to generate plan.");
+      // Catch the 429 error specifically
+      if (e instanceof RateLimitError) {
+        setRateLimitInfo({
+          message: e.message,
+          secondsRemaining: e.seconds_remaining,
+        });
+      } else {
+        setErr(e?.message ?? "Failed to generate plan.");
+      }
       setLoading(false);
     }
   }
@@ -637,19 +668,52 @@ export function Members() {
                   </div>
                 )}
 
+                {/* ✅ ADD: Cooldown Alert Box (Place this right above your Generate Button) */}
+                {rateLimitInfo && (
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      background: "rgba(74, 144, 226, 0.1)",
+                      border: "1px solid rgba(74, 144, 226, 0.3)",
+                      borderRadius: 12,
+                      marginBottom: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      color: "#000",
+                    }}
+                  >
+                    <span style={{ fontSize: "1.2rem" }}>⏳</span>
+                    <div style={{ fontSize: "0.9rem", lineHeight: 1.4 }}>
+                      <strong>Plan Cooldown:</strong> Please wait{" "}
+                      <strong>
+                        {formatTime(rateLimitInfo.secondsRemaining)}
+                      </strong>{" "}
+                      before your next request.
+                    </div>
+                  </div>
+                )}
+
                 <button
                   onClick={handleGenerate}
-                  disabled={!waterName || !selectedCoords}
+                  // ✅ SURGICAL FIX: Disable the button if rateLimitInfo is NOT null
+                  disabled={!!rateLimitInfo || !waterName || !selectedCoords}
                   className="btn primary"
                   style={{
                     width: "100%",
-                    padding: "16px",
-                    fontSize: "1.1rem",
-                    fontWeight: 600,
-                    marginTop: "auto",
+                    padding: 16,
+                    // Visual feedback: grey out the button when disabled
+                    background: rateLimitInfo ? "#ccc" : "#4A90E2",
+                    cursor: rateLimitInfo ? "not-allowed" : "pointer",
+                    transition: "background 0.3s ease",
                   }}
                 >
-                  Generate Full Plan
+                  {/* Show the remaining time directly on the button label */}
+                  {rateLimitInfo
+                    ? `System Locked: ${formatTime(
+                        rateLimitInfo.secondsRemaining
+                      )}`
+                    : "Generate Full Plan"}
                 </button>
 
                 {selectedCoords && (
