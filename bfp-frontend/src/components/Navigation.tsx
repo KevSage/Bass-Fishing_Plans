@@ -1,6 +1,5 @@
 // src/components/Navigation.tsx
-// Mobile-first navigation with hamburger menu + Clerk
-// UPDATED: "Smart Visibility" - Hides Top Orb on Plan pages to prevent redundancy
+// Fixed: Breakpoint alignment (768px) to prevent double-orb glitch
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -17,8 +16,7 @@ export function Navigation() {
   const { signOut } = useClerk();
   const navigate = useNavigate();
 
-  // ✅ SMART CHECK: Are we currently on a Plan Screen?
-  // Checks for "/plan" (query param style) or "/plan/view" (direct link style)
+  // Smart Check: Hide header orb on Plan pages (because Dock is active)
   const isPlanPage = location.pathname.startsWith("/plan");
 
   const publicLinks = useMemo(
@@ -116,8 +114,7 @@ export function Navigation() {
 
         <div style={{ height: 10 }} />
 
-        {/* HAMBURGER MENU ORB: We KEEP this one. 
-            If they open the menu, they might want to leave the plan page. */}
+        {/* HAMBURGER MENU ORB: Visible inside menu for convenience */}
         <Link
           to="/members"
           onClick={() => setIsOpen(false)}
@@ -280,7 +277,7 @@ export function Navigation() {
                 </Link>
               ))}
 
-              {/* ✅ DESKTOP ORB: HIDE on Plan Pages */}
+              {/* DESKTOP ORB: HIDE on Plan Pages */}
               {!isPlanPage && (
                 <Link
                   to="/members"
@@ -413,7 +410,7 @@ export function Navigation() {
 
           {/* MOBILE HEADER CONTROLS */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* ✅ MOBILE ORB: HIDE on Plan Pages */}
+            {/* MOBILE ORB: HIDE on Plan Pages */}
             <SignedIn>
               {!isPlanPage && (
                 <div className="mobile-orb-container">
@@ -467,7 +464,8 @@ export function Navigation() {
       {mobileOverlay ? createPortal(mobileOverlay, document.body) : null}
 
       <style>{`
-        @media (min-width: 1024px) {
+        /* ✅ FIXED: Synced to 768px to match global styles */
+        @media (min-width: 768px) {
           .mobile-orb-container, .mobile-menu-btn {
             display: none !important;
           }
