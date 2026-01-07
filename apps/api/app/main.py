@@ -167,33 +167,20 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     is_member = subs.is_active(email)
     
     if not admin_override:
-        if is_member:
-            allowed, seconds_remaining = rate_limits.check_member_cooldown(email)
-            if not allowed:
-                minutes = seconds_remaining / 60
-                hours = seconds_remaining / 3600
-                time_msg = f"{hours:.1f} hours" if hours >= 1 else f"{int(minutes)} minutes"
-                raise HTTPException(
-                    status_code=429,
-                    detail={
-                        "error": "rate_limit_member",
-                        "message": f"Please wait {time_msg} between plan requests.",
-                        "seconds_remaining": seconds_remaining,
-                    }
-                )
-        else:
-            allowed, seconds_remaining = rate_limits.check_preview_limit(email)
-            if not allowed:
-                days = seconds_remaining / (24 * 3600)
-                raise HTTPException(
-                    status_code=429,
-                    detail={
-                        "error": "rate_limit_preview",
-                        "message": f"Next preview available in {days:.1f} days.",
-                        "seconds_remaining": seconds_remaining,
-                        "upgrade_url": f"{WEB_BASE_URL}/subscribe?email={email}"
-                    }
-                )
+        if not is_member:
+            raise HTTPException(
+                status_code=403,
+                detail="Subscription required to generate scouting reports."
+            )
+            
+        if not rate_limits.is_within_daily_limit(email):
+            raise HTTPException(
+                status_code=429,
+                detail={
+                    "error": "rate_limit_daily",
+                    "message": "You've used your 10 daily scouting reports. New insights reset at midnight."
+                }
+            )
     
     try:
         weather = await get_weather_snapshot(latitude, longitude)
@@ -270,9 +257,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     )
     
     if is_member:
-        rate_limits.record_member_request(email)
-    else:
-        rate_limits.record_preview(email)
+        rate_limits.increment_daily_count(email)
     
     return {
         "plan_url": plan_url,
