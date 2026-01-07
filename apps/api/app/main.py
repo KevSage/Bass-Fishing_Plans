@@ -51,27 +51,27 @@ from app.services.stripe_billing import (
     extract_subscription_state,
 )
 
-# Routes
-from app.routes import clerk_webhooks, members
-
-# Initialize stores
+# ----------------------------------------
+# 1. INITIALIZE STORES FIRST
+# ----------------------------------------
+# These must exist BEFORE importing routes that use them
 subs = SubscriberStore()
 rate_limits = RateLimitStore()
 plan_links = PlanLinkStore()
-# ✅ FIXED: Initialized plan_history_store to resolve 'undefined' error
 plan_history_store = PlanHistoryStore() 
 
-# FastAPI app
+# ----------------------------------------
+# 2. APP SETUP
+# ----------------------------------------
 app = FastAPI(title="Bass Clarity API")
 
 # ✅ PRODUCTION CORS CONFIGURATION
-# List specific domains to allow browser access from your live site
 origins = [
     "https://www.bassclarity.com",
     "https://bassclarity.com",
-    "https://bassclarity.vercel.app",  # Support Vercel previews
-    "http://localhost:3000",           # Local development
-    "http://localhost:5173",           # Vite default port
+    "https://bassclarity.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:5173",
 ]
 
 app.add_middleware(
@@ -89,17 +89,11 @@ WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 # VARIETY SYSTEM HELPER
 # ========================================
 
-def get_recent_lures(
-    email: str,
-    limit: int = 2
-) -> dict[str, list[str]]:
-    """
-    Get user's N most recent primary AND secondary lures from plan history.
-    """
+def get_recent_lures(email: str, limit: int = 2) -> dict[str, list[str]]:
+    """Get user's N most recent primary AND secondary lures from plan history."""
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     
     try:
-        # Uses the newly initialized plan_history_store
         recent_history = plan_history_store.get_user_plans(
             email=email,
             since=seven_days_ago,
@@ -116,31 +110,24 @@ def get_recent_lures(
     
     for plan_hist in recent_history:
         token = plan_hist.get("plan_link_id")
-        if not token:
-            continue
+        if not token: continue
         
         try:
             full_plan_data = plan_links.get_plan(token)
-            if not full_plan_data:
-                continue
+            if not full_plan_data: continue
             
             plan = full_plan_data.get("plan", {})
-            primary_lure = plan.get("primary", {}).get("base_lure")
-            if primary_lure:
-                primary_lures.append(primary_lure)
+            p_lure = plan.get("primary", {}).get("base_lure")
+            if p_lure: primary_lures.append(p_lure)
             
-            secondary_lure = plan.get("secondary", {}).get("base_lure")
-            if secondary_lure:
-                secondary_lures.append(secondary_lure)
+            s_lure = plan.get("secondary", {}).get("base_lure")
+            if s_lure: secondary_lures.append(s_lure)
                 
         except Exception as e:
             print(f"Failed to extract lures from plan {token}: {e}")
             continue
     
-    return {
-        "primary": primary_lures,
-        "secondary": secondary_lures
-    }
+    return {"primary": primary_lures, "secondary": secondary_lures}
 
 # ========================================
 # REQUEST MODELS
@@ -151,7 +138,7 @@ class PlanGenerateRequest(BaseModel):
     latitude: float
     longitude: float
     location_name: str
-    access_type: str = "boat" 
+    access_type: str = "boat"
 
 class SubscribeRequest(BaseModel):
     email: EmailStr
@@ -162,6 +149,11 @@ class SubscribeRequest(BaseModel):
 
 @app.post("/plan/generate")
 async def plan_generate(body: PlanGenerateRequest, request: Request):
+    # Map flat fields to Service variables
+    latitude = body.latitude
+    longitude = body.longitude
+    location = body.location_name
+    
     email = body.email.lower().strip()
     
     access_type = body.access_type.lower().strip()
@@ -204,29 +196,23 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
                 )
     
     try:
-        # Note: Requires OPENWEATHER_API_KEY in Render Env
-        weather = await get_weather_snapshot(body.latitude, body.longitude)
+        weather = await get_weather_snapshot(latitude, longitude)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Weather service error: {e}")
     
     current_month = datetime.now().month
-    phase = determine_phase(
-        temp_f=weather["temp_f"],
-        month=current_month,
-        latitude=body.latitude,
-    )
+    phase = determine_phase(temp_f=weather["temp_f"], month=current_month, latitude=latitude)
     
     recent_lures = get_recent_lures(email, limit=2)
-
     trip_date = datetime.now().strftime("%B %d, %Y")
     
     try:
         plan = await generate_llm_plan_with_retries(
             weather=weather,
             phase=phase,
-            location=body.location_name,
-            latitude=body.latitude,
-            longitude=body.longitude,
+            location=location, 
+            latitude=latitude,
+            longitude=longitude,
             access_type=access_type,
             is_member=is_member,
             recent_primary_lures=recent_lures["primary"],
@@ -243,8 +229,8 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     
     plan["conditions"] = {
         "location_name": body.location_name,
-        "latitude": body.latitude,
-        "longitude": body.longitude,
+        "latitude": latitude,
+        "longitude": longitude,
         "trip_date": trip_date,
         "access_type": access_type,
         "subscriber_email": email if is_member else None,
@@ -366,7 +352,7 @@ async def stripe_webhook(request: Request):
 # ========================================
 
 @app.get("/health")
-@app.head("/health") # Support HEAD for Render
+@app.head("/health")
 def health_check():
     return {
         "status": "healthy",
@@ -379,7 +365,7 @@ def health_check():
     }
 
 @app.get("/")
-@app.head("/") # Clear 405 Method Not Allowed error
+@app.head("/")
 def root():
     return {
         "service": "Bass Clarity API",
@@ -393,8 +379,10 @@ def root():
     }
 
 # ========================================
-# CLERK & MEMBER ROUTES
+# 3. REGISTER ROUTES LAST
 # ========================================
+# Import routes AFTER stores are initialized to prevent circular import 500s
+from app.routes import clerk_webhooks, members
 
 app.include_router(clerk_webhooks.router, tags=["clerk"])
 app.include_router(members.router, tags=["members"])

@@ -229,6 +229,15 @@ RETURN JSON ONLY:
 
 CRITICAL: Return a SINGLE JSON OBJECT only. No markdown. No extra keys. No wrapper objects.
 
+🚨 COLOR POOL INTEGRITY RULE (CRITICAL):
+Before selecting color_recommendations, you MUST identify the specific pool for your chosen lure using LURE_COLOR_POOL_MAP.
+Using a color from the wrong pool will cause system failure. 
+Common Hallucinations to AVOID:
+❌ "chartreuse" for Crankbaits -> MUST use "chartreuse/black back" or "firetiger"
+❌ "shad" for Crankbaits -> MUST use "sexy shad" or "ghost shad"
+❌ "pearl" for Rigs -> MUST use "white" or "baby bass"
+❌ "green pumpkin" for Frogs -> MUST use "green" or "brown"
+
 🚨 CRITICAL VALIDATION RULE #1 - ONLY ONE BOTTOM CONTACT PRESENTATION PER PLAN:
 
 Bottom Contact presentations are:
@@ -705,10 +714,21 @@ SECONDARY Analysis:
 - ❌ WRONG: Pick jig (ignores variety requirement)
 
 Both patterns should show variety INDEPENDENTLY.
+If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERENT viable colors for each to give the angler options.
 """
     
+    # ✅ FIX 1: DIVERSIFY Nudge - No longer forces single colors
+    color_variety_nudge = """
+🎨 COLOR VARIETY REQUIREMENT:
+- DIVERSITY: Avoid using the exact same color pair for Primary and Secondary if possible.
+- Winter/Cold: Do NOT default to "black/blue" for every plan. 
+  * Clear water alternatives: "green pumpkin orange", "watermelon red", "peanut butter & jelly".
+  * Stained water alternatives: "junebug", "red craw".
+"""
+
     user_input["instructions"] = (
         variety_instructions + "\n\n" +
+        color_variety_nudge + "\n\n" +
         "ACCESSIBLE TARGETS (based on " + access_type + " access):\n" +
         "- You MUST choose 3 targets ONLY from the accessible_targets list\n" +
         "- Available targets: " + str(accessible_targets) + "\n" +
@@ -739,7 +759,6 @@ Both patterns should show variety INDEPENDENTLY.
     # ENHANCED WEATHER ANALYSIS INJECTION
     # ===================================================================
     
-    # Extract enhanced weather data
     pressure_mb = weather.get("pressure_mb")
     pressure_trend = weather.get("pressure_trend")
     moon_phase = weather.get("moon_phase")
@@ -748,7 +767,6 @@ Both patterns should show variety INDEPENDENTLY.
     uv_index = weather.get("uv_index")
     humidity = weather.get("humidity")
     
-    # Build dynamic weather guidance based on actual conditions
     weather_guidance = "\n🌡️ ENHANCED WEATHER ANALYSIS:\n\n"
     
     # Barometric Pressure Analysis (HIGHEST PRIORITY)
@@ -805,20 +823,14 @@ Both patterns should show variety INDEPENDENTLY.
                 weather_guidance += "- Minimal moonlight, bass feed during daylight hours\n"
             weather_guidance += "\n"
     
-    # Precipitation Analysis
+    # ✅ FIX 2: REMOVED "FOR BOTH RECOMMENDATIONS" CONSTRAINT
     if has_recent_rain:
         weather_guidance += """
 💧 RECENT RAIN DETECTED
 - Water clarity likely REDUCED (stained or muddy)
 - Oxygen levels INCREASED (active bass)
-- SHIFT COLORS toward high-visibility options:
-  * Use chartreuse, white, bright colors for BOTH recommendations
-  * Even in "clear water" lane, pick brighter options (white vs pearl, chartreuse vs green pumpkin)
-- LOUDER BAITS more effective: chatterbait, spinnerbait (Colorado blade), lipless crank
-- Target creek mouths, points, runoff areas (bass follow baitfish)
-- Strategy tone: "Recent rain has stained the water—bright colors improve visibility in reduced clarity"
-
-"""
+- SHIFT COLORS toward high-visibility options (chartreuse, white, black/blue).
+- Strategy tone: "Recent rain has stained the water—bright colors improve visibility in reduced clarity"\n"""
     
     # UV Index Analysis
     if uv_index is not None:
@@ -1029,7 +1041,7 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
         return plan
 
     except Exception as e:
-        print("LLM_PLAN ERROR: " + type(e).__name__ + " " + repr(e))
+        print(f"LLM_PLAN ERROR: {type(e).__name__} {repr(e)}")
         return None
 
 
@@ -1431,8 +1443,6 @@ async def generate_llm_plan_with_retries(
         # - Simpler, no post-processing needed
         if variety_mode != "best":
             pass  # No swapping - LLM handles variety via temperature
-            # plan = swap_lures_for_variety(plan, variety_mode, weather, phase)  # ← DISABLED
-            # plan = apply_color_variety(plan, variety_mode)  # ← DISABLED
 
         # Validate plan
         is_valid, errors = validate_llm_plan(plan, is_member=is_member)
