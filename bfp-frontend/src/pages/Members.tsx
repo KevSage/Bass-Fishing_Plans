@@ -1,5 +1,5 @@
 // src/pages/Members.tsx
-// FINAL: Glowing Orb Marker + Radar Icon + No Spellcheck
+// UPDATE: Added "Low Fuel" Warning (Hidden until 2 remaining)
 
 import React, { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
@@ -11,12 +11,22 @@ import { generateMemberPlan, RateLimitError } from "@/lib/api";
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
+import { FishIcon } from "@/components/UnifiedIcons";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+const MAX_DAILY_PLANS = 10;
+const WARNING_THRESHOLD = 8; // Warning appears when 8 are used (2 remaining)
 
 function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
   return f.source === "composite" && f.sourceLayer === "water";
 }
+
+// Custom Orb Marker (From previous step)
+const createOrbMarker = () => {
+  const el = document.createElement("div");
+  el.className = "orb-marker-map";
+  return el;
+};
 
 // --- ICONS ---
 const BoatIcon = ({ active }: { active: boolean }) => (
@@ -84,7 +94,6 @@ const PinIcon = () => (
     <circle cx="12" cy="10" r="3"></circle>
   </svg>
 );
-// ✅ NEW: Tactical Radar Icon for the Drawer Button
 const RadarIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}
@@ -110,10 +119,12 @@ export function Members() {
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
 
+  // Rate Limit & Usage State
   const [rateLimitInfo, setRateLimitInfo] = useState<{
     message: string;
     secondsRemaining: number;
   } | null>(null);
+  const [dailyUsage, setDailyUsage] = useState(0); // Local session tracker (Connect to user DB for persistence)
 
   useEffect(() => {
     if (!rateLimitInfo || rateLimitInfo.secondsRemaining <= 0) return;
@@ -153,13 +164,7 @@ export function Members() {
   const initialized = useRef(false);
   const rafRef = useRef<number | null>(null);
 
-  // --- HELPER: Create Custom Orb Marker Element ---
-  const createOrbMarker = () => {
-    const el = document.createElement("div");
-    el.className = "orb-marker-map"; // Defined in <style> below
-    return el;
-  };
-
+  // Map Lifecycle
   useEffect(() => {
     if (
       initialized.current ||
@@ -224,7 +229,6 @@ export function Members() {
         setShowModal(true);
 
         if (markerRef.current) markerRef.current.remove();
-        // ✅ NEW: Use Custom Orb Element
         markerRef.current = new mapboxgl.Marker({ element: createOrbMarker() })
           .setLngLat([lng, lat])
           .addTo(mapRef.current);
@@ -306,18 +310,10 @@ export function Members() {
       });
 
       if (markerRef.current) markerRef.current.remove();
-      // ✅ NEW: Use Custom Orb Element
       markerRef.current = new mapboxgl.Marker({ element: createOrbMarker() })
         .setLngLat([location.longitude, location.latitude])
         .addTo(mapRef.current);
     }
-  }
-
-  function resetToSearch() {
-    setInputMode("search");
-    setWaterName("");
-    setSelectedCoords(null);
-    if (markerRef.current) markerRef.current.remove();
   }
 
   async function handleGenerate() {
@@ -336,6 +332,7 @@ export function Members() {
         },
         access_type: accessType,
       });
+      setDailyUsage((prev) => prev + 1); // ✅ Increment local counter on success
       navigate("/plan", { state: { planResponse: response } });
     } catch (e: any) {
       if (e instanceof RateLimitError) {
@@ -349,6 +346,10 @@ export function Members() {
       setLoading(false);
     }
   }
+
+  // Derived state for warning
+  const remaining = MAX_DAILY_PLANS - dailyUsage;
+  const showUsageWarning = dailyUsage >= WARNING_THRESHOLD && remaining > 0;
 
   if (loading)
     return <PlanGenerationLoader lakeName={waterName || "Selected Water"} />;
@@ -393,7 +394,6 @@ export function Members() {
             border: "1px solid rgba(74, 144, 226, 0.4)",
           }}
         >
-          {/* ✅ NEW: Radar Icon */}
           <RadarIcon size={20} />
           <span>Scout Water</span>
         </button>
@@ -474,7 +474,7 @@ export function Members() {
                 gap: 20,
               }}
             >
-              {/* 1. SEGMENTED TOGGLE */}
+              {/* Toggle Section */}
               <div
                 style={{
                   background: "rgba(0,0,0,0.2)",
@@ -542,7 +542,7 @@ export function Members() {
                 </button>
               </div>
 
-              {/* 2. DYNAMIC INPUT SECTION */}
+              {/* Dynamic Input Section */}
               <div>
                 {inputMode === "search" ? (
                   <>
@@ -556,7 +556,6 @@ export function Members() {
                            border-radius: 8px !important;
                            padding: 12px !important;
                            font-size: 1rem !important;
-                           /* ✅ NEW: No Red Lines */
                         }
                         .glass-search-wrapper .location-results {
                            background: #1a1a1a !important;
@@ -594,7 +593,6 @@ export function Members() {
                         fontSize: "1rem",
                       }}
                       autoFocus
-                      // ✅ NEW: No Red Lines
                       spellCheck={false}
                       autoCorrect="off"
                       autoComplete="off"
@@ -614,7 +612,7 @@ export function Members() {
                 )}
               </div>
 
-              {/* 3. Platform */}
+              {/* Platform */}
               <div>
                 <label className="modal-label">Platform</label>
                 <div style={{ display: "flex", gap: 10 }}>
@@ -641,7 +639,7 @@ export function Members() {
                 </div>
               </div>
 
-              {/* 4. Coordinates */}
+              {/* Coordinates */}
               {selectedCoords && (
                 <div
                   style={{
@@ -682,6 +680,7 @@ export function Members() {
               )}
 
               <div style={{ marginTop: "auto" }}>
+                {/* 1. COOLDOWN WARNING (API Limit Hit) */}
                 {rateLimitInfo && (
                   <div
                     style={{
@@ -694,6 +693,29 @@ export function Members() {
                     }}
                   >
                     Cooldown: {formatTime(rateLimitInfo.secondsRemaining)}
+                  </div>
+                )}
+
+                {/* 2. ✅ NEW: LOW FUEL WARNING (Visible only when 1-2 remaining) */}
+                {!rateLimitInfo && showUsageWarning && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      background: "rgba(255, 166, 0, 0.1)",
+                      border: "1px solid rgba(255, 166, 0, 0.3)",
+                      borderRadius: 10,
+                      marginBottom: 12,
+                      fontSize: "0.85rem",
+                      color: "#ffc107",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ fontSize: "1rem" }}>⚠️</span>
+                    <span>
+                      <strong>{remaining} plans remaining</strong> today.
+                    </span>
                   </div>
                 )}
 
@@ -754,8 +776,6 @@ export function Members() {
         .generate-btn:active {
             transform: scale(0.98);
         }
-
-        /* ✅ NEW: ORB MARKER STYLE */
         .orb-marker-map {
           width: 24px;
           height: 24px;

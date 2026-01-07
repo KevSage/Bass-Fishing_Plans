@@ -215,7 +215,8 @@ JIG_LURES = {
 # ----------------------------------------
 # Each lure group gets its own curated color pool
 
-# Group 1: Rigs (9 colors)
+# Group 1: Rigs (Soft Plastics)
+# AUDIT: Added watermelon (classic staple). Verified all 10 have descriptions.
 RIG_COLORS = [
     "green pumpkin",
     "black/blue",
@@ -226,9 +227,11 @@ RIG_COLORS = [
     "black",
     "green pumpkin orange",
     "peanut butter & jelly",
+    "watermelon",
 ]
 
-# Group 2: Bladed/Skirted (8 colors)
+# Group 2: Bladed/Skirted (Jigs/Chatterbaits)
+# AUDIT: Added staples (junebug, pb&j, black, brown, sexy shad) to fix validation errors.
 BLADED_SKIRTED_COLORS = [
     "white",
     "shad",
@@ -238,9 +241,15 @@ BLADED_SKIRTED_COLORS = [
     "green pumpkin",
     "red craw",
     "bluegill",
+    "junebug",
+    "peanut butter & jelly",
+    "black",
+    "brown",
+    "sexy shad",
 ]
 
 # Group 3: Soft Swimbaits (5 colors)
+# AUDIT: Verified all 5 have descriptions.
 SOFT_SWIMBAIT_COLORS = [
     "white",
     "shad",
@@ -249,15 +258,18 @@ SOFT_SWIMBAIT_COLORS = [
     "green pumpkin",
 ]
 
-# Group 4: Crankbaits (9 colors)
+# Group 4: Crankbaits (11 colors)
+# AUDIT: Added craw, black/blue (for squarebills). Verified descriptions.
 CRANKBAIT_COLORS = [
     "sexy shad",
     "chartreuse/black back",
     "red craw",
+    "craw",
     "bluegill",
     "ghost shad",
     "citrus shad",
     "firetiger",
+    "black/blue",
     "chrome",
     "gold",
 ]
@@ -394,28 +406,32 @@ COLOR_DESCRIPTIONS = {
     "junebug": "Dark profile for murky water or night fishing, strong silhouette creates clear target",
     "baby bass": "Translucent with subtle flake, imitates small bass/bluegill in clear water",
     "watermelon red": "Clear water crawfish with red flake imitating eggs or gills, natural in clean conditions",
+    "watermelon": "Classic clear water green, very natural presentation",
     "red craw": "Bright crawfish imitation for stained water or aggressive feeding, high visibility",
     "black": "Maximum contrast for dirty water or night, creates strongest silhouette",
     "green pumpkin orange": "Natural green with orange highlights mimicking egg-bearing crawfish",
     "peanut butter & jelly": "Purple/brown translucent for clear water, imitates bluegill or natural forage",
+    "brown": "Natural crawfish or bottom forage, great for clear to stained water",
     
     # Bladed/Skirted Colors
     "white": "Clean baitfish imitation for clear water or when bass are keyed on shad",
     "shad": "Natural shad pattern with dark back, works in most water clarities",
     "chartreuse/white": "High visibility for stained water while maintaining baitfish profile",
     "chartreuse": "Maximum visibility in muddy water or low light, triggers reaction strikes",
+    "sexy shad": "Shad pattern with chartreuse stripe, great for stained water reaction",
+    "bluegill": "Natural bluegill imitation with purple/orange highlights",
     
     # Soft Swimbait Colors
     "pearl": "Translucent white for ultra-clear water, realistic baitfish with subtle flash",
     
     # Crankbait Colors
-    "sexy shad": "Realistic shad pattern with gray/purple back for clear to slightly stained water",
     "chartreuse/black back": "High visibility chartreuse with dark back for stained water",
     "ghost shad": "Translucent white/blue for clear water, mimics natural shad perfectly",
     "citrus shad": "Chartreuse belly with shad profile for slightly off-colored water",
     "firetiger": "Extreme contrast pattern for muddy water or aggressive feeding windows",
     "chrome": "Silver metallic finish reflects light in any water clarity, mimics shad flash",
     "gold": "Gold metallic for stained water or low light, creates warm flash",
+    "craw": "General crawfish pattern for spring or bottom grinding",
     
     # Jerkbait Colors
     "pro blue": "Transparent with blue/purple back imitating shad in clear to stained water",
@@ -430,7 +446,6 @@ COLOR_DESCRIPTIONS = {
     
     # Frog Colors
     "green": "Natural frog green for vegetated areas",
-    "brown": "Natural frog brown for darker vegetation or muddy banks",
     "yellow": "High visibility for stained water or thick cover",
 }
 
@@ -850,10 +865,7 @@ def generate_asset_key(lure: str, zones: dict) -> str:
 
 def validate_color_zones(lure: str, zones: dict) -> List[str]:
     """
-    Validate expanded color zones for a lure.
-    
-    Returns:
-        List of error strings (empty if valid)
+    Validate expanded color zones for a lure using LURE-SPECIFIC pools.
     """
     errors = []
     
@@ -863,24 +875,33 @@ def validate_color_zones(lure: str, zones: dict) -> List[str]:
     
     schema = LURE_ZONE_SCHEMA[lure]
     
-    # Validate primary (always required)
+    # Get the specific allowable pool for this lure
+    try:
+        specific_pool = get_color_pool_for_lure(lure, zones.get("soft_plastic"))
+    except ValueError as e:
+        errors.append(str(e))
+        return errors
+
+    # Validate primary
     if not zones.get("primary_color"):
         errors.append(f"{lure} requires primary_color")
-    elif zones["primary_color"] not in COLOR_POOL:
-        errors.append(f"Invalid primary_color: {zones['primary_color']}")
+    elif zones["primary_color"] not in specific_pool:
+        errors.append(f"Invalid primary_color: {zones['primary_color']} (not in allowed pool for {lure})")
     
-    # Validate secondary (if present)
+    # Validate secondary
     if zones.get("secondary_color"):
-        if schema.get("secondary") is None:  # Zone not supported
+        if schema.get("secondary") is None:
             errors.append(f"{lure} does not support secondary_color")
-        elif zones["secondary_color"] not in COLOR_POOL:
-            errors.append(f"Invalid secondary_color: {zones['secondary_color']}")
+        elif zones["secondary_color"] not in specific_pool:
+            errors.append(f"Invalid secondary_color: {zones['secondary_color']} (not in allowed pool for {lure})")
     
-    # Validate accent (if present)
+    # Validate accent
     if zones.get("accent_color"):
-        if schema.get("accent") is None:  # Zone not supported
+        if schema.get("accent") is None:
             errors.append(f"{lure} does not support accent_color")
-        elif zones["accent_color"] not in COLOR_POOL:
+        # Accents (e.g. blades) often use METALLIC_COLORS or defaults, not necessarily the lure's body pool
+        # For simplicity, we can check if it's in the legacy pool OR metallic set
+        elif zones["accent_color"] not in COLOR_POOL and zones["accent_color"] not in METALLIC_COLORS:
             errors.append(f"Invalid accent_color: {zones['accent_color']}")
     
     # Validate metallic restrictions
@@ -892,20 +913,15 @@ def validate_color_zones(lure: str, zones: dict) -> List[str]:
     
     metallics_forbidden = is_rig_icon or is_soft_body or is_frog or is_jig
     
-    # Check primary
     if zones.get("primary_color") in METALLIC_COLORS:
         if is_blade_bait:
-            # OK - primary IS metal, should have primary_material set
             if not zones.get("primary_material") == "metallic":
                 errors.append(f"blade bait with metallic primary must have primary_material='metallic'")
         elif metallics_forbidden:
             lure_type = "frog" if is_frog else "jig" if is_jig else "rig icon" if is_rig_icon else "soft plastic"
             errors.append(f"Metallic color '{zones['primary_color']}' not allowed on {lure} ({lure_type})")
     
-    # Check secondary (metallics almost never valid in secondary)
     if zones.get("secondary_color") in METALLIC_COLORS:
         errors.append(f"Metallic color '{zones['secondary_color']}' not allowed in secondary_color for {lure}")
-    
-    # Accent can be metallic (hardware finishes) - no restriction
     
     return errors

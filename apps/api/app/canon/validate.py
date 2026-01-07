@@ -81,12 +81,16 @@ def validate_colors_for_lure(base_lure: str, colors: list[str], soft_plastic: st
     """
     Validate colors for a specific lure using lure-specific color pools.
     """
+    # Import locally to avoid circular dependency if pools imports validate
     from app.canon.pools import get_color_pool_for_lure
     
     errs: list[str] = []
     
-    # Get the correct color pool for this lure
-    valid_colors = get_color_pool_for_lure(base_lure, soft_plastic)
+    # Get the correct color pool for this lure (e.g. gets RIG_COLORS for texas rig)
+    try:
+        valid_colors = get_color_pool_for_lure(base_lure, soft_plastic)
+    except ValueError as e:
+        return [str(e)]
     
     # Validate against lure-specific pool
     errs.extend(validate_colors(colors, valid_colors))
@@ -97,7 +101,7 @@ def validate_colors_for_lure(base_lure: str, colors: list[str], soft_plastic: st
     if any(c in HARDBAIT_ONLY_COLORS for c in colors):
         if base_lure not in HARDBAIT_LURES:
             errs.append(
-                f"{base_lure} cannot use metallic/fire tiger colors "
+                f"{base_lure} cannot use metallic/firetiger colors "
                 f"(silver/gold/bronze/firetiger are hardbait-only)."
             )
 
@@ -108,7 +112,7 @@ def validate_colors_for_lure(base_lure: str, colors: list[str], soft_plastic: st
 
     # spinnerbait: color refers to skirt, so metallic labels are not valid "colors" here
     if base_lure == "spinnerbait":
-        if any(c in {"silver", "gold", "bronze"} for c in colors):
+        if any(c in {"silver", "gold", "bronze", "firetiger"} for c in colors):
             errs.append("spinnerbait color_recommendations must describe the skirt, not blade finish.")
 
     return errs
