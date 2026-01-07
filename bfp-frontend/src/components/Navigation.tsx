@@ -1,11 +1,12 @@
 // src/components/Navigation.tsx
 // Mobile-first navigation with hamburger menu + Clerk
-// Fixes overlay layering issues by rendering the mobile menu via a portal.
+// UPDATED: "Smart Visibility" - Hides Top Orb on Plan pages to prevent redundancy
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useUser, useClerk, SignedIn, SignedOut } from "@clerk/clerk-react";
 import { createPortal } from "react-dom";
+import { MapOrb } from "./MapOrb";
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,8 +17,10 @@ export function Navigation() {
   const { signOut } = useClerk();
   const navigate = useNavigate();
 
-  // Public links (shown to everyone)
-  // NOTE: removed /preview in favor of subscribe/trial.
+  // ✅ SMART CHECK: Are we currently on a Plan Screen?
+  // Checks for "/plan" (query param style) or "/plan/view" (direct link style)
+  const isPlanPage = location.pathname.startsWith("/plan");
+
   const publicLinks = useMemo(
     () => [
       { to: "/", label: "Home" },
@@ -31,14 +34,7 @@ export function Navigation() {
     []
   );
 
-  // Member links (shown only when signed in)
-  const memberLinks = useMemo(
-    () => [
-      { to: "/members", label: "Members" },
-      { to: "/account", label: "Account" },
-    ],
-    []
-  );
+  const memberLinks = useMemo(() => [{ to: "/account", label: "Account" }], []);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -49,13 +45,11 @@ export function Navigation() {
     navigate("/");
   };
 
-  // Close menus on route change (prevents stuck overlays)
   useEffect(() => {
     setIsOpen(false);
     setUserMenuOpen(false);
   }, [location.pathname]);
 
-  // Lock body scroll when the mobile menu is open
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -65,7 +59,6 @@ export function Navigation() {
     };
   }, [isOpen]);
 
-  // Close on ESC
   useEffect(() => {
     if (!isOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -75,6 +68,7 @@ export function Navigation() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen]);
 
+  // Mobile Overlay (Hamburger Menu)
   const mobileOverlay = isOpen ? (
     <div
       style={{
@@ -82,12 +76,11 @@ export function Navigation() {
         inset: 0,
         background: "rgba(10, 10, 10, 0.98)",
         backdropFilter: "blur(12px)",
-        zIndex: 10000, // IMPORTANT: above mapbox + members header layers
-        padding: "78px 20px 24px", // space for sticky header height
+        zIndex: 10000,
+        padding: "78px 20px 24px",
         overflowY: "auto",
       }}
       onClick={() => setIsOpen(false)}
-      aria-label="Mobile navigation overlay"
     >
       <nav
         style={{
@@ -99,7 +92,6 @@ export function Navigation() {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Primary nav */}
         {publicLinks.map((link) => (
           <Link
             key={link.to}
@@ -122,8 +114,31 @@ export function Navigation() {
           </Link>
         ))}
 
-        {/* Member-only link */}
         <div style={{ height: 10 }} />
+
+        {/* HAMBURGER MENU ORB: We KEEP this one. 
+            If they open the menu, they might want to leave the plan page. */}
+        <Link
+          to="/members"
+          onClick={() => setIsOpen(false)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            textDecoration: "none",
+            color: isActive("/members") ? "#fff" : "rgba(255, 255, 255, 0.9)",
+            fontSize: "1.05rem",
+            fontWeight: 700,
+            padding: "14px 14px",
+            borderRadius: 12,
+            background: "rgba(74, 144, 226, 0.1)",
+            border: "1px solid rgba(74, 144, 226, 0.3)",
+          }}
+        >
+          <MapOrb size={22} active={true} />
+          <span>Scout Map</span>
+        </Link>
+
         {memberLinks.map((link) => (
           <Link
             key={link.to}
@@ -146,7 +161,6 @@ export function Navigation() {
           </Link>
         ))}
 
-        {/* Signed out CTA */}
         <SignedOut>
           <div style={{ height: 14 }} />
           <Link
@@ -163,7 +177,6 @@ export function Navigation() {
           >
             Start Free Trial
           </Link>
-
           <Link
             to="/sign-in"
             onClick={() => setIsOpen(false)}
@@ -187,15 +200,13 @@ export function Navigation() {
 
   return (
     <>
-      {/* Header */}
       <header
         style={{
           position: "sticky",
           top: 0,
-          // ✅ Force full-bleed width in all environments (including prod/Vercel quirks)
           width: "100vw",
           marginLeft: "calc(50% - 50vw)",
-          zIndex: 11000, // Above overlay padding area; overlay itself is 10000 full-screen
+          zIndex: 11000,
           background: "rgba(10, 10, 10, 0.95)",
           backdropFilter: "blur(10px)",
           borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
@@ -210,12 +221,10 @@ export function Navigation() {
             paddingTop: 16,
             paddingBottom: 16,
             gap: 14,
-            // ✅ iOS safe-area support (notch)
             paddingLeft: "calc(20px + env(safe-area-inset-left))",
             paddingRight: "calc(20px + env(safe-area-inset-right))",
           }}
         >
-          {/* Logo */}
           <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
             <div
               style={{
@@ -233,12 +242,8 @@ export function Navigation() {
 
           {/* Desktop Nav */}
           <nav
-            style={{
-              display: "none",
-              gap: 24,
-              alignItems: "center",
-            }}
             className="desktop-nav"
+            style={{ display: "none", gap: 24, alignItems: "center" }}
           >
             {publicLinks.slice(1).map((link) => (
               <Link
@@ -275,6 +280,21 @@ export function Navigation() {
                 </Link>
               ))}
 
+              {/* ✅ DESKTOP ORB: HIDE on Plan Pages */}
+              {!isPlanPage && (
+                <Link
+                  to="/members"
+                  title="Go to Map"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <MapOrb size={28} active={!isActive("/members")} />
+                </Link>
+              )}
+
               {/* User Menu */}
               <div style={{ position: "relative" }}>
                 <button
@@ -293,7 +313,6 @@ export function Navigation() {
                     fontSize: "0.9em",
                     fontWeight: 600,
                   }}
-                  aria-label="Open account menu"
                 >
                   {user?.firstName?.charAt(0) ||
                     user?.emailAddresses[0]?.emailAddress
@@ -301,7 +320,6 @@ export function Navigation() {
                       .toUpperCase() ||
                     "U"}
                 </button>
-
                 {userMenuOpen && (
                   <div
                     style={{
@@ -337,7 +355,6 @@ export function Navigation() {
                         {user?.primaryEmailAddress?.emailAddress}
                       </div>
                     </div>
-
                     <Link
                       to="/account"
                       onClick={() => setUserMenuOpen(false)}
@@ -349,17 +366,9 @@ export function Navigation() {
                         borderRadius: 8,
                         fontSize: "0.95em",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "rgba(255, 255, 255, 0.06)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
                     >
                       Account
                     </Link>
-
                     <button
                       onClick={handleSignOut}
                       style={{
@@ -373,13 +382,6 @@ export function Navigation() {
                         fontSize: "0.95em",
                         cursor: "pointer",
                       }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background =
-                          "rgba(239, 68, 68, 0.12)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
                     >
                       Sign Out
                     </button>
@@ -409,48 +411,71 @@ export function Navigation() {
             </SignedOut>
           </nav>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsOpen((v) => !v)}
-            className="mobile-menu-btn"
-            style={{
-              background: "transparent",
-              border: "none",
-              color: "inherit",
-              cursor: "pointer",
-              padding: 8,
-            }}
-            aria-label="Toggle menu"
-          >
-            {isOpen ? (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M3 12h18M3 6h18M3 18h18" />
-              </svg>
-            )}
-          </button>
+          {/* MOBILE HEADER CONTROLS */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {/* ✅ MOBILE ORB: HIDE on Plan Pages */}
+            <SignedIn>
+              {!isPlanPage && (
+                <div className="mobile-orb-container">
+                  <Link to="/members" aria-label="Quick Map Access">
+                    <MapOrb size={28} active={!isActive("/members")} />
+                  </Link>
+                </div>
+              )}
+            </SignedIn>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsOpen((v) => !v)}
+              className="mobile-menu-btn"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                padding: 8,
+              }}
+            >
+              {isOpen ? (
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M3 12h18M3 6h18M3 18h18" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Mobile overlay rendered at document.body to avoid Mapbox/Safari z-index/compositor issues */}
       {mobileOverlay ? createPortal(mobileOverlay, document.body) : null}
+
+      <style>{`
+        @media (min-width: 1024px) {
+          .mobile-orb-container, .mobile-menu-btn {
+            display: none !important;
+          }
+          .desktop-nav {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

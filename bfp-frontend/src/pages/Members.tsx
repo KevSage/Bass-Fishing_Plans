@@ -1,5 +1,5 @@
 // src/pages/Members.tsx
-// Members-only map page: stable Mapbox lifecycle + Safari-safe event handling.
+// FINAL: Glowing Orb Marker + Radar Icon + No Spellcheck
 
 import React, { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
@@ -11,7 +11,6 @@ import { generateMemberPlan, RateLimitError } from "@/lib/api";
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
-import { FishIcon } from "@/components/UnifiedIcons";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -19,21 +18,105 @@ function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
   return f.source === "composite" && f.sourceLayer === "water";
 }
 
+// --- ICONS ---
+const BoatIcon = ({ active }: { active: boolean }) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={active ? "#4A90E2" : "currentColor"}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2 17l1.5-4h17L22 17H2z" />
+    <path d="M6 13l2-3h8l2 3" />
+    <path d="M12 3v10" />
+    <path d="M18 6l-1-3H7L6 6" />
+  </svg>
+);
+const BankIcon = ({ active }: { active: boolean }) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={active ? "#4A90E2" : "currentColor"}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M19 21v-6" />
+    <path d="M19 15l-3-3" />
+    <path d="M22 15l-3-3" />
+    <circle cx="12" cy="7" r="4" />
+    <path d="M5.5 21a9 9 0 0 1 12.8 0" />
+  </svg>
+);
+const SearchIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="11" cy="11" r="8"></circle>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+  </svg>
+);
+const PinIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+    <circle cx="12" cy="10" r="3"></circle>
+  </svg>
+);
+// ✅ NEW: Tactical Radar Icon for the Drawer Button
+const RadarIcon = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
+    <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+    <path d="M12 2v2" />
+    <path d="M12 22v-2" />
+    <path d="M2 12h2" />
+    <path d="M22 12h-2" />
+  </svg>
+);
+
 export function Members() {
   const { user } = useUser();
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
-  // ✅ ADD: State for the cooldown info
+
   const [rateLimitInfo, setRateLimitInfo] = useState<{
     message: string;
     secondsRemaining: number;
   } | null>(null);
 
-  // ✅ ADD: The Countdown Timer Effect
-  // This runs every second when a rate limit is hit
   useEffect(() => {
     if (!rateLimitInfo || rateLimitInfo.secondsRemaining <= 0) return;
-
     const timer = setInterval(() => {
       setRateLimitInfo((prev) => {
         if (!prev || prev.secondsRemaining <= 1) {
@@ -43,27 +126,24 @@ export function Members() {
         return { ...prev, secondsRemaining: prev.secondsRemaining - 1 };
       });
     }, 1000);
-
     return () => clearInterval(timer);
   }, [rateLimitInfo]);
 
-  // Helper to format seconds into M:S
   const formatTime = (seconds: number) => {
     if (seconds < 60) return `${seconds}s`;
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}m ${secs}s`;
   };
+
   const [showModal, setShowModal] = useState(false);
+  const [inputMode, setInputMode] = useState<"search" | "manual">("search");
   const [waterName, setWaterName] = useState("");
-  const [placeholder, setPlaceholder] = useState(
-    "Lake Lanier, My secret pond..."
-  );
   const [selectedCoords, setSelectedCoords] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
-  const [accessType, setAccessType] = useState<"boat" | "bank">("boat"); // ← NEW: Boat/bank selector
+  const [accessType, setAccessType] = useState<"boat" | "bank">("boat");
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -71,12 +151,14 @@ export function Members() {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const initialized = useRef(false);
-
-  // Prevent 60fps React re-render storms:
-  // - we only set hovered state when it changes
-  // - we throttle the handler with requestAnimationFrame
-  const hoverRef = useRef(false);
   const rafRef = useRef<number | null>(null);
+
+  // --- HELPER: Create Custom Orb Marker Element ---
+  const createOrbMarker = () => {
+    const el = document.createElement("div");
+    el.className = "orb-marker-map"; // Defined in <style> below
+    return el;
+  };
 
   useEffect(() => {
     if (
@@ -95,13 +177,12 @@ export function Members() {
       style: "mapbox://styles/mapbox/outdoors-v12",
       center: [-86.7816, 33.5186],
       zoom: 6,
+      pitch: 0,
     });
 
     mapRef.current = m;
-
     m.dragRotate.disable();
     m.touchZoomRotate.disableRotation();
-
     m.addControl(new mapboxgl.NavigationControl(), "top-right");
     m.addControl(
       new mapboxgl.GeolocateControl({
@@ -114,50 +195,37 @@ export function Members() {
 
     const onMove = (e: mapboxgl.MapMouseEvent) => {
       if (rafRef.current) return;
-
       rafRef.current = window.requestAnimationFrame(() => {
         rafRef.current = null;
         if (!mapRef.current) return;
-
-        // ✅ Safety check: don't query if map is being destroyed
         try {
           const features = mapRef.current.queryRenderedFeatures(e.point);
           const water = features.find(isWaterFeature);
           const isHovering = !!water;
-
-          // Only update cursor + internal ref (no React state needed)
           mapRef.current.getCanvas().style.cursor = isHovering ? "pointer" : "";
-
-          // If you ever want UI reactions to hovering later, this is where you'd
-          // set state, but ONLY on change:
-          // if (hoverRef.current !== isHovering) {
-          //   hoverRef.current = isHovering;
-          //   setHoveredWater(isHovering);
-          // }
-          hoverRef.current = isHovering;
         } catch (err) {
-          // Map may have been destroyed, ignore error
-          console.debug("queryRenderedFeatures failed (map destroyed?)");
+          console.debug("Map interaction error", err);
         }
       });
     };
 
     const onClick = async (e: mapboxgl.MapMouseEvent) => {
       if (!mapRef.current) return;
-
       try {
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
         if (!water) return;
 
         const { lng, lat } = e.lngLat;
-
         setSelectedCoords({ lat, lng });
+
+        setInputMode("manual");
         setWaterName("");
         setShowModal(true);
 
         if (markerRef.current) markerRef.current.remove();
-        markerRef.current = new mapboxgl.Marker({ color: "#4A90E2" })
+        // ✅ NEW: Use Custom Orb Element
+        markerRef.current = new mapboxgl.Marker({ element: createOrbMarker() })
           .setLngLat([lng, lat])
           .addTo(mapRef.current);
 
@@ -166,7 +234,6 @@ export function Members() {
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
           );
           const data = await response.json();
-
           const context = data?.features?.[0]?.context;
           if (context) {
             const city =
@@ -176,41 +243,48 @@ export function Members() {
               context
                 .find((c: any) => String(c.id).startsWith("region"))
                 ?.short_code?.replace("US-", "") || "";
-            setPlaceholder(
-              `Water body near ${[city, state].filter(Boolean).join(", ")}`
+            setWaterName(
+              `Water near ${[city, state].filter(Boolean).join(", ")}`
             );
+          } else {
+            setWaterName("Dropped Pin Location");
           }
         } catch (e2) {
           console.error("Geocode failed:", e2);
         }
       } catch (err) {
-        // Map destroyed or queryRenderedFeatures failed
-        console.debug("onClick failed (map destroyed?)");
+        console.debug("Click handler error", err);
       }
     };
 
     m.on("mousemove", onMove);
     m.on("click", onClick);
 
-    return () => {
-      // Cleanup RAF
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+    m.on("load", () => {
+      const params = new URLSearchParams(window.location.search);
+      const lat = params.get("lat");
+      const lng = params.get("lng");
+      const lake = params.get("lake");
+      if (lat && lng) {
+        const l = parseFloat(lng);
+        const lt = parseFloat(lat);
+        m.flyTo({ center: [l, lt], zoom: 14, speed: 1.2 });
+        if (lake) {
+          setInputMode("manual");
+          setWaterName(lake);
+          setSelectedCoords({ lat: lt, lng: l });
+          setShowModal(true);
+        }
       }
+    });
 
-      // Remove handlers
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
       m.off("mousemove", onMove);
       m.off("click", onClick);
-
-      // Remove marker
       markerRef.current?.remove();
-      markerRef.current = null;
-
-      // Remove map (WebGL cleanup)
       m.remove();
       mapRef.current = null;
-
       initialized.current = false;
     };
   }, [isActive]);
@@ -222,27 +296,34 @@ export function Members() {
   }) {
     setWaterName(location.name);
     setSelectedCoords({ lat: location.latitude, lng: location.longitude });
+    setInputMode("manual");
 
     if (mapRef.current) {
       mapRef.current.flyTo({
         center: [location.longitude, location.latitude],
-        zoom: 13,
+        zoom: 10.5,
         duration: 1500,
       });
 
       if (markerRef.current) markerRef.current.remove();
-      markerRef.current = new mapboxgl.Marker({ color: "#4A90E2" })
+      // ✅ NEW: Use Custom Orb Element
+      markerRef.current = new mapboxgl.Marker({ element: createOrbMarker() })
         .setLngLat([location.longitude, location.latitude])
         .addTo(mapRef.current);
     }
   }
 
-  // ✅ UPDATE: Your handleGenerate function
+  function resetToSearch() {
+    setInputMode("search");
+    setWaterName("");
+    setSelectedCoords(null);
+    if (markerRef.current) markerRef.current.remove();
+  }
+
   async function handleGenerate() {
     if (!user?.primaryEmailAddress?.emailAddress || !selectedCoords) return;
-
     setErr(null);
-    setRateLimitInfo(null); // Reset previous limit info
+    setRateLimitInfo(null);
     setLoading(true);
 
     try {
@@ -257,7 +338,6 @@ export function Members() {
       });
       navigate("/plan", { state: { planResponse: response } });
     } catch (e: any) {
-      // Catch the 429 error specifically
       if (e instanceof RateLimitError) {
         setRateLimitInfo({
           message: e.message,
@@ -270,548 +350,436 @@ export function Members() {
     }
   }
 
-  // Loading states
-  if (loading) return <PlanGenerationLoader lakeName={waterName} />;
-
-  if (statusLoading) {
+  if (loading)
+    return <PlanGenerationLoader lakeName={waterName || "Selected Water"} />;
+  if (statusLoading)
     return (
-      <div style={{ padding: 100, textAlign: "center" }}>
-        <div>Checking subscription status...</div>
+      <div style={{ padding: 100, textAlign: "center", color: "#fff" }}>
+        Checking status...
       </div>
     );
-  }
-
-  // Members gating
-  if (!isActive) {
-    return (
-      <div style={{ padding: 100, textAlign: "center" }}>
-        <div
-          style={{
-            fontSize: "0.85rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "#4A90E2",
-            marginBottom: 16,
-          }}
-        >
-          Members Only
-        </div>
-
-        <h1 style={{ fontSize: "2rem", marginBottom: 16 }}>
-          Active subscription required
-        </h1>
-
-        <p style={{ marginBottom: 32, opacity: 0.7 }}>
-          You need an active subscription to generate full fishing plans.
-        </p>
-
-        <a
-          href="/subscribe"
-          className="btn primary"
-          style={{ display: "inline-block", padding: "14px 32px" }}
-        >
-          Subscribe Now
-        </a>
-      </div>
-    );
-  }
+  if (!isActive) return <div />;
 
   return (
-    <div style={{ position: "relative", height: "100vh" }}>
-      {/* Header - keep zIndex modest so global overlays always beat it */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 30, // WAS 999 - this was part of your overlay conflict
-          background:
-            "linear-gradient(to bottom, rgba(10,10,10,0.98) 20%, rgba(10,10,10,0.85) 40%, rgba(10,10,10,0.4) 70%, transparent 100%)",
-          paddingTop: "70px",
-          paddingBottom: "48px",
-          paddingLeft: "20px",
-          paddingRight: "20px",
-          pointerEvents: "none",
-        }}
-      >
-        <div style={{ maxWidth: 600, margin: "0 auto", textAlign: "center" }}>
-          <div
-            style={{
-              fontSize: "0.75rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.15em",
-              color: "#4A90E2",
-              marginBottom: 12,
-              fontWeight: 600,
-            }}
-          >
-            Members
-          </div>
-          <h1
-            style={{
-              fontSize: "clamp(2rem, 5vw, 2.75rem)",
-              fontWeight: 800,
-              marginBottom: 12,
-              letterSpacing: "-0.02em",
-              textShadow: "0 2px 12px rgba(0,0,0,0.5)",
-            }}
-          >
-            Find Your Water
-          </h1>
-          <p
-            style={{
-              fontSize: "clamp(1rem, 2.5vw, 1.15rem)",
-              opacity: 0.9,
-              fontWeight: 500,
-              textShadow: "0 1px 8px rgba(0,0,0,0.5)",
-            }}
-          >
-            Search or tap any body of water
-          </p>
-        </div>
-      </div>
-
-      {/* Map */}
+    <div
+      style={{ position: "relative", height: "100vh", background: "#0a0a0a" }}
+    >
+      {/* MAP SURFACE */}
       <div style={{ width: "100%", height: "100%" }}>
-        {/* Push Mapbox controls below header */}
-        <style>{`.mapboxgl-ctrl-top-right { top: 200px !important; }`}</style>
+        <style>{`.mapboxgl-ctrl-top-right { top: 120px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
 
-      {/* Thumb Drawer Button */}
+      {/* FLOATING ACTION BUTTON */}
       {!showModal && (
         <button
           onClick={() => setShowModal(true)}
+          className="glass-panel"
           style={{
             position: "fixed",
-            bottom: 20,
+            bottom: 30,
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 40,
-            background: "rgba(10, 10, 10, 0.95)",
-            backdropFilter: "blur(20px)",
-            border: "2px solid rgba(74, 144, 226, 0.4)",
-            borderRadius: 12,
-            padding: "16px 32px",
-            color: "#4A90E2",
+            padding: "12px 24px",
+            borderRadius: 30,
+            color: "#fff",
             fontWeight: 600,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            fontSize: "1.05rem",
-            boxShadow: "0 4px 24px rgba(0, 0, 0, 0.3)",
+            gap: 10,
+            fontSize: "0.95rem",
+            border: "1px solid rgba(74, 144, 226, 0.4)",
           }}
         >
-          <FishIcon size={24} style={{ color: "#4A90E2" }} />
-          <span>Find Your Water</span>
+          {/* ✅ NEW: Radar Icon */}
+          <RadarIcon size={20} />
+          <span>Scout Water</span>
         </button>
       )}
 
-      {/* Modal */}
+      {/* COMPACT GLASS MODAL */}
       {showModal && (
         <div
           style={{
             position: "absolute",
             inset: 0,
             zIndex: 2000,
-            background: "rgba(0,0,0,0.6)",
-            // blur is nice, but Safari + WebGL can glitch — keep it light:
-            backdropFilter: "blur(4px)",
-            WebkitBackdropFilter: "blur(4px)",
+            background: "rgba(0,0,0,0.3)",
+            backdropFilter: "blur(2px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            padding: "20px",
+            padding: "16px",
           }}
           onClick={() => setShowModal(false)}
         >
           <div
+            className="glass-panel"
             style={{
-              background: "rgba(255, 255, 255, 0.98)",
-              borderRadius: 16,
-              maxWidth: 1000,
+              borderRadius: 20,
               width: "100%",
-              maxHeight: "85vh",
+              maxWidth: 420,
               display: "flex",
               flexDirection: "column",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+              overflow: "hidden",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
+            {/* Header */}
             <div
               style={{
-                padding: "24px 24px 16px",
-                borderBottom: "1px solid rgba(0,0,0,0.1)",
+                padding: "16px 20px",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
               }}
             >
-              <div
+              <h2
                 style={{
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  margin: 0,
+                  color: "#fff",
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "center",
+                  gap: 8,
                 }}
               >
-                <h2
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: 700,
-                    color: "#000",
-                    margin: 0,
-                  }}
-                >
-                  Find Your Water
-                </h2>
-                <button
-                  onClick={() => setShowModal(false)}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid rgba(0,0,0,0.2)",
-                    borderRadius: 6,
-                    padding: "6px 16px",
-                    color: "#000",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    fontWeight: 500,
-                  }}
-                >
-                  Close
-                </button>
-              </div>
+                <span style={{ color: "#4A90E2" }}>✦</span> Tactical Scout
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "rgba(255,255,255,0.5)",
+                  cursor: "pointer",
+                  fontSize: "1.25rem",
+                  padding: "0 4px",
+                }}
+              >
+                ×
+              </button>
             </div>
 
-            {/* Modal Content */}
+            {/* BODY */}
             <div
               style={{
-                display: "grid",
-                gridTemplateRows: "1fr 1fr",
-                gap: 24,
-                padding: 24,
-                overflowY: "auto",
-                flex: 1,
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 20,
               }}
             >
-              {/* LEFT: FORM */}
+              {/* 1. SEGMENTED TOGGLE */}
               <div
-                style={{ display: "flex", flexDirection: "column", gap: 20 }}
+                style={{
+                  background: "rgba(0,0,0,0.2)",
+                  borderRadius: "10px",
+                  padding: "4px",
+                  display: "flex",
+                  gap: "4px",
+                }}
               >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      color: "#000",
-                      marginBottom: 8,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Lake Name
-                  </label>
-                  <input
-                    value={waterName}
-                    onChange={(e) => setWaterName(e.target.value)}
-                    placeholder={placeholder}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "#fff",
-                      border: "1px solid rgba(0,0,0,0.2)",
-                      borderRadius: 8,
-                      color: "#000",
-                      fontSize: "1rem",
-                    }}
-                    autoFocus
-                  />
-                </div>
+                <button
+                  onClick={() => setInputMode("search")}
+                  style={{
+                    flex: 1,
+                    background:
+                      inputMode === "search"
+                        ? "rgba(74, 144, 226, 0.2)"
+                        : "transparent",
+                    color:
+                      inputMode === "search" ? "#fff" : "rgba(255,255,255,0.5)",
+                    border:
+                      inputMode === "search"
+                        ? "1px solid rgba(74, 144, 226, 0.5)"
+                        : "1px solid transparent",
+                    borderRadius: "8px",
+                    padding: "8px",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <SearchIcon /> Database
+                </button>
+                <button
+                  onClick={() => setInputMode("manual")}
+                  style={{
+                    flex: 1,
+                    background:
+                      inputMode === "manual"
+                        ? "rgba(74, 144, 226, 0.2)"
+                        : "transparent",
+                    color:
+                      inputMode === "manual" ? "#fff" : "rgba(255,255,255,0.5)",
+                    border:
+                      inputMode === "manual"
+                        ? "1px solid rgba(74, 144, 226, 0.5)"
+                        : "1px solid transparent",
+                    borderRadius: "8px",
+                    padding: "8px",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <PinIcon /> Manual / Map
+                </button>
+              </div>
 
-                {/* ← NEW: BOAT/BANK SELECTOR */}
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      color: "#000",
-                      marginBottom: 8,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                    }}
-                  >
-                    Fishing From
-                  </label>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                    }}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setAccessType("boat")}
+              {/* 2. DYNAMIC INPUT SECTION */}
+              <div>
+                {inputMode === "search" ? (
+                  <>
+                    <label className="modal-label">Search Verified Lakes</label>
+                    <div className="glass-search-wrapper">
+                      <style>{`
+                        .glass-search-wrapper input {
+                           background: rgba(0,0,0,0.3) !important;
+                           border: 1px solid rgba(255,255,255,0.1) !important;
+                           color: #fff !important;
+                           border-radius: 8px !important;
+                           padding: 12px !important;
+                           font-size: 1rem !important;
+                           /* ✅ NEW: No Red Lines */
+                        }
+                        .glass-search-wrapper .location-results {
+                           background: #1a1a1a !important;
+                           border: 1px solid rgba(255,255,255,0.1) !important;
+                           z-index: 9999 !important;
+                        }
+                        .glass-search-wrapper .location-result-item {
+                           color: rgba(255,255,255,0.8) !important;
+                           border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+                           padding: 12px !important;
+                        }
+                        .glass-search-wrapper .location-result-item:hover {
+                           background: rgba(74, 144, 226, 0.15) !important;
+                           color: #fff !important;
+                        }
+                      `}</style>
+                      <LocationSearch
+                        onSelect={handleSearchSelect}
+                        placeholder="Search 1,000+ Lakes..."
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <label className="modal-label">Confirm Location Name</label>
+                    <input
+                      value={waterName}
+                      onChange={(e) => setWaterName(e.target.value)}
+                      className="glass-input modal-input"
+                      placeholder="e.g. Lake Lanier, North Arm"
                       style={{
-                        flex: 1,
-                        padding: "12px 16px",
-                        background:
-                          accessType === "boat"
-                            ? "#4A90E2"
-                            : "rgba(74, 144, 226, 0.1)",
-                        border:
-                          accessType === "boat"
-                            ? "2px solid #4A90E2"
-                            : "2px solid rgba(0,0,0,0.1)",
-                        borderRadius: 8,
-                        color: accessType === "boat" ? "#fff" : "#000",
+                        width: "100%",
+                        padding: "12px",
+                        borderRadius: "10px",
                         fontSize: "1rem",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
                       }}
-                    >
-                      <span style={{ fontSize: "1.25rem" }}>🚤</span>
-                      Boat
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAccessType("bank")}
-                      style={{
-                        flex: 1,
-                        padding: "12px 16px",
-                        background:
-                          accessType === "bank"
-                            ? "#4A90E2"
-                            : "rgba(74, 144, 226, 0.1)",
-                        border:
-                          accessType === "bank"
-                            ? "2px solid #4A90E2"
-                            : "2px solid rgba(0,0,0,0.1)",
-                        borderRadius: 8,
-                        color: accessType === "bank" ? "#fff" : "#000",
-                        fontSize: "1rem",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <span style={{ fontSize: "1.25rem" }}>🎣</span>
-                      Bank
-                    </button>
-                  </div>
-                </div>
-
-                {selectedCoords && (
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        color: "#000",
-                        marginBottom: 8,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      Coordinates
-                    </label>
+                      autoFocus
+                      // ✅ NEW: No Red Lines
+                      spellCheck={false}
+                      autoCorrect="off"
+                      autoComplete="off"
+                    />
                     <div
                       style={{
-                        fontSize: "0.9rem",
-                        color: "#666",
-                        fontFamily: "monospace",
+                        marginTop: "8px",
+                        fontSize: "0.75rem",
+                        color: "rgba(255,255,255,0.4)",
+                        fontStyle: "italic",
                       }}
                     >
-                      📍 {selectedCoords.lat.toFixed(4)},{" "}
-                      {selectedCoords.lng.toFixed(4)}
+                      Tip: Rename this to match your specific section (e.g.
+                      "North Creek Arm") for better precision.
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* 3. Platform */}
+              <div>
+                <label className="modal-label">Platform</label>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setAccessType("boat")}
+                    className={`glass-toggle modal-btn ${
+                      accessType === "boat" ? "active" : ""
+                    }`}
+                  >
+                    <BoatIcon active={accessType === "boat"} />{" "}
+                    <span>Boat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccessType("bank")}
+                    className={`glass-toggle modal-btn ${
+                      accessType === "bank" ? "active" : ""
+                    }`}
+                  >
+                    <BankIcon active={accessType === "bank"} />{" "}
+                    <span>Bank</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 4. Coordinates */}
+              {selectedCoords && (
+                <div
+                  style={{
+                    padding: "12px",
+                    background: "rgba(255,255,255,0.03)",
+                    borderRadius: 8,
+                    border: "1px solid rgba(255,255,255,0.05)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "0.65rem",
+                        textTransform: "uppercase",
+                        opacity: 0.5,
+                        fontWeight: 700,
+                      }}
+                    >
+                      Confirmed Drop Point
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "monospace",
+                        color: "#4A90E2",
+                        fontSize: "0.85rem",
+                        marginTop: 2,
+                      }}
+                    >
+                      {selectedCoords.lat.toFixed(5)},{" "}
+                      {selectedCoords.lng.toFixed(5)}
                     </div>
                   </div>
-                )}
+                  <div style={{ color: "#4ecdc4", fontSize: "1.2rem" }}>✓</div>
+                </div>
+              )}
 
-                {user?.primaryEmailAddress?.emailAddress && (
-                  <div
-                    style={{
-                      fontSize: "0.85rem",
-                      color: "#666",
-                      padding: "12px",
-                      background: "rgba(74, 144, 226, 0.1)",
-                      borderRadius: 8,
-                    }}
-                  >
-                    ✓ Using your account email:{" "}
-                    {user.primaryEmailAddress.emailAddress}
-                  </div>
-                )}
-
-                {err && (
-                  <div
-                    style={{
-                      padding: "12px",
-                      background: "rgba(255,0,0,0.1)",
-                      border: "1px solid rgba(255,0,0,0.3)",
-                      borderRadius: 8,
-                      color: "#c00",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    ⚠️ {err}
-                  </div>
-                )}
-
-                {/* ✅ ADD: Cooldown Alert Box (Place this right above your Generate Button) */}
+              <div style={{ marginTop: "auto" }}>
                 {rateLimitInfo && (
                   <div
                     style={{
-                      padding: "12px 16px",
-                      background: "rgba(74, 144, 226, 0.1)",
-                      border: "1px solid rgba(74, 144, 226, 0.3)",
-                      borderRadius: 12,
-                      marginBottom: 20,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      color: "#000",
+                      padding: "10px",
+                      background: "rgba(255,255,255,0.05)",
+                      borderRadius: 8,
+                      marginBottom: 10,
+                      fontSize: "0.8rem",
+                      color: "#ffe66d",
                     }}
                   >
-                    <span style={{ fontSize: "1.2rem" }}>⏳</span>
-                    <div style={{ fontSize: "0.9rem", lineHeight: 1.4 }}>
-                      <strong>Plan Cooldown:</strong> Please wait{" "}
-                      <strong>
-                        {formatTime(rateLimitInfo.secondsRemaining)}
-                      </strong>{" "}
-                      before your next request.
-                    </div>
+                    Cooldown: {formatTime(rateLimitInfo.secondsRemaining)}
                   </div>
                 )}
 
                 <button
                   onClick={handleGenerate}
-                  // ✅ SURGICAL FIX: Disable the button if rateLimitInfo is NOT null
                   disabled={!!rateLimitInfo || !waterName || !selectedCoords}
-                  className="btn primary"
+                  className="generate-btn"
                   style={{
-                    width: "100%",
-                    padding: 16,
-                    // Visual feedback: grey out the button when disabled
-                    background: rateLimitInfo ? "#ccc" : "#4A90E2",
-                    cursor: rateLimitInfo ? "not-allowed" : "pointer",
-                    transition: "background 0.3s ease",
+                    background: rateLimitInfo
+                      ? "rgba(255,255,255,0.1)"
+                      : "#4A90E2",
+                    opacity: !waterName || !selectedCoords ? 0.6 : 1,
                   }}
                 >
-                  {/* Show the remaining time directly on the button label */}
-                  {rateLimitInfo
-                    ? `System Locked: ${formatTime(
-                        rateLimitInfo.secondsRemaining
-                      )}`
-                    : "Generate Full Plan"}
+                  {rateLimitInfo ? "Wait" : "Generate Plan"}
                 </button>
-
-                {selectedCoords && (
-                  <button
-                    onClick={() => {
-                      setWaterName("");
-                      setSelectedCoords(null);
-                      setErr(null);
-                      markerRef.current?.remove();
-                      markerRef.current = null;
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "12px",
-                      background: "transparent",
-                      border: "1px solid rgba(0,0,0,0.2)",
-                      borderRadius: 8,
-                      color: "#666",
-                      cursor: "pointer",
-                      fontSize: "0.9rem",
-                      marginTop: 8,
-                    }}
-                  >
-                    Clear Selection
-                  </button>
-                )}
-              </div>
-
-              {/* RIGHT: SEARCH */}
-              <div
-                style={{
-                  borderLeft: "1px solid rgba(0,0,0,0.1)",
-                  paddingLeft: 24,
-                }}
-              >
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    color: "#000",
-                    marginBottom: 12,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Search for a Lake
-                </label>
-
-                <div className="light-search-wrapper">
-                  <style>{`
-                    .light-search-wrapper input.input {
-                      background: #fff !important;
-                      border: 1px solid rgba(0,0,0,0.2) !important;
-                      color: #000 !important;
-                    }
-                    .light-search-wrapper .location-results {
-                      background: #fff !important;
-                      border: 1px solid rgba(0,0,0,0.2) !important;
-                      box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-                    }
-                    .light-search-wrapper .location-result-item {
-                      color: #000 !important;
-                      border-bottom: 1px solid rgba(0,0,0,0.05) !important;
-                    }
-                    .light-search-wrapper .location-result-item:hover {
-                      background: rgba(74, 144, 226, 0.1) !important;
-                    }
-                    .light-search-wrapper .location-result-item div {
-                      color: #000 !important;
-                    }
-                    .light-search-wrapper .location-result-item div:last-child {
-                      opacity: 0.6 !important;
-                    }
-                  `}</style>
-
-                  <LocationSearch
-                    onSelect={handleSearchSelect}
-                    placeholder="Lake Lanier, Lake Fork..."
-                  />
-                </div>
-
-                <p
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#666",
-                    marginTop: 16,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  Search for a lake or close this panel and tap any water body
-                  on the map
-                </p>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* STYLES */}
+      <style>{`
+        .modal-label {
+            display: block; 
+            font-size: 0.7rem; 
+            fontWeight: 700; 
+            opacity: 0.7; 
+            margin-bottom: 8px; 
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .generate-btn {
+            width: 100%;
+            padding: 16px;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+            transition: all 0.2s ease;
+        }
+        .generate-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* ✅ NEW: ORB MARKER STYLE */
+        .orb-marker-map {
+          width: 24px;
+          height: 24px;
+          background: #4A90E2;
+          border-radius: 50%;
+          box-shadow: 0 0 12px rgba(74,144,226,0.8);
+          border: 2px solid rgba(255,255,255,0.8);
+          position: relative;
+        }
+        .orb-marker-map::after {
+          content: '';
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          width: 100%; height: 100%;
+          border-radius: 50%;
+          border: 2px solid rgba(74,144,226,0.5);
+          animation: map-orb-pulse 2s infinite ease-out;
+        }
+        @keyframes map-orb-pulse {
+          0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+          100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -476,3 +476,43 @@ export function LayersIcon({ size = 24, className }: IconProps) {
     </svg>
   );
 }
+
+//Map Orb
+export const MapOrb = ({ size = 24, className = "" }) => (
+  <div
+    className={`map-orb-container ${className}`}
+    style={{ width: size, height: size }}
+  >
+    <div className="orb-core" />
+    <div className="orb-pulse" />
+    <style>{`
+      .map-orb-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .orb-core {
+        width: 45%;
+        height: 45%;
+        background: #4A90E2;
+        border-radius: 50%;
+        z-index: 2;
+        box-shadow: 0 0 10px #4A90E2;
+      }
+      .orb-pulse {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 2px solid #4A90E2;
+        border-radius: 50%;
+        animation: orb-pulsate 2s infinite ease-out;
+        opacity: 0;
+      }
+      @keyframes orb-pulsate {
+        0% { transform: scale(0.5); opacity: 0.8; }
+        100% { transform: scale(1.5); opacity: 0; }
+      }
+    `}</style>
+  </div>
+);
