@@ -1,5 +1,6 @@
 // src/components/Navigation.tsx
-// Fixed: Breakpoint alignment (768px) to prevent double-orb glitch
+// Updated: Desktop Orb is ALWAYS visible (solving the missing map button on wide screens).
+// Mobile Orb stays hidden on Plan pages (to avoid double-orb with the bottom dock).
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -16,7 +17,7 @@ export function Navigation() {
   const { signOut } = useClerk();
   const navigate = useNavigate();
 
-  // Smart Check: Hide header orb on Plan pages (because Dock is active)
+  // Smart Check: Only used for MOBILE to prevent double-orbs
   const isPlanPage = location.pathname.startsWith("/plan");
 
   const publicLinks = useMemo(
@@ -66,7 +67,7 @@ export function Navigation() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen]);
 
-  // Mobile Overlay (Hamburger Menu)
+  // Mobile Overlay
   const mobileOverlay = isOpen ? (
     <div
       style={{
@@ -114,7 +115,7 @@ export function Navigation() {
 
         <div style={{ height: 10 }} />
 
-        {/* HAMBURGER MENU ORB: Visible inside menu for convenience */}
+        {/* HAMBURGER MENU ORB */}
         <Link
           to="/members"
           onClick={() => setIsOpen(false)}
@@ -277,20 +278,18 @@ export function Navigation() {
                 </Link>
               ))}
 
-              {/* DESKTOP ORB: HIDE on Plan Pages */}
-              {!isPlanPage && (
-                <Link
-                  to="/members"
-                  title="Go to Map"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <MapOrb size={28} active={!isActive("/members")} />
-                </Link>
-              )}
+              {/* ✅ DESKTOP ORB: ALWAYS SHOW (Removed the !isPlanPage check here) */}
+              <Link
+                to="/members"
+                title="Go to Map"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <MapOrb size={28} active={!isActive("/members")} />
+              </Link>
 
               {/* User Menu */}
               <div style={{ position: "relative" }}>
@@ -410,7 +409,7 @@ export function Navigation() {
 
           {/* MOBILE HEADER CONTROLS */}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* MOBILE ORB: HIDE on Plan Pages */}
+            {/* ✅ MOBILE ORB: STILL HIDDEN ON PLAN (Prevents duplication with bottom dock) */}
             <SignedIn>
               {!isPlanPage && (
                 <div className="mobile-orb-container">
@@ -464,7 +463,7 @@ export function Navigation() {
       {mobileOverlay ? createPortal(mobileOverlay, document.body) : null}
 
       <style>{`
-        /* ✅ FIXED: Synced to 768px to match global styles */
+        /* ✅ BREAKPOINT SYNC: 768px */
         @media (min-width: 768px) {
           .mobile-orb-container, .mobile-menu-btn {
             display: none !important;
