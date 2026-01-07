@@ -11,8 +11,9 @@ from app.render.lure_specs import (
     trailer_notes_for_lures,
 )
 from app.services.phase_logic import determine_phase
-# ✅ NEW: Import specific lure tips from your rules file
+# Canonical Rules & Definitions
 from app.canon.retrieve_rules import LURE_TIP_BANK
+from app.canon.target_definitions import TARGET_DEFINITIONS
 
 """
 WEATHER CONTRACT (V1 – LOCKED)
@@ -46,6 +47,9 @@ COLOR_SWATCHES = {
     "chrome": "chrome", "gold": "gold", "firetiger": "firetiger", "chartreuse": "chartreuse",
 }
 
+def titleCase(s: str) -> str:
+    return s.lower().replace("_", " ").title()
+
 def _stub_weather_context() -> WeatherContext:
     return WeatherContext(
         temp_f=60.0, wind_speed=5.0, sky_condition="partly_cloudy", timestamp=datetime.utcnow()
@@ -58,23 +62,21 @@ def _get_weather_from_request(req: ProPatternRequest) -> WeatherContext:
         wind = snap.get("wind_mph") or snap.get("wind_speed")
         cloud = snap.get("cloud_cover") or snap.get("sky_condition")
         
-        # ✅ NEW: Capture OpenWeather 3.0 Advanced Metrics
-        pressure = snap.get("pressure") # hPa
-        visibility = snap.get("visibility") # meters
-        uvi = snap.get("uvi") # 0-11+
+        # Advanced Metrics Capture
+        pressure = snap.get("pressure") 
+        visibility = snap.get("visibility") 
+        uvi = snap.get("uvi") 
 
         if temp_f is not None and wind is not None:
             sky = (cloud or "partly_cloudy").strip().lower().replace(" ", "_")
             ctx = WeatherContext(
                 temp_f=float(temp_f), wind_speed=float(wind), sky_condition=sky, timestamp=datetime.utcnow()
             )
-            # Attach advanced metrics (monkey-patching onto context for internal use)
             ctx.pressure = float(pressure) if pressure is not None else 1015.0
             ctx.visibility = float(visibility) if visibility is not None else 10000.0
             ctx.uvi = float(uvi) if uvi is not None else 0.0
             return ctx
 
-    # Legacy fallback
     if hasattr(req, "temp_f") and hasattr(req, "wind_speed") and hasattr(req, "sky_condition"):
         ctx = WeatherContext(
             temp_f=getattr(req, "temp_f"), wind_speed=getattr(req, "wind_speed"),
@@ -105,15 +107,12 @@ def _signals(weather: WeatherContext, month: int) -> Dict[str, Any]:
     wind_speed = weather.wind_speed
     sky = (weather.sky_condition or "").lower().replace("_", " ")
     
-    # ✅ NEW: Access Advanced Metrics
     pressure = getattr(weather, "pressure", 1015.0)
     visibility = getattr(weather, "visibility", 10000.0)
     uvi = getattr(weather, "uvi", 0.0)
 
-    # Logic V2 Definitions
     is_foggy = visibility < 2000
     is_cloudy = any(k in sky for k in ["cloud", "overcast", "rain", "storm", "fog"])
-    # Low light = Clouds OR Fog OR Low Winter Sun
     is_low_light = is_cloudy or is_foggy or (month in (12, 1) and temp_f > 40)
     
     is_falling_pressure = pressure < 1012
@@ -127,7 +126,7 @@ def _signals(weather: WeatherContext, month: int) -> Dict[str, Any]:
         "is_low_light": is_low_light, "is_foggy": is_foggy,
         "is_falling_pressure": is_falling_pressure, "is_high_pressure": is_high_pressure,
         "is_high_uv": is_high_uv,
-        "pressure_val": pressure, "uvi_val": uvi, "vis_val": visibility, # Store raw for text generation
+        "pressure_val": pressure, "uvi_val": uvi, "vis_val": visibility,
         "is_winter": month in (12, 1, 2), "is_spring": month in (3, 4, 5),
         "is_summer": month in (6, 7, 8), "is_fall": month in (9, 10, 11),
     }
@@ -165,7 +164,6 @@ def _score_families(sig: Dict[str, Any]) -> Dict[str, int]:
     if sig["is_hot"]:
         score["vertical_hover"] += 2; score["bottom_dragging"] += 1
         
-    # ✅ NEW: Pressure Logic
     if sig["is_falling_pressure"]:
         score["horizontal_moving"] += 3; score["surface_chase"] += 2; score["slow_roll_glide"] -= 1
     elif sig["is_high_pressure"]:
@@ -193,41 +191,22 @@ def _depth_zone_for_family(family: str, phase: str) -> str:
     if family == "vertical_hover": return "deep"
     return "mid_depth"
 
-# ✅ NEW: Context-Aware Color Logic
 def _colors_for_family(family: str, sig: Dict[str, Any]) -> List[str]:
     is_stained = sig["is_low_light"] or sig["is_windy"] or sig["is_foggy"]
     is_high_uv = sig["is_high_uv"]
 
-    # 1. MOVING / REACTION
     if family in ("horizontal_moving", "surface_chase", "slow_roll_glide"):
         if is_stained:
-            return [
-                COLOR_SWATCHES["chart_white"],
-                COLOR_SWATCHES["shad_chart"],
-                COLOR_SWATCHES["black_blue"],
-                COLOR_SWATCHES["firetiger"] if "firetiger" in COLOR_SWATCHES else "chartreuse"
-            ]
+            return [COLOR_SWATCHES["chart_white"], COLOR_SWATCHES["shad_chart"], COLOR_SWATCHES["black_blue"], COLOR_SWATCHES["firetiger"]]
         if is_high_uv:
-            return [
-                COLOR_SWATCHES["ghost_shad"],
-                COLOR_SWATCHES["translucent"],
-                COLOR_SWATCHES["ghost_minnow"],
-                COLOR_SWATCHES["natural_shad"]
-            ]
-        return [
-            COLOR_SWATCHES["shad"],
-            COLOR_SWATCHES["shad_chart"],
-            COLOR_SWATCHES["bream"],
-            COLOR_SWATCHES["chrome"]
-        ]
+            return [COLOR_SWATCHES["ghost_shad"], COLOR_SWATCHES["translucent"], COLOR_SWATCHES["ghost_minnow"], COLOR_SWATCHES["natural_shad"]]
+        return [COLOR_SWATCHES["shad"], COLOR_SWATCHES["shad_chart"], COLOR_SWATCHES["bream"], COLOR_SWATCHES["chrome"]]
 
-    # 2. TOPWATER AMBUSH
     if family == "surface_ambush":
         if is_stained:
             return [COLOR_SWATCHES["black_blue"], COLOR_SWATCHES["white"], COLOR_SWATCHES["bream"]]
         return [COLOR_SWATCHES["white"], COLOR_SWATCHES["shad"], COLOR_SWATCHES["bream"]]
 
-    # 3. BOTTOM CONTACT / FINESSE
     if is_stained:
         return [COLOR_SWATCHES["black_blue"], COLOR_SWATCHES["junebug"], COLOR_SWATCHES["green_pumpkin_orange"]]
     return [COLOR_SWATCHES["green_pumpkin"], COLOR_SWATCHES["watermelon_red"], COLOR_SWATCHES["peanut butter_jelly"], COLOR_SWATCHES["bream"]]
@@ -242,7 +221,7 @@ def _family_to_lures(primary_family: str, phase: str, sig: Dict[str, Any] = None
         return ["jerkbait", "soft jerkbait", "paddle tail swimbait"] if winter_block_top else ["hollow body frog", "walking bait", "popper"]
     
     if primary_family == "horizontal_moving":
-        if is_foggy: return ["chatterbait", "spinnerbait", "squarebill"] # ✅ FOG FILTER
+        if is_foggy: return ["chatterbait", "spinnerbait", "squarebill"]
         if phase in ("pre-spawn", "fall", "late-fall"): return ["chatterbait", "spinnerbait", "lipless crankbait"]
         if phase in ("summer", "late-summer"): return ["deep crankbait", "underspin", "paddle tail swimbait"]
         if phase == "winter": return ["jerkbait", "mid crankbait", "chatterbait"]
@@ -263,13 +242,10 @@ def _family_targets(primary_family: str, phase: str, bottom_composition: str) ->
     targets = []
     if primary_family in ("surface_chase", "surface_ambush"):
         targets += ["shade lines and calm pockets near cover", "shallow cover lanes (docks, laydowns, grass edges)"]
-        if phase in ("summer", "late-summer"): targets.append("early/late low-light stretches")
     elif primary_family in ("horizontal_moving", "slow_roll_glide"):
         targets += ["secondary points and channel swings", "wind-blown banks and long stretches"]
-        if phase in ("fall", "late-fall"): targets.append("backs of creeks and pockets")
     elif primary_family in ("bottom_dragging", "bottom_lift_drop"):
         targets += ["breaks, edges, and staging structure", "bottom-oriented cover (wood/rock/grass edges)"]
-        if phase == "winter": targets.append("steeper swings and deeper edges")
     elif primary_family == "vertical_hover":
         targets += ["vertical structure near deep water", "areas where contour, cover, and bait intersect"]
     
@@ -277,27 +253,18 @@ def _family_targets(primary_family: str, phase: str, bottom_composition: str) ->
     elif bottom_composition in ("sand", "clay"): targets.append("subtle contour changes and bottom edges")
     return list(set(targets))
 
-# ✅ NEW: Helper to get specific lure tips from retrieve_rules.py
 def _get_lure_specific_tips(lure: str, sig: Dict[str, Any]) -> List[str]:
-    """
-    Look up the lure in retrieve_rules.py and return 1-2 tips matching current weather.
-    """
+    """Retrieves mechanics from retrieve_rules.py bank based on conditions."""
     lure_key = lure.lower().replace(" ", " ") 
     candidates = LURE_TIP_BANK.get(lure_key)
     if not candidates:
         for k, v in LURE_TIP_BANK.items():
             if k in lure_key:
-                candidates = v
-                break
-    
-    if not candidates:
-        return []
-
+                candidates = v; break
+    if not candidates: return []
     valid_tips = []
-    for text, category, tags in candidates:
-        if "any" in tags:
-            valid_tips.append(text)
-            continue
+    for text, _, tags in candidates:
+        if "any" in tags: valid_tips.append(text); continue
         if "windy" in tags and sig["is_windy"]: valid_tips.append(text)
         elif "calm" in tags and sig["is_calm"]: valid_tips.append(text)
         elif "bright" in tags and not sig["is_low_light"]: valid_tips.append(text)
@@ -305,47 +272,77 @@ def _get_lure_specific_tips(lure: str, sig: Dict[str, Any]) -> List[str]:
         elif "winter" in tags and sig["is_winter"]: valid_tips.append(text)
         elif "clear" in tags and not sig["is_low_light"]: valid_tips.append(text)
         elif "stained" in tags and sig["is_low_light"]: valid_tips.append(text)
+    return valid_tips[:3]
 
-    return valid_tips[:2]
+
+
+def _build_work_it_cards(lure: str, targets: List[str], sig: Dict[str, Any]) -> List[Dict[str, str]]:
+    """
+    Final Awestruck Version: 
+    Forces 100% unique instructions across all cards by matching terrain 
+    mechanics first, then cycling through the remaining lure tip bank.
+    """
+    all_lure_tips = _get_lure_specific_tips(lure, sig)
+    cards = []
+    used_tips = set() 
+    
+    for target in targets[:3]:
+        t_lower = target.lower()
+        
+        # 1. Definition Lookup
+        target_info = TARGET_DEFINITIONS.get(t_lower, {})
+        if not target_info:
+            for k, v in TARGET_DEFINITIONS.items():
+                if k in t_lower:
+                    target_info = v; break
+        definition = target_info.get("definition", "Strategic structural transition.")
+
+        # 2. Contextual 'How to Fish' with Forced Uniqueness
+        how_to = None
+        
+        if all_lure_tips:
+            # A. Try for a Terrain Match (Hard/Rock)
+            if any(word in t_lower for word in ["rock", "riprap", "hard", "point", "bridge"]):
+                how_to = next((tip for tip in all_lure_tips if tip not in used_tips and any(x in tip.lower() for x in ["contact", "deflect", "flare", "bottom", "bounce"])), None)
+            
+            # B. Try for a Terrain Match (Soft/Cover)
+            elif any(word in t_lower for word in ["grass", "weed", "laydown", "brush", "creek", "pocket", "timber"]):
+                how_to = next((tip for tip in all_lure_tips if tip not in used_tips and any(x in tip.lower() for x in ["grass", "rip", "tick", "snag", "weed", "clean"])), None)
+            
+            # C. Fallback: Take the first available tip that hasn't been used yet
+            if not how_to:
+                how_to = next((tip for tip in all_lure_tips if tip not in used_tips), all_lure_tips[0])
+
+        used_tips.add(how_to)
+        
+        cards.append({
+            "name": titleCase(target),
+            "definition": definition,
+            "how_to_fish": how_to
+        })
+    return cards
 
 def _strategy_tips(primary_family: str, phase: str, sig: Dict[str, Any], lure_name: str = None) -> List[str]:
-    """
-    Combines General Family Logic (Pressure, Season) with Specific Lure Logic.
-    """
     tips = []
-    
-    # 1. High-Level Pressure/Weather Context
-    if sig["is_falling_pressure"]: 
-        tips.append("Falling pressure detected: fish should be chasing. Speed up your retrieve.")
-    elif sig["is_high_pressure"]: 
-        tips.append("High pressure detected: fish may hold tight to cover. Slow down and be precise.")
-    
+    if sig["is_falling_pressure"]: tips.append("Falling pressure detected: fish should be chasing. Speed up your retrieve.")
+    elif sig["is_high_pressure"]: tips.append("High pressure detected: fish may hold tight to cover. Slow down.")
     if sig["is_windy"]: tips.append("Focus on wind-blown banks where bait is pushed.")
-    
-    # 2. General Family Tips
     if primary_family == "horizontal_moving": tips.append("Cover water until you intersect active fish, then make repeated passes.")
     elif primary_family == "bottom_dragging": tips.append("Stay in contact with bottom—small pauses often trigger the bite.")
-    elif primary_family == "bottom_lift_drop": tips.append("Hop/raise it over cover and let it fall on semi-slack line.")
-    elif primary_family == "vertical_hover": tips.append("Keep the bait in place longer than feels natural—time-in-zone wins.")
-    elif primary_family in ("surface_chase", "surface_ambush"): tips.append("Treat surface strikes as timing windows—work the best lanes.")
-
-    # 3. ✅ NEW: Specific Lure Tips (Integrated from retrieve_rules.py)
     if lure_name:
-        lure_tips = _get_lure_specific_tips(lure_name, sig)
-        tips.extend(lure_tips)
-    
+        tips.extend(_get_lure_specific_tips(lure_name, sig))
     return list(dict.fromkeys(tips))[:6]
 
 def _build_lure_setups(lures: List[str], primary_family: str) -> List[LureSetup]:
+    """Provides professional gear metadata required for premium UI rendering."""
     setups = []
     def add(lure, rod, reel, line, hook, size, tech="casting"):
         setups.append(LureSetup(lure=lure, technique=tech, rod=rod, reel=reel, line=line, hook_or_leader=hook, lure_size=size))
-    
     for lure in lures:
         lu = (lure or "").lower()
-        if primary_family == "vertical_hover" or lu in ("dropshot", "damiki rig", "ned rig", "shaky head", "neko rig"):
+        if primary_family == "vertical_hover" or any(x in lu for x in ["dropshot", "ned rig", "shaky head", "neko"]):
             add(lure, '7\'0" medium spinning', "2500 spinning", "10lb braid to 8lb floro", "finesse hook", "1/8–3/8 oz", "spinning")
-        elif primary_family in ("bottom_dragging", "bottom_lift_drop") or "jig" in lu or "carolina" in lu or "texas" in lu:
+        elif primary_family in ("bottom_dragging", "bottom_lift_drop") or any(x in lu for x in ["jig", "carolina", "texas"]):
             add(lure, '7\'1" medium-heavy casting', "7.3:1 baitcaster", "15–17 lb floro", "3/0–4/0 EWG", "3/8–3/4 oz")
         elif primary_family in ("surface_chase", "surface_ambush"):
             add(lure, '7\'0" medium-heavy casting', "7.3–8.1:1 baitcaster", "30–50 lb braid", "factory trebles", "standard")
@@ -358,166 +355,69 @@ def _family_label_for_user(family: str) -> str:
 
 def _pattern_summary(family: str, phase: str, sig: Dict[str, Any]) -> str:
     light_phrase = "lower light" if bool(sig.get("is_low_light")) else "brighter skies"
-    wind_phrase = "wind-driven activity" if sig.get("is_windy") else ("calm conditions" if sig.get("is_calm") else "steady conditions")
-
-    if family == "bottom_dragging":
-        return (
-            f"Today’s {wind_phrase} and {phase} timing favor a bottom-contact plan that stays in the strike zone. "
-            "Work it methodically along breaks, edges, and bottom-oriented cover instead of relying on pure chase."
-        )
-
+    wind_phrase = "wind-driven activity" if sig.get("is_windy") else "steady conditions"
     if family == "horizontal_moving":
-        return (
-            f"With {light_phrase} and {wind_phrase}, bass are more likely to roam and react. "
-            "Cover water efficiently along points, banks, and edges until you intersect active fish."
-        )
+        return f"With {light_phrase} and {wind_phrase}, bass are more likely to roam and react. Cover water along edges."
+    return f"Today’s {phase} conditions favor a focused {family.replace('_', ' ')} presentation."
 
-    if family == "vertical_hover":
-        return (
-            f"In {phase} conditions, a slower hold can outperform chase. "
-            "Keep the bait in place longer around steep edges, isolated cover, and depth-access areas."
-        )
-
-    if family in ("surface_chase", "surface_ambush"):
-        return (
-            f"When surface windows open (especially with {light_phrase}), top presentations can produce the cleanest bites. "
-            "Commit to the best lanes and give fish a clear target near cover and shade."
-        )
-
-    if family == "bottom_lift_drop":
-        return (
-            f"With {wind_phrase} and {phase} timing, a lift-drop plan can trigger fish that won’t track a steady retrieve. "
-            "Use contact and controlled falls to create reaction near cover and edges."
-        )
-
-    if family == "slow_roll_glide":
-        return (
-            f"Under {light_phrase} and {wind_phrase}, a subtler horizontal look often draws better commitment. "
-            "Keep it smooth and believable around edges, transitions, and roaming fish lanes."
-        )
-
-    return "Today’s conditions favor a focused presentation that keeps your plan simple and repeatable."
-
-# ✅ NEW: Insight Generator for UI Cards
 def _generate_weather_insights(sig: Dict[str, Any]) -> List[str]:
+    """Generates weather-triggered 'Reverse Card' insights for the contextual UI section."""
     insights = []
-    
-    # UV Insights
     uvi = sig.get("uvi_val", 0)
-    if sig["is_high_uv"]:
-        insights.append(f"High UV Index ({uvi:.0f}): Light penetration is deep. Use translucent/ghost shades to avoid looking unnatural.")
-    elif uvi < 3:
-        insights.append(f"Low UV Index ({uvi:.0f}): Light is diffused. Solid, opaque colors will silhouette better against the surface.")
-
-    # Pressure Insights
+    if sig["is_high_uv"]: insights.append(f"Low UV Index ({uvi:.0f}): Light is diffused. Solid, opaque colors will silhouette better.")
     press = sig.get("pressure_val", 1015)
-    if sig["is_falling_pressure"]:
-        insights.append(f"Falling Pressure ({press:.0f} hPa): Fish air bladders expand, often triggering aggressive chasing behavior.")
-    elif sig["is_high_pressure"]:
-        insights.append(f"High Pressure ({press:.0f} hPa): Fish typically hold tighter to cover and reduce strike zones.")
-
-    # Visibility/Fog Insights
-    vis = sig.get("vis_val", 10000)
-    if sig["is_foggy"]:
-        insights.append(f"Low Visibility ({int(vis)}m): Fog reduces light drastically. Prioritize lures with vibration (thump) over sight-baits.")
-    
+    if sig["is_falling_pressure"]: insights.append(f"Falling Pressure ({press:.0f} hPa): Fish air bladders expand, triggering aggressive chasing behavior.")
+    if sig["is_foggy"]: insights.append(f"Low Visibility ({int(sig['vis_val'])}m): Fog reduces light drastically. Prioritize vibration (thump).")
     return insights
-
-# -----------------------------
-# Main builder
-# -----------------------------
 
 def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
     weather = _get_weather_from_request(req)
-    latitude = getattr(req, "latitude", None)
-    longitude = getattr(req, "longitude", None)
-    
-    weather_hash_input = _weather_for_hash(weather)
-    env_snapshot_hash = snapshot_hash(weather=weather_hash_input, config=SnapshotHashConfig(), lat=latitude, lon=longitude, time_bucket=None, water_view_id=None)
-
+    latitude = getattr(req, "latitude", 34.0)
+    longitude = getattr(req, "longitude", -84.0)
     month = _resolve_month(req, weather)
-    
-    # ✅ NEW: Use Smart Phase Logic if lat provided, else fallback
-    if latitude:
-        phase = determine_phase(weather.temp_f, month, float(latitude))
-    else:
-        phase = _classify_phase(weather.temp_f, month)
-
-    bottom_composition = getattr(req, "bottom_composition", None) or "mixed"
-    forage = getattr(req, "forage", None) or ["shad"]
-    clarity_hint = getattr(req, "clarity", None)
-
+    phase = determine_phase(weather.temp_f, month, float(latitude))
     sig = _signals(weather, month)
 
     primary_family = _pick_primary_family(sig)
     counter_family = _pick_counter_family(sig, primary_family)
     depth_zone = _depth_zone_for_family(primary_family, phase)
-
     primary_lures = _family_to_lures(primary_family, phase, sig)
-    counter_lures = _family_to_lures(counter_family, phase, sig)
+    targets = _family_targets(primary_family, phase, getattr(req, "bottom_composition", "mixed"))
     
-    colors = _colors_for_family(primary_family, sig)
-    counter_colors = _colors_for_family(counter_family, sig)
-
-    recommended_targets = _family_targets(primary_family, phase, bottom_composition)
-    
-    # ✅ UPDATED: Pass specific lure to get granular "How" tips
-    strategy_tips = _strategy_tips(primary_family, phase, sig, lure_name=primary_lures[0])
-    
+    work_it_cards = _build_work_it_cards(primary_lures[0], targets, sig)
     lure_setups = _build_lure_setups(primary_lures[:2], primary_family)
-    weather_insights = _generate_weather_insights(sig)
 
-    primary_lure_spec, alternate_lure_specs = build_primary_and_alternate_lure_specs(
-        primary_lures=primary_lures[:3], color_recommendations=colors[:2],
+    primary_lure_spec, alt_specs = build_primary_and_alternate_lure_specs(
+        primary_lures=primary_lures[:3], color_recommendations=_colors_for_family(primary_family, sig)[:2],
         primary_presentation_family=primary_family, phase=phase
     )
-    trailer_notes = trailer_notes_for_lures(primary_lures[:2])
-
-    counter_lure_spec, counter_alt_specs = build_primary_and_alternate_lure_specs(
-        primary_lures=counter_lures[:3], color_recommendations=counter_colors[:2],
-        primary_presentation_family=counter_family, phase=phase
-    )
-
-    if counter_family == primary_family:
-        counter_family = "bottom_dragging" if primary_family == "horizontal_moving" else "horizontal_moving"
 
     conditions = {
-        "location_name": getattr(req, "location_name", None),
+        "location_name": getattr(req, "location_name", "Local Lake"),
         "latitude": latitude, "longitude": longitude,
         "temp_f": weather.temp_f, "wind_speed": weather.wind_speed, "sky_condition": weather.sky_condition,
-        "timestamp": weather.timestamp.isoformat(), "month": month, "clarity": clarity_hint,
-        "bottom_composition": bottom_composition, "forage": forage, "depth_ft": getattr(req, "depth_ft", None),
-        "snapshot_hash": env_snapshot_hash, "snapshot_weather": weather_hash_input,
-        
-        "primary_presentation_family": primary_family,
-        "counter_presentation_family": counter_family,
-        "primary_lure_spec": primary_lure_spec,
-        "alternate_lure_specs": alternate_lure_specs,
-        "trailer_notes": trailer_notes,
-        
-        # ✅ NEW FIELD for UI Reverse Card
-        "weather_insights": weather_insights,
-
+        "timestamp": weather.timestamp.isoformat(), "month": month,
+        "weather_insights": _generate_weather_insights(sig),
+        "primary": {
+            "presentation": titleCase(primary_family),
+            "base_lure": primary_lures[0],
+            "colors": {"asset_key": f"{primary_lures[0].replace(' ', '_')}.png"},
+            "color_recommendations": _colors_for_family(primary_family, sig)[:2],
+            "work_it_cards": work_it_cards,
+            "gear": {"rod": lure_setups[0].rod, "reel": lure_setups[0].reel, "line": lure_setups[0].line}
+        },
         "pattern_2": {
             "presentation_family": counter_family,
-            "recommended_lures": counter_lures[:2],
-            "color_recommendations": counter_colors[:2],
-            "recommended_targets": _family_targets(counter_family, phase, bottom_composition),
-            "primary_lure_spec": counter_lure_spec,
-            "alternate_lure_specs": counter_alt_specs,
-            "trailer_notes": trailer_notes_for_lures(counter_lures[:2]),
-        },
+            "recommended_lures": _family_to_lures(counter_family, phase, sig)[:2],
+            "color_recommendations": _colors_for_family(counter_family, sig)[:2],
+        }
     }
-
-    notes = "Pattern generated using rules-based logic and a lake-centered weather snapshot."
-    primary_technique = _family_label_for_user(primary_family)
-    featured_lure_name = (primary_lure_spec.get("display_name") if isinstance(primary_lure_spec, dict) else None) or (primary_lures[0] if primary_lures else "spinnerbait")
-    pattern_summary = _pattern_summary(primary_family, phase, sig)
 
     return ProPatternResponse(
         phase=phase, depth_zone=depth_zone, recommended_lures=primary_lures[:2],
-        recommended_targets=recommended_targets[:4], strategy_tips=strategy_tips[:6],
-        color_recommendations=colors[:2], lure_setups=lure_setups, conditions=conditions,
-        notes=notes, primary_technique=primary_technique, featured_lure_name=featured_lure_name,
-        featured_lure_family=primary_family, pattern_summary=pattern_summary,
+        recommended_targets=targets[:3], strategy_tips=_strategy_tips(primary_family, phase, sig, primary_lures[0]),
+        color_recommendations=_colors_for_family(primary_family, sig)[:2], lure_setups=lure_setups, conditions=conditions,
+        notes="Generated via rules-based logic engine.", primary_technique=titleCase(primary_family),
+        featured_lure_name=primary_lures[0], featured_lure_family=primary_family, 
+        pattern_summary=_pattern_summary(primary_family, phase, sig)
     )

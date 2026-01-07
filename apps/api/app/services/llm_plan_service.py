@@ -56,7 +56,7 @@ from app.canon.validate import (
     validate_lure_and_presentation,
     validate_colors_for_lure,
 )
-from app.render.retrieve_rules import LURE_TIP_BANK
+from app.canon.retrieve_rules import LURE_TIP_BANK
 
 
 # ----------------------------------------
