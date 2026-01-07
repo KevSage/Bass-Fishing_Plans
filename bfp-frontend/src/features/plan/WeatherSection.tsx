@@ -1,6 +1,6 @@
 // src/features/plan/WeatherSection.tsx
 // REFINED: Balanced Hierarchy, Data-Rich Cards, Watermark Visuals
-//
+// NOW CONNECTED TO BACKEND INTELLIGENCE (weather_insights)
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -38,7 +38,7 @@ export type PlanConditions = {
   temp_high?: number | null;
   wind_mph?: number | null;
   wind_speed?: number | null;
-  wind_direction?: string | null; // Added for direction
+  wind_direction?: string | null;
   uv_index?: number | null;
   cloud_cover?: string | null;
   sky_condition?: string | null;
@@ -54,6 +54,8 @@ export type PlanConditions = {
   moon_phase?: string | null;
   moon_illumination?: number | null;
   is_major_period?: boolean | null;
+  // ✅ NEW: Receive the smart insights from the backend
+  weather_insights?: string[] | null;
 };
 
 export function WeatherSection({
@@ -83,7 +85,6 @@ export function WeatherSection({
         : low != null && high != null
         ? `${Math.round(high)}°`
         : "--";
-    // Sub: Range
     const tempSecondary =
       low != null && high != null
         ? `L:${Math.round(low)}° H:${Math.round(high)}°`
@@ -98,7 +99,6 @@ export function WeatherSection({
       numOrNull(raw.weather?.wind_mph);
     const windDir = raw.wind_direction ?? raw.weather?.wind_direction ?? "";
     const windPrimary = wind != null ? `${Math.round(wind)}` : "--";
-    // Sub: Direction (e.g. "3 MPH • NW")
     const windSecondary = windDir ? `MPH • ${windDir}` : "MPH";
 
     // Pressure
@@ -116,14 +116,13 @@ export function WeatherSection({
     )
       .toString()
       .toLowerCase();
-    // Fallback trend calculation
+
     if (!pTrend && pressureMb != null) {
       pTrend =
         pressureMb > 1016 ? "High" : pressureMb < 1008 ? "Low" : "Steady";
     }
     const pressurePrimary =
       pressureMb != null ? `${Math.round(pressureMb)}` : "--";
-    // Sub: Trend (e.g. "MB • Steady")
     const pressureSecondary = pTrend ? `MB • ${titleCase(pTrend)}` : "MB";
 
     // Light
@@ -140,7 +139,6 @@ export function WeatherSection({
     const uv =
       numOrNull(raw.uv_index) ?? numOrNull(raw.weather_snapshot?.uv_index);
     const lightPrimary = cloudRaw ? titleCase(cloudRaw) : "Clear";
-    // Sub: UV Index (e.g. "UV: 4")
     const lightSecondary = uv != null ? `UV: ${Math.round(uv)}` : "Visibility";
 
     return {
@@ -205,11 +203,10 @@ export function WeatherSection({
             "linear-gradient(145deg, rgba(74, 144, 226, 0.04) 0%, rgba(10, 10, 10, 0.4) 100%)",
           border: "1px solid rgba(74, 144, 226, 0.12)",
           boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-          // Negative margin attempt to close gap if parent allows, otherwise relying on height
           marginTop: -10,
         }}
       >
-        {/* HEADER: Satellite Background - Increased Height to 260px */}
+        {/* HEADER: Satellite Background */}
         <div
           style={{
             position: "relative",
@@ -240,7 +237,6 @@ export function WeatherSection({
             }}
           />
 
-          {/* Top Row: Date & Phase */}
           <div
             style={{
               position: "relative",
@@ -279,7 +275,6 @@ export function WeatherSection({
             )}
           </div>
 
-          {/* Bottom Row: Location */}
           <div style={{ position: "relative", padding: "0 24px 32px" }}>
             <div
               style={{
@@ -319,20 +314,43 @@ export function WeatherSection({
         </div>
 
         <div style={{ padding: "24px" }}>
-          <h3
+          <div
             style={{
-              fontSize: "0.8rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.15em",
-              color: "rgba(255,255,255,0.5)",
-              fontWeight: 700,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
               marginBottom: 16,
             }}
           >
-            Current Conditions
-          </h3>
+            <h3
+              style={{
+                fontSize: "0.8rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.15em",
+                color: "rgba(255,255,255,0.5)",
+                fontWeight: 700,
+                margin: 0,
+              }}
+            >
+              Current Conditions
+            </h3>
+            {/* Visual Indicator that backend intelligence is active */}
+            {conditions.weather_insights &&
+              conditions.weather_insights.length > 0 && (
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "#4A90E2",
+                    background: "rgba(74, 144, 226, 0.1)",
+                    padding: "2px 8px",
+                    borderRadius: 4,
+                  }}
+                >
+                  AI ANALYSIS ACTIVE
+                </span>
+              )}
+          </div>
 
-          {/* DASHBOARD GRID */}
           <div
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
@@ -390,7 +408,6 @@ export function WeatherSection({
         </div>
       </div>
 
-      {/* --- PREMIUM GLASS MODAL --- */}
       {activeCard && expansion && (
         <div
           style={{
@@ -423,7 +440,6 @@ export function WeatherSection({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Background Watermark (re-using icon for texture) */}
             <div
               style={{
                 position: "absolute",
@@ -440,7 +456,6 @@ export function WeatherSection({
               {activeCard === "light" && <CloudIcon size={200} />}
             </div>
 
-            {/* Header */}
             <div
               style={{
                 display: "flex",
@@ -494,7 +509,6 @@ export function WeatherSection({
               </button>
             </div>
 
-            {/* Stat Block */}
             {expansion.numbers && expansion.numbers.length > 0 && (
               <div
                 style={{
@@ -524,7 +538,6 @@ export function WeatherSection({
               </div>
             )}
 
-            {/* Details */}
             <div style={{ position: "relative" }}>
               <h4
                 style={{
@@ -597,7 +610,7 @@ export function WeatherSection({
   );
 }
 
-// --- SUB-COMPONENT: Minimal Card (Balanced) ---
+// --- SUB-COMPONENT: Minimal Card ---
 function MinimalCard({
   icon,
   label,
@@ -620,13 +633,12 @@ function MinimalCard({
         alignItems: "center",
         justifyContent: "center",
         padding: "24px 12px",
-        // Card Background with Watermark Icon visual trick
         background: "rgba(255,255,255,0.03)",
         border: "1px solid rgba(255,255,255,0.06)",
         borderRadius: 16,
         cursor: "pointer",
         position: "relative",
-        overflow: "hidden", // Clip the watermark
+        overflow: "hidden",
         transition: "all 0.2s ease",
       }}
       onMouseEnter={(e) =>
@@ -636,7 +648,6 @@ function MinimalCard({
         (e.currentTarget.style.background = "rgba(255,255,255,0.03)")
       }
     >
-      {/* 1. Subtle Background Watermark */}
       <div
         style={{
           position: "absolute",
@@ -648,7 +659,6 @@ function MinimalCard({
           color: "#fff",
         }}
       >
-        {/* Clone icon but larger for texture */}
         {React.cloneElement(icon as React.ReactElement, { size: 80 })}
       </div>
 
@@ -662,7 +672,6 @@ function MinimalCard({
       >
         {icon}
       </div>
-      {/* 2. Value Reduced to 1.5rem (Balanced) */}
       <div
         style={{
           fontSize: "1.5rem",
@@ -675,7 +684,6 @@ function MinimalCard({
       >
         {value}
       </div>
-      {/* 3. Label */}
       <div
         style={{
           fontSize: "0.75rem",
@@ -689,7 +697,6 @@ function MinimalCard({
       >
         {label}
       </div>
-      {/* 4. Sub-value (Direction/Trend) */}
       {subValue && (
         <div
           style={{
@@ -718,11 +725,21 @@ type Expansion = {
   details: string[];
 };
 
+// ✅ UPDATED: Now looks for 'weather_insights' from Backend
 function buildExpansion(
   card: "temp" | "wind" | "pressure" | "light",
   conditions: PlanConditions
 ): Expansion {
   const raw: any = conditions as any;
+  // Get the smart insights if available
+  const insights = conditions.weather_insights || [];
+
+  // Helper to find specific insights relevant to the card
+  const getInsightsFor = (keyword: string) => {
+    return insights.filter((i) =>
+      i.toLowerCase().includes(keyword.toLowerCase())
+    );
+  };
 
   // Extract Raw Data
   const tempF = numOrNull(raw.temp_f);
@@ -780,16 +797,12 @@ function buildExpansion(
         ? `Current conditions are ${Math.round(tempF)}°F.`
         : "Temperature data is limited for this location.";
 
+    // Logic: Fallback to generic if no specific AI insight, OR append generic helpful info
     if (low != null && high != null) {
       if (swing != null && swing >= 10) {
         details.push(
           "Large temperature swing: Expect activity to increase as water warms."
         );
-        details.push(
-          "Bass will likely move from deep to shallow as the day progresses."
-        );
-      } else if (swing != null && swing >= 6) {
-        details.push("Moderate swing: Activity should build steadily.");
       } else {
         details.push(
           "Stable temperature: Expect consistent behavior throughout the day."
@@ -809,25 +822,25 @@ function buildExpansion(
 
     const summary = `Wind is ${Math.round(wind)} mph.`;
 
-    if (wind <= 8) {
-      details.push(
-        "Calm conditions: Finesse presentations and slow moving baits are key."
-      );
-      details.push("Bass will hold tighter to cover.");
-    } else if (wind <= 15) {
-      details.push(
-        "Active chop: Spinnerbaits and crankbaits on wind-blown banks."
-      );
-      details.push(
-        "The wind breaks up light penetration, encouraging shallow feeding."
-      );
+    // ✅ SMART INTEGRATION: Use backend insights if available
+    const windInsights = getInsightsFor("wind");
+    if (windInsights.length > 0) {
+      details.push(...windInsights);
     } else {
-      details.push(
-        "High wind: Safety first. Target protected coves or drifts."
-      );
-      details.push(
-        "Bass will be positioned on the distinct wind-blown structural elements."
-      );
+      // Fallback Logic
+      if (wind <= 8) {
+        details.push(
+          "Calm conditions: Finesse presentations and slow moving baits are key."
+        );
+      } else if (wind <= 15) {
+        details.push(
+          "Active chop: Spinnerbaits and crankbaits on wind-blown banks."
+        );
+      } else {
+        details.push(
+          "High wind: Bass will be positioned on distinct wind-blown structural elements."
+        );
+      }
     }
     return { title: "Wind", summary, numbers, details };
   }
@@ -848,21 +861,23 @@ function buildExpansion(
 
     const summary = `Barometric pressure is ${pressureTrend}.`;
 
-    if (pressureTrend === "falling") {
-      details.push(
-        "Falling pressure often triggers an aggressive feeding window."
-      );
-      details.push(
-        "Power fishing techniques (crankbaits, chatterbaits) are effective."
-      );
-    } else if (pressureTrend === "rising") {
-      details.push(
-        "Rising pressure (post-frontal) usually pushes fish tight to cover."
-      );
-      details.push("Slow down with jigs or dropshots.");
+    // ✅ SMART INTEGRATION: Use backend insights if available
+    const pressInsights = getInsightsFor("pressure");
+    if (pressInsights.length > 0) {
+      details.push(...pressInsights);
     } else {
-      details.push("Stable pressure means predictable behavior.");
-      details.push("Stick to the primary pattern.");
+      // Fallback Logic
+      if (pressureTrend === "falling") {
+        details.push(
+          "Falling pressure often triggers an aggressive feeding window."
+        );
+      } else if (pressureTrend === "rising") {
+        details.push(
+          "Rising pressure (post-frontal) usually pushes fish tight to cover."
+        );
+      } else {
+        details.push("Stable pressure means predictable behavior.");
+      }
     }
     return { title: "Pressure", summary, numbers, details };
   }
@@ -872,26 +887,40 @@ function buildExpansion(
     numbers.push(sky);
     if (uv != null) numbers.push(`UV Index: ${Math.round(uv)}`);
 
-    const isOvercast =
-      cloudRaw.includes("overcast") || cloudRaw.includes("rain");
-    const summary = isOvercast
+    const summary = cloudRaw.includes("overcast")
       ? "Low light conditions."
       : "High visibility conditions.";
 
-    if (isOvercast) {
-      details.push(
-        "Low Light: Bass roam more freely. Topwater and moving baits are excellent."
-      );
-      details.push(
-        "Colors: Use darker profiles (Black/Blue, Junebug) for contrast."
-      );
+    // ✅ SMART INTEGRATION: Use backend insights if available
+    // Look for keywords: UV, Visibility, Light, Fog
+    const lightInsights = [
+      ...getInsightsFor("UV"),
+      ...getInsightsFor("Visibility"),
+      ...getInsightsFor("Fog"),
+      ...getInsightsFor("Light"),
+    ];
+    // Deduplicate
+    const uniqueLightInsights = Array.from(new Set(lightInsights));
+
+    if (uniqueLightInsights.length > 0) {
+      details.push(...uniqueLightInsights);
     } else {
-      details.push(
-        "Bright Sun: Bass will hold tight to shade (docks, mats, laydowns)."
-      );
-      details.push(
-        "Colors: Natural and translucent shades (Green Pumpkin, Ghost Shad) are best."
-      );
+      // Fallback Logic
+      if (cloudRaw.includes("overcast") || cloudRaw.includes("rain")) {
+        details.push(
+          "Low Light: Bass roam more freely. Topwater and moving baits are excellent."
+        );
+        details.push(
+          "Colors: Use darker profiles (Black/Blue, Junebug) for contrast."
+        );
+      } else {
+        details.push(
+          "Bright Sun: Bass will hold tight to shade (docks, mats, laydowns)."
+        );
+        details.push(
+          "Colors: Natural and translucent shades (Green Pumpkin, Ghost Shad) are best."
+        );
+      }
     }
     return { title: "Light & Sky", summary, numbers, details };
   }
