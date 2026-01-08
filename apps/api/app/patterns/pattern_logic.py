@@ -274,53 +274,39 @@ def _get_lure_specific_tips(lure: str, sig: Dict[str, Any]) -> List[str]:
         elif "stained" in tags and sig["is_low_light"]: valid_tips.append(text)
     return valid_tips[:3]
 
-
-
-def _build_work_it_cards(lure: str, targets: List[str], sig: Dict[str, Any]) -> List[Dict[str, str]]:
-    """
-    Final Awestruck Version: 
-    Forces 100% unique instructions across all cards by matching terrain 
-    mechanics first, then cycling through the remaining lure tip bank.
-    """
+# ✅ AWESTRUCK ZIPPER: Deterministic, Repeatable, Terrain-Aware Logic
+def build_work_it_cards(lure: str, targets: List[str], sig: Dict[str, Any]) -> List[Dict[str, str]]:
+    """Deterministically pairs Terrain + Official Definition + Mechanical Retrieve."""
     all_lure_tips = _get_lure_specific_tips(lure, sig)
     cards = []
-    used_tips = set() 
+    used_tips = set()
     
     for target in targets[:3]:
         t_lower = target.lower()
-        
-        # 1. Definition Lookup
+        # 1. Fuzzy Definition Lookup
         target_info = TARGET_DEFINITIONS.get(t_lower, {})
         if not target_info:
             for k, v in TARGET_DEFINITIONS.items():
                 if k in t_lower:
                     target_info = v; break
-        definition = target_info.get("definition", "Strategic structural transition.")
+        definition = target_info.get("definition", "Strategic transition area.")
 
-        # 2. Contextual 'How to Fish' with Forced Uniqueness
-        how_to = None
-        
+        # 2. Contextual 'How to Fish' Synthesis
+        how_to = "Maintain a steady retrieve and stay near cover."
         if all_lure_tips:
-            # A. Try for a Terrain Match (Hard/Rock)
+            # Match Hard Terrain (Rock/Point) to Deflection/Contact tips
             if any(word in t_lower for word in ["rock", "riprap", "hard", "point", "bridge"]):
-                how_to = next((tip for tip in all_lure_tips if tip not in used_tips and any(x in tip.lower() for x in ["contact", "deflect", "flare", "bottom", "bounce"])), None)
-            
-            # B. Try for a Terrain Match (Soft/Cover)
-            elif any(word in t_lower for word in ["grass", "weed", "laydown", "brush", "creek", "pocket", "timber"]):
-                how_to = next((tip for tip in all_lure_tips if tip not in used_tips and any(x in tip.lower() for x in ["grass", "rip", "tick", "snag", "weed", "clean"])), None)
-            
-            # C. Fallback: Take the first available tip that hasn't been used yet
-            if not how_to:
+                how_to = next((tip for tip in all_lure_tips if any(x in tip.lower() for x in ["contact", "deflect", "flare", "bottom"]) and tip not in used_tips), all_lure_tips[0])
+            # Match Soft Terrain (Grass/Wood) to Ripping/Ticking tips
+            elif any(word in t_lower for word in ["grass", "weed", "laydown", "brush", "creek", "pocket"]):
+                how_to = next((tip for tip in all_lure_tips if any(x in tip.lower() for x in ["grass", "rip", "tick", "snag", "weed"]) and tip not in used_tips), all_lure_tips[0])
+            else:
                 how_to = next((tip for tip in all_lure_tips if tip not in used_tips), all_lure_tips[0])
 
         used_tips.add(how_to)
-        
-        cards.append({
-            "name": titleCase(target),
-            "definition": definition,
-            "how_to_fish": how_to
-        })
+        cards.append({"name": titleCase(target), "definition": definition, "how_to_fish": how_to})
     return cards
+
 
 def _strategy_tips(primary_family: str, phase: str, sig: Dict[str, Any], lure_name: str = None) -> List[str]:
     tips = []
@@ -360,13 +346,13 @@ def _pattern_summary(family: str, phase: str, sig: Dict[str, Any]) -> str:
         return f"With {light_phrase} and {wind_phrase}, bass are more likely to roam and react. Cover water along edges."
     return f"Today’s {phase} conditions favor a focused {family.replace('_', ' ')} presentation."
 
-def _generate_weather_insights(sig: Dict[str, Any]) -> List[str]:
+def generate_weather_insights(sig: Dict[str, Any]) -> List[str]:
     """Generates weather-triggered 'Reverse Card' insights for the contextual UI section."""
     insights = []
     uvi = sig.get("uvi_val", 0)
     if sig["is_high_uv"]: insights.append(f"Low UV Index ({uvi:.0f}): Light is diffused. Solid, opaque colors will silhouette better.")
     press = sig.get("pressure_val", 1015)
-    if sig["is_falling_pressure"]: insights.append(f"Falling Pressure ({press:.0f} hPa): Fish air bladders expand, triggering aggressive chasing behavior.")
+    if sig["is_falling_pressure"]: insights.append(f"Falling Pressure ({press:.0f} hPa): Fish air bladders expand, triggering агрессивные chasing behavior.")
     if sig["is_foggy"]: insights.append(f"Low Visibility ({int(sig['vis_val'])}m): Fog reduces light drastically. Prioritize vibration (thump).")
     return insights
 
@@ -384,7 +370,7 @@ def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
     primary_lures = _family_to_lures(primary_family, phase, sig)
     targets = _family_targets(primary_family, phase, getattr(req, "bottom_composition", "mixed"))
     
-    work_it_cards = _build_work_it_cards(primary_lures[0], targets, sig)
+    work_it_cards = build_work_it_cards(primary_lures[0], targets, sig)
     lure_setups = _build_lure_setups(primary_lures[:2], primary_family)
 
     primary_lure_spec, alt_specs = build_primary_and_alternate_lure_specs(
@@ -397,7 +383,7 @@ def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
         "latitude": latitude, "longitude": longitude,
         "temp_f": weather.temp_f, "wind_speed": weather.wind_speed, "sky_condition": weather.sky_condition,
         "timestamp": weather.timestamp.isoformat(), "month": month,
-        "weather_insights": _generate_weather_insights(sig),
+        "weather_insights": generate_weather_insights(sig),
         "primary": {
             "presentation": titleCase(primary_family),
             "base_lure": primary_lures[0],
