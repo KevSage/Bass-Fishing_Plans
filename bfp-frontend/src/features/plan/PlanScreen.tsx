@@ -1,6 +1,6 @@
 // src/features/plan/PlanScreen.tsx
 // Complete plan display: consolidated plan UI with weather extracted to WeatherSection.
-// NOTE: This refactor is weather-only per project guardrails.
+// NOW PASSING WEATHER INSIGHTS CORRECTLY TO UI.
 
 import React from "react";
 import type { PlanGenerateResponse, Pattern } from "./types";
@@ -43,6 +43,13 @@ const UI: Record<string, React.CSSProperties> = {
 export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   const { plan } = response;
 
+  // ✅ CRITICAL FIX: Merge the insights directly into conditions
+  // This ensures WeatherSection receives the AI Analysis array
+  const activeConditions = {
+    ...(plan.conditions as any),
+    weather_insights: plan.weather_insights || [],
+  };
+
   return (
     <>
       <div style={{ marginTop: 18, paddingBottom: 100 }}>
@@ -50,8 +57,8 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
 
         <WeatherSection
           // WeatherSection owns weather-only presentation + geocoding.
-          // Cast is intentional to avoid forcing wider Plan type refactors.
-          conditions={plan.conditions as any}
+          // Now passing the insights-enriched object.
+          conditions={activeConditions}
           outlookBlurb={plan.outlook_blurb}
         />
         {/* Pattern 1 */}
@@ -687,7 +694,7 @@ function PatternCard({
             Where & How
           </h4>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {(pattern.work_it_cards || pattern.work_it).map((item, i) => {
+            {(pattern.work_it_cards || pattern.work_it || []).map((item, i) => {
               // Handle new object format
               if (typeof item === "object" && item !== null && "name" in item) {
                 return (
