@@ -287,7 +287,7 @@ export function LocationClarityPage() {
                   {[
                     {
                       title: "Lake Search",
-                      desc: "Seearch our database of 0ver 1000 lakes and reservoirs. You can also search by city or state.",
+                      desc: "Search our database of 0ver 1000 lakes and reservoirs. You can also search by city or state.",
                     },
                     {
                       title: "Fishing a smaller water body?",

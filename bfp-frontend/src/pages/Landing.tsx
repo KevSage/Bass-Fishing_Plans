@@ -857,7 +857,7 @@ export function Landing() {
                   {[
                     {
                       title: "Lake Search",
-                      desc: "Seearch our database of 0ver 1000 lakes and reservoirs. You can also search by city or state.",
+                      desc: "Search our database of 0ver 1000 lakes and reservoirs. You can also search by city or state.",
                     },
                     {
                       title: "Fishing a smaller water body?",
@@ -1513,8 +1513,8 @@ export function Landing() {
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "5%",
-                  width: "90.6%",
+                  left: "3.9%",
+                  width: "92.6%",
                   height: "92.4%",
                   borderRadius: "42px",
                   overflow: "hidden",
@@ -1523,7 +1523,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/ProductionScreenshots/Why.png"
+                  src="/images/ProductionScreenshots/Targets.png"
                   alt="Strategy cards and progression"
                   style={{
                     width: "100%",
@@ -1678,8 +1678,8 @@ export function Landing() {
               style={{
                 position: "absolute",
                 top: "3.8%",
-                left: "6.2%",
-                width: "89.6%",
+                left: "2.2%",
+                width: "94.6%",
                 height: "92.4%",
                 borderRadius: "42px",
                 overflow: "hidden",
@@ -1691,7 +1691,7 @@ export function Landing() {
                 src="/images/ProductionScreenshots/DayProgression.png"
                 alt="Strategy' cards and progression"
                 style={{
-                  width: "102%",
+                  width: "100%",
                   height: "100%",
                   objectFit: "contain",
                   filter: "brightness(0.92) contrast(1.08) saturate(0.95)",

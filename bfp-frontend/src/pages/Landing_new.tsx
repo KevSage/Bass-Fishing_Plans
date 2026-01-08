@@ -610,8 +610,8 @@ export function Landing() {
           </h2>
 
           <p style={{ ...leadStyle, marginBottom: "clamp(36px, 7vw, 64px)" }}>
-            Fishing decisions often happen under pressure, with too many
-            signals competing for attention.
+            Fishing decisions often happen under pressure, with too many signals
+            competing for attention.
           </p>
 
           <div style={{ ...grid2Col, marginBottom: "clamp(32px, 6vw, 56px)" }}>
@@ -975,7 +975,7 @@ export function Landing() {
                   {[
                     {
                       title: "Lake Search",
-                      desc: "Seearch our database of 0ver 1000 lakes and reservoirs. You can also search by city or state.",
+                      desc: "Search our database of 0ver 1000 lakes and reservoirs. You can also search by city or state.",
                     },
                     {
                       title: "Fishing a smaller water body?",

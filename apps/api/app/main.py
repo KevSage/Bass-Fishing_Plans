@@ -89,7 +89,7 @@ WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 # VARIETY SYSTEM HELPER
 # ========================================
 
-def get_recent_lures(email: str, limit: int = 2) -> dict[str, list[str]]:
+def get_recent_lures(email: str, limit: int = 3) -> dict[str, list[str]]:
     """Get user's N most recent primary AND secondary lures from plan history."""
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     
