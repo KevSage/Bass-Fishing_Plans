@@ -1,10 +1,9 @@
 """
-llm_plan_service.py - DENSE HYBRID RESTORATION
-Status: PRODUCTION READY
-Role:
-1. Calls OpenAI with the FULL, DENSE prompt (restoring detailed day progression).
-2. Injects deterministic "Weather Insights" for the frontend UI (Reverse Card).
-3. Validates against canonical pools (Lures, Colors, Targets).
+llm_plan_service.py - FULL PRODUCTION VERSION
+Features:
+1. DENSE PROMPT: Creative guide voice + detailed day progression.
+2. HISTORY AWARENESS: Passes recent lures to prevent repetition (Variety).
+3. WEATHER INSIGHTS: Injects deterministic data for the frontend UI.
 """
 from __future__ import annotations
 
@@ -62,7 +61,7 @@ from app.patterns.pattern_logic import generate_weather_insights
 
 
 # ----------------------------------------
-# SYSTEM PROMPT (THE DENSE VERSION)
+# SYSTEM PROMPT (DENSE / GUIDE VOICE)
 # ----------------------------------------
 def build_system_prompt(include_pattern_2: bool = False) -> str:
     """
@@ -265,12 +264,20 @@ def _reconstruct_signals(weather: dict, phase: str) -> dict:
     vis = safe_f(weather.get("visibility"), 10000.0)
     
     return {
+        # ✅ PASSTHROUGH: Required for Logic Engine specific checks
+        "pressure_trend": weather.get("pressure_trend"), 
+        "wind_speed": wind,
+        "cloud_cover": weather.get("cloud_cover") or weather.get("sky_condition"),
+        
+        # Derived Booleans
         "is_falling_pressure": weather.get("pressure_trend") == "falling",
         "is_high_pressure": pressure > 1022,
         "is_high_uv": uvi > 6,
         "is_windy": wind >= 12,
         "is_winter": "winter" in str(phase).lower(),
         "is_foggy": vis < 2000,
+        "is_calm": wind < 5, # Added for explicit safety
+        "is_low_light": (weather.get("cloud_cover") or "").lower() in ["overcast", "rain"],
         "pressure_val": pressure,
         "uvi_val": uvi
     }
@@ -294,7 +301,7 @@ def expand_plan_color_zones(plan: Dict[str, Any], is_member: bool) -> Dict[str, 
 
 
 # ----------------------------------------
-# CORE: OpenAI Call
+# CORE: OpenAI Call (WITH HISTORY RESTORED)
 # ----------------------------------------
 async def call_openai_plan(
     weather: dict,
@@ -340,10 +347,32 @@ async def call_openai_plan(
         "accessible_targets": accessible_targets,
         "target_definitions": accessible_target_defs,
         "variety_mode": variety_mode,
-        "instructions": "Be specific. Connect lure selection to pressure/UV.",
+        "instructions": "", # Populated below
     }
 
-    # Enhanced Weather Analysis Injection (excerpted from your dense file)
+    # =========================================================
+    # ✅ RESTORED: VARIETY & RECENT HISTORY LOGIC
+    # This prevents the LLM from suggesting the same lures repeatedly
+    # =========================================================
+    variety_instructions = f"VARIETY MODE: {variety_mode.upper()}\n"
+    
+    if recent_primary_lures or recent_secondary_lures:
+        variety_instructions += "🚨 HISTORY CONSTRAINT (Avoid Repetition):\n"
+        if recent_primary_lures:
+             variety_instructions += f"User recently used PRIMARY: {', '.join(recent_primary_lures)}\n"
+             variety_instructions += "⛔ DO NOT use these for Primary unless conditions are absolutely perfect for them.\n"
+        if recent_secondary_lures:
+             variety_instructions += f"User recently used SECONDARY: {', '.join(recent_secondary_lures)}\n"
+             variety_instructions += "⛔ DO NOT use these for Secondary.\n"
+    
+    if variety_mode == "deep_cut":
+        variety_instructions += "🎯 DEEP CUT MODE: Prioritize under-utilized, high-skill lures over common staples if valid.\n"
+    
+    # Prepend variety rules to the instructions
+    user_input["instructions"] = variety_instructions + "\n" + "Be specific. Connect lure selection to pressure/UV."
+    # =========================================================
+
+    # Enhanced Weather Analysis Injection
     pressure_mb = weather.get("pressure_mb")
     pressure_trend = weather.get("pressure_trend")
     if pressure_mb and pressure_trend:
@@ -450,7 +479,7 @@ async def generate_llm_plan_with_retries(
 ) -> dict:
     """
     Hybrid Logic:
-    1. Gets DENSE, detailed plan from OpenAI (including day_progression).
+    1. Gets DENSE, detailed plan from OpenAI (including day_progression and history-aware variety).
     2. Injects deterministic 'weather_insights' (Reverse Card) for UI.
     3. Validates and Expands Colors.
     """

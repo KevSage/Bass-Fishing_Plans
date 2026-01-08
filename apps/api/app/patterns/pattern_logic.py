@@ -346,14 +346,41 @@ def _pattern_summary(family: str, phase: str, sig: Dict[str, Any]) -> str:
         return f"With {light_phrase} and {wind_phrase}, bass are more likely to roam and react. Cover water along edges."
     return f"Today’s {phase} conditions favor a focused {family.replace('_', ' ')} presentation."
 
-def generate_weather_insights(sig: Dict[str, Any]) -> List[str]:
-    """Generates weather-triggered 'Reverse Card' insights for the contextual UI section."""
+def generate_weather_insights(sigs: Dict[str, Any]) -> List[str]:
+    """
+    Analyzes weather signals to produce "Reverse Card" insights for the UI.
+    These strings are displayed on the frontend Weather Cards.
+    """
     insights = []
-    uvi = sig.get("uvi_val", 0)
-    if sig["is_high_uv"]: insights.append(f"Low UV Index ({uvi:.0f}): Light is diffused. Solid, opaque colors will silhouette better.")
-    press = sig.get("pressure_val", 1015)
-    if sig["is_falling_pressure"]: insights.append(f"Falling Pressure ({press:.0f} hPa): Fish air bladders expand, triggering агрессивные chasing behavior.")
-    if sig["is_foggy"]: insights.append(f"Low Visibility ({int(sig['vis_val'])}m): Fog reduces light drastically. Prioritize vibration (thump).")
+
+    # --- PRESSURE INSIGHTS ---
+    if sigs.get("is_falling_pressure"):
+        insights.append("Falling Pressure: Triggers an aggressive feeding window—bass will chase reaction baits.")
+    elif sigs.get("pressure_val", 1013) > 1020: # High pressure
+        insights.append("High Pressure: Fish will hold tight to cover and be less active. Slow down.")
+    
+    # Handle the "Rising" case
+    if sigs.get("pressure_trend") == "rising":
+        insights.append("Rising Pressure: Post-frontal conditions often push fish tight to cover.")
+
+    # --- WIND INSIGHTS ---
+    if sigs.get("is_windy"):
+        insights.append("High Wind: Bass are positioned on wind-blown banks and points to ambush disoriented bait.")
+    elif sigs.get("is_calm") or sigs.get("wind_speed", 0) < 5:
+        insights.append("Calm Wind Conditions: Lack of surface disturbance requires finesse presentations and long casts.")
+
+    # --- LIGHT / UV INSIGHTS ---
+    if sigs.get("is_high_uv"):
+        insights.append("High UV: Bass will seek deep shade (docks, mats) to protect their eyes.")
+    elif sigs.get("is_low_light") or sigs.get("cloud_cover", "") == "overcast":
+        insights.append("Low Light/Overcast: Bass roam away from cover. Topwater and moving baits excel.")
+    elif sigs.get("is_foggy"):
+        insights.append("Fog/Low Vis: Bass rely on vibration and silhouette. Use dark colors and rattling baits.")
+
+    # --- TEMPERATURE / SEASONAL ---
+    if sigs.get("is_winter"):
+        insights.append("Cold Water: Metabolism is slow. Fish vertical or drag bottom slowly.")
+
     return insights
 
 def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:

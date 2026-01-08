@@ -1,5 +1,5 @@
 // src/features/plan/types.ts
-// Updated: Removed PreviewPlan system - all users get full MemberPlan
+// Updated for Hybrid Restoration (Awestruck Weather + Creative Guide Voice)
 
 export type Geo = {
   zip?: string;
@@ -8,6 +8,7 @@ export type Geo = {
   name?: string | null;
 };
 
+// Updated to allow the merged weather_insights from PlanScreen
 export type PlanConditions = {
   location_name: string;
   latitude: number;
@@ -20,6 +21,9 @@ export type PlanConditions = {
   wind_speed: number;
   sky_condition: string;
   subscriber_email?: string | null;
+
+  // ✅ ADDED: Allows WeatherSection to receive the AI analysis
+  weather_insights?: string[];
 };
 
 export type ColorZones = {
@@ -28,56 +32,63 @@ export type ColorZones = {
   accent_color: string | null;
   accent_material: "metallic" | null;
   primary_material: "metallic" | null;
-  asset_key: string; // e.g., "spinnerbait__chartreuse_white__gold.png"
+  asset_key: string;
   warnings?: string[];
 };
 
+// The new card format for "How to Fish"
 export type WorkItTarget = {
   name: string;
   definition: string;
-  how_to_fish: string;
-};
-
-export type Target = {
-  name: string;
-  definition: string;
-  retrieve_cadence: string; // Legacy - may be removed
+  how_to_fish: string; // The LLM-generated expert advice
 };
 
 export type Pattern = {
   presentation: string;
   base_lure: string;
-  soft_plastic?: string;
-  soft_plastic_why?: string;
-  trailer?: string;
-  trailer_why?: string;
-  color_recommendations: string[];
-  colors: ColorZones;
-  targets?: Target[]; // Legacy - keeping for backwards compatibility
+
+  // Terminal Tackle / Trailers
+  soft_plastic?: string | null;
+  soft_plastic_why?: string | null;
+  trailer?: string | null;
+  trailer_why?: string | null;
+
+  // Colors
+  color_recommendations: string[]; // The strings from the LLM (e.g., "Green Pumpkin")
+  colors: ColorZones; // The visual assets for the UI
+
+  // Targets & Strategy
+  targets: string[]; // ✅ UPDATED: Now just strings (names). Details are in work_it_cards.
   why_this_works: string;
-  work_it: WorkItTarget[] | string[]; // Support both new and legacy formats
-  work_it_cards?: WorkItTarget[]; // NEW - rich card format for rendering
-  day_progression?: string[]; // Array of strings (just longer now)
+  strategy?: string;
+  pattern_summary?: string;
+
+  // Tactical Advice
+  work_it?: string[]; // Legacy fallback
+  work_it_cards?: WorkItTarget[]; // ✅ NEW: Rich cards with 'how_to_fish'
+
   gear?: {
     rod: string;
     reel: string;
     line: string;
-    technique: string;
+    technique?: string;
   };
-  strategy?: string;
-  pattern_summary?: string;
 };
 
-// All plans are now MemberPlan format (dual patterns)
 export type Plan = {
+  // ✅ ADDED: Missing root fields
+  location: string;
+  weather_insights?: string[]; // The "Reverse Card" data from backend
+
   primary: Pattern;
   secondary: Pattern;
-  day_progression?: string[]; // Array of strings (just longer now)
+
+  day_progression?: string[];
   outlook_blurb: string;
   conditions: PlanConditions;
 };
 
-// API Response from /plan/generate (removed is_member field)
+// API Response from /plan/generate
 export type PlanGenerateResponse = {
   plan_url: string;
   token: string;
@@ -92,14 +103,14 @@ export type PlanViewResponse = {
   views: number;
 };
 
-// Rate limit error response
 export type RateLimitError = {
   error: "rate_limit_member";
   message: string;
   seconds_remaining: number;
 };
 
-// Legacy types for backward compatibility (can remove later)
+// --- LEGACY TYPES (Keep for safety, but marked as legacy) ---
+
 export type LureSpec = {
   display_name?: string;
   lure_family?: string;
