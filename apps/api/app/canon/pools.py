@@ -375,18 +375,17 @@ def get_color_pool_for_lure(lure: str, soft_plastic: Optional[str] = None) -> Li
         ValueError: If lure not found or dropshot without soft_plastic
     """
     if lure == "dropshot":
+        # Fallback to RIG_COLORS if no plastic specified, to be safe
         if not soft_plastic:
-            raise ValueError("dropshot requires soft_plastic to determine color pool")
+            return RIG_COLORS
         
-        # Finesse worm variants → Rig colors
-        if soft_plastic.lower() in ["finesse worm", "trick worm", "straight tail worm"]:
-            return RIG_COLORS
-        # Minnow variants → Soft swimbait colors
-        elif soft_plastic.lower() in ["small minnow", "fluke", "jerkbait"]:
+        sp = soft_plastic.lower()
+        # Broad keyword check for baitfish/minnow types
+        if any(k in sp for k in ["minnow", "fluke", "jerk", "shad", "swimbait", "fish", "dropshot minnow"]):
             return SOFT_SWIMBAIT_COLORS
-        else:
-            # Default to rig colors if unclear
-            return RIG_COLORS
+        
+        # Default to worm/creature colors
+        return RIG_COLORS
     
     if lure not in LURE_COLOR_POOL_MAP:
         raise ValueError(f"No color pool defined for lure: {lure}")
@@ -652,7 +651,7 @@ LURE_TO_PRESENTATION = {
     "jighead minnow": "Vertical Reaction",
 
     # ========================================
-    # BOTTOM CONTACT - Both Dragging & Hopping
+    # BOTTOM CONTACT - Both Dragging AND Hopping
     # (All except ned rig can be hopped or dragged)
     # ========================================
     "texas rig": [
