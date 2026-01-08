@@ -1,3 +1,7 @@
+// src/components/About.tsx
+// Updated: "Stealth Luxury" Design.
+// Fixes: Removed blocky cards, refined typography, added premium gradients.
+
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -5,474 +9,339 @@ export function About() {
   return (
     <div
       style={{
-        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        background: "#0a0a0a",
         color: "#fff",
         minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
     >
-      {/* Hero */}
+      {/* --- HERO SECTION --- */}
       <section
         style={{
           padding: "120px 24px 80px",
+          textAlign: "center",
+          maxWidth: 800,
         }}
       >
-        <div
-          className="container"
-          style={{ maxWidth: 900, textAlign: "center" }}
+        <h1
+          style={{
+            fontSize: "clamp(2.5rem, 5vw, 3.5rem)", // Tightened up
+            fontWeight: 800,
+            marginBottom: 24,
+            letterSpacing: "-0.03em",
+            background: "linear-gradient(to bottom, #fff, #94a3b8)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            lineHeight: 1.1,
+          }}
         >
-          <h1
-            style={{
-              fontSize: "clamp(2.5rem, 6vw, 4rem)",
-              fontWeight: 700,
-              marginBottom: 24,
-              letterSpacing: "-0.03em",
-            }}
-          >
-            About Bass Clarity
-          </h1>
-          <p
-            style={{
-              fontSize: "clamp(1.15rem, 2.5vw, 1.35rem)",
-              opacity: 0.8,
-              lineHeight: 1.6,
-              maxWidth: 720,
-              margin: "0 auto",
-            }}
-          >
-            Built for anglers who want strategic clarity, not data overload.
-          </p>
-        </div>
+          Clarity, Not Noise.
+        </h1>
+        <p
+          style={{
+            fontSize: "1.2rem",
+            color: "rgba(255, 255, 255, 0.6)",
+            lineHeight: 1.6,
+            maxWidth: 600,
+            margin: "0 auto",
+          }}
+        >
+          Built for anglers who want strategic precision, not just data dumps.
+        </p>
       </section>
 
-      {/* The Problem */}
-      <section style={{ padding: "80px 24px" }}>
-        <div className="container" style={{ maxWidth: 900 }}>
+      {/* --- THE PROBLEM (Text Focused) --- */}
+      <section style={{ padding: "60px 24px", width: "100%", maxWidth: 800 }}>
+        <div style={{ borderLeft: "2px solid #3b82f6", paddingLeft: 32 }}>
           <h2
             style={{
-              fontSize: "clamp(2rem, 5vw, 2.75rem)",
+              fontSize: "1.75rem",
               fontWeight: 700,
-              marginBottom: 32,
+              marginBottom: 24,
+              color: "#fff",
+              letterSpacing: "-0.01em",
             }}
           >
-            The Problem We Solve
+            The Problem
           </h2>
           <p
             style={{
-              fontSize: "1.2rem",
+              fontSize: "1.05rem",
               lineHeight: 1.8,
-              opacity: 0.85,
-              marginBottom: 28,
+              color: "rgba(255, 255, 255, 0.7)",
+              marginBottom: 24,
             }}
           >
-            Most fishing apps dump data and leave you guessing. Weather charts,
-            solunar tables, moon phases, barometric pressure graphs—all the
+            Most fishing apps dump raw data on you and leave you guessing.
+            Barometric pressure graphs, solunar tables, wind charts—all the
             information, none of the answers.
           </p>
           <p
             style={{
-              fontSize: "1.2rem",
-              lineHeight: 1.8,
-              opacity: 0.85,
-              marginBottom: 28,
-            }}
-          >
-            You're staring at numbers you don't understand, trying to translate
-            data into action. Should you throw a crankbait or a jig? What color?
-            What retrieve? Where do you even start?
-          </p>
-          <p
-            style={{
-              fontSize: "1.2rem",
-              lineHeight: 1.8,
-              opacity: 0.85,
-            }}
-          >
-            <strong style={{ color: "#4A90E2" }}>
-              Bass Clarity cuts through the noise.
-            </strong>{" "}
-            We don't dump data—we deliver clarity. Clear strategy. Clear
-            execution. Clear reasoning.
-          </p>
-        </div>
-      </section>
-
-      {/* Our Philosophy */}
-      <section
-        style={{
-          padding: "100px 24px",
-        }}
-      >
-        <div className="container" style={{ maxWidth: 900 }}>
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 5vw, 2.75rem)",
-              fontWeight: 700,
-              marginBottom: 60,
-            }}
-          >
-            Our Philosophy
-          </h2>
-
-          <div style={{ display: "grid", gap: 48 }}>
-            {/* Clarity Over Complexity */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "1.75rem",
-                  fontWeight: 600,
-                  marginBottom: 16,
-                  color: "#4A90E2",
-                }}
-              >
-                Clarity Over Complexity
-              </h3>
-              <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                The best strategy isn't the one with the most data—it's the one
-                you can execute with confidence. We give you exactly what you
-                need to know: what to throw, how to fish it, why it works. No
-                clutter, no confusion.
-              </p>
-            </div>
-
-            {/* Everything Connects */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "1.75rem",
-                  fontWeight: 600,
-                  marginBottom: 16,
-                  color: "#4A90E2",
-                }}
-              >
-                Everything Connects
-              </h3>
-              <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                Your Pattern 2 complements Pattern 1. Your gear matches your
-                technique. Your lures match conditions. Bass Clarity plans are
-                coherent from start to finish—not scattered tips pulled from
-                different sources that contradict each other.
-              </p>
-            </div>
-
-            {/* Honest Intelligence */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "1.75rem",
-                  fontWeight: 600,
-                  marginBottom: 16,
-                  color: "#4A90E2",
-                }}
-              >
-                Honest Intelligence
-              </h3>
-              <p
-                style={{
-                  fontSize: "1.1rem",
-                  lineHeight: 1.8,
-                  opacity: 0.85,
-                  marginBottom: 20,
-                }}
-              >
-                We don't guess your lake's exact depth when we don't have that
-                data. We don't make up temperature readings. We don't claim to
-                know things we can't verify.
-              </p>
-              <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                What we DO know: seasonal patterns for your region, how weather
-                affects bass behavior, which presentations work in which
-                conditions, and how to match lures to targets. That's where our
-                clarity comes from—honesty about what we know and don't know.
-              </p>
-            </div>
-
-            {/* Strategic Discipline */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "1.75rem",
-                  fontWeight: 600,
-                  marginBottom: 16,
-                  color: "#4A90E2",
-                }}
-              >
-                Strategic Discipline
-              </h3>
-              <p style={{ fontSize: "1.1rem", lineHeight: 1.8, opacity: 0.85 }}>
-                Bass Clarity isn't for anglers who want 20 random tips. It's for
-                serious anglers who want systematic clarity. Tournament anglers.
-                Weekend warriors who treat fishing like a craft. People who want
-                to fish smarter, not just harder.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How We're Different */}
-      <section style={{ padding: "100px 24px" }}>
-        <div className="container" style={{ maxWidth: 900 }}>
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 5vw, 2.75rem)",
-              fontWeight: 700,
-              marginBottom: 60,
-            }}
-          >
-            How We're Different
-          </h2>
-
-          <div style={{ display: "grid", gap: 40 }}>
-            <div
-              style={{
-                padding: "32px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: 600,
-                  marginBottom: 12,
-                  color: "#4A90E2",
-                }}
-              >
-                We Analyze, Not Just Display
-              </h3>
-              <p
-                style={{
-                  fontSize: "1.05rem",
-                  lineHeight: 1.7,
-                  opacity: 0.85,
-                  margin: 0,
-                }}
-              >
-                Other apps show you weather data. We tell you how it affects the
-                water below and what it means for your strategy.
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: "32px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: 600,
-                  marginBottom: 12,
-                  color: "#4A90E2",
-                }}
-              >
-                Regional Seasonal Logic
-              </h3>
-              <p
-                style={{
-                  fontSize: "1.05rem",
-                  lineHeight: 1.7,
-                  opacity: 0.85,
-                  margin: 0,
-                }}
-              >
-                Late-fall in Texas is different from late-fall in Michigan. Our
-                plans account for regional variation—not one-size-fits-all
-                calendar dates.
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: "32px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: 600,
-                  marginBottom: 12,
-                  color: "#4A90E2",
-                }}
-              >
-                Lure-Specific Retrieves
-              </h3>
-              <p
-                style={{
-                  fontSize: "1.05rem",
-                  lineHeight: 1.7,
-                  opacity: 0.85,
-                  margin: 0,
-                }}
-              >
-                We don't just say "throw a crankbait." We tell you how to work
-                it based on bass activity and then match those retrieves to
-                specific targets like secondary points and channel swings.
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: "32px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: 600,
-                  marginBottom: 12,
-                  color: "#4A90E2",
-                }}
-              >
-                Two Complementary Approaches
-              </h3>
-              <p
-                style={{
-                  fontSize: "1.05rem",
-                  lineHeight: 1.7,
-                  opacity: 0.85,
-                  margin: 0,
-                }}
-              >
-                Not scattered tips. Two focused patterns that work together.
-                When Pattern 1 slows, Pattern 2 picks up. Strategic coherence
-                under pressure.
-              </p>
-            </div>
-
-            <div
-              style={{
-                padding: "32px",
-                background: "rgba(255,255,255,0.02)",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <h3
-                style={{
-                  fontSize: "1.3rem",
-                  fontWeight: 600,
-                  marginBottom: 12,
-                  color: "#4A90E2",
-                }}
-              >
-                1000+ Lakes
-              </h3>
-              <p
-                style={{
-                  fontSize: "1.05rem",
-                  lineHeight: 1.7,
-                  opacity: 0.85,
-                  margin: 0,
-                }}
-              >
-                If it's not in our database, select it from the map. Consistent
-                clarity everywhere—your home lake, tournament lake, or that spot
-                you've never fished.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Who It's For */}
-      <section
-        style={{
-          padding: "100px 24px",
-        }}
-      >
-        <div className="container" style={{ maxWidth: 900 }}>
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 5vw, 2.75rem)",
-              fontWeight: 700,
-              marginBottom: 32,
-            }}
-          >
-            Who Bass Clarity Is For
-          </h2>
-          <p
-            style={{
-              fontSize: "1.2rem",
-              lineHeight: 1.8,
-              opacity: 0.85,
-              marginBottom: 40,
-            }}
-          >
-            Bass Clarity is for anglers who:
-          </p>
-          <ul
-            style={{
-              listStyle: "none",
-              padding: 0,
               fontSize: "1.15rem",
-              lineHeight: 2.2,
-              opacity: 0.85,
+              lineHeight: 1.6,
+              color: "#fff",
+              fontWeight: 500,
             }}
           >
-            <li>→ Want strategic clarity, not data dumps</li>
-            <li>→ Fish tournaments or treat fishing like a craft</li>
-            <li>→ Value systematic approaches over random tips</li>
-            <li>→ Want to fish smarter, not just harder</li>
-            <li>→ Need confidence under pressure</li>
-            <li>→ Appreciate honesty about what works and why</li>
-          </ul>
+            Bass Clarity cuts through the noise. We don't just show you the
+            weather; we analyze how it affects the water below.
+          </p>
         </div>
       </section>
 
-      {/* CTA */}
-      <section style={{ padding: "100px 24px" }}>
+      {/* --- PHILOSOPHY GRID (Clean Lines) --- */}
+      <section style={{ padding: "80px 24px", width: "100%", maxWidth: 900 }}>
         <div
-          className="container"
-          style={{ maxWidth: 700, textAlign: "center" }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: 60,
+          }}
         >
-          <h2
-            style={{
-              fontSize: "clamp(2rem, 5vw, 3rem)",
-              fontWeight: 700,
-              marginBottom: 32,
-            }}
-          >
-            Experience Clarity
-          </h2>
-          <p
-            style={{
-              fontSize: "1.2rem",
-              opacity: 0.7,
-              marginBottom: 40,
-              lineHeight: 1.6,
-            }}
-          >
-            See what strategic clarity looks like. Generate your first plan
-            free.
-          </p>
+          {/* Item 1 */}
+          <div>
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: 600,
+                color: "#fff",
+                marginBottom: 12,
+              }}
+            >
+              Strategic Discipline
+            </h3>
+            <p
+              style={{
+                fontSize: "1rem",
+                lineHeight: 1.7,
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              We aren't for anglers who want random tips. We are for those who
+              treat fishing like a craft. Systematic, deliberate, and adaptable.
+            </p>
+          </div>
+
+          {/* Item 2 */}
+          <div>
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: 600,
+                color: "#fff",
+                marginBottom: 12,
+              }}
+            >
+              Everything Connects
+            </h3>
+            <p
+              style={{
+                fontSize: "1rem",
+                lineHeight: 1.7,
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              Your Pattern 2 complements Pattern 1. Your gear matches your
+              technique. We ensure your plan is coherent from start to finish.
+            </p>
+          </div>
+
+          {/* Item 3 */}
+          <div>
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: 600,
+                color: "#fff",
+                marginBottom: 12,
+              }}
+            >
+              Honest Intelligence
+            </h3>
+            <p
+              style={{
+                fontSize: "1rem",
+                lineHeight: 1.7,
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              We don't guess depth when we don't know it. We rely on verified
+              seasonal logic and biological principles, not guesswork.
+            </p>
+          </div>
+
+          {/* Item 4 */}
+          <div>
+            <h3
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: 600,
+                color: "#fff",
+                marginBottom: 12,
+              }}
+            >
+              Regional Logic
+            </h3>
+            <p
+              style={{
+                fontSize: "1rem",
+                lineHeight: 1.7,
+                color: "rgba(255,255,255,0.5)",
+              }}
+            >
+              Late fall in Michigan is different from late fall in Texas. Our
+              engine adapts to your specific latitude and seasonal phase.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* --- DIVIDER --- */}
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 900,
+          height: 1,
+          background: "rgba(255,255,255,0.1)",
+        }}
+      />
+
+      {/* --- DIFFERENTIATORS (Sleek List) --- */}
+      <section style={{ padding: "100px 24px", width: "100%", maxWidth: 800 }}>
+        <h2
+          style={{
+            fontSize: "2rem",
+            fontWeight: 700,
+            marginBottom: 48,
+            textAlign: "center",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          How We're Different
+        </h2>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+          {[
+            {
+              title: "We Analyze, Not Just Display",
+              desc: "Other apps show weather. We translate it into behavior.",
+            },
+            {
+              title: "Lure-Specific Retrieves",
+              desc: "We don't just say 'Crankbait'. We say 'Parallel retrieves along riprap with deflection'.",
+            },
+            {
+              title: "Complementary Patterns",
+              desc: "Two distinct approaches (Primary & Pivot) designed to work together, not compete.",
+            },
+            {
+              title: "1000+ Lakes",
+              desc: "And if yours isn't there, you can map any water body instantly.",
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              style={{ display: "flex", gap: 24, alignItems: "flex-start" }}
+            >
+              <div
+                style={{
+                  marginTop: 6,
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: "#3b82f6",
+                  boxShadow: "0 0 10px rgba(59, 130, 246, 0.5)",
+                }}
+              />
+              <div>
+                <h3
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 600,
+                    color: "#fff",
+                    marginBottom: 4,
+                  }}
+                >
+                  {item.title}
+                </h3>
+                <p
+                  style={{
+                    fontSize: "0.95rem",
+                    color: "rgba(255,255,255,0.5)",
+                    margin: 0,
+                  }}
+                >
+                  {item.desc}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* --- CTA SECTION (Premium Pill) --- */}
+      <section
+        style={{
+          padding: "0 24px 120px",
+          textAlign: "center",
+          maxWidth: 600,
+        }}
+      >
+        <h2
+          style={{
+            fontSize: "1.75rem",
+            fontWeight: 700,
+            marginBottom: 24,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Experience Clarity.
+        </h2>
+        <p
+          style={{
+            fontSize: "1rem",
+            color: "rgba(255, 255, 255, 0.6)",
+            marginBottom: 32,
+            lineHeight: 1.6,
+          }}
+        >
+          See what systematic fishing strategy looks like.
+        </p>
+
+        <Link
+          to="/subscribe"
+          className="btn primary"
+          style={{
+            fontSize: "1rem",
+            padding: "16px 40px",
+            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            borderRadius: 100, // Pill
+            fontWeight: 600,
+            letterSpacing: "0.01em",
+            display: "inline-block",
+            marginBottom: 24,
+            textDecoration: "none",
+            boxShadow: "0 10px 40px rgba(37, 99, 235, 0.3)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}
+        >
+          Start 5-Day Free Trial
+        </Link>
+
+        <div>
           <Link
-            to="/subscribe"
-            className="btn primary"
+            to="/"
             style={{
-              fontSize: "1.2rem",
-              padding: "22px 60px",
-              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-              borderRadius: 16,
-              fontWeight: 600,
-              display: "inline-block",
-              marginBottom: 16,
-              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
+              color: "rgba(255,255,255,0.4)",
+              fontSize: "0.9rem",
+              textDecoration: "none",
             }}
           >
-            5-Day Free Trial
+            Back to Home
           </Link>
-          <p style={{ opacity: 0.5, fontSize: "1rem" }}>Get Clarity</p>
         </div>
       </section>
     </div>
