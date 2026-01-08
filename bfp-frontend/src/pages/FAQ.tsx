@@ -1,3 +1,7 @@
+// src/components/FAQ.tsx
+// Updated: "Stealth Luxury" Design.
+// Fixes: Removed blocky cards, reduced font sizes, added elegant hairline dividers.
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -10,7 +14,6 @@ export function FAQ() {
       answer:
         "Bass Clarity analyzes current weather, seasonal phase, and regional patterns to generate a complete fishing strategy. You select your lake, we analyze conditions, and deliver a plan with specific lures, retrieves, targets, and reasoning—all in about 30 seconds.",
     },
-
     {
       question: "How many lakes are in your database?",
       answer:
@@ -26,7 +29,6 @@ export function FAQ() {
       answer:
         "Members can generate a new plan right from the water. Wind picks up? Clouds roll in? Water gets choppy? Check if conditions warrant a different approach. Clarity when you need it most.",
     },
-
     {
       question: "How accurate is the seasonal data?",
       answer:
@@ -35,7 +37,7 @@ export function FAQ() {
     {
       question: "Can I save my plans?",
       answer:
-        "Yes. You can view the 10 most recent plans you've generated for reference, directly from your account page",
+        "Yes. You can view the 10 most recent plans you've generated for reference, directly from your account page.",
     },
     {
       question: "What if I fish small ponds or private lakes?",
@@ -72,187 +74,223 @@ export function FAQ() {
   return (
     <div
       style={{
-        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        background: "#0a0a0a",
         color: "#fff",
         minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
     >
-      {/* Hero */}
+      {/* --- HERO SECTION --- */}
       <section
         style={{
-          padding: "120px 24px 80px",
+          padding: "100px 24px 60px",
+          textAlign: "center",
+          maxWidth: 800,
         }}
       >
-        <div
-          className="container"
-          style={{ maxWidth: 900, textAlign: "center" }}
+        <h1
+          style={{
+            fontSize: "clamp(2rem, 4vw, 2.5rem)", // Much smaller, sharper
+            fontWeight: 700,
+            marginBottom: 16,
+            letterSpacing: "-0.02em",
+            background: "linear-gradient(to bottom, #fff, #a1a1aa)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
         >
-          <h1
-            style={{
-              fontSize: "clamp(2.5rem, 6vw, 4rem)",
-              fontWeight: 700,
-              marginBottom: 24,
-              letterSpacing: "-0.03em",
-            }}
-          >
-            Frequently Asked Questions
-          </h1>
-          <p
-            style={{
-              fontSize: "clamp(1.15rem, 2.5vw, 1.35rem)",
-              opacity: 0.8,
-              lineHeight: 1.6,
-              maxWidth: 720,
-              margin: "0 auto",
-            }}
-          >
-            Everything you need to know about Bass Clarity.
-          </p>
-        </div>
+          Frequently Asked Questions
+        </h1>
+        <p
+          style={{
+            fontSize: "1.05rem",
+            color: "rgba(255, 255, 255, 0.6)",
+            lineHeight: 1.6,
+          }}
+        >
+          Everything you need to know about how Bass Clarity works.
+        </p>
       </section>
 
-      {/* FAQ List */}
-      <section style={{ padding: "80px 24px 120px" }}>
-        <div className="container" style={{ maxWidth: 900 }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {faqs.map((faq, index) => (
-              <div
-                key={index}
+      {/* --- FAQ LIST --- */}
+      <section
+        style={{ width: "100%", maxWidth: 800, padding: "0 24px 100px" }}
+      >
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          {faqs.map((faq, index) => (
+            <div
+              key={index}
+              style={{
+                borderBottom: "1px solid rgba(255,255,255,0.08)", // Hairline divider
+                transition: "background 0.2s",
+              }}
+            >
+              <button
+                onClick={() => setOpenIndex(openIndex === index ? null : index)}
                 style={{
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(255,255,255,0.08)",
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(74, 144, 226, 0.05)";
-                  e.currentTarget.style.borderColor = "rgba(74, 144, 226, 0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(255,255,255,0.02)";
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+                  width: "100%",
+                  padding: "24px 0", // Vertical padding only
+                  background: "transparent",
+                  border: "none",
+                  color: "#fff",
+                  textAlign: "left",
+                  cursor: "pointer",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 24,
                 }}
               >
-                <button
-                  onClick={() =>
-                    setOpenIndex(openIndex === index ? null : index)
-                  }
+                <span
                   style={{
-                    width: "100%",
-                    padding: "24px 28px",
-                    background: "transparent",
-                    border: "none",
-                    color: "#fff",
-                    textAlign: "left",
-                    cursor: "pointer",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 20,
+                    fontSize: "1rem", // Sleek size
+                    fontWeight: 500,
+                    lineHeight: 1.4,
+                    letterSpacing: "0.01em",
+                    opacity: openIndex === index ? 1 : 0.8,
+                    transition: "opacity 0.2s",
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "1.2rem",
-                      fontWeight: 600,
-                      lineHeight: 1.4,
-                    }}
-                  >
-                    {faq.question}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "1.5rem",
-                      flexShrink: 0,
-                      transition: "transform 0.3s ease",
-                      transform:
-                        openIndex === index ? "rotate(180deg)" : "rotate(0deg)",
-                      color: "#4A90E2",
-                    }}
-                  >
-                    ▼
-                  </span>
-                </button>
-                {openIndex === index && (
+                  {faq.question}
+                </span>
+
+                {/* Modern Plus/Minus Icon */}
+                <div
+                  style={{
+                    position: "relative",
+                    width: 14,
+                    height: 14,
+                    marginTop: 4,
+                    opacity: 0.6,
+                    flexShrink: 0,
+                  }}
+                >
+                  {/* Horizontal Line */}
                   <div
                     style={{
-                      padding: "0 28px 24px",
-                      fontSize: "1.05rem",
-                      lineHeight: 1.7,
-                      opacity: 0.85,
+                      position: "absolute",
+                      top: "50%",
+                      left: 0,
+                      width: "100%",
+                      height: 2,
+                      background: "currentColor",
+                      transform: "translateY(-50%)",
                     }}
-                  >
-                    {faq.answer}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                  />
+                  {/* Vertical Line (Rotates) */}
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: "50%",
+                      width: 2,
+                      height: "100%",
+                      background: "currentColor",
+                      // transform: "translateX(-50%)",
+                      transition: "transform 0.3s ease",
+                      transformOrigin: "center",
+                      transform:
+                        openIndex === index
+                          ? "translateX(-50%) rotate(90deg)"
+                          : "translateX(-50%) rotate(0deg)",
+                      opacity: openIndex === index ? 0 : 1, // Fade out vertical line to make minus
+                    }}
+                  />
+                </div>
+              </button>
+
+              {openIndex === index && (
+                <div
+                  style={{
+                    paddingBottom: 24,
+                    fontSize: "0.95rem",
+                    lineHeight: 1.7,
+                    color: "rgba(255, 255, 255, 0.6)",
+                    maxWidth: "95%",
+                    animation: "fadeIn 0.3s ease",
+                  }}
+                >
+                  {faq.answer}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Still Have Questions CTA */}
+      {/* --- CTA SECTION --- */}
       <section
         style={{
-          padding: "100px 24px",
+          padding: "0 24px 120px",
+          textAlign: "center",
+          maxWidth: 600,
         }}
       >
-        <div
-          className="container"
-          style={{ maxWidth: 700, textAlign: "center" }}
+        <h2
+          style={{
+            fontSize: "1.75rem",
+            fontWeight: 700,
+            marginBottom: 16,
+            letterSpacing: "-0.02em",
+          }}
         >
-          <h2
+          Still have questions?
+        </h2>
+        <p
+          style={{
+            fontSize: "1rem",
+            color: "rgba(255, 255, 255, 0.6)",
+            marginBottom: 32,
+            lineHeight: 1.6,
+          }}
+        >
+          The best way to understand Bass Clarity is to see it in action.
+        </p>
+
+        <Link
+          to="/subscribe"
+          className="btn primary"
+          style={{
+            fontSize: "1rem",
+            padding: "16px 40px", // Sleeker pill shape
+            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+            borderRadius: 100, // Full rounded
+            fontWeight: 600,
+            letterSpacing: "0.01em",
+            display: "inline-block",
+            marginBottom: 24,
+            textDecoration: "none",
+            boxShadow: "0 10px 30px rgba(37, 99, 235, 0.25)", // Soft glow
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}
+        >
+          Start 5-Day Free Trial
+        </Link>
+
+        <div>
+          <a
+            href="mailto:support@bassclarity.com"
             style={{
-              fontSize: "clamp(2rem, 5vw, 3rem)",
-              fontWeight: 700,
-              marginBottom: 24,
+              color: "rgba(255, 255, 255, 0.4)",
+              textDecoration: "none",
+              fontSize: "0.9rem",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+              paddingBottom: 2,
             }}
           >
-            Still Have Questions?
-          </h2>
-          <p
-            style={{
-              fontSize: "1.2rem",
-              opacity: 0.7,
-              marginBottom: 40,
-              lineHeight: 1.6,
-            }}
-          >
-            Try a free preview plan and see Bass Clarity in action.
-          </p>
-          <Link
-            to="/subscribe"
-            className="btn primary"
-            style={{
-              fontSize: "1.2rem",
-              padding: "22px 60px",
-              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-              borderRadius: 16,
-              fontWeight: 600,
-              display: "inline-block",
-              marginBottom: 24,
-              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
-            }}
-          >
-            5 Day Free Trial
-          </Link>
-          <div>
-            <p style={{ opacity: 0.6, fontSize: "1rem" }}>
-              Or email us at{" "}
-              <a
-                href="mailto:support@bassclarity.com"
-                style={{
-                  color: "#4A90E2",
-                  textDecoration: "none",
-                }}
-              >
-                support@bassclarity.com
-              </a>
-            </p>
-          </div>
+            Contact Support
+          </a>
         </div>
       </section>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 // src/components/Navigation.tsx
-// Updated: Desktop Orb is ALWAYS visible (solving the missing map button on wide screens).
-// Mobile Orb stays hidden on Plan pages (to avoid double-orb with the bottom dock).
+// Final Version: "Stealth Luxury" Design
+// Features: Minimalist fonts, no blocky backgrounds, functional Map Orb.
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -11,22 +11,25 @@ import { MapOrb } from "./MapOrb";
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   const location = useLocation();
   const { user } = useUser();
   const { signOut } = useClerk();
   const navigate = useNavigate();
 
-  // Smart Check: Only used for MOBILE to prevent double-orbs
   const isPlanPage = location.pathname.startsWith("/plan");
+
+  // Scroll Listener for Glass Effect
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const publicLinks = useMemo(
     () => [
       { to: "/", label: "Home" },
-      { to: "/location", label: "Location" },
-      { to: "/weather", label: "Weather" },
-      { to: "/presentation", label: "Presentation" },
-      { to: "/strategy", label: "Strategy" },
       { to: "/about", label: "About" },
       { to: "/faq", label: "FAQ" },
     ],
@@ -49,6 +52,7 @@ export function Navigation() {
     setUserMenuOpen(false);
   }, [location.pathname]);
 
+  // Lock scroll when mobile menu is open
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -58,156 +62,180 @@ export function Navigation() {
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [isOpen]);
-
-  // Mobile Overlay
+  // --- MOBILE MENU OVERLAY (Stealth Luxury) ---
   const mobileOverlay = isOpen ? (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(10, 10, 10, 0.98)",
-        backdropFilter: "blur(12px)",
+        background: "rgba(0, 0, 0, 0.4)", // Subtle dimmer
+        backdropFilter: "blur(6px)",
         zIndex: 10000,
-        padding: "78px 20px 24px",
-        overflowY: "auto",
+        paddingTop: 68, // Pushes menu below the header
+        animation: "fadeIn 0.2s ease-out",
       }}
       onClick={() => setIsOpen(false)}
     >
-      <nav
+      <div
         style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          maxWidth: 720,
-          margin: "0 auto",
+          background: "#0a0a0a", // Deep solid black
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          padding: "20px 24px 32px",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.8)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {publicLinks.map((link) => (
-          <Link
-            key={link.to}
-            to={link.to}
-            onClick={() => setIsOpen(false)}
-            style={{
-              textDecoration: "none",
-              color: isActive(link.to) ? "#fff" : "rgba(255, 255, 255, 0.78)",
-              fontSize: "1.05rem",
-              fontWeight: isActive(link.to) ? 700 : 500,
-              padding: "14px 14px",
-              borderRadius: 12,
-              background: isActive(link.to)
-                ? "rgba(255,255,255,0.06)"
-                : "transparent",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            {link.label}
-          </Link>
-        ))}
+        <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Public Links - Sleek Text Only */}
+          {publicLinks.map((link) => (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={() => setIsOpen(false)}
+              style={{
+                textDecoration: "none",
+                color: isActive(link.to) ? "#fff" : "rgba(255, 255, 255, 0.5)",
+                fontSize: "0.95rem",
+                fontWeight: isActive(link.to) ? 500 : 400,
+                letterSpacing: "0.02em",
+                padding: "12px 0",
+                borderBottom: "1px solid rgba(255,255,255,0.04)", // Hairline divider
+                transition: "color 0.2s",
+              }}
+            >
+              {link.label}
+            </Link>
+          ))}
 
-        <div style={{ height: 10 }} />
+          <SignedIn>
+            {memberLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                onClick={() => setIsOpen(false)}
+                style={{
+                  textDecoration: "none",
+                  color: isActive(link.to)
+                    ? "#fff"
+                    : "rgba(255, 255, 255, 0.5)",
+                  fontSize: "0.95rem",
+                  fontWeight: isActive(link.to) ? 500 : 400,
+                  letterSpacing: "0.02em",
+                  padding: "12px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.04)",
+                }}
+              >
+                {link.label}
+              </Link>
+            ))}
 
-        {/* HAMBURGER MENU ORB */}
-        <Link
-          to="/members"
-          onClick={() => setIsOpen(false)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            textDecoration: "none",
-            color: isActive("/members") ? "#fff" : "rgba(255, 255, 255, 0.9)",
-            fontSize: "1.05rem",
-            fontWeight: 700,
-            padding: "14px 14px",
-            borderRadius: 12,
-            background: "rgba(74, 144, 226, 0.1)",
-            border: "1px solid rgba(74, 144, 226, 0.3)",
-          }}
-        >
-          <MapOrb size={22} active={true} />
-          <span>Scout Map</span>
-        </Link>
+            <div style={{ height: 24 }} />
 
-        {memberLinks.map((link) => (
-          <Link
-            key={link.to}
-            to={link.to}
-            onClick={() => setIsOpen(false)}
-            style={{
-              textDecoration: "none",
-              color: isActive(link.to) ? "#fff" : "rgba(255, 255, 255, 0.78)",
-              fontSize: "1.05rem",
-              fontWeight: isActive(link.to) ? 700 : 500,
-              padding: "14px 14px",
-              borderRadius: 12,
-              background: isActive(link.to)
-                ? "rgba(255,255,255,0.06)"
-                : "transparent",
-              border: "1px solid rgba(255,255,255,0.08)",
-            }}
-          >
-            {link.label}
-          </Link>
-        ))}
+            {/* Mobile Drawer Map Launcher */}
+            <Link
+              to="/members"
+              onClick={() => setIsOpen(false)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                textDecoration: "none",
+                color: "#fff",
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                letterSpacing: "0.01em",
+                padding: "12px",
+                borderRadius: 8,
+                background: "rgba(59, 130, 246, 0.1)",
+                border: "1px solid rgba(59, 130, 246, 0.25)",
+              }}
+            >
+              <MapOrb size={18} active={true} />
+              <span>Launch Map</span>
+            </Link>
 
-        <SignedOut>
-          <div style={{ height: 14 }} />
-          <Link
-            to="/subscribe"
-            onClick={() => setIsOpen(false)}
-            className="btn primary"
-            style={{
-              display: "inline-flex",
-              justifyContent: "center",
-              padding: "14px 18px",
-              borderRadius: 12,
-              textDecoration: "none",
-            }}
-          >
-            Start Free Trial
-          </Link>
-          <Link
-            to="/sign-in"
-            onClick={() => setIsOpen(false)}
-            style={{
-              textDecoration: "none",
-              color: "rgba(255, 255, 255, 0.78)",
-              fontSize: "1rem",
-              fontWeight: 500,
-              padding: "14px 14px",
-              borderRadius: 12,
-              border: "1px solid rgba(255,255,255,0.08)",
-              textAlign: "center",
-            }}
-          >
-            Sign In
-          </Link>
-        </SignedOut>
-      </nav>
+            <button
+              onClick={handleSignOut}
+              style={{
+                width: "100%",
+                textAlign: "center",
+                padding: "14px",
+                marginTop: 8,
+                background: "transparent",
+                border: "none",
+                color: "rgba(255, 255, 255, 0.4)",
+                fontSize: "0.85rem",
+                fontWeight: 500,
+                cursor: "pointer",
+                letterSpacing: "0.02em",
+              }}
+            >
+              Sign Out
+            </button>
+          </SignedIn>
+
+          <SignedOut>
+            <div style={{ height: 20 }} />
+            <Link
+              to="/subscribe"
+              onClick={() => setIsOpen(false)}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "12px",
+                borderRadius: 100,
+                textDecoration: "none",
+                background: "#fff",
+                color: "#000",
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Start Free Trial
+            </Link>
+            <Link
+              to="/sign-in"
+              onClick={() => setIsOpen(false)}
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                padding: "12px",
+                marginTop: 12,
+                borderRadius: 100,
+                textDecoration: "none",
+                border: "1px solid rgba(255,255,255,0.15)",
+                color: "#fff",
+                fontSize: "0.9rem",
+                fontWeight: 500,
+              }}
+            >
+              Sign In
+            </Link>
+          </SignedOut>
+        </nav>
+      </div>
     </div>
   ) : null;
 
+  // --- MAIN HEADER ---
   return (
     <>
       <header
         style={{
           position: "sticky",
           top: 0,
-          width: "100vw",
-          marginLeft: "calc(50% - 50vw)",
-          zIndex: 11000,
-          background: "rgba(10, 10, 10, 0.95)",
-          backdropFilter: "blur(10px)",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+          zIndex: 1000,
+          width: "100%",
+          height: 64, // Sleek height
+          transition: "all 0.3s ease",
+          background: scrolled || isOpen ? "rgba(5, 5, 5, 0.9)" : "transparent",
+          backdropFilter: scrolled || isOpen ? "blur(16px)" : "none",
+          borderBottom: scrolled
+            ? "1px solid rgba(255, 255, 255, 0.06)"
+            : "1px solid transparent",
         }}
       >
         <div
@@ -216,22 +244,23 @@ export function Navigation() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingTop: 16,
-            paddingBottom: 16,
-            gap: 14,
-            paddingLeft: "calc(20px + env(safe-area-inset-left))",
-            paddingRight: "calc(20px + env(safe-area-inset-right))",
+            height: "100%",
+            paddingLeft: "max(24px, env(safe-area-inset-left))",
+            paddingRight: "max(24px, env(safe-area-inset-right))",
           }}
         >
-          <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
+          {/* Logo */}
+          <Link
+            to="/"
+            style={{ textDecoration: "none", color: "inherit", zIndex: 10001 }}
+          >
             <div
               style={{
-                fontSize: "1.15rem",
-                fontWeight: 800,
+                fontSize: "1.1rem",
+                fontWeight: 700,
                 letterSpacing: "0.04em",
+                color: "#fff",
                 textTransform: "uppercase",
-                opacity: 0.95,
-                whiteSpace: "nowrap",
               }}
             >
               Bass Clarity
@@ -241,7 +270,7 @@ export function Navigation() {
           {/* Desktop Nav */}
           <nav
             className="desktop-nav"
-            style={{ display: "none", gap: 24, alignItems: "center" }}
+            style={{ display: "none", gap: 32, alignItems: "center" }}
           >
             {publicLinks.slice(1).map((link) => (
               <Link
@@ -251,9 +280,11 @@ export function Navigation() {
                   textDecoration: "none",
                   color: isActive(link.to)
                     ? "#fff"
-                    : "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.95em",
-                  fontWeight: isActive(link.to) ? 600 : 400,
+                    : "rgba(255, 255, 255, 0.6)",
+                  fontSize: "0.9rem",
+                  fontWeight: isActive(link.to) ? 600 : 500,
+                  letterSpacing: "0.01em",
+                  transition: "color 0.2s",
                 }}
               >
                 {link.label}
@@ -269,113 +300,77 @@ export function Navigation() {
                     textDecoration: "none",
                     color: isActive(link.to)
                       ? "#fff"
-                      : "rgba(255, 255, 255, 0.7)",
-                    fontSize: "0.95em",
-                    fontWeight: isActive(link.to) ? 600 : 400,
+                      : "rgba(255, 255, 255, 0.6)",
+                    fontSize: "0.9rem",
+                    fontWeight: isActive(link.to) ? 600 : 500,
+                    letterSpacing: "0.01em",
                   }}
                 >
                   {link.label}
                 </Link>
               ))}
 
-              {/* ✅ DESKTOP ORB: ALWAYS SHOW (Removed the !isPlanPage check here) */}
+              {/* Desktop Orb */}
               <Link
                 to="/members"
-                title="Go to Map"
+                title="Map"
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
+                  color: "#fff",
+                  textDecoration: "none",
                 }}
               >
-                <MapOrb size={28} active={!isActive("/members")} />
+                <MapOrb size={30} active={!isActive("/members")} />
               </Link>
 
-              {/* User Menu */}
+              {/* Minimal User Avatar */}
               <div style={{ position: "relative" }}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   style={{
-                    background: "rgba(255, 255, 255, 0.1)",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    width: 30,
+                    height: 30,
                     borderRadius: "50%",
-                    width: 36,
-                    height: 36,
+                    background: "rgba(255,255,255,0.08)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    cursor: "pointer",
-                    color: "white",
-                    fontSize: "0.9em",
-                    fontWeight: 600,
                   }}
                 >
-                  {user?.firstName?.charAt(0) ||
-                    user?.emailAddresses[0]?.emailAddress
-                      ?.charAt(0)
-                      .toUpperCase() ||
-                    "U"}
+                  {user?.firstName?.charAt(0) || "U"}
                 </button>
                 {userMenuOpen && (
                   <div
                     style={{
                       position: "absolute",
-                      top: "100%",
+                      top: "130%",
                       right: 0,
-                      marginTop: 8,
-                      background: "rgba(20, 20, 20, 0.98)",
-                      border: "1px solid rgba(255, 255, 255, 0.1)",
-                      borderRadius: 10,
-                      minWidth: 220,
-                      padding: 8,
-                      boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+                      background: "#0a0a0a",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 12,
+                      padding: 6,
+                      minWidth: 140,
+                      boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
                     }}
                   >
-                    <div
-                      style={{
-                        padding: "12px",
-                        borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div style={{ fontWeight: 700, fontSize: "0.95em" }}>
-                        {user?.fullName || "Account"}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.85em",
-                          color: "rgba(255, 255, 255, 0.6)",
-                          marginTop: 4,
-                        }}
-                      >
-                        {user?.primaryEmailAddress?.emailAddress}
-                      </div>
-                    </div>
-                    <Link
-                      to="/account"
-                      onClick={() => setUserMenuOpen(false)}
-                      style={{
-                        display: "block",
-                        padding: "10px 12px",
-                        textDecoration: "none",
-                        color: "rgba(255, 255, 255, 0.9)",
-                        borderRadius: 8,
-                        fontSize: "0.95em",
-                      }}
-                    >
-                      Account
-                    </Link>
                     <button
                       onClick={handleSignOut}
                       style={{
                         width: "100%",
-                        padding: "10px 12px",
+                        padding: "10px",
                         textAlign: "left",
                         background: "transparent",
                         border: "none",
                         color: "#ef4444",
-                        borderRadius: 8,
-                        fontSize: "0.95em",
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
                         cursor: "pointer",
                       }}
                     >
@@ -388,71 +383,118 @@ export function Navigation() {
 
             <SignedOut>
               <Link
+                to="/sign-in"
+                style={{
+                  textDecoration: "none",
+                  color: "#fff",
+                  fontSize: "0.9rem",
+                  fontWeight: 500,
+                }}
+              >
+                Sign In
+              </Link>
+              <Link
                 to="/subscribe"
-                className="btn primary"
-                style={{ padding: "8px 20px", textDecoration: "none" }}
+                style={{
+                  textDecoration: "none",
+                  background: "#fff",
+                  color: "#000",
+                  padding: "8px 18px",
+                  borderRadius: 100,
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                }}
               >
                 Start Free Trial
               </Link>
+            </SignedOut>
+          </nav>
+
+          {/* MOBILE CONTROLS (Right Side) */}
+          <div
+            className="mobile-controls"
+            style={{ display: "flex", alignItems: "center", gap: 16 }}
+          >
+            <SignedOut>
               <Link
                 to="/sign-in"
                 style={{
                   textDecoration: "none",
-                  color: "rgba(255, 255, 255, 0.7)",
-                  fontSize: "0.95em",
+                  color: "#fff",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.01em",
+                  padding: "6px 14px",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: 100,
+                  background: "rgba(255,255,255,0.03)",
                 }}
               >
                 Sign In
               </Link>
             </SignedOut>
-          </nav>
 
-          {/* MOBILE HEADER CONTROLS */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* ✅ MOBILE ORB: STILL HIDDEN ON PLAN (Prevents duplication with bottom dock) */}
+            {/* Mobile Orb */}
             <SignedIn>
               {!isPlanPage && (
-                <div className="mobile-orb-container">
-                  <Link to="/members" aria-label="Quick Map Access">
-                    <MapOrb size={28} active={!isActive("/members")} />
-                  </Link>
-                </div>
+                <Link
+                  to="/members"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#fff",
+                    textDecoration: "none",
+                  }}
+                >
+                  <MapOrb size={30} active={!isActive("/members")} />
+                </Link>
               )}
             </SignedIn>
 
-            {/* Mobile Menu Button */}
+            {/* Hamburger */}
             <button
-              onClick={() => setIsOpen((v) => !v)}
-              className="mobile-menu-btn"
+              onClick={() => setIsOpen(!isOpen)}
               style={{
                 background: "transparent",
                 border: "none",
-                color: "inherit",
+                color: "#fff",
                 cursor: "pointer",
-                padding: 8,
+                padding: 4,
+                display: "flex",
+                alignItems: "center",
               }}
+              aria-label="Menu"
             >
               {isOpen ? (
                 <svg
-                  width="24"
-                  height="24"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                 >
-                  <path d="M18 6L6 18M6 6l12 12" />
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               ) : (
                 <svg
-                  width="24"
-                  height="24"
+                  width="20"
+                  height="20"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="2"
+                  strokeWidth="1.5"
                 >
-                  <path d="M3 12h18M3 6h18M3 18h18" />
+                  <path
+                    d="M3 12h18M3 6h18M3 18h18"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               )}
             </button>
@@ -463,14 +505,13 @@ export function Navigation() {
       {mobileOverlay ? createPortal(mobileOverlay, document.body) : null}
 
       <style>{`
-        /* ✅ BREAKPOINT SYNC: 768px */
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         @media (min-width: 768px) {
-          .mobile-orb-container, .mobile-menu-btn {
-            display: none !important;
-          }
-          .desktop-nav {
-            display: flex !important;
-          }
+          .mobile-controls { display: none !important; }
+          .desktop-nav { display: flex !important; }
         }
       `}</style>
     </>
