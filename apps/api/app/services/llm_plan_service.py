@@ -199,9 +199,9 @@ RETURN JSON ONLY:
 
   "targets":["<target>","<target>","<target>"],
 
-  "why_this_works":"2-3 sentences total. MUST explain why THIS lure + presentation fits phase/conditions AND include Choose A if... Choose B if... color guidance.",
-  "pattern_summary":"2-3 sentences. Suggestive language only (may/might/can/suggests).",
-  "strategy":"2-3 sentences. Practical, calm, no hype.",
+  "why_this_works":"Max 28–32 words total. MUST explain why THIS lure + presentation fits phase/conditions AND include Choose A if... Choose B if... color guidance.",
+  "pattern_summary":"Max 28–32 words. Suggestive language only (may/might/can/suggests).",
+  "strategy":"Max 28–32 words. Practical, calm, no hype.",
 
   "work_it":[
     "<Target 1>: <specific cadence using LURE_TIP_BANK>",
@@ -210,18 +210,18 @@ RETURN JSON ONLY:
   ],
 
   "work_it_cards":[
-    {"name":"<Target 1>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"2-3 sentences"},
-    {"name":"<Target 2>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"2-3 sentences"},
-    {"name":"<Target 3>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"2-3 sentences"}
+    {"name":"<Target 1>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"Max 28–32 words"},
+    {"name":"<Target 2>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"Max 28–32 words"},
+    {"name":"<Target 3>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"Max 28–32 words"}
   ],
 
   "day_progression":[
-    "Morning: 2-3 sentences. Where+why + tactical adjustment. No colors. No exact numbers.",
-    "Midday: 2-3 sentences. Where+why + tactical adjustment. No colors. No exact numbers.",
-    "Evening: 2-3 sentences. Where+why + tactical adjustment. No colors. No exact numbers."
+    "Morning: Max 28–32 words. Where+why + tactical adjustment. No colors. No exact numbers.",
+    "Midday: Max 28–32 words. Where+why + tactical adjustment. No colors. No exact numbers.",
+    "Evening: Max 28–32 words. Where+why + tactical adjustment. No colors. No exact numbers."
   ],
 
-  "outlook_blurb":"2-3 sentences of weather/phase context only. No exact numbers. No fishing strategy."
+  "outlook_blurb":"Max 28–32 words of weather/phase context only. No exact numbers. No fishing strategy."
 }
 """
 
@@ -332,7 +332,7 @@ ANALYSIS ORDER (NON-NEGOTIABLE):
 Season/Phase → Current Conditions → Targets → Presentation Family → Lure → Retrieves
 
 PRESENTATION
-- 2-3 sentences providing a description of the presentation and why this particular presentation is chosen based on the current weather/condition/phase analysis and how it relates to the selected targets.
+- Max 28–32 words providing a description of the presentation and why this particular presentation is chosen based on the current weather/condition/phase analysis and how it relates to the selected targets.
 
 SECONDARY PATTERN (COMPLEMENT / PIVOT):
 Secondary is not a backup lure. It assumes the initial read may be slightly off and attacks bass a different way.
@@ -389,11 +389,11 @@ WHY THIS WORKS:
      * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
      * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
    - Add ONE sentence about soft plastic/trailer color choice if applicable.
-   - Length: 2-3 sentences total (lure choice + color explanation + optional trailer color)
+   - Length: Max 28-32 words total (lure choice + color explanation + optional trailer color)
 
 DAY PROGRESSION (EXTENDED FORMAT):
    - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
-   - Length: 2 sentences PER time block (not just 1 sentence)
+   - Length: Max 28-32 words PER time block (not just 1 sentence)
    - Each time block MUST start with "Morning:", "Midday:", or "Evening:" (or "Late:")
    - NO colors in day progression (no parentheses, no "in green pumpkin")
    

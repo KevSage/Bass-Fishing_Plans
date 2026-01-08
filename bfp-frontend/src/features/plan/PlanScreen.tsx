@@ -1,6 +1,6 @@
 // src/features/plan/PlanScreen.tsx
 // Complete plan display: consolidated plan UI with weather extracted to WeatherSection.
-// NOW PASSING WEATHER INSIGHTS CORRECTLY TO UI.
+// UPDATE: Added id="weather" wrapper so PlanNavigation can scroll to it.
 
 import React from "react";
 import type { PlanGenerateResponse, Pattern } from "./types";
@@ -25,7 +25,7 @@ const UI: Record<string, React.CSSProperties> = {
   },
 
   eyebrow: {
-    fontSize: "0.75rem", // Increased from 0.72rem
+    fontSize: "0.75rem",
     textTransform: "uppercase",
     letterSpacing: "0.12em",
     fontWeight: 700,
@@ -43,8 +43,7 @@ const UI: Record<string, React.CSSProperties> = {
 export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   const { plan } = response;
 
-  // ✅ CRITICAL FIX: Merge the insights directly into conditions
-  // This ensures WeatherSection receives the AI Analysis array
+  // Merge the insights directly into conditions
   const activeConditions = {
     ...(plan.conditions as any),
     weather_insights: plan.weather_insights || [],
@@ -55,16 +54,19 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
       <div style={{ marginTop: 18, paddingBottom: 100 }}>
         {/* Extra padding for mobile nav */}
 
-        <WeatherSection
-          // WeatherSection owns weather-only presentation + geocoding.
-          // Now passing the insights-enriched object.
-          conditions={activeConditions}
-          outlookBlurb={plan.outlook_blurb}
-        />
+        {/* ✅ FIX: Added ID wrapper for Navigation */}
+        <div id="weather">
+          <WeatherSection
+            conditions={activeConditions}
+            outlookBlurb={plan.outlook_blurb}
+          />
+        </div>
+
         {/* Pattern 1 */}
         <div id="pattern-1">
           <PatternCard pattern={plan.primary} patternNumber={1} isPrimary />
         </div>
+
         {/* Pattern 2 */}
         <div id="pattern-2">
           <PatternCard
@@ -73,6 +75,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
             isPrimary={false}
           />
         </div>
+
         {/* Day Progression */}
         {plan.day_progression && plan.day_progression.length > 0 && (
           <div
@@ -125,7 +128,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   );
 }
 
-// Reusable pattern card component - PREMIUM REDESIGN
+// Reusable pattern card component
 function PatternCard({
   pattern,
   patternNumber,
@@ -141,7 +144,6 @@ function PatternCard({
       style={{
         marginTop: 32,
         position: "relative",
-        // Premium frosted glass effect with depth
         background: isPrimary
           ? "linear-gradient(145deg, rgba(74, 144, 226, 0.06) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(74, 144, 226, 0.03) 100%)"
           : "linear-gradient(145deg, rgba(255, 255, 255, 0.02) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(255, 255, 255, 0.01) 100%)",
@@ -150,7 +152,6 @@ function PatternCard({
           : "1px solid rgba(255, 255, 255, 0.08)",
         borderRadius: 24,
         padding: "24px",
-        // Premium shadows (work in PDF)
         boxShadow: isPrimary
           ? "0 8px 32px rgba(74, 144, 226, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
           : "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
@@ -180,7 +181,7 @@ function PatternCard({
         Pattern {patternNumber}
       </div>
 
-      {/* Presentation Title - Premium typography */}
+      {/* Presentation Title */}
       <h3
         style={{
           fontSize: "1.5rem",
@@ -195,7 +196,7 @@ function PatternCard({
         {pattern.presentation}
       </h3>
 
-      {/* Pattern Summary - Refined callout */}
+      {/* Pattern Summary */}
       {pattern.pattern_summary && (
         <div
           style={{
@@ -233,7 +234,7 @@ function PatternCard({
         }}
       />
 
-      {/* Lure Image Container - Premium hero treatment */}
+      {/* Lure Image Container */}
       <div
         style={{
           position: "relative",
@@ -244,7 +245,7 @@ function PatternCard({
           borderRadius: 20,
         }}
       >
-        {/* Glow effect behind */}
+        {/* Glow effect */}
         <div
           style={{
             position: "absolute",
@@ -278,7 +279,6 @@ function PatternCard({
                 maxWidth: 480,
                 height: "auto",
                 objectFit: "contain",
-                // Premium multi-layer shadow
                 filter:
                   "drop-shadow(0 24px 80px rgba(0, 0, 0, 0.6)) drop-shadow(0 12px 40px rgba(74, 144, 226, 0.5)) drop-shadow(0 4px 16px rgba(0, 0, 0, 0.4))",
               }}
@@ -415,7 +415,7 @@ function PatternCard({
         </div>
       )}
 
-      {/* Color Swatches - Premium cards */}
+      {/* Color Swatches */}
       {pattern.color_recommendations &&
         pattern.color_recommendations.length > 0 && (
           <div style={{ marginBottom: 32 }}>
@@ -485,7 +485,7 @@ function PatternCard({
         }}
       />
 
-      {/* Gear Setup - Premium card */}
+      {/* Gear Setup */}
       {pattern.gear && (
         <div
           style={{
@@ -676,7 +676,7 @@ function PatternCard({
         }}
       />
 
-      {/* How to Work It - Premium step indicators */}
+      {/* How to Work It */}
       {((pattern.work_it_cards && pattern.work_it_cards.length > 0) ||
         (pattern.work_it && pattern.work_it.length > 0)) && (
         <div style={{ marginBottom: 0 }}>
@@ -708,7 +708,6 @@ function PatternCard({
                       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
                     }}
                   >
-                    {/* Target Name */}
                     <h5
                       style={{
                         fontSize: ".95rem",
@@ -722,7 +721,6 @@ function PatternCard({
                       {item.name}
                     </h5>
 
-                    {/* Definition (Educational) */}
                     <p
                       style={{
                         margin: "0 0 12px 0",
@@ -736,7 +734,6 @@ function PatternCard({
                       {item.definition}
                     </p>
 
-                    {/* How to Fish (Actionable) */}
                     <p
                       style={{
                         margin: 0,

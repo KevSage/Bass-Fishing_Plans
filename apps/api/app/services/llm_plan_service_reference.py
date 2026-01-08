@@ -45,7 +45,7 @@ from app.canon.validate import (
     validate_targets,
 )
 
-from app.render.retrieve_rules import LURE_TIP_BANK
+from app.canon.retrieve_rules import LURE_TIP_BANK
 
 # ----------------------------------------
 # System Prompt (LOCKED RULES)
