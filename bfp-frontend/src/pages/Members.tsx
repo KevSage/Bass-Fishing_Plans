@@ -1,5 +1,5 @@
 // src/pages/Members.tsx
-// UPDATE: Added "Low Fuel" Warning (Hidden until 2 remaining)
+// UPDATE: Restored "Find Your Water" Gradient Overlay & Text.
 
 import React, { useEffect, useRef, useState } from "react";
 import { useUser } from "@clerk/clerk-react";
@@ -15,13 +15,12 @@ import { FishIcon } from "@/components/UnifiedIcons";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const MAX_DAILY_PLANS = 10;
-const WARNING_THRESHOLD = 8; // Warning appears when 8 are used (2 remaining)
+const WARNING_THRESHOLD = 8;
 
 function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
   return f.source === "composite" && f.sourceLayer === "water";
 }
 
-// Custom Orb Marker (From previous step)
 const createOrbMarker = () => {
   const el = document.createElement("div");
   el.className = "orb-marker-map";
@@ -119,12 +118,11 @@ export function Members() {
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
 
-  // Rate Limit & Usage State
   const [rateLimitInfo, setRateLimitInfo] = useState<{
     message: string;
     secondsRemaining: number;
   } | null>(null);
-  const [dailyUsage, setDailyUsage] = useState(0); // Local session tracker (Connect to user DB for persistence)
+  const [dailyUsage, setDailyUsage] = useState(0);
 
   useEffect(() => {
     if (!rateLimitInfo || rateLimitInfo.secondsRemaining <= 0) return;
@@ -164,7 +162,6 @@ export function Members() {
   const initialized = useRef(false);
   const rafRef = useRef<number | null>(null);
 
-  // Map Lifecycle
   useEffect(() => {
     if (
       initialized.current ||
@@ -183,6 +180,7 @@ export function Members() {
       center: [-86.7816, 33.5186],
       zoom: 6,
       pitch: 0,
+      preserveDrawingBuffer: true,
     });
 
     mapRef.current = m;
@@ -332,7 +330,7 @@ export function Members() {
         },
         access_type: accessType,
       });
-      setDailyUsage((prev) => prev + 1); // ✅ Increment local counter on success
+      setDailyUsage((prev) => prev + 1);
       navigate("/plan", { state: { planResponse: response } });
     } catch (e: any) {
       if (e instanceof RateLimitError) {
@@ -347,7 +345,6 @@ export function Members() {
     }
   }
 
-  // Derived state for warning
   const remaining = MAX_DAILY_PLANS - dailyUsage;
   const showUsageWarning = dailyUsage >= WARNING_THRESHOLD && remaining > 0;
 
@@ -365,11 +362,69 @@ export function Members() {
     <div
       style={{ position: "relative", height: "100vh", background: "#0a0a0a" }}
     >
-      {/* MAP SURFACE */}
+      {/* --- MAP SURFACE --- */}
       <div style={{ width: "100%", height: "100%" }}>
         <style>{`.mapboxgl-ctrl-top-right { top: 120px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
+
+      {/* --- GUIDANCE OVERLAY (The Fix) --- */}
+      {/* Positioned absolute top, fades out, transparent to clicks so map pans */}
+      {!showModal && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "40vh",
+            maxHeight: "350px",
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)",
+            pointerEvents: "none",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            paddingTop: "100px", // Push below navbar
+            textAlign: "center",
+            color: "#fff",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              letterSpacing: "0.15em",
+              color: "#4A90E2",
+              textTransform: "uppercase",
+              marginBottom: 10,
+            }}
+          >
+            Members
+          </div>
+          <h1
+            style={{
+              fontSize: "clamp(2rem, 5vw, 3rem)",
+              fontWeight: 800,
+              margin: "0 0 8px 0",
+              textShadow: "0 4px 20px rgba(0,0,0,0.5)",
+            }}
+          >
+            Find Your Water
+          </h1>
+          <p
+            style={{
+              fontSize: "1.1rem",
+              opacity: 0.9,
+              margin: 0,
+              textShadow: "0 2px 10px rgba(0,0,0,0.5)",
+            }}
+          >
+            Search or tap any body of water
+          </p>
+        </div>
+      )}
 
       {/* FLOATING ACTION BUTTON */}
       {!showModal && (
@@ -382,16 +437,20 @@ export function Members() {
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 40,
-            padding: "12px 24px",
-            borderRadius: 30,
+            padding: "14px 28px",
+            borderRadius: 100,
             color: "#fff",
-            fontWeight: 600,
+            fontWeight: 700,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: 10,
-            fontSize: "0.95rem",
+            gap: 12,
+            fontSize: "1rem",
             border: "1px solid rgba(74, 144, 226, 0.4)",
+            boxShadow:
+              "0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
+            background: "rgba(10, 10, 20, 0.8)",
+            backdropFilter: "blur(12px)",
           }}
         >
           <RadarIcon size={20} />
@@ -407,7 +466,7 @@ export function Members() {
             inset: 0,
             zIndex: 2000,
             background: "rgba(0,0,0,0.3)",
-            backdropFilter: "blur(2px)",
+            backdropFilter: "blur(4px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -418,19 +477,22 @@ export function Members() {
           <div
             className="glass-panel"
             style={{
-              borderRadius: 20,
+              borderRadius: 24,
               width: "100%",
               maxWidth: 420,
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: "rgba(10, 10, 15, 0.95)",
+              boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div
               style={{
-                padding: "16px 20px",
+                padding: "18px 24px",
                 borderBottom: "1px solid rgba(255,255,255,0.08)",
                 display: "flex",
                 justifyContent: "space-between",
@@ -439,13 +501,13 @@ export function Members() {
             >
               <h2
                 style={{
-                  fontSize: "1rem",
+                  fontSize: "1.1rem",
                   fontWeight: 700,
                   margin: 0,
                   color: "#fff",
                   display: "flex",
                   alignItems: "center",
-                  gap: 8,
+                  gap: 10,
                 }}
               >
                 <span style={{ color: "#4A90E2" }}>✦</span> Tactical Scout
@@ -457,8 +519,9 @@ export function Members() {
                   border: "none",
                   color: "rgba(255,255,255,0.5)",
                   cursor: "pointer",
-                  fontSize: "1.25rem",
-                  padding: "0 4px",
+                  fontSize: "1.5rem",
+                  padding: "0",
+                  lineHeight: 1,
                 }}
               >
                 ×
@@ -468,17 +531,17 @@ export function Members() {
             {/* BODY */}
             <div
               style={{
-                padding: "20px",
+                padding: "24px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 20,
+                gap: 24,
               }}
             >
               {/* Toggle Section */}
               <div
                 style={{
-                  background: "rgba(0,0,0,0.2)",
-                  borderRadius: "10px",
+                  background: "rgba(255,255,255,0.05)",
+                  borderRadius: "12px",
                   padding: "4px",
                   display: "flex",
                   gap: "4px",
@@ -498,15 +561,15 @@ export function Members() {
                       inputMode === "search"
                         ? "1px solid rgba(74, 144, 226, 0.5)"
                         : "1px solid transparent",
-                    borderRadius: "8px",
-                    padding: "8px",
-                    fontSize: "0.8rem",
+                    borderRadius: "10px",
+                    padding: "10px",
+                    fontSize: "0.9rem",
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "6px",
+                    gap: "8px",
                     transition: "all 0.2s ease",
                   }}
                 >
@@ -526,15 +589,15 @@ export function Members() {
                       inputMode === "manual"
                         ? "1px solid rgba(74, 144, 226, 0.5)"
                         : "1px solid transparent",
-                    borderRadius: "8px",
-                    padding: "8px",
-                    fontSize: "0.8rem",
+                    borderRadius: "10px",
+                    padding: "10px",
+                    fontSize: "0.9rem",
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "6px",
+                    gap: "8px",
                     transition: "all 0.2s ease",
                   }}
                 >
@@ -553,8 +616,8 @@ export function Members() {
                            background: rgba(0,0,0,0.3) !important;
                            border: 1px solid rgba(255,255,255,0.1) !important;
                            color: #fff !important;
-                           border-radius: 8px !important;
-                           padding: 12px !important;
+                           border-radius: 10px !important;
+                           padding: 14px !important;
                            font-size: 1rem !important;
                         }
                         .glass-search-wrapper .location-results {
@@ -588,9 +651,12 @@ export function Members() {
                       placeholder="e.g. Lake Lanier, North Arm"
                       style={{
                         width: "100%",
-                        padding: "12px",
+                        padding: "14px",
                         borderRadius: "10px",
                         fontSize: "1rem",
+                        background: "rgba(0,0,0,0.3)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "#fff",
                       }}
                       autoFocus
                       spellCheck={false}
@@ -600,7 +666,7 @@ export function Members() {
                     <div
                       style={{
                         marginTop: "8px",
-                        fontSize: "0.75rem",
+                        fontSize: "0.8rem",
                         color: "rgba(255,255,255,0.4)",
                         fontStyle: "italic",
                       }}
@@ -615,7 +681,7 @@ export function Members() {
               {/* Platform */}
               <div>
                 <label className="modal-label">Platform</label>
-                <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ display: "flex", gap: 12 }}>
                   <button
                     type="button"
                     onClick={() => setAccessType("boat")}
@@ -643,9 +709,9 @@ export function Members() {
               {selectedCoords && (
                 <div
                   style={{
-                    padding: "12px",
+                    padding: "14px",
                     background: "rgba(255,255,255,0.03)",
-                    borderRadius: 8,
+                    borderRadius: 12,
                     border: "1px solid rgba(255,255,255,0.05)",
                     display: "flex",
                     justifyContent: "space-between",
@@ -655,10 +721,11 @@ export function Members() {
                   <div>
                     <div
                       style={{
-                        fontSize: "0.65rem",
+                        fontSize: "0.7rem",
                         textTransform: "uppercase",
                         opacity: 0.5,
                         fontWeight: 700,
+                        letterSpacing: "0.05em",
                       }}
                     >
                       Confirmed Drop Point
@@ -667,15 +734,15 @@ export function Members() {
                       style={{
                         fontFamily: "monospace",
                         color: "#4A90E2",
-                        fontSize: "0.85rem",
-                        marginTop: 2,
+                        fontSize: "0.9rem",
+                        marginTop: 4,
                       }}
                     >
                       {selectedCoords.lat.toFixed(5)},{" "}
                       {selectedCoords.lng.toFixed(5)}
                     </div>
                   </div>
-                  <div style={{ color: "#4ecdc4", fontSize: "1.2rem" }}>✓</div>
+                  <div style={{ color: "#4ecdc4", fontSize: "1.4rem" }}>✓</div>
                 </div>
               )}
 
@@ -684,35 +751,36 @@ export function Members() {
                 {rateLimitInfo && (
                   <div
                     style={{
-                      padding: "10px",
+                      padding: "12px",
                       background: "rgba(255,255,255,0.05)",
-                      borderRadius: 8,
-                      marginBottom: 10,
-                      fontSize: "0.8rem",
+                      borderRadius: 10,
+                      marginBottom: 12,
+                      fontSize: "0.85rem",
                       color: "#ffe66d",
+                      textAlign: "center",
                     }}
                   >
                     Cooldown: {formatTime(rateLimitInfo.secondsRemaining)}
                   </div>
                 )}
 
-                {/* 2. ✅ NEW: LOW FUEL WARNING (Visible only when 1-2 remaining) */}
+                {/* 2. LOW FUEL WARNING */}
                 {!rateLimitInfo && showUsageWarning && (
                   <div
                     style={{
-                      padding: "10px 14px",
+                      padding: "12px 16px",
                       background: "rgba(255, 166, 0, 0.1)",
                       border: "1px solid rgba(255, 166, 0, 0.3)",
                       borderRadius: 10,
-                      marginBottom: 12,
-                      fontSize: "0.85rem",
+                      marginBottom: 16,
+                      fontSize: "0.9rem",
                       color: "#ffc107",
                       display: "flex",
                       alignItems: "center",
-                      gap: 8,
+                      gap: 10,
                     }}
                   >
-                    <span style={{ fontSize: "1rem" }}>⚠️</span>
+                    <span style={{ fontSize: "1.2rem" }}>⚠️</span>
                     <span>
                       <strong>{remaining} plans remaining</strong> today.
                     </span>
@@ -742,35 +810,44 @@ export function Members() {
       <style>{`
         .modal-label {
             display: block; 
-            font-size: 0.7rem; 
+            font-size: 0.75rem; 
             fontWeight: 700; 
-            opacity: 0.7; 
-            margin-bottom: 8px; 
+            opacity: 0.6; 
+            margin-bottom: 10px; 
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
         }
         .modal-btn {
             flex: 1;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 14px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 600;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.6);
+            transition: all 0.2s ease;
+        }
+        .modal-btn.active {
+            background: rgba(74, 144, 226, 0.15);
+            border-color: rgba(74, 144, 226, 0.5);
+            color: #fff;
         }
         .generate-btn {
             width: 100%;
-            padding: 16px;
+            padding: 18px;
             color: #fff;
             border: none;
-            border-radius: 12px;
+            border-radius: 14px;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 1.05rem;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
             transition: all 0.2s ease;
         }
         .generate-btn:active {

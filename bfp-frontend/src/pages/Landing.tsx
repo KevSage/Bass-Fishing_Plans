@@ -405,7 +405,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Weather2.png"
+                  src="/images/ProductionScreenshots/chatterbait.png"
                   style={{
                     width: "100%",
                     height: "100%",
@@ -427,12 +427,13 @@ export function Landing() {
                 }}
               >
                 {[
-                  "Daily Weather Outlook focused on bass activity",
-                  "Curated list of target areas based on season and your conditions.",
-                  "Two complementary approaches based on your targets.",
-                  "Soft plastic/trailer, color and gear recommendations based on the approaches.",
-                  "Lure Specific Retrieves that explain how to execute and when to adjust.",
-                  "A Full Day Progression plan that outlines your day from first light, to your last cast. ",
+                  "Daily Weather Outlook",
+                  "Curated list of target areas ",
+                  "Two complementary approaches.",
+                  "Soft plastic/trailer suggestions",
+                  "Gear recommendations",
+                  "Lure Specific Retrieves.",
+                  "A Full Day Progression plan",
                 ].map((item, i) => (
                   <li
                     key={i}
@@ -492,8 +493,7 @@ export function Landing() {
           </h2>
 
           <p style={{ ...leadStyle, marginBottom: "clamp(36px, 7vw, 64px)" }}>
-            Other apps overwhelm with data leaving it up to you to figure out
-            what it all means. You still end up asking the same questions.
+            When everything matters, nothing stands out.
           </p>
 
           <div style={{ ...grid2Col, marginBottom: "clamp(32px, 6vw, 56px)" }}>
@@ -745,9 +745,9 @@ export function Landing() {
             </h1>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              Bass Clarity pulls live weather data directly from your location.
-              We then take that data, analyze and create an actionable strategy
-              for the water you're fishing. <br />
+              Analyzes live weather data directly from your location.
+              {/* We then take that data, analyze and create an actionable strategy
+              for the water you're fishing. <br /> */}
             </p>
 
             <div
@@ -990,7 +990,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Weather2.png"
+                  src="/images/ProductionScreenshots/Weather.png"
                   alt="Weather cards and outlook"
                   style={{
                     width: "102%",
@@ -1084,15 +1084,12 @@ export function Landing() {
                     </li>
                   ))}
                 </ul>
-                <div style={{ height: 18 }} />
 
                 {/* <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
                          Only the Information You Need.
                          <br />
                          No translation required.
                        </p> */}
-
-                <div style={{ height: 18 }} />
 
                 {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                          <Link to="/subscribe" style={primaryCta}>
@@ -1106,628 +1103,6 @@ export function Landing() {
             </div>
           </div>
         </div>
-
-        {/* HOW IT WORKS (Weather Engine) */}
-        <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
-          <div className="container" style={container(1100)}>
-            <h2 style={h2Style}>More Context, When You Need It</h2>
-            <p style={leadStyle}>
-              The goal is simple: keep the important numbers visible, then
-              translate the rest into meaning. Just tap one of the cards for
-              more clarity.
-            </p>
-
-            <div style={{ height: 46 }} />
-            {/* Phone + Quick explainer */}
-            <div
-              style={{
-                ...grid2,
-                marginTop: "clamp(34px, 6vw, 54px)",
-                paddingBottom: "clamp(48px, 7vw, 72px)",
-              }}
-            >
-              {/* Phone mock */}
-              <div
-                style={{
-                  position: "relative",
-                  maxWidth: 420,
-                  margin: "0 auto",
-                }}
-              >
-                {/* Frame */}
-                <img
-                  src="/images/iphone15.png"
-                  alt="Bass Clarity on mobile"
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    position: "relative",
-                    zIndex: 2,
-                    pointerEvents: "none",
-                  }}
-                />
-                {/* Screen */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "3.8%",
-                    left: "6.2%",
-                    width: "87.6%",
-                    height: "92.4%",
-                    borderRadius: "42px",
-                    overflow: "hidden",
-                    zIndex: 1,
-                    background: "rgba(0,0,0,0.25)",
-                  }}
-                >
-                  <img
-                    src="/images/mobile_screenshots/LightData.png"
-                    alt="Weather cards and outlook"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    }}
-                  />
-                  {/* Subtle overlay to keep it calm */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.28) 100%)",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div style={{ height: 22 }} />
-
-            <div
-              style={{
-                ...softCard,
-                padding: "clamp(18px, 3.5vw, 26px)",
-                maxWidth: 980,
-                margin: "0 auto",
-              }}
-            >
-              <div
-                style={{
-                  ...eyebrow,
-                  marginBottom: 10,
-                  color: "rgba(74,144,226,0.95)",
-                }}
-              >
-                Why this stays calm
-              </div>
-              <p style={{ ...pStyle, opacity: 0.86 }}>
-                You’re still seeing what matters — like temperature and wind
-                speed — but the experience stays quiet. The system emphasizes
-                safety when wind is a factor, reduces noise elsewhere, and gives
-                you detail only when you ask for it.
-              </p>
-            </div>
-          </div>
-          <div style={{ height: 72 }} />
-          <div className="container" style={container(1100)}>
-            <div
-              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
-            >
-              <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
-                Technique / Presentation Clarity
-              </div>
-
-              <h1 style={h1Style}>Complementary Approaches.</h1>
-
-              <p style={{ ...leadStyle, maxWidth: 980 }}>
-                {/* Two Complementary Approaches. */}
-                <br />
-                Our Engine synthesizes hundreds of potential variables to
-                determine the two most effective strategies for the day.
-              </p>
-            </div>
-
-            {/* Phone + Quick explainer */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
-                gap: "clamp(22px, 5vw, 54px)",
-                alignItems: "center",
-                marginTop: "clamp(34px, 6vw, 54px)",
-                paddingBottom: "clamp(48px, 7vw, 72px)",
-              }}
-            >
-              {/* Phone mock */}
-              <div
-                style={{
-                  position: "relative",
-                  maxWidth: 420,
-                  margin: "0 auto",
-                }}
-              >
-                <img
-                  src="/images/iphone15.png"
-                  alt="Bass Clarity on mobile"
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    position: "relative",
-                    zIndex: 2,
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "3.8%",
-                    left: "6.9%",
-                    width: "87.6%",
-                    height: "92.4%",
-                    borderRadius: "42px",
-                    overflow: "hidden",
-                    zIndex: 1,
-                    background: "rgba(0,0,0,0.25)",
-                  }}
-                >
-                  <img
-                    src="/images/mobile_screenshots/Primary1.png"
-                    alt="Pattern card (example)"
-                    style={{
-                      width: "100%",
-                      height: "101%",
-                      objectFit: "contain",
-                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Text block */}
-              <div
-                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
-              >
-                <div
-                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
-                >
-                  <div
-                    style={{
-                      ...eyebrow,
-                      marginBottom: 12,
-                      color: "rgba(255,255,255,0.68)",
-                    }}
-                  >
-                    Primary (Pattern 1)
-                  </div>
-
-                  <div style={{ height: 14 }} />
-
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      padding: 0,
-                      margin: 0,
-                      display: "grid",
-                      gap: 14,
-                    }}
-                  >
-                    <Bullet
-                      title="Anchors Your Day"
-                      desc="Based on real angler logic, the primary pattern is meant to serve as the best starting point, based on your current weather, season and conditions"
-                    />
-                    <Bullet
-                      title="Pattern Summary"
-                      desc="Each pattern provides a brief summary of the presentation. We explain why we chose this presentation and why it makes sense for you today in easy to understand language."
-                    />
-                    <Bullet
-                      title="Fish with Confidence"
-                      desc="No Decision Paralysis. Figuring out which presentation best suits your conditions is no longer a struggle."
-                    />
-                  </ul>
-                </div>
-                <div style={{ height: 24 }} />
-              </div>
-            </div>
-            {/* Phone + Quick explainer */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
-                gap: "clamp(22px, 5vw, 54px)",
-                alignItems: "center",
-                marginTop: "clamp(34px, 6vw, 54px)",
-                paddingBottom: "clamp(48px, 7vw, 72px)",
-              }}
-            >
-              {/* Phone mock */}
-              <div
-                style={{
-                  position: "relative",
-                  maxWidth: 420,
-                  margin: "0 auto",
-                }}
-              >
-                <img
-                  src="/images/iphone15.png"
-                  alt="Bass Clarity on mobile"
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    position: "relative",
-                    zIndex: 2,
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "3.8%",
-                    left: "6.9%",
-                    width: "87.6%",
-                    height: "92.4%",
-                    borderRadius: "42px",
-                    overflow: "hidden",
-                    zIndex: 1,
-                    background: "rgba(0,0,0,0.25)",
-                  }}
-                >
-                  <img
-                    src="/images/mobile_screenshots/Pivot1.png"
-                    alt="Pattern card (example)"
-                    style={{
-                      width: "100%",
-                      height: "101%",
-                      objectFit: "contain",
-                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Text block */}
-              <div
-                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
-              >
-                <div
-                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
-                >
-                  <div
-                    style={{
-                      ...eyebrow,
-                      marginBottom: 12,
-                      color: "rgba(255,255,255,0.68)",
-                    }}
-                  >
-                    Pivot (Pattern 2)
-                  </div>
-
-                  <div style={{ height: 14 }} />
-
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      padding: 0,
-                      margin: 0,
-                      display: "grid",
-                      gap: 14,
-                    }}
-                  >
-                    <Bullet
-                      title="A Powerful Alternate "
-                      desc="A strategic complement to the primary pattern that serves as either a pivot or as a tandem search and pick apart combination, as used by the pros."
-                    />
-                    <Bullet
-                      title="The Pivot"
-                      desc="When bass are less active, Bass Clarity utilizes Pattern 2 as a strategic pivot that targets bass in a different water column."
-                    />
-                    <Bullet
-                      title="Search and Destroy"
-                      desc="If your primary pattern is a Search Bait/Surface Ambush (chatterbait, shallow crank, whopper plopper etc), pattern 2 will often serve as the followup. "
-                    />
-                    <Bullet
-                      title="What You'll Notice (Real Intelligence)"
-                      desc="Not only does it reference your conditions, but it also references the primary pattern and explains in plain language its role and relation to the first."
-                    />
-                  </ul>
-
-                  <div style={{ height: 18 }} />
-                </div>
-              </div>
-            </div>
-            {/* Phone + Quick explainer */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))",
-                gap: "clamp(22px, 5vw, 54px)",
-                alignItems: "center",
-                marginTop: "clamp(34px, 6vw, 54px)",
-                paddingBottom: "clamp(48px, 7vw, 72px)",
-              }}
-            >
-              {/* Phone mock */}
-              <div
-                style={{
-                  position: "relative",
-                  maxWidth: 420,
-                  margin: "0 auto",
-                }}
-              >
-                <img
-                  src="/images/iphone15.png"
-                  alt="Bass Clarity on mobile"
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    position: "relative",
-                    zIndex: 2,
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "3.8%",
-                    left: "6.9%",
-                    width: "87.6%",
-                    height: "92.4%",
-                    borderRadius: "42px",
-                    overflow: "hidden",
-                    zIndex: 1,
-                    background: "rgba(0,0,0,0.25)",
-                  }}
-                >
-                  <img
-                    src="/images/mobile_screenshots/WhyThisWorks1.png"
-                    alt="Pattern card (example)"
-                    style={{
-                      width: "100%",
-                      height: "101%",
-                      objectFit: "contain",
-                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.30) 100%)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Text block */}
-              <div
-                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
-              >
-                <div
-                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
-                >
-                  <div
-                    style={{
-                      ...eyebrow,
-                      marginBottom: 12,
-                      color: "rgba(255,255,255,0.68)",
-                    }}
-                  >
-                    Expert Tuning
-                  </div>
-
-                  <div style={{ height: 14 }} />
-
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      padding: 0,
-                      margin: 0,
-                      display: "grid",
-                      gap: 14,
-                    }}
-                  >
-                    <Bullet
-                      title="Soft Plastic/Trailer Guidance"
-                      desc="We also give you specific soft bait advice. Plastic recommendations based on forage, profile and season."
-                    />
-                    <Bullet
-                      title="Color Suggestions"
-                      desc="We don't just leave it at lure suggestion, we also tell you which colors make sense. Color tuneing based on water clarity and light penetration."
-                    />
-                    <Bullet
-                      title="Gear Recommendations"
-                      desc="Gear recommendation optimized for each approach, includes Rod/Reel/Line recommendations"
-                    />
-                  </ul>
-
-                  <div style={{ height: 18 }} />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style={{ height: 36 }} />
-
-          <div className="container" style={container(1100)}>
-            <div
-              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
-            >
-              <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
-                Strategic Clarity
-              </div>
-
-              <h2 style={h2Style}>Fish With Intention.</h2>
-
-              <p style={{ ...leadStyle, maxWidth: 980 }}>
-                Know exactly what to do, and why you're doing it. No datapoints,
-                charts, or graphs.
-              </p>
-            </div>
-
-            {/* Phone + Quick explainer */}
-            <div
-              style={{
-                ...grid2,
-                marginTop: "clamp(34px, 6vw, 54px)",
-                paddingBottom: "clamp(48px, 7vw, 72px)",
-              }}
-            >
-              {/* Phone mock */}
-              <div
-                style={{
-                  position: "relative",
-                  maxWidth: 420,
-                  margin: "0 auto",
-                }}
-              >
-                {/* Frame */}
-                <img
-                  src="/images/iphone15.png"
-                  alt="Bass Clarity on mobile"
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    position: "relative",
-                    zIndex: 2,
-                    pointerEvents: "none",
-                  }}
-                />
-                {/* Screen */}
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "3.8%",
-                    left: "6.2%",
-                    width: "90.6%",
-                    height: "92.4%",
-                    borderRadius: "42px",
-                    overflow: "hidden",
-                    zIndex: 1,
-                    background: "rgba(0,0,0,0.25)",
-                  }}
-                >
-                  <img
-                    src="/images/mobile_screenshots/WTW2.png"
-                    alt="Strategy cards and progression"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    }}
-                  />
-                  {/* Subtle overlay to keep it calm */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      background:
-                        "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.28) 100%)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Text block */}
-              <div
-                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
-              >
-                <div
-                  style={{
-                    ...softCard,
-                    padding: "clamp(18px, 3.5vw, 28px)",
-                  }}
-                >
-                  <div
-                    style={{
-                      ...eyebrow,
-                      marginBottom: 12,
-                      color: "rgba(255,255,255,0.68)",
-                    }}
-                  >
-                    Sound Reasoning. None of the Noise.
-                  </div>
-
-                  <div style={{ height: 14 }} />
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      padding: 0,
-                      margin: 0,
-                      display: "grid",
-                      gap: 14,
-                    }}
-                  >
-                    {[
-                      {
-                        title: "Why This Works",
-                        desc: "Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning.",
-                      },
-                      {
-                        title: "Strategy",
-                        desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
-                      },
-                      {
-                        title: "Retrieve Guidance",
-                        desc: "More than 130+ lure specific retrieves that adjusts for targets and conditions",
-                      },
-                      {
-                        title: "Full Day Progression",
-                        desc: "A coherent plan arc without constant second-guessing.",
-                      },
-                    ].map((x, i) => (
-                      <li
-                        key={i}
-                        style={{
-                          display: "flex",
-                          gap: 12,
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 999,
-                            marginTop: 8,
-                            background: "rgba(74,144,226,0.95)",
-                            boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
-                            flexShrink: 0,
-                          }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 720, opacity: 0.92 }}>
-                            {x.title}
-                          </div>
-                          <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                            {x.desc}
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Responsive styling */}
         <style>{`
@@ -1757,108 +1132,7 @@ export function Landing() {
       </section>
 
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
-        <div className="container" style={container(1100)}>
-          <h2 style={h2Style}>More Context, When You Need It</h2>
-          <p style={leadStyle}>
-            The goal is simple: keep the important numbers visible, then
-            translate the rest into meaning. Just tap one of the cards for more
-            clarity.
-          </p>
-
-          <div style={{ height: 46 }} />
-          {/* Phone + Quick explainer */}
-          <div
-            style={{
-              ...grid2,
-              marginTop: "clamp(34px, 6vw, 54px)",
-              paddingBottom: "clamp(48px, 7vw, 72px)",
-            }}
-          >
-            {/* Phone mock */}
-            <div
-              style={{
-                position: "relative",
-                maxWidth: 420,
-                margin: "0 auto",
-              }}
-            >
-              {/* Frame */}
-              <img
-                src="/images/iphone15.png"
-                alt="Bass Clarity on mobile"
-                style={{
-                  width: "100%",
-                  display: "block",
-                  position: "relative",
-                  zIndex: 2,
-                  pointerEvents: "none",
-                }}
-              />
-              {/* Screen */}
-              <div
-                style={{
-                  position: "absolute",
-                  top: "3.8%",
-                  left: "6.2%",
-                  width: "87.6%",
-                  height: "92.4%",
-                  borderRadius: "42px",
-                  overflow: "hidden",
-                  zIndex: 1,
-                  background: "rgba(0,0,0,0.25)",
-                }}
-              >
-                <img
-                  src="/images/mobile_screenshots/LightData.png"
-                  alt="Weather cards and outlook"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                    filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                  }}
-                />
-                {/* Subtle overlay to keep it calm */}
-                <div
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background:
-                      "linear-gradient(to bottom, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.28) 100%)",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div style={{ height: 22 }} />
-
-          <div
-            style={{
-              ...softCard,
-              padding: "clamp(18px, 3.5vw, 26px)",
-              maxWidth: 980,
-              margin: "0 auto",
-            }}
-          >
-            <div
-              style={{
-                ...eyebrow,
-                marginBottom: 10,
-                color: "rgba(74,144,226,0.95)",
-              }}
-            >
-              Why this stays calm
-            </div>
-            <p style={{ ...pStyle, opacity: 0.86 }}>
-              You’re still seeing what matters — like temperature and wind speed
-              — but the experience stays quiet. The system emphasizes safety
-              when wind is a factor, reduces noise elsewhere, and gives you
-              detail only when you ask for it.
-            </p>
-          </div>
-        </div>
-        <div style={{ height: 72 }} />
+        {/* <div style={{ height: 36 }} /> */}
         <div className="container" style={container(1100)}>
           <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
             <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
@@ -1866,13 +1140,6 @@ export function Landing() {
             </div>
 
             <h1 style={h1Style}>Complementary Approaches.</h1>
-
-            <p style={{ ...leadStyle, maxWidth: 980 }}>
-              {/* Two Complementary Approaches. */}
-              <br />
-              Our Engine synthesizes hundreds of potential variables to
-              determine the two most effective strategies for the day.
-            </p>
           </div>
 
           {/* Phone + Quick explainer */}
@@ -1965,11 +1232,11 @@ export function Landing() {
                 >
                   <Bullet
                     title="Anchors Your Day"
-                    desc="Based on real angler logic, the primary pattern is meant to serve as the best starting point, based on your current weather, season and conditions"
+                    desc="Meant to serve as the best starting point, based on your current weather, season and conditions"
                   />
                   <Bullet
                     title="Pattern Summary"
-                    desc="Each pattern provides a brief summary of the presentation. We explain why we chose this presentation and why it makes sense for you today in easy to understand language."
+                    desc="We explain why we chose this presentation and why it makes sense."
                   />
                   <Bullet
                     title="Fish with Confidence"
@@ -2024,7 +1291,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Pivot1.png"
+                  src="/images/ProductionScreenshots/pivot.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -2070,19 +1337,19 @@ export function Landing() {
                 >
                   <Bullet
                     title="A Powerful Alternate "
-                    desc="A stretegic complement to the primary pattern that serves as either a pivot or as a tandem search and pick apart combination, as used by the pros."
+                    desc="A stretegic complement to the primary pattern."
                   />
                   <Bullet
                     title="The Pivot"
-                    desc="When bass are less active, Bass Clarity utilizes Pattern 2 as a strategic pivot that targets bass in a different water column."
+                    desc="When bass are less active Pattern 2 targets bass in a different water column."
                   />
                   <Bullet
                     title="Search and Destroy"
-                    desc="If your primary pattern is a Search Bait/Surface Ambush (chatterbait, shallow crank, whopper plopper etc), pattern 2 will often serve as the followup. "
+                    desc="If your primary pattern is a Search Bait pattern 2 will often serve as the followup. "
                   />
                   <Bullet
                     title="What You'll Notice (Real Intelligence)"
-                    desc="Not only does it reference your conditions, but it also references the primary pattern and explains in plain language its role and relation to the first."
+                    desc="References the primary pattern and explains in plain language its role and relation to the first."
                   />
                 </ul>
 
@@ -2134,7 +1401,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/WhyThisWorks1.png"
+                  src="/images/ProductionScreenshots/Why.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -2180,11 +1447,11 @@ export function Landing() {
                 >
                   <Bullet
                     title="Soft Plastic/Trailer Guidance"
-                    desc="We also give you specific soft bait advice. Plastic recommendations based on forage, profile and season."
+                    desc="Plastic recommendations based on forage, profile and season."
                   />
                   <Bullet
                     title="Color Suggestions"
-                    desc="We don't just leave it at lure suggestion, we also tell you which colors make sense. Color tuneing based on water clarity and light penetration."
+                    desc="Color tuneing based on water clarity and light penetration."
                   />
                   <Bullet
                     title="Gear Recommendations"
@@ -2208,8 +1475,8 @@ export function Landing() {
             <h2 style={h2Style}>Fish With Intention.</h2>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
-              Know exactly what to do, and why you're doing it. No datapoints,
-              charts, or graphs.
+              Make Every Cast Deliberate. Know exactly what to do, and why
+              you're doing it.
             </p>
           </div>
 
@@ -2246,7 +1513,7 @@ export function Landing() {
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "6.2%",
+                  left: "5%",
                   width: "90.6%",
                   height: "92.4%",
                   borderRadius: "42px",
@@ -2256,7 +1523,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/WTW2.png"
+                  src="/images/ProductionScreenshots/Why.png"
                   alt="Strategy cards and progression"
                   style={{
                     width: "100%",
@@ -2308,7 +1575,7 @@ export function Landing() {
                   {[
                     {
                       title: "Why This Works",
-                      desc: "Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning.",
+                      desc: "Nothing left to intrepret, just sound reasoning.",
                     },
                     {
                       title: "Strategy",
@@ -2359,177 +1626,14 @@ export function Landing() {
         </div>
       </section>
       {/* HOW IT WORKS (Strategy Engine) */}
-      <div className="container" style={container(1100)}>
+      {/* <div className="container" style={container(1100)}>
         <h2 style={h2Style}> Make Every Cast Deliberate.</h2>
         <p style={leadStyle}>
           Complete strategy including target areas, retrieves specific to your
           lure
         </p>
-      </div>
-      <div style={{ height: 46 }} />
-
-      <div className="container" style={container(1200)}>
-        {/* Mobile: phone first, then 2x2 cards */}
-        {/* Desktop: 2x2 cards left, phone right */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr",
-            gap: "clamp(32px, 6vw, 64px)",
-            alignItems: "center",
-          }}
-          className="strategy-layout"
-        >
-          {/* Phone Mock - first on mobile, second on desktop */}
-          <div
-            style={{
-              position: "relative",
-              maxWidth: 420,
-              margin: "0 auto",
-              justifySelf: "center",
-            }}
-            className="strategy-phone"
-          >
-            <img
-              src="/images/iphone15.png"
-              alt="Bass Clarity strategy view"
-              style={{
-                width: "100%",
-                display: "block",
-                position: "relative",
-                zIndex: 2,
-                pointerEvents: "none",
-              }}
-            />
-            <img
-              src="/images/mobile_screenshots/Targets1.png"
-              alt="Strategy cards interface"
-              style={{
-                position: "absolute",
-                top: "4%",
-                left: "6.2%",
-                width: "87.6%",
-                height: "92.8%",
-                borderRadius: "clamp(24px, 4vw, 40px)",
-                objectFit: "contain",
-                zIndex: 1,
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                inset: "-15%",
-                background:
-                  "radial-gradient(circle, rgba(74, 144, 226, 0.14) 0%, transparent 70%)",
-                filter: "blur(60px)",
-                zIndex: 0,
-                pointerEvents: "none",
-              }}
-            />
-          </div>
-          <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
-            <div
-              style={{
-                ...softCard,
-                padding: "clamp(18px, 3.5vw, 28px)",
-              }}
-            >
-              <div
-                style={{
-                  ...eyebrow,
-                  marginBottom: 12,
-                  color: "rgba(255,255,255,0.68)",
-                }}
-              >
-                Clarity leads to Confidence.
-              </div>
-
-              <div style={{ height: 14 }} />
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: 0,
-                  display: "grid",
-                  gap: 14,
-                }}
-              >
-                {[
-                  {
-                    title: "Where To Start",
-                    desc: "Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning.",
-                  },
-                  {
-                    title: "What to Expect",
-                    desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
-                  },
-                  {
-                    title: "Transitions and Adjustments",
-                    desc: "More than 130+ lure specific retrieves that adjusts for targets and conditions",
-                  },
-                ].map((x, i) => (
-                  <li
-                    key={i}
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 999,
-                        marginTop: 8,
-                        background: "rgba(74,144,226,0.95)",
-                        boxShadow: "0 6px 18px rgba(74,144,226,0.22)",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 720, opacity: 0.92 }}>
-                        {x.title}
-                      </div>
-                      <div style={{ opacity: 0.78, lineHeight: 1.7 }}>
-                        {x.desc}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ height: 48 }} />
-
-        {/* "Why this stays calm" section */}
-        <div
-          style={{
-            ...softCard,
-            padding: "clamp(28px, 4.5vw, 38px)",
-            maxWidth: 980,
-            margin: "0 auto",
-          }}
-        >
-          <div
-            style={{
-              ...eyebrow,
-              marginBottom: 16,
-              color: "rgba(74,144,226,0.95)",
-            }}
-          >
-            Why this stays calm
-          </div>
-          <p style={{ ...pStyle, opacity: 0.86, marginTop: 0 }}>
-            Strategic Clarity is designed to prevent option overload. The plan
-            narrows down to a few decisions.
-          </p>
-        </div>
-      </div>
-
-      <div style={{ height: 48 }} />
+      </div> */}
+      {/* <div style={{ height: 24 }} /> */}
 
       <div className="container" style={container(1100)}>
         <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
@@ -2584,7 +1688,7 @@ export function Landing() {
               }}
             >
               <img
-                src="/images/mobile_screenshots/DayProgression.png"
+                src="/images/ProductionScreenshots/DayProgression.png"
                 alt="Strategy' cards and progression"
                 style={{
                   width: "102%",

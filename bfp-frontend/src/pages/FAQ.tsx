@@ -1,7 +1,3 @@
-// src/components/FAQ.tsx
-// Updated: "Stealth Luxury" Design.
-// Fixes: Removed blocky cards, reduced font sizes, added elegant hairline dividers.
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -12,62 +8,53 @@ export function FAQ() {
     {
       question: "How does Bass Clarity work?",
       answer:
-        "Bass Clarity analyzes current weather, seasonal phase, and regional patterns to generate a complete fishing strategy. You select your lake, we analyze conditions, and deliver a plan with specific lures, retrieves, targets, and reasoning—all in about 30 seconds.",
+        "Bass Clarity interprets current conditions — weather, seasonal phase, and location — and translates them into a clear fishing plan. Each plan includes patterns, targets, retrieves, and short explanations that show why the decisions fit the moment.",
     },
     {
-      question: "How many lakes are in your database?",
+      question:
+        "Is Bass Clarity an educational tool or a recommendation engine?",
       answer:
-        "1000+ lakes across all 50 states. If your lake isn't in the database, you can select any water body from our interactive map. Same clarity, any water.",
+        "Both. Bass Clarity provides clear recommendations, but always explains the reasoning behind them. Over time, anglers learn how conditions influence decisions, not just what to throw on a given day.",
     },
     {
-      question: "Can I use Bass Clarity for tournament fishing?",
+      question: "How many lakes are supported?",
       answer:
-        "Absolutely. Bass Clarity was built for strategic discipline under pressure. Members get two complementary approaches, matched gear, and day progression—perfect for tournament scenarios where you need systematic clarity, not scattered tips.",
+        "Bass Clarity includes over 1,000 mapped lakes across the U.S. If your water isn’t listed, you can generate a plan for any lake, reservoir, or pond directly from the interactive map.",
     },
     {
-      question: "What if conditions change while I'm fishing?",
+      question: "What if conditions change while I’m fishing?",
       answer:
-        "Members can generate a new plan right from the water. Wind picks up? Clouds roll in? Water gets choppy? Check if conditions warrant a different approach. Clarity when you need it most.",
+        "Plans can be regenerated on the water when conditions shift. If wind, cloud cover, or light changes meaningfully, Bass Clarity can re-evaluate and suggest an updated approach.",
     },
     {
-      question: "How accurate is the seasonal data?",
+      question: "How accurate is the seasonal logic?",
       answer:
-        "Our seasonal logic accounts for regional variation. Late-fall in Texas is different from late-fall in Michigan. We don't use one-size-fits-all calendar dates—your plan adapts to your region and current phase.",
-    },
-    {
-      question: "Can I save my plans?",
-      answer:
-        "Yes. You can view the 10 most recent plans you've generated for reference, directly from your account page.",
-    },
-    {
-      question: "What if I fish small ponds or private lakes?",
-      answer:
-        "No problem. Use our interactive map to click any water body. Bass Clarity works for tournament reservoirs, neighborhood ponds, and everything in between.",
+        "Seasonal behavior is region-specific. Bass Clarity accounts for latitude and local climate rather than fixed calendar dates, allowing plans to reflect how fish actually behave in your area.",
     },
     {
       question: "How do I know which pattern to start with?",
       answer:
-        "Pattern 1 (primary) and Pattern 2 (complementary pivot). Start with Pattern 1. If it slows or conditions change, switch to Pattern 2. They're designed to work together, not compete.",
+        "Each plan includes a Primary pattern and a complementary Pivot pattern. Start with the Primary. If activity slows or conditions shift, the Pivot provides a natural adjustment rather than a competing idea.",
     },
     {
-      question: "What kind of gear specs do members get?",
+      question: "What kind of gear recommendations are included?",
       answer:
-        "Rod power and action, reel gear ratio, and line type/weight—all matched to how you're fishing it. Bottom contact gets heavy gear. Finesse gets lighter touch. Deliberate, not random.",
+        "Each pattern includes rod power and action, reel gear ratio, and line type matched to the technique and presentation. Gear is selected to support execution, not to showcase variety.",
     },
     {
-      question: "Can I cancel anytime?",
+      question: "Can I save or revisit past plans?",
       answer:
-        "Yes. Cancel your $10/month membership anytime. No contracts, no hassle.",
+        "Yes. Your most recent plans are saved automatically and can be reviewed from your account page for reference and learning.",
     },
     {
-      question: "What if my lake isn't in the database?",
+      question: "Does Bass Clarity work for ponds and small lakes?",
       answer:
-        "Contact us. We're constantly expanding our database and want to know which lakes matter to you.",
+        "Yes. Bass Clarity is designed to work on any water body — from large reservoirs to neighborhood ponds — as long as conditions and location can be identified.",
     },
     {
-      question: "How is this different from other fishing apps?",
+      question: "Can I cancel my subscription?",
       answer:
-        "Most apps dump data and leave you guessing. Bass Clarity cuts through the noise with clear strategy: what to throw, how to fish it, why it works. We don't just show weather—we analyze how it affects the water below. We don't just list lures—we match them to conditions with specific retrieves for each target type. Everything connects. That's clarity.",
+        "Yes. You can cancel at any time from your account settings. There are no contracts or long-term commitments.",
     },
   ];
 
@@ -82,7 +69,7 @@ export function FAQ() {
         alignItems: "center",
       }}
     >
-      {/* --- HERO SECTION --- */}
+      {/* HERO */}
       <section
         style={{
           padding: "100px 24px 60px",
@@ -92,7 +79,7 @@ export function FAQ() {
       >
         <h1
           style={{
-            fontSize: "clamp(2rem, 4vw, 2.5rem)", // Much smaller, sharper
+            fontSize: "clamp(2rem, 4vw, 2.5rem)",
             fontWeight: 700,
             marginBottom: 16,
             letterSpacing: "-0.02em",
@@ -106,15 +93,15 @@ export function FAQ() {
         <p
           style={{
             fontSize: "1.05rem",
-            color: "rgba(255, 255, 255, 0.6)",
+            color: "rgba(255,255,255,0.6)",
             lineHeight: 1.6,
           }}
         >
-          Everything you need to know about how Bass Clarity works.
+          Clear answers about how Bass Clarity thinks and what it provides.
         </p>
       </section>
 
-      {/* --- FAQ LIST --- */}
+      {/* FAQ LIST */}
       <section
         style={{ width: "100%", maxWidth: 800, padding: "0 24px 100px" }}
       >
@@ -123,15 +110,14 @@ export function FAQ() {
             <div
               key={index}
               style={{
-                borderBottom: "1px solid rgba(255,255,255,0.08)", // Hairline divider
-                transition: "background 0.2s",
+                borderBottom: "1px solid rgba(255,255,255,0.08)",
               }}
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
                 style={{
                   width: "100%",
-                  padding: "24px 0", // Vertical padding only
+                  padding: "24px 0",
                   background: "transparent",
                   border: "none",
                   color: "#fff",
@@ -145,18 +131,15 @@ export function FAQ() {
               >
                 <span
                   style={{
-                    fontSize: "1rem", // Sleek size
+                    fontSize: "1rem",
                     fontWeight: 500,
                     lineHeight: 1.4,
-                    letterSpacing: "0.01em",
-                    opacity: openIndex === index ? 1 : 0.8,
-                    transition: "opacity 0.2s",
+                    opacity: openIndex === index ? 1 : 0.85,
                   }}
                 >
                   {faq.question}
                 </span>
 
-                {/* Modern Plus/Minus Icon */}
                 <div
                   style={{
                     position: "relative",
@@ -167,7 +150,6 @@ export function FAQ() {
                     flexShrink: 0,
                   }}
                 >
-                  {/* Horizontal Line */}
                   <div
                     style={{
                       position: "absolute",
@@ -179,7 +161,6 @@ export function FAQ() {
                       transform: "translateY(-50%)",
                     }}
                   />
-                  {/* Vertical Line (Rotates) */}
                   <div
                     style={{
                       position: "absolute",
@@ -188,14 +169,13 @@ export function FAQ() {
                       width: 2,
                       height: "100%",
                       background: "currentColor",
-                      // transform: "translateX(-50%)",
-                      transition: "transform 0.3s ease",
                       transformOrigin: "center",
                       transform:
                         openIndex === index
                           ? "translateX(-50%) rotate(90deg)"
                           : "translateX(-50%) rotate(0deg)",
-                      opacity: openIndex === index ? 0 : 1, // Fade out vertical line to make minus
+                      opacity: openIndex === index ? 0 : 1,
+                      transition: "transform 0.3s ease",
                     }}
                   />
                 </div>
@@ -207,9 +187,8 @@ export function FAQ() {
                     paddingBottom: 24,
                     fontSize: "0.95rem",
                     lineHeight: 1.7,
-                    color: "rgba(255, 255, 255, 0.6)",
+                    color: "rgba(255,255,255,0.6)",
                     maxWidth: "95%",
-                    animation: "fadeIn 0.3s ease",
                   }}
                 >
                   {faq.answer}
@@ -220,7 +199,7 @@ export function FAQ() {
         </div>
       </section>
 
-      {/* --- CTA SECTION --- */}
+      {/* CTA */}
       <section
         style={{
           padding: "0 24px 120px",
@@ -230,67 +209,43 @@ export function FAQ() {
       >
         <h2
           style={{
-            fontSize: "1.75rem",
+            fontSize: "1.6rem",
             fontWeight: 700,
             marginBottom: 16,
             letterSpacing: "-0.02em",
           }}
         >
-          Still have questions?
+          Ready to see it in action?
         </h2>
         <p
           style={{
             fontSize: "1rem",
-            color: "rgba(255, 255, 255, 0.6)",
+            color: "rgba(255,255,255,0.6)",
             marginBottom: 32,
             lineHeight: 1.6,
           }}
         >
-          The best way to understand Bass Clarity is to see it in action.
+          The best way to understand Bass Clarity is to use it on your water.
         </p>
 
         <Link
           to="/subscribe"
-          className="btn primary"
           style={{
             fontSize: "1rem",
-            padding: "16px 40px", // Sleeker pill shape
+            padding: "16px 40px",
             background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-            borderRadius: 100, // Full rounded
+            borderRadius: 100,
             fontWeight: 600,
             letterSpacing: "0.01em",
             display: "inline-block",
-            marginBottom: 24,
             textDecoration: "none",
-            boxShadow: "0 10px 30px rgba(37, 99, 235, 0.25)", // Soft glow
-            transition: "transform 0.2s, box-shadow 0.2s",
+            color: "#fff",
+            boxShadow: "0 10px 30px rgba(37, 99, 235, 0.25)",
           }}
         >
-          Start 5-Day Free Trial
+          Start Your Free Trial
         </Link>
-
-        <div>
-          <a
-            href="mailto:support@bassclarity.com"
-            style={{
-              color: "rgba(255, 255, 255, 0.4)",
-              textDecoration: "none",
-              fontSize: "0.9rem",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-              paddingBottom: 2,
-            }}
-          >
-            Contact Support
-          </a>
-        </div>
       </section>
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-5px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }
