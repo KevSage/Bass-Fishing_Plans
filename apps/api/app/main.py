@@ -361,32 +361,53 @@ async def billing_portal(authorization: Optional[str] = Header(None)):
 async def stripe_webhook(request: Request):
     payload = await request.body()
     sig = request.headers.get("stripe-signature")
+    
     try:
         event = verify_webhook_and_parse_event(payload=payload, stripe_signature=sig)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Webhook verification failed: {e}")
     
-    # ✅ AUTOMATION FIX: Listen for manual dashboard creations and updates
-    type = event.get("type")
-    if type in ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated"]:
+    # event_type is pulled from the Stripe event object
+    event_type = event.get("type")
+    
+    # Supported events now include manual dashboard changes and updates
+    supported_events = [
+        "checkout.session.completed", 
+        "customer.subscription.created", 
+        "customer.subscription.updated",
+        "customer.subscription.deleted"
+    ]
+    
+    if event_type in supported_events:
         update = extract_subscription_state(event)
         if update:
             email, active, customer_id, subscription_id = update
+            
+            # 1. Update the member's active status in Postgres
             subs.upsert_active(
                 email=email,
                 active=active,
                 stripe_customer_id=customer_id,
                 stripe_subscription_id=subscription_id,
             )
-            # Send welcome email for new subscriptions
-            if active and type in ["checkout.session.completed", "customer.subscription.created"]:
+            
+            # 2. ✅ LOG THE EVENT: For real-time monitoring and database auditing
+            print(f"[Webhook Received] {event_type} | User: {email} | Active: {active}")
+            subs.log_webhook(
+                event_type=event_type,
+                email=email,
+                active=active,
+                event_id=event["id"]
+            )
+            
+            # 3. Send welcome email only for new activations
+            if active and event_type in ["checkout.session.completed", "customer.subscription.created"]:
                 try:
                     send_welcome_email(email)
                 except Exception as e:
                     print(f"Welcome email failed for {email}: {e}")
     
     return {"ok": True}
-
 # ========================================
 # HEALTH CHECK & ROOT
 # ========================================
