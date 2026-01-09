@@ -77,7 +77,10 @@ export function PlanHistory() {
   };
 
   const copyPlanLink = (plan: Plan) => {
-    const url = `${window.location.origin}${plan.plan_url}`;
+    const token =
+      plan.plan_url.split("token=").pop() || plan.plan_url.split("/").pop();
+    const url = `${window.location.origin}/plan/view/${token}`;
+    // const url = `${window.location.origin}${plan.plan_url}`;
     navigator.clipboard.writeText(url);
 
     const toast = document.createElement("div");
