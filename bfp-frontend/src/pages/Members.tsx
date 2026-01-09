@@ -386,7 +386,7 @@ export function Members() {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
-            paddingTop: "100px", // Push below navbar
+            paddingTop: "120px", // Push below navbar
             textAlign: "center",
             color: "#fff",
           }}
