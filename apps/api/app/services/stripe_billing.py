@@ -88,23 +88,46 @@ def verify_webhook_and_parse_event(
     return event
 # apps/api/app/services/stripe_billing.py
 
-def extract_subscription_state(event: Dict[str, Any]):
-    # ... existing code ...
-    if etype in ("customer.subscription.created", "customer.subscription.updated"):
-        obj = event.get("data", {}).get("object", {})
+def extract_subscription_state(event: Dict[str, Any]) -> Optional[Tuple[str, bool, str, str]]:
+    """
+    Extracts (email, active_status, customer_id, subscription_id) from Stripe events.
+    Handles both Checkout sessions and direct Subscription updates.
+    """
+    # ✅ FIX 1: Define etype from the event object
+    etype = event.get("type")
+    obj = event.get("data", {}).get("object", {})
+
+    # Case A: User signs up via the website (Checkout)
+    if etype == "checkout.session.completed":
+        email = obj.get("customer_email") or (obj.get("metadata") or {}).get("email")
         customer_id = obj.get("customer")
+        subscription_id = obj.get("subscription")
         
-        # Try metadata first
-        email = (obj.get("metadata", {}) or {}).get("email")
+        if email and customer_id and subscription_id:
+            # Checkout completion implies active/trialing status
+            return (email.lower().strip(), True, customer_id, subscription_id)
+
+    # Case B: Manual Dashboard additions or status changes (Subscription)
+    elif etype in ("customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"):
+        customer_id = obj.get("customer")
+        subscription_id = obj.get("id")
         
-        # FALLBACK: If metadata is empty (as seen in your event JSON)
+        # Try metadata first (set in create_checkout_session)
+        email = (obj.get("metadata") or {}).get("email")
+        
+        # ✅ FIX 2: Fallback for manual Dashboard entries where metadata is missing
         if not email and customer_id:
-            import stripe
-            customer = stripe.Customer.retrieve(customer_id)
-            email = getattr(customer, 'email', None)
+            try:
+                # We already have 'import stripe' at the top of stripe_billing.py
+                customer = stripe.Customer.retrieve(customer_id)
+                email = getattr(customer, "email", None)
+            except Exception as e:
+                print(f"Stripe retrieval failed for {customer_id}: {e}")
+                return None
             
         if email:
             status = (obj.get("status") or "").lower()
             active = status in ("active", "trialing")
-            return (email.lower().strip(), active, customer_id, obj.get("id"))
+            return (email.lower().strip(), active, customer_id, subscription_id)
+
     return None

@@ -6,6 +6,7 @@ Unified plan generation with LLM, rate limiting, and plan history.
 from __future__ import annotations
 
 import os
+import stripe
 from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, Optional
 
@@ -19,7 +20,8 @@ ENV_PATH = BASE_DIR / ".env"
 
 # Load .env from the correct location
 load_dotenv(dotenv_path=ENV_PATH)
-
+from app.services.subscribers import SubscriberStore
+from app.services.stripe_billing import init_stripe
 from fastapi import FastAPI, HTTPException, Request, Response, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
@@ -85,6 +87,43 @@ app.add_middleware(
 # Environment
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
+
+
+async def sync_members_from_stripe():
+    """
+    Scans Stripe for active/trialing subscriptions and syncs them to Postgres.
+    """
+    print("[Startup] Starting Stripe-to-DB member sync...")
+    init_stripe()
+    store = SubscriberStore()
+    
+    try:
+        # Fetch all active/trialing subscriptions
+        subscriptions = stripe.Subscription.list(status="active", limit=100)
+        # Also include trialing
+        trialing = stripe.Subscription.list(status="trialing", limit=100)
+        
+        all_subs = list(subscriptions.auto_paging_iter()) + list(trialing.auto_paging_iter())
+        
+        count = 0
+        for sub in all_subs:
+            customer_id = sub.get("customer")
+            # We need the email, which isn't always in the sub object
+            customer = stripe.Customer.retrieve(customer_id)
+            email = getattr(customer, "email", None)
+
+            if email:
+                store.upsert_active(
+                    email=email.lower().strip(),
+                    active=True,
+                    stripe_customer_id=customer_id,
+                    stripe_subscription_id=sub.get("id")
+                )
+                count += 1
+        print(f"[Startup] Sync complete. Verified {count} active members.")
+    except Exception as e:
+        print(f"[Startup] Sync failed: {e}")
+
 # ========================================
 # VARIETY SYSTEM HELPER
 # ========================================
@@ -143,6 +182,15 @@ class PlanGenerateRequest(BaseModel):
 class SubscribeRequest(BaseModel):
     email: EmailStr
 
+
+
+# ========================================
+# SYNC STRIPE MEMBERS
+# ========================================
+@app.on_event("startup")
+async def startup_event():
+    # This runs every time Render deploys or restarts your API
+    await sync_members_from_stripe()
 # ========================================
 # PLAN GENERATION (UNIFIED ENDPOINT)
 # ========================================
@@ -307,6 +355,8 @@ async def billing_portal(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=500, detail=f"Portal error: {e}")
     return {"portal_url": portal_url}
 
+# apps/api/app/main.py
+
 @app.post("/webhooks/stripe")
 async def stripe_webhook(request: Request):
     payload = await request.body()
@@ -316,20 +366,25 @@ async def stripe_webhook(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Webhook verification failed: {e}")
     
-    update = extract_subscription_state(event)
-    if update:
-        email, active, customer_id, subscription_id = update
-        subs.upsert_active(
-            email=email,
-            active=active,
-            stripe_customer_id=customer_id,
-            stripe_subscription_id=subscription_id,
-        )
-        if active and event.get("type") == "checkout.session.completed":
-            try:
-                send_welcome_email(email)
-            except Exception as e:
-                print(f"Welcome email failed for {email}: {e}")
+    # ✅ AUTOMATION FIX: Listen for manual dashboard creations and updates
+    type = event.get("type")
+    if type in ["checkout.session.completed", "customer.subscription.created", "customer.subscription.updated"]:
+        update = extract_subscription_state(event)
+        if update:
+            email, active, customer_id, subscription_id = update
+            subs.upsert_active(
+                email=email,
+                active=active,
+                stripe_customer_id=customer_id,
+                stripe_subscription_id=subscription_id,
+            )
+            # Send welcome email for new subscriptions
+            if active and type in ["checkout.session.completed", "customer.subscription.created"]:
+                try:
+                    send_welcome_email(email)
+                except Exception as e:
+                    print(f"Welcome email failed for {email}: {e}")
+    
     return {"ok": True}
 
 # ========================================
