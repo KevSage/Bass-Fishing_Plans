@@ -1,7 +1,4 @@
 // src/features/plan/WeatherSection.tsx
-// REFINED: Balanced Hierarchy, Data-Rich Cards, Watermark Visuals
-// NOW CONNECTED TO BACKEND INTELLIGENCE (weather_insights)
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ThermometerIcon,
@@ -25,8 +22,10 @@ const titleCase = (s: string): string =>
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 
-const ACCENT = "#4A90E2";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+// Moving CardId to top-level scope to ensure accessibility in all functions
+export type CardId = "temp" | "wind" | "pressure" | "light";
 
 export type PlanConditions = {
   trip_date: string;
@@ -43,19 +42,13 @@ export type PlanConditions = {
   cloud_cover?: string | null;
   sky_condition?: string | null;
   pressure_mb?: number | null;
-  pressure?: number | null;
-  pressure_mbar?: number | null;
-  pressure_trend?: "rising" | "falling" | "stable" | string | null;
-  pressureTrend?: "rising" | "falling" | "stable" | string | null;
+  pressure_trend?: string | null;
   phase?: string | null;
-  precipitation_1h?: number | null;
-  has_recent_rain?: boolean | null;
-  humidity?: number | null;
-  moon_phase?: string | null;
-  moon_illumination?: number | null;
-  is_major_period?: boolean | null;
-  // ✅ NEW: Receive the smart insights from the backend
   weather_insights?: string[] | null;
+  // Flat keys provided by Python backend
+  sunriseTime?: string;
+  sunsetTime?: string;
+  solarNoonTime?: string;
 };
 
 export function WeatherSection({
@@ -65,24 +58,27 @@ export function WeatherSection({
   conditions: PlanConditions;
   outlookBlurb?: string | null;
 }) {
-  type CardId = "temp" | "wind" | "pressure" | "light";
   const [locationCity, setLocationCity] = useState<string>("");
   const [locationState, setLocationState] = useState<string>("");
   const hasGeocodedRef = useRef(false);
   const [activeCard, setActiveCard] = useState<CardId | null>(null);
 
-  // 1. DATA PROCESSING
   const derived = useMemo(() => {
-    const raw: any = conditions as any;
+    const raw: any = conditions;
 
-    // Temp
+    // ✅ PLUMBING FIX: Direct root access to times provided by backend
+    const sunrise = conditions.sunriseTime || "--:--";
+    const sunset = conditions.sunsetTime || "--:--";
+    const solarNoon = conditions.solarNoonTime || "--:--";
+
+    // Temperature Logic
     const tempF = numOrNull(raw.temp_f);
     const low = numOrNull(raw.temp_low);
     const high = numOrNull(raw.temp_high);
     const tempPrimary =
       tempF != null
         ? `${Math.round(tempF)}°`
-        : low != null && high != null
+        : high != null
         ? `${Math.round(high)}°`
         : "--";
     const tempSecondary =
@@ -90,58 +86,34 @@ export function WeatherSection({
         ? `L:${Math.round(low)}° H:${Math.round(high)}°`
         : "Forecast";
 
-    // Wind
-    const wind =
-      numOrNull(raw.wind_mph) ??
-      numOrNull(raw.wind_speed) ??
-      numOrNull(raw.wind) ??
-      numOrNull(raw.weather_snapshot?.wind_mph) ??
-      numOrNull(raw.weather?.wind_mph);
-    const windDir = raw.wind_direction ?? raw.weather?.wind_direction ?? "";
+    // Wind Logic
+    const wind = numOrNull(raw.wind_mph) ?? numOrNull(raw.wind_speed);
     const windPrimary = wind != null ? `${Math.round(wind)}` : "--";
-    const windSecondary = windDir ? `MPH • ${windDir}` : "MPH";
+    const windSecondary = raw.wind_direction
+      ? `MPH • ${raw.wind_direction}`
+      : "MPH";
 
-    // Pressure
-    const pressureMb =
-      numOrNull(raw.pressure_mb) ??
-      numOrNull(raw.pressure_mbar) ??
-      numOrNull(raw.pressure) ??
-      numOrNull(raw.weather_snapshot?.pressure_mb) ??
-      numOrNull(raw.weather?.pressure_mb);
-    let pTrend = (
-      raw.pressure_trend ??
-      raw.pressureTrend ??
-      raw.weather_snapshot?.pressure_trend ??
-      ""
-    )
-      .toString()
-      .toLowerCase();
-
-    if (!pTrend && pressureMb != null) {
-      pTrend =
-        pressureMb > 1016 ? "High" : pressureMb < 1008 ? "Low" : "Steady";
-    }
+    // Pressure Logic
+    const pressureMb = numOrNull(raw.pressure_mb);
+    const pTrend = (raw.pressure_trend || "Stable").toLowerCase();
     const pressurePrimary =
       pressureMb != null ? `${Math.round(pressureMb)}` : "--";
-    const pressureSecondary = pTrend ? `MB • ${titleCase(pTrend)}` : "MB";
+    const pressureSecondary = `MB • ${titleCase(pTrend)}`;
 
-    // Light
+    // Sky & UV Logic
     const cloudRaw = (
-      raw.cloud_cover ??
-      raw.sky_condition ??
-      raw.weather_snapshot?.cloud_cover ??
-      raw.weather?.cloud_cover ??
-      ""
-    )
-      .toString()
-      .replace(/_/g, " ")
-      .toLowerCase();
-    const uv =
-      numOrNull(raw.uv_index) ?? numOrNull(raw.weather_snapshot?.uv_index);
-    const lightPrimary = cloudRaw ? titleCase(cloudRaw) : "Clear";
-    const lightSecondary = uv != null ? `UV: ${Math.round(uv)}` : "Visibility";
+      raw.sky_condition ||
+      raw.cloud_cover ||
+      "Clear"
+    ).toLowerCase();
+    const uv = numOrNull(raw.uv_index);
+    const lightPrimary = titleCase(cloudRaw);
+    const uvValue = uv != null ? `${Math.round(uv)}` : "0";
 
     return {
+      sunrise,
+      solarNoon,
+      sunset,
       tempPrimary,
       tempSecondary,
       windPrimary,
@@ -149,7 +121,7 @@ export function WeatherSection({
       pressurePrimary,
       pressureSecondary,
       lightPrimary,
-      lightSecondary,
+      uvValue,
       phase: conditions.phase ? titleCase(String(conditions.phase)) : "",
     };
   }, [conditions]);
@@ -161,7 +133,7 @@ export function WeatherSection({
 
   const lakeZoom = getLakeZoom(conditions.location_name);
 
-  // 2. GEOCODING
+  // Geocoding logic preserved from source
   useEffect(() => {
     if (hasGeocodedRef.current) return;
     async function getCityState() {
@@ -171,7 +143,7 @@ export function WeatherSection({
           `https://api.mapbox.com/geocoding/v5/mapbox.places/${conditions.longitude},${conditions.latitude}.json?types=place,region&access_token=${MAPBOX_TOKEN}`
         );
         const data = await res.json();
-        if (data.features && data.features.length > 0) {
+        if (data.features?.length > 0) {
           const place = data.features.find((f: any) =>
             f.id.startsWith("place")
           );
@@ -185,8 +157,8 @@ export function WeatherSection({
             );
           hasGeocodedRef.current = true;
         }
-      } catch (error) {
-        console.error("Failed to get location:", error);
+      } catch (e) {
+        console.error("Geocoding error", e);
       }
     }
     getCityState();
@@ -199,14 +171,29 @@ export function WeatherSection({
         style={{
           borderRadius: 24,
           overflow: "hidden",
-          background:
-            "linear-gradient(145deg, rgba(74, 144, 226, 0.04) 0%, rgba(10, 10, 10, 0.4) 100%)",
-          border: "1px solid rgba(74, 144, 226, 0.12)",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+          position: "relative",
           marginTop: -10,
+          background:
+            "linear-gradient(145deg, rgba(10, 10, 10, 0.6) 0%, rgba(20, 20, 20, 0.8) 100%)",
+          border: "1px solid rgba(74, 144, 226, 0.2)",
+          boxShadow: "0 12px 40px rgba(0,0,0,0.4)",
         }}
       >
-        {/* HEADER: Satellite Background */}
+        {/* Top Tactical Seal */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 4,
+            background: "#4A90E2",
+            boxShadow: "0 0 15px rgba(74, 144, 226, 0.5)",
+            zIndex: 10,
+          }}
+        />
+
+        {/* MAP HEADER */}
         <div
           style={{
             position: "relative",
@@ -224,7 +211,7 @@ export function WeatherSection({
                 backgroundImage: `url(https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${conditions.longitude},${conditions.latitude},${lakeZoom},0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false)`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
-                filter: "brightness(0.75) saturate(1.1) contrast(1.1)",
+                filter: "brightness(1) saturate(1.1)",
               }}
             />
           )}
@@ -233,25 +220,23 @@ export function WeatherSection({
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%)",
+                "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(10,10,10,0.9) 100%)",
             }}
           />
 
           <div
             style={{
               position: "relative",
-              padding: "24px",
+              padding: "28px 24px",
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
             }}
           >
             <span
               style={{
                 fontSize: "0.85rem",
-                fontWeight: 700,
-                letterSpacing: "0.05em",
-                color: "rgba(255,255,255,0.9)",
+                fontWeight: 800,
+                color: "#4A90E2",
                 textTransform: "uppercase",
               }}
             >
@@ -264,10 +249,9 @@ export function WeatherSection({
                   background: "rgba(74, 144, 226, 0.2)",
                   border: "1px solid rgba(74, 144, 226, 0.4)",
                   color: "#fff",
-                  padding: "4px 10px",
+                  padding: "4px 12px",
                   borderRadius: 20,
-                  fontWeight: 600,
-                  textTransform: "capitalize",
+                  fontWeight: 700,
                 }}
               >
                 {derived.phase}
@@ -291,95 +275,160 @@ export function WeatherSection({
                   fontWeight: 800,
                   color: "#fff",
                   margin: 0,
-                  textShadow: "0 2px 10px rgba(0,0,0,0.5)",
                 }}
               >
                 {conditions.location_name}
               </h2>
             </div>
-            {(locationCity || locationState) && (
-              <div
-                style={{
-                  fontSize: "1.05rem",
-                  color: "rgba(255,255,255,0.8)",
-                  paddingLeft: 34,
-                }}
-              >
-                {locationCity && locationState
-                  ? `${locationCity}, ${locationState}`
-                  : locationCity || locationState}
-              </div>
-            )}
+            <div
+              style={{
+                fontSize: "1.05rem",
+                color: "rgba(255,255,255,0.7)",
+                paddingLeft: 34,
+                fontWeight: 500,
+              }}
+            >
+              {locationCity && locationState
+                ? `${locationCity}, ${locationState}`
+                : locationCity || locationState}
+            </div>
           </div>
         </div>
 
+        {/* HUD DASHBOARD */}
         <div style={{ padding: "24px" }}>
+          {/* FUNCTIONAL SOLAR STRIP */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
+              marginBottom: 20,
+              padding: "16px",
+              background: "rgba(74, 144, 226, 0.04)",
+              borderRadius: 16,
+              border: "1px solid rgba(74, 144, 226, 0.12)",
+              position: "relative",
             }}
           >
-            <h3
+            <div
               style={{
-                fontSize: "0.8rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.15em",
-                color: "rgba(255,255,255,0.5)",
-                fontWeight: 700,
-                margin: 0,
+                position: "relative",
+                height: 32,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
-              Current Conditions
-            </h3>
-            {/* Visual Indicator that backend intelligence is active */}
-            {conditions.weather_insights &&
-              conditions.weather_insights.length > 0 && (
-                <span
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  height: 1,
+                  background: "rgba(74, 144, 226, 0.2)",
+                }}
+              />
+              <div style={{ textAlign: "center", zIndex: 1 }}>
+                <div
                   style={{
-                    fontSize: "0.7rem",
+                    fontSize: "0.6rem",
                     color: "#4A90E2",
-                    background: "rgba(74, 144, 226, 0.1)",
-                    padding: "2px 8px",
-                    borderRadius: 4,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
                   }}
                 >
-                  AI ANALYSIS ACTIVE
-                </span>
-              )}
+                  Sunrise
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "#fff",
+                    fontWeight: 700,
+                  }}
+                >
+                  {derived.sunrise}
+                </div>
+              </div>
+              <div style={{ textAlign: "center", zIndex: 1, marginTop: -12 }}>
+                <CloudIcon
+                  size={16}
+                  style={{
+                    color: "#FFD700",
+                    marginBottom: 2,
+                    filter: "drop-shadow(0 0 5px rgba(255, 215, 0, 0.4))",
+                  }}
+                />
+                <div
+                  style={{
+                    fontSize: "0.65rem",
+                    color: "#FFD700",
+                    fontWeight: 800,
+                  }}
+                >
+                  SOLAR PEAK
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "#fff",
+                    fontWeight: 700,
+                  }}
+                >
+                  {derived.solarNoon}
+                </div>
+              </div>
+              <div style={{ textAlign: "center", zIndex: 1 }}>
+                <div
+                  style={{
+                    fontSize: "0.6rem",
+                    color: "#4A90E2",
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Sunset
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "#fff",
+                    fontWeight: 700,
+                  }}
+                >
+                  {derived.sunset}
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* 4-PANEL HUD GRID (Centered & Consolidated) */}
           <div
             style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}
           >
-            <MinimalCard
-              icon={<ThermometerIcon size={32} />}
+            <CompactHUD
+              icon={<ThermometerIcon size={22} />}
               label="Temperature"
               value={derived.tempPrimary}
               subValue={derived.tempSecondary}
               onClick={() => setActiveCard("temp")}
             />
-            <MinimalCard
-              icon={<WindIcon size={32} />}
+            <CompactHUD
+              icon={<WindIcon size={22} />}
               label="Wind"
               value={derived.windPrimary}
               subValue={derived.windSecondary}
               onClick={() => setActiveCard("wind")}
             />
-            <MinimalCard
-              icon={<ActivityIcon size={32} />}
+            <CompactHUD
+              icon={<ActivityIcon size={22} />}
               label="Pressure"
               value={derived.pressurePrimary}
               subValue={derived.pressureSecondary}
               onClick={() => setActiveCard("pressure")}
             />
-            <MinimalCard
-              icon={<CloudIcon size={32} />}
-              label="Light"
+            <CompactHUD
+              icon={<CloudIcon size={22} />}
+              label="Sky & UV"
               value={derived.lightPrimary}
-              subValue={derived.lightSecondary}
+              subValue={`UV Index: ${derived.uvValue}`}
               onClick={() => setActiveCard("light")}
             />
           </div>
@@ -389,7 +438,7 @@ export function WeatherSection({
               style={{
                 marginTop: 24,
                 paddingTop: 20,
-                borderTop: "1px solid rgba(255,255,255,0.08)",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
               }}
             >
               <p
@@ -408,14 +457,15 @@ export function WeatherSection({
         </div>
       </div>
 
+      {/* TACTICAL MODAL: Details Restored */}
       {activeCard && expansion && (
         <div
           style={{
             position: "fixed",
             inset: 0,
             zIndex: 9999,
-            background: "rgba(0,0,0,0.7)",
-            backdropFilter: "blur(6px)",
+            background: "rgba(0,0,0,0.85)",
+            backdropFilter: "blur(8px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -428,50 +478,41 @@ export function WeatherSection({
             style={{
               width: "100%",
               maxWidth: 440,
-              borderRadius: 24,
+              borderRadius: 28,
               padding: "32px 24px",
-              background: "rgba(12, 14, 18, 0.95)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 20px 80px rgba(0,0,0,0.7)",
+              background: "rgba(10, 10, 10, 0.98)",
+              border: "1px solid rgba(74, 144, 226, 0.3)",
+              boxShadow: "0 25px 80px rgba(0,0,0,0.8)",
               position: "relative",
               overflow: "hidden",
-              transform: "translateY(0)",
-              animation: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <div
               style={{
                 position: "absolute",
-                top: -20,
-                right: -20,
-                opacity: 0.05,
-                transform: "rotate(-15deg)",
+                inset: 0,
+                backgroundImage: `radial-gradient(rgba(74, 144, 226, 0.05) 1px, transparent 1px)`,
+                backgroundSize: "30px 30px",
+                opacity: 0.5,
                 pointerEvents: "none",
               }}
-            >
-              {activeCard === "temp" && <ThermometerIcon size={200} />}
-              {activeCard === "wind" && <WindIcon size={200} />}
-              {activeCard === "pressure" && <ActivityIcon size={200} />}
-              {activeCard === "light" && <CloudIcon size={200} />}
-            </div>
-
+            />
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                marginBottom: 24,
+                gap: 14,
+                marginBottom: 28,
                 position: "relative",
               }}
             >
               <div
                 style={{
                   color: "#4A90E2",
-                  background: "rgba(74, 144, 226, 0.1)",
-                  padding: 10,
+                  background: "rgba(74, 144, 226, 0.15)",
+                  padding: 12,
                   borderRadius: "50%",
-                  boxShadow: "0 0 15px rgba(74, 144, 226, 0.2)",
                 }}
               >
                 {activeCard === "temp" && <ThermometerIcon size={28} />}
@@ -481,8 +522,8 @@ export function WeatherSection({
               </div>
               <h3
                 style={{
-                  fontSize: "1.4rem",
-                  fontWeight: 700,
+                  fontSize: "1.5rem",
+                  fontWeight: 800,
                   margin: 0,
                   color: "#fff",
                 }}
@@ -496,8 +537,8 @@ export function WeatherSection({
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.1)",
                   borderRadius: "50%",
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   color: "#fff",
                   cursor: "pointer",
                   display: "flex",
@@ -508,28 +549,24 @@ export function WeatherSection({
                 ✕
               </button>
             </div>
-
             {expansion.numbers && expansion.numbers.length > 0 && (
               <div
                 style={{
-                  marginBottom: 24,
-                  padding: 20,
-                  background:
-                    "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%)",
-                  borderRadius: 16,
+                  marginBottom: 28,
+                  padding: 24,
+                  background: "rgba(74, 144, 226, 0.08)",
+                  borderRadius: 20,
                   border: "1px solid rgba(74, 144, 226, 0.2)",
-                  position: "relative",
                 }}
               >
                 {expansion.numbers.map((num, i) => (
                   <div
                     key={i}
                     style={{
-                      fontSize: i === 0 ? "1.8rem" : "1.1rem",
-                      fontWeight: i === 0 ? 800 : 500,
+                      fontSize: i === 0 ? "2.1rem" : "1.2rem",
+                      fontWeight: i === 0 ? 800 : 600,
                       color: i === 0 ? "#fff" : "rgba(255,255,255,0.7)",
-                      marginBottom: i === 0 ? 6 : 4,
-                      lineHeight: 1.2,
+                      marginBottom: i === 0 ? 8 : 4,
                     }}
                   >
                     {num}
@@ -537,27 +574,27 @@ export function WeatherSection({
                 ))}
               </div>
             )}
-
             <div style={{ position: "relative" }}>
               <h4
                 style={{
                   fontSize: "0.85rem",
                   textTransform: "uppercase",
-                  letterSpacing: "0.1em",
-                  color: "rgba(255,255,255,0.4)",
-                  marginBottom: 12,
+                  letterSpacing: "0.15em",
+                  color: "#4A90E2",
+                  marginBottom: 16,
+                  fontWeight: 800,
                 }}
               >
                 Tactical Insight
               </h4>
               <div
-                style={{ display: "flex", flexDirection: "column", gap: 14 }}
+                style={{ display: "flex", flexDirection: "column", gap: 16 }}
               >
                 <p
                   style={{
                     margin: 0,
-                    fontSize: "1rem",
-                    lineHeight: 1.5,
+                    fontSize: "1.1rem",
+                    lineHeight: 1.6,
                     color: "#fff",
                     fontWeight: 500,
                   }}
@@ -569,7 +606,7 @@ export function WeatherSection({
                     key={i}
                     style={{
                       display: "flex",
-                      gap: 12,
+                      gap: 14,
                       alignItems: "flex-start",
                     }}
                   >
@@ -577,7 +614,7 @@ export function WeatherSection({
                       style={{
                         minWidth: 6,
                         height: 6,
-                        marginTop: 8,
+                        marginTop: 10,
                         borderRadius: "50%",
                         background: "#4A90E2",
                       }}
@@ -585,9 +622,9 @@ export function WeatherSection({
                     <p
                       style={{
                         margin: 0,
-                        fontSize: "0.95rem",
-                        lineHeight: 1.5,
-                        color: "rgba(255,255,255,0.7)",
+                        fontSize: "1rem",
+                        lineHeight: 1.6,
+                        color: "rgba(255,255,255,0.8)",
                       }}
                     >
                       {detail}
@@ -599,31 +636,12 @@ export function WeatherSection({
           </div>
         </div>
       )}
-
-      <style>{`
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      `}</style>
     </>
   );
 }
 
-// --- SUB-COMPONENT: Minimal Card ---
-function MinimalCard({
-  icon,
-  label,
-  value,
-  subValue,
-  onClick,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  subValue?: string | null;
-  onClick: () => void;
-}) {
+// --- SUB-COMPONENT: Centered HUD Panel ---
+function CompactHUD({ icon, label, value, subValue, onClick }: any) {
   return (
     <button
       onClick={onClick}
@@ -632,67 +650,36 @@ function MinimalCard({
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "24px 12px",
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        minHeight: "115px",
+        padding: "16px 10px",
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: 16,
         cursor: "pointer",
-        position: "relative",
-        overflow: "hidden",
         transition: "all 0.2s ease",
       }}
-      onMouseEnter={(e) =>
-        (e.currentTarget.style.background = "rgba(255,255,255,0.06)")
-      }
-      onMouseLeave={(e) =>
-        (e.currentTarget.style.background = "rgba(255,255,255,0.03)")
-      }
     >
-      <div
-        style={{
-          position: "absolute",
-          bottom: -10,
-          right: -10,
-          opacity: 0.05,
-          transform: "rotate(-15deg)",
-          pointerEvents: "none",
-          color: "#fff",
-        }}
-      >
-        {React.cloneElement(icon as React.ReactElement, { size: 80 })}
-      </div>
-
-      <div
-        style={{
-          color: "#4A90E2",
-          marginBottom: 10,
-          filter: "drop-shadow(0 0 10px rgba(74,144,226,0.3))",
-          position: "relative",
-        }}
-      >
+      <div style={{ color: "#4A90E2", marginBottom: 8, opacity: 0.9 }}>
         {icon}
       </div>
       <div
         style={{
-          fontSize: "1.5rem",
+          fontSize: "1.6rem",
           fontWeight: 800,
           color: "#fff",
           lineHeight: 1,
-          marginBottom: 6,
-          position: "relative",
+          marginBottom: 4,
         }}
       >
         {value}
       </div>
       <div
         style={{
-          fontSize: "0.75rem",
-          fontWeight: 700,
-          color: "rgba(255,255,255,0.5)",
+          fontSize: "0.65rem",
+          fontWeight: 800,
+          color: "rgba(255,255,255,0.4)",
           textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          marginBottom: 4,
-          position: "relative",
+          letterSpacing: "0.05em",
         }}
       >
         {label}
@@ -701,13 +688,9 @@ function MinimalCard({
         <div
           style={{
             fontSize: "0.75rem",
-            color: "rgba(255,255,255,0.6)",
-            fontWeight: 500,
-            maxWidth: "100%",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            position: "relative",
+            color: "#4A90E2",
+            fontWeight: 600,
+            marginTop: 4,
           }}
         >
           {subValue}
@@ -717,70 +700,20 @@ function MinimalCard({
   );
 }
 
-// --- LOGIC: EXPANSION & HELPERS ---
-type Expansion = {
-  title: string;
-  summary: string;
-  numbers?: string[];
-  details: string[];
-};
-
-// ✅ UPDATED: Now looks for 'weather_insights' from Backend
-function buildExpansion(
-  card: "temp" | "wind" | "pressure" | "light",
-  conditions: PlanConditions
-): Expansion {
-  const raw: any = conditions as any;
-  // Get the smart insights if available
+// --- LOGIC: TACTICAL INSIGHTS RESTORED ---
+function buildExpansion(card: CardId, conditions: PlanConditions) {
+  const raw: any = conditions;
   const insights = conditions.weather_insights || [];
+  const getInsightsFor = (keyword: string) =>
+    insights.filter((i) => i.toLowerCase().includes(keyword.toLowerCase()));
 
-  // Helper to find specific insights relevant to the card
-  const getInsightsFor = (keyword: string) => {
-    return insights.filter((i) =>
-      i.toLowerCase().includes(keyword.toLowerCase())
-    );
-  };
-
-  // Extract Raw Data
   const tempF = numOrNull(raw.temp_f);
   const low = numOrNull(raw.temp_low);
   const high = numOrNull(raw.temp_high);
-  const wind =
-    numOrNull(raw.wind_mph) ??
-    numOrNull(raw.wind_speed) ??
-    numOrNull(raw.wind) ??
-    numOrNull(raw.weather_snapshot?.wind_mph) ??
-    numOrNull(raw.weather?.wind_mph);
-  const pressureMb =
-    numOrNull(raw.pressure_mb) ??
-    numOrNull(raw.pressure_mbar) ??
-    numOrNull(raw.pressure) ??
-    numOrNull(raw.weather_snapshot?.pressure_mb) ??
-    numOrNull(raw.weather?.pressure_mb);
-
-  let pressureTrend = (
-    raw.pressure_trend ??
-    raw.pressureTrend ??
-    raw.weather_snapshot?.pressure_trend ??
-    ""
-  )
-    .toString()
-    .toLowerCase();
-
-  const uv =
-    numOrNull(raw.uv_index) ??
-    numOrNull(raw.weather_snapshot?.uv_index) ??
-    numOrNull(raw.weather?.uv_index);
-  const cloudRaw = (
-    raw.cloud_cover ??
-    raw.sky_condition ??
-    raw.weather_snapshot?.cloud_cover ??
-    raw.weather?.cloud_cover ??
-    ""
-  )
-    .toString()
-    .replace(/_/g, " ")
-    .toLowerCase();
+  const wind = numOrNull(raw.wind_mph) ?? numOrNull(raw.wind_speed);
+  const pressureMb = numOrNull(raw.pressure_mb);
+  const uv = numOrNull(raw.uv_index);
+  const cloudRaw = (raw.sky_condition || "Clear").toLowerCase();
 
   const numbers: string[] = [];
   const details: string[] = [];
@@ -790,141 +723,71 @@ function buildExpansion(
     if (tempF != null) numbers.push(`${Math.round(tempF)}°F Current`);
     if (low != null && high != null)
       numbers.push(`${Math.round(low)}° – ${Math.round(high)}°F Range`);
-    if (swing != null) numbers.push(`${Math.round(swing)}° Swing`);
-
     const summary =
       tempF != null
         ? `Current conditions are ${Math.round(tempF)}°F.`
-        : "Temperature data is limited for this location.";
-
-    // Logic: Fallback to generic if no specific AI insight, OR append generic helpful info
-    if (low != null && high != null) {
-      if (swing != null && swing >= 10) {
-        details.push(
-          "Large temperature swing: Expect activity to increase as water warms."
-        );
-      } else {
-        details.push(
-          "Stable temperature: Expect consistent behavior throughout the day."
-        );
-      }
-    }
+        : "Temperature data limited.";
+    const tempInsights = getInsightsFor("temp");
+    if (tempInsights.length > 0) details.push(...tempInsights);
+    else if (swing != null && swing >= 10)
+      details.push(
+        "Large temperature swing: Expect activity to increase as water warms."
+      );
     return { title: "Temperature", summary, numbers, details };
   }
-
   if (card === "wind") {
-    if (wind == null)
-      return { title: "Wind", summary: "Wind data unavailable", details: [] };
-
-    numbers.push(`${Math.round(wind)} mph`);
-    const risk = wind <= 8 ? "Low Risk" : wind <= 15 ? "Caution" : "High Risk";
-    numbers.push(risk);
-
-    const summary = `Wind is ${Math.round(wind)} mph.`;
-
-    // ✅ SMART INTEGRATION: Use backend insights if available
+    numbers.push(`${Math.round(wind || 0)} mph`);
     const windInsights = getInsightsFor("wind");
-    if (windInsights.length > 0) {
-      details.push(...windInsights);
-    } else {
-      // Fallback Logic
-      if (wind <= 8) {
-        details.push(
-          "Calm conditions: Finesse presentations and slow moving baits are key."
-        );
-      } else if (wind <= 15) {
-        details.push(
-          "Active chop: Spinnerbaits and crankbaits on wind-blown banks."
-        );
-      } else {
-        details.push(
-          "High wind: Bass will be positioned on distinct wind-blown structural elements."
-        );
-      }
-    }
-    return { title: "Wind", summary, numbers, details };
+    if (windInsights.length > 0) details.push(...windInsights);
+    else
+      details.push(
+        (wind || 0) <= 8
+          ? "Calm conditions: Slow presentations are key."
+          : "Active chop: Use wind-blown banks."
+      );
+    return {
+      title: "Wind",
+      summary: `Wind speed is ${Math.round(wind || 0)} mph.`,
+      numbers,
+      details,
+    };
   }
-
   if (card === "pressure") {
-    if (pressureMb == null)
-      return {
-        title: "Pressure",
-        summary: "Pressure data unavailable",
-        details: [],
-      };
-
-    numbers.push(`${Math.round(pressureMb)} mb`);
-    if (!pressureTrend)
-      pressureTrend =
-        pressureMb > 1015 ? "rising" : pressureMb < 1010 ? "falling" : "stable";
-    numbers.push(titleCase(pressureTrend));
-
-    const summary = `Barometric pressure is ${pressureTrend}.`;
-
-    // ✅ SMART INTEGRATION: Use backend insights if available
+    numbers.push(`${Math.round(pressureMb || 0)} mb`);
     const pressInsights = getInsightsFor("pressure");
-    if (pressInsights.length > 0) {
-      details.push(...pressInsights);
-    } else {
-      // Fallback Logic
-      if (pressureTrend === "falling") {
-        details.push(
-          "Falling pressure often triggers an aggressive feeding window."
-        );
-      } else if (pressureTrend === "rising") {
-        details.push(
-          "Rising pressure (post-frontal) usually pushes fish tight to cover."
-        );
-      } else {
-        details.push("Stable pressure means predictable behavior.");
-      }
-    }
-    return { title: "Pressure", summary, numbers, details };
+    if (pressInsights.length > 0) details.push(...pressInsights);
+    else details.push("Stable pressure suggests normal behavior.");
+    return {
+      title: "Pressure",
+      summary: "Barometric pressure analysis.",
+      numbers,
+      details,
+    };
   }
-
   if (card === "light") {
-    const sky = cloudRaw ? titleCase(cloudRaw) : "Clear";
-    numbers.push(sky);
+    numbers.push(titleCase(cloudRaw));
     if (uv != null) numbers.push(`UV Index: ${Math.round(uv)}`);
-
-    const summary = cloudRaw.includes("overcast")
-      ? "Low light conditions."
-      : "High visibility conditions.";
-
-    // ✅ SMART INTEGRATION: Use backend insights if available
-    // Look for keywords: UV, Visibility, Light, Fog
-    const lightInsights = [
-      ...getInsightsFor("UV"),
-      ...getInsightsFor("Visibility"),
-      ...getInsightsFor("Fog"),
-      ...getInsightsFor("Light"),
-    ];
-    // Deduplicate
-    const uniqueLightInsights = Array.from(new Set(lightInsights));
-
-    if (uniqueLightInsights.length > 0) {
-      details.push(...uniqueLightInsights);
-    } else {
-      // Fallback Logic
-      if (cloudRaw.includes("overcast") || cloudRaw.includes("rain")) {
-        details.push(
-          "Low Light: Bass roam more freely. Topwater and moving baits are excellent."
-        );
-        details.push(
-          "Colors: Use darker profiles (Black/Blue, Junebug) for contrast."
-        );
-      } else {
-        details.push(
-          "Bright Sun: Bass will hold tight to shade (docks, mats, laydowns)."
-        );
-        details.push(
-          "Colors: Natural and translucent shades (Green Pumpkin, Ghost Shad) are best."
-        );
-      }
-    }
-    return { title: "Light & Sky", summary, numbers, details };
+    const lightInsights = Array.from(
+      new Set([
+        ...getInsightsFor("UV"),
+        ...getInsightsFor("Visibility"),
+        ...getInsightsFor("Light"),
+      ])
+    );
+    if (lightInsights.length > 0) details.push(...lightInsights);
+    else
+      details.push(
+        cloudRaw.includes("overcast")
+          ? "Low Light: Bass roam freely."
+          : "Bright Sun: Bass hold tight to shade."
+      );
+    return {
+      title: "Light & Sky",
+      summary: "Solar conditions.",
+      numbers,
+      details,
+    };
   }
-
   return { title: "Conditions", summary: "", details: [] };
 }
 
@@ -936,7 +799,6 @@ const LARGE_LAKES = new Set([
   "champlain",
   "eufaula",
 ]);
-
 function getLakeZoom(lakeName: string): number {
   const normalized = lakeName
     .toLowerCase()

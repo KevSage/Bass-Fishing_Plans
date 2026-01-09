@@ -286,6 +286,9 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "humidity": weather["humidity"],
         "wind_speed": weather["wind_mph"],  
         "sky_condition": weather["cloud_cover"],  
+        "sunriseTime": weather.get("sunriseTime", "--:--"),
+        "solarNoonTime": weather.get("solarNoonTime", "--:--"),
+        "sunsetTime": weather.get("sunsetTime", "--:--"),
     }
     
     token = plan_links.save_plan(
