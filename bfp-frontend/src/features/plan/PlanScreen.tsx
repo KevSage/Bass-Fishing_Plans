@@ -150,7 +150,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
             <div
               style={{
                 ...UI.eyebrow,
-                fontSize: "1.1rem",
+                fontSize: "1.2rem",
                 color: "rgba(74,144,226,0.9)",
                 marginBottom: 28,
               }}
@@ -284,553 +284,76 @@ function PatternCard({
     <div
       className="card"
       style={{
-        marginTop: 32,
+        marginTop: 40,
         position: "relative",
         background: isPrimary
-          ? "linear-gradient(145deg, rgba(74, 144, 226, 0.06) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(74, 144, 226, 0.03) 100%)"
-          : "linear-gradient(145deg, rgba(255, 255, 255, 0.02) 0%, rgba(10, 10, 10, 0.4) 50%, rgba(255, 255, 255, 0.01) 100%)",
+          ? "linear-gradient(145deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.5) 50%, rgba(74, 144, 226, 0.04) 100%)"
+          : "linear-gradient(145deg, rgba(255, 255, 255, 0.02) 0%, rgba(10, 10, 10, 0.5) 50%, rgba(255, 255, 255, 0.01) 100%)",
         border: isPrimary
-          ? "1px solid rgba(74, 144, 226, 0.15)"
-          : "1px solid rgba(255, 255, 255, 0.08)",
-        borderRadius: 24,
+          ? "1px solid rgba(74, 144, 226, 0.25)"
+          : "1px solid rgba(255, 255, 255, 0.1)",
+        borderRadius: 28,
         padding: "24px",
         boxShadow: isPrimary
-          ? "0 8px 32px rgba(74, 144, 226, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
-          : "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+          ? "0 12px 40px rgba(74, 144, 226, 0.12)"
+          : "0 12px 40px rgba(0, 0, 0, 0.3)",
       }}
     >
-      {/* Floating Pattern Badge */}
+      {/* 1. Floating Pattern Badge */}
       <div
         style={{
           position: "absolute",
-          top: -12,
+          top: -14,
           left: 32,
-          padding: "6px 18px",
+          padding: "6px 20px",
           background: isPrimary
             ? "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)"
-            : "linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.08) 100%)",
-          boxShadow: isPrimary
-            ? "0 4px 16px rgba(74, 144, 226, 0.4)"
-            : "0 4px 16px rgba(0, 0, 0, 0.3)",
+            : "linear-gradient(135deg, rgba(50, 50, 50, 0.9) 0%, rgba(30, 30, 30, 0.9) 100%)",
           borderRadius: 8,
-          fontSize: "0.8rem",
+          fontSize: "0.85rem",
           textTransform: "uppercase",
-          letterSpacing: "0.1em",
-          fontWeight: 700,
-          color: isPrimary ? "#fff" : "rgba(255, 255, 255, 0.9)",
+          letterSpacing: "0.12em",
+          fontWeight: 800,
+          color: "#fff",
+          zIndex: 10,
         }}
       >
         Pattern {patternNumber}
       </div>
 
-      {/* Presentation Title */}
       <h3
         style={{
-          fontSize: "1.5rem",
-          fontWeight: 600,
-          letterSpacing: "-0.02em",
-          marginTop: 12,
-          marginBottom: 32,
-          lineHeight: 1,
-          color: "rgba(255, 255, 255, 0.95)",
+          fontSize: "1.6rem",
+          fontWeight: 700,
+          letterSpacing: "-0.01em",
+          marginTop: 14,
+          marginBottom: 28,
+          color: "#fff",
         }}
       >
         {pattern.presentation}
       </h3>
 
-      {/* Pattern Summary */}
-      {/* The Brief - High-Level Pattern Overview */}
+      {/* 2. The Brief (Pattern Summary) */}
       {pattern.pattern_summary && (
         <div
           style={{
             position: "relative",
-            marginBottom: 24,
-            padding: "20px 24px",
+            marginBottom: 32,
+            padding: "22px 26px",
             background:
-              "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
+              "linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(10, 10, 10, 0.4) 100%)",
             border: "1px solid rgba(74, 144, 226, 0.25)",
             borderRadius: 20,
-            boxShadow: "0 6px 20px rgba(0, 0, 0, 0.25)",
             overflow: "hidden",
           }}
         >
-          {/* Sonar/Pulse Watermark */}
+          {/* Sonar Watermark */}
           <div
             style={{
               position: "absolute",
               right: -15,
               top: -15,
-              opacity: 0.06,
-              color: "#4A90E2",
-              pointerEvents: "none",
-            }}
-          >
-            <svg
-              width="150"
-              height="150"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="7" />
-              <circle cx="12" cy="12" r="4" />
-              <circle cx="12" cy="12" r="1" />
-            </svg>
-          </div>
-
-          <h4
-            style={{
-              fontSize: "0.8rem",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.15em",
-              color: "#4A90E2",
-              marginBottom: 12,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            {/* Briefing Icon */}
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
-            </svg>
-            The Brief
-          </h4>
-
-          <p
-            style={{
-              lineHeight: 1.7,
-              margin: 0,
-              fontSize: "1.15rem",
-              fontWeight: 500, // Medium weight for better readability
-              letterSpacing: "0.01em",
-              color: "#fff",
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {pattern.pattern_summary}
-          </p>
-        </div>
-      )}
-
-      {/* Section Divider */}
-      <div
-        style={{
-          height: 1,
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.04) 50%, transparent 100%)",
-          margin: "0px 0",
-        }}
-      />
-
-      {/* Lure Image Container */}
-      <div
-        style={{
-          position: "relative",
-          marginBottom: 16,
-          overflow: "hidden",
-          background:
-            "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.12) 0%, rgba(74, 144, 226, 0.04) 40%, transparent 70%)",
-          borderRadius: 20,
-        }}
-      >
-        {/* Glow effect */}
-        <div
-          style={{
-            position: "absolute",
-            inset: "-40px",
-            background:
-              "radial-gradient(ellipse at center, rgba(74, 144, 226, 0.2) 0%, transparent 60%)",
-            filter: "blur(60px)",
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        />
-
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            minHeight: 280,
-            padding: "20px 10px",
-            zIndex: 1,
-          }}
-        >
-          {pattern.colors.asset_key ? (
-            <img
-              className="image-fade"
-              src={`/images/lures/${pattern.colors.asset_key}`}
-              alt={pattern.base_lure}
-              style={{
-                width: "100%",
-                maxWidth: 480,
-                height: "auto",
-                objectFit: "contain",
-                filter:
-                  "drop-shadow(0 24px 80px rgba(0, 0, 0, 0.6)) drop-shadow(0 12px 40px rgba(74, 144, 226, 0.5)) drop-shadow(0 4px 16px rgba(0, 0, 0, 0.4))",
-              }}
-              onError={(e) => {
-                e.currentTarget.src = "/images/jig_lure.jpeg";
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                width: 300,
-                height: 200,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "rgba(255,255,255,0.05)",
-                borderRadius: 12,
-                opacity: 0.5,
-                fontSize: "0.9rem",
-                color: "rgba(255, 255, 255, 0.4)",
-              }}
-            >
-              No image available
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Lure Name */}
-      <div style={{ marginBottom: 16 }}>
-        <div
-          style={{
-            fontSize: ".75rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            fontWeight: 700,
-            color: "rgba(255, 255, 255, 0.5)",
-            marginBottom: 12,
-          }}
-        >
-          Lure
-        </div>
-        <div
-          style={{
-            fontSize: "1.3rem",
-            fontWeight: 600,
-            textTransform: "capitalize",
-            color: "rgba(255, 255, 255, 0.95)",
-          }}
-        >
-          {pattern.base_lure}
-        </div>
-      </div>
-
-      {/* Soft Plastic */}
-      {pattern.soft_plastic && (
-        <div style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              fontWeight: 700,
-              color: "rgba(255, 255, 255, 0.5)",
-              marginBottom: 12,
-            }}
-          >
-            Soft Plastic
-          </div>
-          <div
-            style={{
-              fontSize: "1.1rem",
-              fontWeight: 500,
-              textTransform: "capitalize",
-              marginBottom: 10,
-              color: "rgba(255, 255, 255, 0.95)",
-            }}
-          >
-            {pattern.soft_plastic}
-          </div>
-          {pattern.soft_plastic_why && (
-            <div
-              style={{
-                fontSize: "0.9rem",
-                opacity: 0.75,
-                lineHeight: 1.6,
-                fontStyle: "italic",
-              }}
-            >
-              {pattern.soft_plastic_why}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Trailer */}
-      {pattern.trailer && (
-        <div style={{ marginBottom: 32 }}>
-          <div
-            style={{
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              fontWeight: 700,
-              color: "rgba(255, 255, 255, 0.5)",
-              marginBottom: 12,
-            }}
-          >
-            Trailer
-          </div>
-          <div
-            style={{
-              fontSize: "1.1rem",
-              fontWeight: 500,
-              textTransform: "capitalize",
-              marginBottom: 10,
-              color: "rgba(255, 255, 255, 0.95)",
-            }}
-          >
-            {pattern.trailer}
-          </div>
-          {pattern.trailer_why && (
-            <div
-              style={{
-                fontSize: "0.95rem",
-                opacity: 0.75,
-                lineHeight: 1.6,
-                fontStyle: "italic",
-              }}
-            >
-              {pattern.trailer_why}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Color Swatches */}
-      {pattern.color_recommendations &&
-        pattern.color_recommendations.length > 0 && (
-          <div style={{ marginBottom: 32 }}>
-            <div
-              style={{
-                fontSize: "0.8rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.12em",
-                fontWeight: 700,
-                color: "rgba(255, 255, 255, 0.5)",
-                marginBottom: 16,
-              }}
-            >
-              Colors
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: 20,
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              {pattern.color_recommendations.map((color, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      background: getSwatchBackground(color),
-                      border: "2px solid rgba(255,255,255,0.25)",
-                      boxShadow:
-                        "0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15)",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontWeight: 500,
-                      textTransform: "capitalize",
-                      fontSize: ".9rem",
-                      color: "rgba(255, 255, 255, 0.9)",
-                    }}
-                  >
-                    {color}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-      {/* Section Divider */}
-      <div
-        style={{
-          height: 1,
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
-          margin: "10px 0",
-        }}
-      />
-
-      {/* Gear Setup */}
-      {pattern.gear && (
-        <div
-          style={{
-            marginBottom: 32,
-            padding: "12px 14px",
-            background:
-              "linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: 16,
-            boxShadow: "inset 0 1px 2px rgba(255, 255, 255, 0.03)",
-          }}
-        >
-          <h4
-            style={{
-              fontSize: "1.2rem",
-              fontWeight: 600,
-              marginBottom: 20,
-              color: "rgba(255, 255, 255, 0.95)",
-            }}
-          >
-            Gear Setup
-          </h4>
-          <div style={{ display: "grid", gap: 16 }}>
-            {/* Rod */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingBottom: 12,
-                borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  fontWeight: 600,
-                }}
-              >
-                Rod
-              </span>
-              <span
-                style={{
-                  fontSize: "0.9rem",
-                  fontWeight: 600,
-                  color: "rgba(255, 255, 255, 0.95)",
-                }}
-              >
-                {pattern.gear.rod}
-              </span>
-            </div>
-            {/* Reel */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                paddingBottom: 12,
-                borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  fontWeight: 600,
-                }}
-              >
-                Reel
-              </span>
-              <span
-                style={{
-                  fontSize: ".9rem",
-                  fontWeight: 600,
-                  color: "rgba(255, 255, 255, 0.95)",
-                }}
-              >
-                {pattern.gear.reel}
-              </span>
-            </div>
-            {/* Line */}
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: "0.9rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  fontWeight: 600,
-                }}
-              >
-                Line
-              </span>
-              <span
-                style={{
-                  fontSize: "0.9rem",
-                  fontWeight: 600,
-                  color: "rgba(255, 255, 255, 0.95)",
-                  maxWidth: "70%",
-                  textAlign: "right",
-                }}
-              >
-                {pattern.gear.line}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* The Logic - Theoretical Foundation */}
-      {pattern.why_this_works && (
-        <div
-          style={{
-            position: "relative",
-            marginTop: 32,
-            padding: "24px",
-            background: "rgba(74, 144, 226, 0.05)", // Slightly more blue depth
-            borderRadius: 20,
-            border: "1px solid rgba(74, 144, 226, 0.2)",
-            overflow: "hidden",
-          }}
-        >
-          {/* Logic Watermark */}
-          <div
-            style={{
-              position: "absolute",
-              right: -10,
-              top: -10,
               opacity: 0.05,
               color: "#4A90E2",
               pointerEvents: "none",
@@ -844,25 +367,25 @@ function PatternCard({
               stroke="currentColor"
               strokeWidth="1"
             >
-              <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.97-2.02 2.5 2.5 0 0 1-2.02-2.97 2.5 2.5 0 0 1 .45-4.95 2.5 2.5 0 0 1 2-4.5 2.5 2.5 0 0 1 4.96-.44Z" />
-              <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.97-2.02 2.5 2.5 0 0 0 2.02-2.97 2.5 2.5 0 0 0-.45-4.95 2.5 2.5 0 0 0-2-4.5 2.5 2.5 0 0 0-4.96-.44Z" />
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="7" />
+              <circle cx="12" cy="12" r="4" />
             </svg>
           </div>
-
           <h4
             style={{
-              fontSize: "0.85rem",
+              fontSize: "0.75rem",
               fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "#4A90E2",
-              marginBottom: 16,
+              marginBottom: 12,
               display: "flex",
               alignItems: "center",
               gap: 10,
             }}
           >
-            {/* Icon instead of hyphen */}
+            {/* Removed Hyphen: Use Icon */}
             <svg
               width="14"
               height="14"
@@ -871,242 +394,511 @@ function PatternCard({
               stroke="currentColor"
               strokeWidth="3"
             >
-              <circle cx="12" cy="12" r="10" />
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
             </svg>
-            The Logic
+            The Brief
           </h4>
-
           <p
             style={{
               lineHeight: 1.75,
               margin: 0,
               fontSize: "1.15rem",
-              color: "rgba(255, 255, 255, 0.95)",
-              fontWeight: 400,
+              fontWeight: 500,
+              color: "rgba(255,255,255,0.95)",
             }}
           >
-            {pattern.why_this_works}
+            {pattern.pattern_summary}
           </p>
         </div>
       )}
 
-      {/* Game Plan - High-Visibility Strategy */}
-      {pattern.strategy && (
+      {/* 3. Lure Image */}
+      <div
+        style={{
+          position: "relative",
+          marginBottom: 32,
+          display: "flex",
+          justifyContent: "center",
+          background:
+            "radial-gradient(circle, rgba(74, 144, 226, 0.15) 0%, transparent 70%)",
+          borderRadius: 24,
+          padding: "30px",
+        }}
+      >
+        {pattern.colors.asset_key ? (
+          <img
+            src={`/images/lures/${pattern.colors.asset_key}`}
+            alt={pattern.base_lure}
+            style={{
+              width: "100%",
+              maxWidth: 420,
+              height: "auto",
+              objectFit: "contain",
+              filter: "drop-shadow(0 25px 50px rgba(0,0,0,0.6))",
+            }}
+          />
+        ) : (
+          <div style={{ opacity: 0.2, color: "#fff" }}>
+            [Lure Visual Pending]
+          </div>
+        )}
+      </div>
+
+      {/* 4. Technical Specs (Hardware Tray) */}
+      <div
+        style={{
+          position: "relative",
+          marginBottom: 32,
+          padding: "24px",
+          background: "rgba(10, 10, 10, 0.4)",
+          borderRadius: 24,
+          border: "1px solid rgba(74, 144, 226, 0.2)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Blue Seal Accent: Matches Day Progression Node Style */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1.5,
+            background: "#4A90E2",
+            boxShadow: "0 0 15px rgba(74, 144, 226, 0.4)",
+          }}
+        />
+
+        <h4
+          style={{
+            fontSize: "0.8rem",
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+            color: "#4A90E2",
+            marginBottom: 24,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+          </svg>
+          Technical Specs
+        </h4>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "28px 16px",
+          }}
+        >
+          <div style={{ gridColumn: "span 2" }}>
+            <div style={UI.eyebrow}>Primary Lure</div>
+            <div
+              style={{
+                fontSize: "1.45rem",
+                fontWeight: 700,
+                color: "#fff",
+                textTransform: "capitalize",
+              }}
+            >
+              {pattern.base_lure}
+            </div>
+          </div>
+
+          {/* Corrected Swatches Logic */}
+          {pattern.color_recommendations &&
+            pattern.color_recommendations.length > 0 && (
+              <div
+                style={{
+                  gridColumn: "span 2",
+                  padding: "16px 20px",
+                  background: "rgba(74, 144, 226, 0.05)",
+                  borderRadius: 14,
+                  border: "1px solid rgba(74, 144, 226, 0.15)",
+                }}
+              >
+                <div
+                  style={{
+                    ...UI.eyebrow,
+                    marginBottom: 14,
+                    color: "rgba(74, 144, 226, 0.8)",
+                  }}
+                >
+                  Color Palette
+                </div>
+                <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                  {pattern.color_recommendations.map((color, i) => (
+                    <div
+                      key={i}
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      <div
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: "50%",
+                          background: getSwatchBackground(color),
+                          border: "2px solid rgba(255,255,255,0.3)",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.5)",
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: "0.95rem",
+                          fontWeight: 600,
+                          color: "#fff",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {color}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          <div style={{ gridColumn: "span 2" }}>
+            <div style={UI.eyebrow}>Trailer / Soft Plastic</div>
+            <div
+              style={{ fontSize: "1.15rem", fontWeight: 600, color: "#fff" }}
+            >
+              {pattern.soft_plastic || pattern.trailer || "None"}
+            </div>
+            {(pattern.soft_plastic_why || pattern.trailer_why) && (
+              <p
+                style={{
+                  fontSize: "0.9rem",
+                  color: "rgba(255,255,255,0.5)",
+                  marginTop: 8,
+                  fontStyle: "italic",
+                  lineHeight: 1.5,
+                  margin: "8px 0 0 0",
+                }}
+              >
+                {pattern.soft_plastic_why || pattern.trailer_why}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <div style={UI.eyebrow}>Rod</div>
+            <div
+              style={{ fontSize: "0.95rem", fontWeight: 600, color: "#fff" }}
+            >
+              {pattern.gear?.rod || "N/A"}
+            </div>
+          </div>
+          <div>
+            <div style={UI.eyebrow}>Reel</div>
+            <div
+              style={{ fontSize: "0.95rem", fontWeight: 600, color: "#fff" }}
+            >
+              {pattern.gear?.reel || "N/A"}
+            </div>
+          </div>
+          <div
+            style={{
+              gridColumn: "span 2",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              paddingTop: 16,
+            }}
+          >
+            <div style={UI.eyebrow}>Line Selection</div>
+            <div
+              style={{ fontSize: "1rem", fontWeight: 700, color: "#4A90E2" }}
+            >
+              {pattern.gear?.line || "N/A"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Pattern Strategy (Logic & Game Plan) - Consistent Visual Flair */}
+      {(pattern.why_this_works || pattern.strategy) && (
         <div
           style={{
             position: "relative",
-            marginTop: 20,
-            padding: "24px",
-            background: "rgba(255, 255, 255, 0.04)", // Increased brightness
-            borderRadius: 20,
-            border: "1px solid rgba(255, 255, 255, 0.15)",
+            marginBottom: 36,
+            padding: "26px",
+            background: "rgba(255, 255, 255, 0.02)",
+            borderRadius: 24,
+            border: "1px solid rgba(255, 255, 255, 0.08)",
             overflow: "hidden",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
           }}
         >
-          {/* Subtle Tactical Grid Overlay */}
+          {/* Tactical HUD Grid Overlay: High visibility for Game Plan */}
           <div
             style={{
               position: "absolute",
               inset: 0,
-              backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
-              backgroundSize: "20px 20px",
-              opacity: 0.4,
+              backgroundImage: `radial-gradient(rgba(74, 144, 226, 0.04) 1px, transparent 1px)`,
+              backgroundSize: "30px 30px",
+              opacity: 0.5,
               pointerEvents: "none",
             }}
           />
 
-          {/* Map Watermark - Increased visibility */}
-          <div
-            style={{
-              position: "absolute",
-              right: -15,
-              bottom: -15,
-              opacity: 0.07,
-              color: "#fff",
-              pointerEvents: "none",
-              transform: "rotate(-5deg)",
-            }}
-          >
-            <svg
-              width="160"
-              height="160"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
-            >
-              <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6zm6-3v15m6-12v15" />
-            </svg>
-          </div>
+          {pattern.why_this_works && (
+            <div style={{ marginBottom: 28, position: "relative" }}>
+              {/* Brain Watermark */}
+              <div
+                style={{
+                  position: "absolute",
+                  right: -10,
+                  top: -10,
+                  opacity: 0.04,
+                  color: "#4A90E2",
+                  pointerEvents: "none",
+                }}
+              >
+                <svg
+                  width="120"
+                  height="120"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                >
+                  <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.97-2.02 2.5 2.5 0 0 1-2.02-2.97 2.5 2.5 0 0 1 .45-4.95 2.5 2.5 0 0 1 2-4.5 2.5 2.5 0 0 1 4.96-.44Z" />
+                  <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.97-2.02 2.5 2.5 0 0 0 2.02-2.97 2.5 2.5 0 0 0-.45-4.95 2.5 2.5 0 0 0-2-4.5 2.5 2.5 0 0 0-4.96-.44Z" />
+                </svg>
+              </div>
+              <h4
+                style={{
+                  fontSize: "0.8rem",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.15em",
+                  color: "#4A90E2",
+                  marginBottom: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                {/* Removed Hyphen: Use Circle Icon */}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+                The Logic
+              </h4>
+              <p
+                style={{
+                  lineHeight: 1.75,
+                  margin: 0,
+                  fontSize: "1.1rem",
+                  color: "rgba(255, 255, 255, 0.9)",
+                }}
+              >
+                {pattern.why_this_works}
+              </p>
+            </div>
+          )}
 
-          <h4
-            style={{
-              fontSize: "0.85rem",
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.15em",
-              color: "#fff",
-              marginBottom: 16,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-            }}
-          >
-            {/* Target/Action Icon */}
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="3"
-            >
-              <path d="M12 2v20M2 12h20" />
-              <circle cx="12" cy="12" r="6" />
-            </svg>
-            Game Plan
-          </h4>
-
-          <p
-            style={{
-              lineHeight: 1.75,
-              margin: 0,
-              fontSize: "1.2rem", // Slightly larger for "Action"
-              color: "#fff",
-              fontWeight: 500, // Thicker font to stand out
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            {typeof pattern.strategy === "string"
-              ? pattern.strategy.replace(/\.([A-Z])/g, ". $1")
-              : pattern.strategy}
-          </p>
+          {pattern.strategy && (
+            <div style={{ position: "relative" }}>
+              {/* Map Watermark */}
+              <div
+                style={{
+                  position: "absolute",
+                  right: -5,
+                  bottom: -5,
+                  opacity: 0.03,
+                  color: "#fff",
+                  pointerEvents: "none",
+                }}
+              >
+                <svg
+                  width="130"
+                  height="130"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                >
+                  <path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6zm6-3v15m6-12v15" />
+                </svg>
+              </div>
+              <h4
+                style={{
+                  fontSize: "0.8rem",
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.15em",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  marginBottom: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                {/* Removed Hyphen: Use Crosshair Icon */}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                >
+                  <path d="M12 2v20M2 12h20" />
+                  <circle cx="12" cy="12" r="6" />
+                </svg>
+                Game Plan
+              </h4>
+              <p
+                style={{
+                  lineHeight: 1.75,
+                  margin: 0,
+                  fontSize: "1.2rem",
+                  fontWeight: 500,
+                  color: "#fff",
+                }}
+              >
+                {/* Maintain existing AI text cleanup logic */}
+                {typeof pattern.strategy === "string"
+                  ? pattern.strategy.replace(/\.([A-Z])/g, ". $1")
+                  : pattern.strategy}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Section Divider */}
-      <div
-        style={{
-          height: 1,
-          background:
-            "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%)",
-          margin: "32px 0",
-        }}
-      />
-
-      {/* How to Work It */}
+      {/* 6. Targets (Unified Locations) - Spotlight Style with Scopes */}
       {((pattern.work_it_cards && pattern.work_it_cards.length > 0) ||
         (pattern.work_it && pattern.work_it.length > 0)) && (
-        <div style={{ marginBottom: 0 }}>
+        <div style={{ marginTop: 8 }}>
           <h4
             style={{
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              marginBottom: 16,
-              color: "rgba(255, 255, 255, 0.95)",
+              fontSize: "1.3rem",
+              fontWeight: 700,
+              marginBottom: 20,
+              color: "#fff",
+              borderBottom: "3px solid #4A90E2",
               display: "inline-block",
-              paddingBottom: "6px",
-              borderBottom: "3px solid rgb(74, 144, 226)",
+              paddingBottom: "4px",
             }}
           >
             Targets
           </h4>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {(pattern.work_it_cards || pattern.work_it || []).map((item, i) => {
-              // Handle new object format
-              if (typeof item === "object" && item !== null && "name" in item) {
-                return (
-                  <div
-                    key={i}
-                    style={{
-                      padding: "20px 24px",
-                      background: "rgba(255, 255, 255, 0.02)",
-                      borderRadius: 12,
-                      border: "1px solid rgba(255, 255, 255, 0.06)",
-                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
-                    }}
-                  >
-                    <h5
-                      style={{
-                        fontSize: ".95rem",
-                        fontWeight: 700,
-                        marginBottom: 8,
-                        color: "#4A90E2",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {item.name}
-                    </h5>
-
-                    <p
-                      style={{
-                        margin: "0 0 12px 0",
-                        lineHeight: 1.6,
-                        opacity: 0.7,
-                        fontSize: "0.9rem",
-                        fontStyle: "italic",
-                        color: "rgba(255, 255, 255, 0.8)",
-                      }}
-                    >
-                      {item.definition}
-                    </p>
-
-                    <p
-                      style={{
-                        margin: 0,
-                        paddingLeft: 10,
-                        borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
-                        lineHeight: 1.5,
-                        opacity: 0.92,
-                        fontSize: "1.1rem",
-                        color: "rgba(255, 255, 255, 0.95)",
-                      }}
-                    >
-                      {item.how_to_fish}
-                    </p>
-                  </div>
-                );
-              }
-
-              // Handle legacy string format
+              const isObject =
+                typeof item === "object" && item !== null && "name" in item;
               return (
                 <div
                   key={i}
-                  style={{ display: "flex", gap: 16, alignItems: "flex-start" }}
+                  style={{
+                    position: "relative",
+                    padding: "24px",
+                    background: "rgba(255, 255, 255, 0.03)",
+                    borderRadius: 20,
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    overflow: "hidden",
+                  }}
                 >
+                  {/* Scope Watermark: Consistent with Day Progression */}
                   <div
                     style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "50%",
-                      background:
-                        "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-                      boxShadow:
-                        "0 2px 8px rgba(74, 144, 226, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.2)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.85rem",
-                      fontWeight: 700,
-                      flexShrink: 0,
-                      color: "#fff",
+                      position: "absolute",
+                      right: -10,
+                      bottom: -10,
+                      opacity: 0.04,
+                      color: "#4A90E2",
+                      pointerEvents: "none",
                     }}
                   >
-                    {i + 1}
+                    <svg
+                      width="120"
+                      height="120"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v8M8 12h8" />
+                    </svg>
                   </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginBottom: 8,
+                    }}
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#4A90E2"
+                      strokeWidth="2.5"
+                    >
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    <h5
+                      style={{
+                        fontSize: "1.25rem",
+                        fontWeight: 700,
+                        margin: 0,
+                        color: "#fff",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.02em",
+                      }}
+                    >
+                      {isObject ? item.name : "Location"}
+                    </h5>
+                  </div>
+                  {isObject && item.definition && (
+                    <div
+                      style={{
+                        fontWeight: 700,
+
+                        fontSize: "0.9rem",
+                        color: "rgba(74, 144, 226, 0.85)",
+                        // fontStyle: "italic",
+                        marginBottom: 14,
+                      }}
+                    >
+                      {item.definition}
+                    </div>
+                  )}
                   <p
                     style={{
                       margin: 0,
                       lineHeight: 1.7,
-                      opacity: 0.88,
-                      fontSize: "1.05rem",
+                      fontSize: "1.1rem",
+                      color: "rgba(255, 255, 255, 0.92)",
+                      borderLeft: "3px solid rgba(74, 144, 226, 0.3)",
+                      paddingLeft: 16,
                     }}
                   >
-                    {item}
+                    {isObject ? item.how_to_fish : item}
                   </p>
                 </div>
               );
@@ -1117,7 +909,6 @@ function PatternCard({
     </div>
   );
 }
-
 // Helper function to map color names to hex values
 function getColorHex(colorName: string): string {
   const colorMap: Record<string, string> = {

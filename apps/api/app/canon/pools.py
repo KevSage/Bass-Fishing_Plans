@@ -228,6 +228,8 @@ RIG_COLORS = [
     "green pumpkin orange",
     "peanut butter & jelly",
     "watermelon",
+    "morning dawn",  # <--- Keep this (Worm color)
+    "green pumpkin orange", # <--- ADDED: Fixes football jig validation error
 ]
 
 # Group 2: Bladed/Skirted (Jigs/Chatterbaits)
@@ -246,6 +248,8 @@ BLADED_SKIRTED_COLORS = [
     "black",
     "brown",
     "sexy shad",
+    "green pumpkin orange", # <--- ADDED: Fixes football jig validation error
+  
 ]
 
 # Group 3: Soft Swimbaits (5 colors)
@@ -528,6 +532,7 @@ BAITFISH_PLASTICS = [
     "small minnow",
     "soft jerkbait",
     "paddle tail swimbait",
+    "dropshot minnow",  # <--- ADD THIS
 ]
 
 JIG_TRAILERS = [
@@ -729,7 +734,7 @@ LURE_TO_PRESENTATION = {
 # ----------------------------------------
 CHUNK_ALLOWED_BASE_LURES = {"casting jig", "football jig"}
 BOTTOM_JIGS = {"casting jig", "football jig"}
-BAITFISH_SET = {"soft jerkbait", "small minnow", "paddle tail swimbait"}
+BAITFISH_SET = {"soft jerkbait", "small minnow", "paddle tail swimbait", "dropshot minnow"}
 
 
 # ----------------------------------------

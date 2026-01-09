@@ -16,7 +16,7 @@ except ImportError:
 
 class RateLimitStore:
     """
-    Manages a simple 10-plan-per-day limit for members.
+    Manages a simple 20-plan-per-day limit for members.
     Supports both SQLite (local) and Postgres (Vercel).
     """
     def __init__(self, path: str = "data/rate_limits.sqlite3"):
@@ -81,8 +81,6 @@ class RateLimitStore:
         today = datetime.now().strftime("%Y-%m-%d")
         email_clean = email.lower().strip()
         p = self._get_p()
-        # Handle syntax differences for UPSERT
-        ex = "EXCLUDED" if self._use_pg else "excluded"
         
         with self._conn() as conn:
             conn.execute(
@@ -92,11 +90,18 @@ class RateLimitStore:
             )
             conn.commit()
 
-    def is_within_daily_limit(self, email: str, limit: int = 10) -> bool:
+    def is_within_daily_limit(self, email: str, limit: int = 20) -> bool:
         """Check if the user is under the daily cap."""
         # Bypass for admin/test accounts
-        bypass = os.getenv("RATE_LIMIT_BYPASS_EMAILS", "").lower().split(",")
-        if email.lower().strip() in bypass:
+        # Fix: Ensure we strip whitespace from env vars and ignore empty strings
+        bypass_env = os.getenv("RATE_LIMIT_BYPASS_EMAILS", "")
+        bypass_list = [
+            e.strip().lower() 
+            for e in bypass_env.split(",") 
+            if e.strip()
+        ]
+        
+        if email.lower().strip() in bypass_list:
             return True
             
         return self.get_daily_count(email) < limit
