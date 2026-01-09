@@ -44,6 +44,7 @@ class SubscriberStore:
 
     def _init_pg(self) -> None:
         with self._pg_conn() as conn:
+            # Main subscribers table
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS subscribers (
@@ -51,6 +52,19 @@ class SubscriberStore:
                     active BOOLEAN NOT NULL,
                     stripe_customer_id TEXT,
                     stripe_subscription_id TEXT UNIQUE
+                );
+                """
+            )
+            # ✅ Webhook Audit Log table
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS stripe_webhook_logs (
+                    id SERIAL PRIMARY KEY,
+                    event_type TEXT NOT NULL,
+                    email TEXT,
+                    active BOOLEAN,
+                    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    stripe_event_id TEXT UNIQUE
                 );
                 """
             )
@@ -131,7 +145,7 @@ class SubscriberStore:
             conn.commit()
 
     # -------------------------
-    # Public API (unchanged)
+    # Public API
     # -------------------------
     def upsert_active(
         self,
@@ -162,6 +176,23 @@ class SubscriberStore:
                     stripe_subscription_id=excluded.stripe_subscription_id
                 """,
                 (email_norm, 1 if active else 0, stripe_customer_id, stripe_subscription_id),
+            )
+            conn.commit()
+
+    def log_webhook(self, event_type: str, email: str, active: bool, event_id: str) -> None:
+        """Saves a record of the webhook event to Postgres for auditing."""
+        if not self._use_pg:
+            # We skip local logging to avoid database migrations on SQLite
+            return
+            
+        with self._pg_conn() as conn:
+            conn.execute(
+                """
+                INSERT INTO stripe_webhook_logs (event_type, email, active, stripe_event_id)
+                VALUES (%s, %s, %s, %s)
+                ON CONFLICT (stripe_event_id) DO NOTHING;
+                """,
+                (event_type, email.lower().strip(), active, event_id)
             )
             conn.commit()
 
