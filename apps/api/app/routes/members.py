@@ -122,7 +122,7 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
     # Check rate limit (10 per day)
     # Replaces old check_member_cooldown logic
     daily_count = rate_limit_store.get_daily_count(email)
-    rate_limit_allowed = daily_count < 10
+    rate_limit_allowed = daily_count < 25
     
     # Base response
     response = {
