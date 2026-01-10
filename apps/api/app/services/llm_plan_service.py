@@ -415,13 +415,26 @@ RETURN JSON ONLY:
 CRITICAL: Return a SINGLE JSON OBJECT only. No markdown. No extra keys. No wrapper objects.
 
 🚨 COLOR POOL INTEGRITY RULE (CRITICAL):
-Before selecting color_recommendations, you MUST identify the specific pool for your chosen lure using LURE_COLOR_POOL_MAP.
-Using a color from the wrong pool will cause system failure. 
+YOU MUST FOLLOW THE LOOKUP PROCEDURE IN LURE SELECTION POLICY SECTION H.
+
+Step 1: Look up your base_lure in LURE_COLOR_POOL_MAP
+Step 2: Use ONLY colors from that specific pool
+Step 3: Copy exact strings (no variations, no inventions)
+
 Common Hallucinations to AVOID:
-❌ "chartreuse" for Crankbaits -> MUST use "chartreuse/black back" or "firetiger"
-❌ "shad" for Crankbaits -> MUST use "sexy shad" or "ghost shad"
-❌ "pearl" for Rigs -> MUST use "white" or "baby bass"
-❌ "green pumpkin" for Frogs -> MUST use "green" or "brown"
+❌ "chartreuse/black" for chatterbait → WRONG POOL. Chatterbait uses BLADED_SKIRTED_COLORS which has "chartreuse/white"
+❌ "chartreuse/black" for spinnerbait → WRONG POOL. Use "chartreuse/white" from BLADED_SKIRTED_COLORS
+❌ "sexy shad" for texas rig → WRONG POOL. That's in CRANKBAIT_COLORS, not RIG_COLORS
+❌ "chartreuse" alone for crankbaits → Must use exact string "chartreuse/black" from CRANKBAIT_COLORS
+❌ "shad" for crankbaits → Must use "sexy shad" or "ghost shad" or "citrus shad" from CRANKBAIT_COLORS
+❌ "pearl" for texas rig → Must use "watermelon" or "baby bass" from RIG_COLORS
+❌ "green pumpkin" for frogs → Must use "green" or "brown" from FROG_COLORS
+❌ Mixing pools or inventing combinations → SYSTEM FAILURE. Each lure has ONE pool only.
+
+✅ CORRECT PROCESS:
+1. Selected "chatterbait" → Look up LURE_COLOR_POOL_MAP["chatterbait"] = "BLADED_SKIRTED_COLORS"
+2. Find BLADED_SKIRTED_COLORS: ["white", "shad", "chartreuse/white", "chartreuse", "black/blue", ...]
+3. Choose from this list only: e.g., ["chartreuse/white", "black/blue"]
 
 🚨 CRITICAL VALIDATION RULE #1 - ONLY ONE BOTTOM CONTACT PRESENTATION PER PLAN:
 
@@ -527,15 +540,14 @@ work_it_cards[0].name = "grass edges"
 work_it_cards[0].definition = target_definitions["grass edges"] (the full definition sentence from user message)
 
 
-COLOR SYSTEM (LOCKED):
-- You do not know real-time water clarity. Always output exactly TWO colors:
-  1) Clear-to-average clarity option
-  2) Stained-to-muddy clarity option
-- Colors MUST come from the correct lure-specific color pool for the chosen base_lure.
-- In why_this_works, you MUST explain colors in "Choose A if… Choose B if…" format.
-- Light penetration can modify which color you pick within each clarity lane:
-  bright = subtler/cleaner; cloudy/low light = more visible/stronger contrast.
-- Do NOT output any other color structure (no zones, no asset keys, no nested color objects).
+COLOR SELECTION:
+⚠️ See LURE SELECTION POLICY Section H for complete color selection procedure.
+Key points:
+- You MUST look up your lure in LURE_COLOR_POOL_MAP first
+- You MUST only use colors from that specific pool (see canonical pools below)
+- Provide exactly TWO colors: one for clear water, one for stained water
+- In why_this_works, explain colors in "Choose A if… Choose B if…" format
+- Do NOT output any other color structure (no zones, no asset keys, no nested color objects)
 
 
 WHERE & HOW
@@ -549,7 +561,7 @@ WHY THIS WORKS:
    - Focus on: lure characteristics, presentation style
    - MUST include color explanation using "Choose X if Y" format:
      * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
-     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
+     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
    - Add ONE sentence about soft plastic/trailer color choice if applicable.
    - Length: Max 28-32 words total (lure choice + color explanation + optional trailer color)
 
@@ -731,8 +743,10 @@ async def call_openai_plan(
     longitude: float,
     access_type: str = "boat",
     is_member: bool = False,
+    current_lake_name: str = "",
     recent_primary_lures: list[str] = None,
     recent_secondary_lures: list[str] = None,
+    regen_context: dict = None,
 ) -> dict:
     """
     Generate LLM plan with access filtering and variety system.
@@ -812,20 +826,71 @@ async def call_openai_plan(
         "instructions": "",
     }
     
-    # Build regeneration context if recent lures exist
+    # Build context-aware regeneration note
     regeneration_note = ""
     if recent_primary_lures or recent_secondary_lures:
-        regeneration_note = "\n🔄 REGENERATION CONTEXT:\n"
-        regeneration_note += "User has recent plan history. When selecting within your Day Lean:\n"
+        # Default context if not provided
+        if not regen_context:
+            regen_context = {
+                "last_lake_name": None,
+                "minutes_since_last_gen": None,
+                "last_combination": None
+            }
         
+        last_lake = regen_context.get("last_lake_name")
+        minutes_ago = regen_context.get("minutes_since_last_gen")
+        last_combo = regen_context.get("last_combination")
+        
+        # Determine user intent based on context
+        same_location = (last_lake == current_lake_name) if last_lake and current_lake_name else False
+        
+        regeneration_note = "\n🔄 REGENERATION CONTEXT:\n"
+        
+        # Show recent lures
         if recent_primary_lures:
             regeneration_note += f"Recent primary lures: {', '.join(recent_primary_lures)}\n"
         if recent_secondary_lures:
             regeneration_note += f"Recent secondary lures: {', '.join(recent_secondary_lures)}\n"
+        
+        # Absolute rule: never repeat combination
+        if last_combo:
+            regeneration_note += f"\n🚨 CRITICAL: Do NOT use combination ({last_combo[0]}, {last_combo[1]}). Combinations must never repeat.\n"
+        
+        # Context-based guidance
+        if minutes_ago is not None:
+            if minutes_ago < 60:  # <1 hour
+                if same_location:
+                    regeneration_note += "\nUser Intent: WANTS DIFFERENT LURES (rapid regeneration at same location)\n"
+                    regeneration_note += "- You MUST avoid all lures in recent lists unless absolutely no other option fits your Day Lean\n"
+                    regeneration_note += "- Provide variety while maintaining condition-based logic\n"
+                else:
+                    regeneration_note += "\nUser Intent: NEW LOCATION (rapid regeneration at different spot)\n"
+                    regeneration_note += "- Same lures are acceptable if they're optimal for this location's conditions\n"
+                    regeneration_note += "- Focus on what conditions suggest, not avoiding recent lures\n"
             
-        regeneration_note += "- If multiple lures fit the lean equally well, prefer lures NOT in recent lists\n"
-        regeneration_note += "- Recent lures are still valid if they're clearly optimal for conditions\n"
-        regeneration_note += "- This helps provide variety when user regenerates\n\n"
+            elif 60 <= minutes_ago < 180:  # 1-3 hours
+                regeneration_note += "\nUser Intent: WANTS TO TRY SOMETHING DIFFERENT (1-3 hours later)\n"
+                regeneration_note += "- User is looking for alternative approaches\n"
+                regeneration_note += "- Avoid recent lures unless conditions have changed significantly\n"
+            
+            elif 180 <= minutes_ago < 360:  # 3-6 hours
+                regeneration_note += "\nUser Intent: CHECKING IF CONDITIONS CHANGED (3-6 hours later)\n"
+                regeneration_note += "- User wants to know what's optimal NOW based on current conditions\n"
+                regeneration_note += "- Same lures are acceptable if current conditions support them\n"
+                regeneration_note += "- Focus on condition analysis, not variety for variety's sake\n"
+            
+            else:  # 6+ hours
+                regeneration_note += "\nUser Intent: NEW DAY / FRESH CONDITIONS (6+ hours later)\n"
+                regeneration_note += "- Treat this as a fresh analysis of current conditions\n"
+                regeneration_note += "- Same lures are perfectly acceptable if conditions support them\n"
+                regeneration_note += "- Focus purely on optimal choices for current weather/phase\n"
+        else:
+            # No timing info, use soft guidance
+            regeneration_note += "\nWhen selecting within your Day Lean:\n"
+            regeneration_note += "- If multiple lures fit equally well, prefer lures NOT in recent lists\n"
+            regeneration_note += "- Recent lures are still valid if they're clearly optimal for conditions\n"
+        
+        regeneration_note += "\n"
     
     
     user_input["instructions"] = (
@@ -1143,8 +1208,10 @@ async def generate_llm_plan_with_retries(
     longitude: float,
     access_type: str = "boat",
     is_member: bool = False,
+    current_lake_name: str = "",
     recent_primary_lures: list[str] = None,
     recent_secondary_lures: list[str] = None,
+    regen_context: dict = None,
     max_attempts: int = 5,
 ) -> dict:
     """
@@ -1158,8 +1225,10 @@ async def generate_llm_plan_with_retries(
         longitude: Longitude
         access_type: "boat" or "bank" - filters accessible targets
         is_member: All users are members now (kept for compatibility)
+        current_lake_name: Current lake name for regeneration context
         recent_primary_lures: List of recently used primary lures
         recent_secondary_lures: List of recently used secondary lures
+        regen_context: Context dict with last_lake_name, minutes_since_last_gen, last_combination
         max_attempts: Number of retry attempts
     """
     for attempt in range(max_attempts):
@@ -1171,8 +1240,10 @@ async def generate_llm_plan_with_retries(
             longitude=longitude,
             access_type=access_type,
             is_member=is_member,
+            current_lake_name=current_lake_name,
             recent_primary_lures=recent_primary_lures,
             recent_secondary_lures=recent_secondary_lures,
+            regen_context=regen_context,
         )
         if plan is not None:
          _log_color_intent(f"raw_llm_attempt_{attempt + 1}", plan)
