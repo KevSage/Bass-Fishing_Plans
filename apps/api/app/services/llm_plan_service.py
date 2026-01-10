@@ -182,6 +182,13 @@ RETURN JSON ONLY:
     "Evening: 2-3 sentences describing location, target type, bass behavior, tactical adjustments and what to expect and prioritize>"
   ],
 
+  "weather_card_insights":{
+    "temperature":"1-2 sentences. No numbers. No tactics. How temperature range may affect bass activity today.",
+    "wind":"1-2 sentences. No numbers. No tactics. How wind may affect bass activity today.",
+    "pressure":"1-2 sentences. No numbers. No tactics. How pressure/trend may affect bass activity today.",
+    "sky_uv":"1-2 sentences. No numbers. No tactics. How cloud cover/UV (light) may affect bass activity today."
+  },
+
   "outlook_blurb":"3 sentences of weather, condition and phase related analysis and how it may effect bass activity. No exact numbers or strategy>"
 }
 """
@@ -225,7 +232,14 @@ RETURN JSON ONLY:
     "Evening: Max 28–32 words. Where+why + tactical adjustment. No colors. No exact numbers."
   ],
 
-  "outlook_blurb":"Max 28–32 words of weather/phase context only. No exact numbers. No fishing strategy."
+  "weather_card_insights":{
+  "temperature":"1-2 sentences. No numbers. No tactics. How temperature range may affect bass activity today.",
+  "wind":"1-2 sentences. No numbers. No tactics. How wind may affect bass activity today.",
+  "pressure":"1-2 sentences. No numbers. No tactics. How pressure/trend may affect bass activity today.",
+  "sky_uv":"1-2 sentences. No numbers. No tactics. How cloud cover/UV (light) may affect bass activity today."
+},
+
+"outlook_blurb":"Max 28–32 words of weather/phase context only. No exact numbers. No fishing strategy."
 }
 """
 
@@ -312,6 +326,14 @@ Secondary is not a backup lure. It assumes the initial read may be slightly off 
 - MUST use a different presentation family than primary
 - May change targets or fish the same targets differently
 - MUST reference primary in why_this_works and explain the pivot assumption
+
+WEATHER CARD INSIGHTS (UI) (LOCKED):
+- You MUST populate weather_card_insights with 4 keys: temperature, wind, pressure, sky_uv.
+- Each value must be 1-2 sentences.
+- Do NOT include any exact numbers (no mph, mb, °F, UV values, ranges).
+- Do NOT mention lures, techniques, targets, or locations.
+- Use suggestive language only (may/might/can/tends to).
+- Do NOT restate the metric value; the UI already shows it.
 
 HARD RULES (validator enforced):
 - Add a space after every period. "word. Word" not "word.Word"
@@ -595,9 +617,6 @@ async def call_openai_plan(
     variety_mode = get_variety_mode()
     print("LLM_PLAN: Variety mode=" + variety_mode)
 
-    # --- NEW: Weather Insights List (for Frontend Cards) ---
-    weather_insights: List[str] = []
-
     # ✅ STEP 3: Build user input with accessible targets and ENHANCED WEATHER
     user_input = {
         "location": location,
@@ -731,237 +750,6 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
         "- Variety will be applied in post-processing\n"
     )
     
-    # ===================================================================
-    # ENHANCED WEATHER ANALYSIS INJECTION
-    # ===================================================================
-    
-    pressure_mb = weather.get("pressure_mb")
-    pressure_trend = weather.get("pressure_trend")
-    wind_mph = weather.get("wind_mph") or weather.get("wind_speed") or 0
-    moon_phase = weather.get("moon_phase")
-    is_major_period = weather.get("is_major_period", False)
-    has_recent_rain = weather.get("has_recent_rain", False)
-    uv_index = weather.get("uv_index")
-    humidity = weather.get("humidity")
-    
-    weather_guidance = "\n🌡️ ENHANCED WEATHER ANALYSIS:\n\n"
-    
-    # Barometric Pressure Analysis (HIGHEST PRIORITY)
-    if pressure_mb and pressure_trend:
-        weather_guidance += f"BAROMETRIC PRESSURE: {pressure_mb}mb ({pressure_trend})\n"
-        
-        if pressure_trend == "falling":
-            weather_guidance += """
-✅ FALLING PRESSURE = AGGRESSIVE FEEDING WINDOW
-- Bass sense approaching weather change and feed heavily
-- POWER FISHING optimal: chatterbait, lipless crank, swim jig, spinnerbait
-- Faster retrieves, cover water quickly, reaction presentations
-- Target shallow cover and transitions
-- Strategy tone: "Falling pressure triggers aggressive feeding—bass will chase reaction baits"
-
-"""
-            # CAPTURE INSIGHT (KEYWORD: Pressure)
-            weather_insights.append("Pressure Falling: Bass feeding aggressively on reaction baits.")
-
-        elif pressure_trend == "rising":
-            weather_guidance += """
-✅ RISING PRESSURE = ACTIVE FEEDING
-- Bass feed well before conditions stabilize
-- REACTION BAITS effective: crankbait, chatterbait, spinnerbait, topwater (if warm)
-- Normal to slightly faster retrieves
-- Strategy tone: "Rising pressure indicates active bass—expect strikes on moving baits"
-
-"""
-            # CAPTURE INSIGHT (KEYWORD: Pressure)
-            weather_insights.append("Pressure Rising: Active bite window expected.")
-
-        else:  # stable
-            weather_guidance += """
-✅ STABLE PRESSURE = NORMAL CONDITIONS
-- Use PHASE-APPROPRIATE presentations
-- Cold water (<50°F): Bottom contact (texas rig, jig, carolina rig)
-- Warm water (>60°F): Reaction baits (chatterbait, crankbait, topwater)
-- Transition temps (50-60°F): Match presentation to phase and structure
-
-"""
-            # CAPTURE INSIGHT (KEYWORD: Pressure)
-            weather_insights.append("Pressure Stable: Normal activity levels.")
-
-    
-    # Moon Phase & Solunar Analysis
-    if moon_phase:
-        weather_guidance += f"MOON PHASE: {moon_phase}"
-        if is_major_period:
-            weather_guidance += " (MAJOR SOLUNAR PERIOD - ACTIVE FEEDING WINDOW)\n"
-            weather_guidance += """
-🌙 CRITICAL FEEDING WINDOW ACTIVE
-- You're fishing during peak solunar activity (moon overhead/underfoot)
-- Bass will be actively feeding for next 2 hours
-- Use aggressive presentations, don't be subtle
-- Strategy tone: "You're fishing during a major solunar period—bass are in an active feeding window"
-
-"""
-            # CAPTURE INSIGHT
-            weather_insights.append("Major Solunar Period: Active feeding window.")
-        else:
-            weather_guidance += "\n"
-            if "full" in moon_phase or "gibbous" in moon_phase:
-                weather_guidance += "- Increased feeding activity, especially dawn/dusk\n"
-            elif "new" in moon_phase or "crescent" in moon_phase:
-                weather_guidance += "- Minimal moonlight, bass feed during daylight hours\n"
-            weather_guidance += "\n"
-    
-    # RAIN / VISIBILITY (Keywords: Light, Visibility)
-    if has_recent_rain:
-        weather_guidance += """
-💧 RECENT RAIN DETECTED
-- Water clarity likely REDUCED (stained or muddy)
-- Oxygen levels INCREASED (active bass)
-- SHIFT COLORS toward high-visibility options (chartreuse, white, black/blue).
-- Strategy tone: "Recent rain has stained the water—bright colors improve visibility in reduced clarity"\n"""
-        
-        # CAPTURE INSIGHT (KEYWORD: Light or Visibility)
-        weather_insights.append("Light & Visibility: Recent rain reduces light penetration; bass roam more.")
-
-    # WIND (Keyword: Wind)
-    if wind_mph > 6:
-        # ✅ FIX: Add Wind Insight
-        weather_insights.append(f"Wind ({wind_mph} mph): Use wind-blown banks.")
-    
-    # UV Index Analysis
-    if uv_index is not None:
-        weather_guidance += f"UV INDEX: {uv_index}\n"
-        if uv_index > 7:
-            weather_guidance += """
-☀️ HIGH UV = BASS SEEK SHADE
-- Strong light penetration drives bass under cover
-- PRIORITIZE shaded targets: docks, laydowns, overhangs, grass mats, undercut banks
-- In target selection, favor cover-oriented structure over open water
-- Natural/translucent colors in clear water
-- Strategy tone: "High UV index drives bass to shade—focus on docks and overhead cover"
-
-"""
-            # CAPTURE INSIGHT (KEYWORD: UV)
-            weather_insights.append(f"UV High ({uv_index}): Bass hold tight to shade.")
-
-        elif uv_index < 3:
-            weather_guidance += """
-☁️ LOW UV = BASS ROAM OPEN WATER
-- Overcast/low light allows bass to leave heavy cover
-- Can target flats, transitions, open-water structure
-- REACTION BAITS more effective (bass less cover-dependent)
-- Chatterbait, crankbait, spinnerbait excel in low light
-- Strategy tone: "Low light conditions reduce cover dependency—bass will roam more freely"
-
-"""
-            # CAPTURE INSIGHT (KEYWORD: UV)
-            weather_insights.append(f"UV Low ({uv_index}): Bass roaming open water.")
-            
-        weather_guidance += "\n"
-    
-    # Humidity Analysis (topwater indicator)
-    if humidity is not None and humidity > 70:
-        weather_guidance += f"""
-💨 HIGH HUMIDITY ({humidity}%)
-- Increased insect activity on water surface
-- TOPWATER opportunities if water temp > 60°F
-- Popper, walking bait, or frog (if grass/pads present)
-- Strategy tone: "High humidity increases insect activity—topwater baits mimic surface prey"
-
-"""
-    
-    # Integration rules
-    weather_guidance += """
-🎯 INTEGRATION RULES:
-1. Pressure trend OVERRIDES moon phase for activity level
-   - Falling pressure + new moon = STILL aggressive (pressure wins)
-   - Rising pressure + full moon = EXTREMELY aggressive (both align)
-   - Stable pressure + major period = normal to active
-
-2. Recent rain MODIFIES all color selections
-   - Shift BOTH color recommendations toward high-visibility
-   - "Clear water" colors become "stained water" equivalents
-
-3. UV index REFINES target selection
-   - High UV (>7) → favor shaded targets in your 3 selections
-   - Low UV (<3) → can include open-water targets
-
-4. Combine indicators for strategy tone:
-   - Falling pressure + major period = "Ideal feeding conditions"
-   - Stable pressure + low UV = "Normal conditions with good roaming activity"
-   - Rising pressure + recent rain = "Active bass in stained water—use bright reaction baits"
-
-"""
-    
-    # Append weather guidance to instructions
-    user_input["instructions"] += weather_guidance
-    
-    # ===================================================================
-    # TEMPERATURE SWING ANALYSIS (existing logic)
-    # ===================================================================
-    
-    temp_current = weather.get("temp_f", 60)
-    temp_high = weather.get("temp_high", temp_current)
-    temp_low = weather.get("temp_low", temp_current)
-    temp_swing = temp_high - temp_low
-    
-    # Add temp swing guidance if significant
-    if temp_swing >= 10:
-        swing_category = (
-            "MODERATE" if temp_swing < 15 else 
-            "WIDE" if temp_swing < 20 else 
-            "EXTREME"
-        )
-        
-        # ✅ FIX: Add Temp Insight so the Temperature Card modal has details
-        weather_insights.append(f"Temperature Swing ({temp_swing}°): Activity increases as water warms.")
-
-        temp_swing_instructions = """
-🌡️ TEMPERATURE SWING DETECTED (""" + swing_category + """):
-Current temp: """ + str(temp_current) + """°F
-Today's range: """ + str(temp_low) + """°F (morning) → """ + str(temp_high) + """°F (afternoon)
-Temperature swing: """ + str(temp_swing) + """°F
-
-LURE SELECTION STRATEGY FOR TEMP SWINGS:
-
-MODERATE SWING (10-15°F):
-- Choose a lure that works effectively across the temperature range
-- Versatile options are preferred over narrow-range specialists
-- Example: Texas rig works 45-65°F (versatile) vs Carolina rig optimal <50°F only (narrow)
-
-WIDE/EXTREME SWING (15°F+):
-- PRIMARY LURE must work at BOTH morning and afternoon temps OR
-- Day progression must explain when/how to transition between techniques
-- Avoid narrow-range specialists unless you explain the transition strategy
-
-Examples of versatile vs narrow-range lures:
-
-VERSATILE (work across wide temp ranges):
-✅ Texas rig (35-65°F)
-✅ Jig (35-65°F)  
-✅ Chatterbait (50-75°F)
-✅ Spinnerbait (50-80°F)
-
-NARROW-RANGE (optimal in specific conditions):
-⚠️ Carolina rig (optimal 35-48°F, less effective >50°F)
-⚠️ Blade bait (optimal 38-52°F, less effective >55°F)
-⚠️ Jerkbait (optimal 45-58°F, less effective <45°F or >60°F)
-⚠️ Topwater (optimal >65°F, ineffective <60°F)
-
-DECISION RULE:
-1. Calculate effective temp range for the day (""" + str(temp_low) + """°F - """ + str(temp_high) + """°F)
-2. If considering a narrow-range lure (e.g., carolina rig):
-   - Check if ENTIRE day's range falls within optimal window
-   - If NO → choose versatile alternative OR explain transition in day progression
-3. If swing is """ + str(temp_swing) + """°F, strongly prefer versatile lures
-
-EXAMPLE for your conditions:
-- If morning is """ + str(temp_low) + """°F and afternoon is """ + str(temp_high) + """°F:
-- Carolina rig works morning but NOT afternoon → Choose texas rig instead (works all day)
-- OR use carolina rig BUT explain "switch to jig as water warms past """ + str(temp_low + 12) + """°F" in day progression
-"""
-        user_input["instructions"] += temp_swing_instructions
-    
     # Add boat advantage strategic requirements
     if access_type == "boat":
         boat_instructions = """
@@ -1043,9 +831,6 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
 
         # Return plan with variety_mode attached for post-processing
         plan["_variety_mode"] = variety_mode
-        
-        # ✅ CAPTURED WEATHER INSIGHTS INJECTED HERE
-        plan["weather_insights"] = weather_insights
         
         return plan
 
@@ -1266,6 +1051,20 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
         errors.append("outlook_blurb contains exact temperature (use descriptive language instead)")
     if re.search(wind_pattern, str(outlook)):
         errors.append("outlook_blurb contains exact wind speed (use descriptive language instead)")
+
+    # weather_card_insights validation
+    insights = plan.get("weather_card_insights")
+    if not insights:
+        errors.append("Missing required field: weather_card_insights")
+    elif not isinstance(insights, dict):
+        errors.append("weather_card_insights must be a dictionary/object")
+    else:
+        required_insight_keys = ["temperature", "wind", "pressure", "sky_uv"]
+        for key in required_insight_keys:
+            if key not in insights:
+                errors.append("weather_card_insights missing required key: " + key)
+            elif not insights[key] or not isinstance(insights[key], str) or len(insights[key].strip()) < 10:
+                errors.append("weather_card_insights." + key + " must be a non-empty string (at least 10 chars)")
 
     # block specific depth-in-water phrasing (allow retrieve distance like "drag 2-3 feet")
     depth_pattern = r"(?<!drag\s)(?<!hop\s)(?<!swim\s)(?<!move\s)(?<!pull\s)\d+[-–]?\d*\s*[-–]?\s*(feet|ft|foot)\s+(of\s+water|deep|depth|down)"

@@ -102,7 +102,7 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   // Merge the insights directly into conditions
   const activeConditions = {
     ...(plan.conditions as any),
-    weather_insights: plan.weather_insights || [],
+    weather_card_insights: plan.weather_card_insights || {},
   };
 
   return (
