@@ -266,7 +266,7 @@ SOFT_SWIMBAIT_COLORS = [
 # AUDIT: Added craw, black/blue (for squarebills). Verified descriptions.
 CRANKBAIT_COLORS = [
     "sexy shad",
-    "chartreuse/black back",
+    "chartreuse/black",
     "red craw",
     "craw",
     "bluegill",
@@ -428,7 +428,7 @@ COLOR_DESCRIPTIONS = {
     "pearl": "Translucent white for ultra-clear water, realistic baitfish with subtle flash",
     
     # Crankbait Colors
-    "chartreuse/black back": "High visibility chartreuse with dark back for stained water",
+    "chartreuse/black": "High visibility chartreuse with dark back for stained water",
     "ghost shad": "Translucent white/blue for clear water, mimics natural shad perfectly",
     "citrus shad": "Chartreuse belly with shad profile for slightly off-colored water",
     "firetiger": "Extreme contrast pattern for muddy water or aggressive feeding windows",
@@ -509,10 +509,6 @@ HARDBAIT_LURES = {
     "walking bait",
     "whopper plopper",
     "blade bait",  # Metal lure - can use metallic colors
-    "spinnerbait",  # Metal blades - can use metallic colors
-    "chatterbait",  # Metal blade - can use metallic colors
-    "buzzbait",  # Metal blade - can use metallic colors
-    "underspin",  # Metal blade - can use metallic colors
 }
 
 # ----------------------------------------

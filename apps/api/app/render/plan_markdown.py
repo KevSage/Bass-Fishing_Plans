@@ -3,7 +3,7 @@
 from typing import Dict, Any, List, Optional
 import re
 
-from app.render.retrieve_rules import build_retrieve_bullets
+from app.canon.retrieve_rules import build_retrieve_bullets
 from app.render.elite_refinements import build_elite_refinements
 
 

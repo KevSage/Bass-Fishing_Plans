@@ -178,7 +178,7 @@ WHY THIS WORKS:
    - Focus on: lure characteristics, presentation style
    - MUST include color explanation using "Choose X if Y" format:
      * "Choose [Color 1] if [conditions] — [bass behavior/why it works]. Choose [Color 2] if [conditions] — [bass behavior/why it works]."
-     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black back if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
+     * Example: "Choose sexy shad if fishing clear to slightly stained water—realistic shad pattern triggers strikes from bass feeding on natural baitfish. Choose chartreuse/black if your water is stained or muddy—high visibility chartreuse creates strong contrast bass can see from distance."
    - Add ONE sentence about soft plastic/trailer color choice if applicable.
    - Length: 2-3 sentences total (lure choice + color explanation + optional trailer color)
 

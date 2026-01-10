@@ -74,7 +74,7 @@ def trailer_notes_for_lures(recommended_lures: List[str]) -> List[str]:
 
 
 def _colors_to_zones(colors: List[str]) -> Tuple[Optional[str], Optional[str], Optional[str]]:
-    # V1: keep minimal. If you later encode "white/chartreuse" etc, split here.
+    # V1: keep minimal. If you later encode "chartreuse/white" etc, split here.
     if not colors:
         return (None, None, None)
     c0 = (colors[0] or "").strip() or None

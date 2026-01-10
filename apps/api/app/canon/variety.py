@@ -600,7 +600,7 @@ COLOR_TIERS = {
             "tier3": ["chrome"],
         },
         "stained": {
-            "tier1": ["chartreuse/black back", "firetiger"],
+            "tier1": ["chartreuse/black", "firetiger"],
             "tier2": ["red craw"],
             "tier3": ["gold"],
         },
@@ -612,7 +612,7 @@ COLOR_TIERS = {
             "tier3": ["chrome"],
         },
         "stained": {
-            "tier1": ["chartreuse/black back", "firetiger"],
+            "tier1": ["chartreuse/black", "firetiger"],
             "tier2": ["red craw"],
             "tier3": ["gold"],
         },
@@ -624,7 +624,7 @@ COLOR_TIERS = {
             "tier3": ["chrome"],
         },
         "stained": {
-            "tier1": ["chartreuse/black back", "firetiger"],
+            "tier1": ["chartreuse/black", "firetiger"],
             "tier2": ["red craw"],
             "tier3": ["gold"],
         },
@@ -636,7 +636,7 @@ COLOR_TIERS = {
             "tier3": ["chrome"],
         },
         "stained": {
-            "tier1": ["chartreuse/black back", "firetiger"],
+            "tier1": ["chartreuse/black", "firetiger"],
             "tier2": ["red craw"],
             "tier3": ["gold"],
         },
@@ -648,7 +648,7 @@ COLOR_TIERS = {
             "tier3": ["chrome", "gold"],
         },
         "stained": {
-            "tier1": ["chartreuse/black back", "firetiger"],
+            "tier1": ["chartreuse/black", "firetiger"],
             "tier2": ["red craw"],
             "tier3": ["sexy shad"],
         },
