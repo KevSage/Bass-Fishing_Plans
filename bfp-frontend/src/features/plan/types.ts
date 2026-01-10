@@ -78,7 +78,12 @@ export type Pattern = {
 export type Plan = {
   // ✅ ADDED: Missing root fields
   location: string;
-  weather_insights?: string[]; // The "Reverse Card" data from backend
+  weather_card_insights?: {
+    temperature: string;
+    wind: string;
+    pressure: string;
+    sky_uv: string;
+  };
 
   primary: Pattern;
   secondary: Pattern;
