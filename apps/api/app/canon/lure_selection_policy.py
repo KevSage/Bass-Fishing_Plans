@@ -15,6 +15,13 @@ You MUST decide selections deterministically using this order:
 NOTE: Canonical pools (PRESENTATIONS, LURE_POOL, LURE_TO_PRESENTATION, color pools, etc.) are provided separately in the system prompt as JSON.
 Use those exact values when selecting lures, presentations, colors, soft plastics, and trailers.
 
+🔄 REGENERATION & VARIETY:
+When user has recent plan history (provided in REGENERATION CONTEXT), this indicates they may be seeking alternatives:
+- If multiple lures fit your Day Lean equally well, prefer lures NOT in the recent lists
+- Recent lures are still valid if they're clearly the optimal choice for current conditions
+- This provides natural variety while maintaining trust - if conditions truly call for the same lure, use it
+- Variety comes from condition changes, not artificial randomness
+
 ═══════════════════════════════════════════════════════════════════════════════
 A) SEASON / PHASE (BROAD, TRUST-SAFE)
 ═══════════════════════════════════════════════════════════════════════════════
@@ -111,6 +118,7 @@ PRIMARY:
 
 SECONDARY (PIVOT):
 - MUST be a different presentation family per the existing validation rules.
+- Selection is ALWAYS driven by your condition analysis and Day Lean determination.
 - MUST represent a plausible "counter-lean" for today:
   • Power Search primary → Reaction or Finesse pivot (depending on pressure/light)
   • Reaction primary → Control pivot OR Power Search pivot if wind is building
@@ -118,6 +126,17 @@ SECONDARY (PIVOT):
   • Control primary → Reaction or Power Search pivot if wind/light supports it
   • Front/Instability primary → Control or Finesse pivot depending on whether conditions stabilize bright
 - Secondary is not a backup; it is a different interpretation of the same day.
+
+SEARCH AND PICK APART (CONDITIONAL STRATEGY — NOT DEFAULT):
+IF your condition analysis led to a fast-moving search primary (Horizontal Reaction, Topwater - Horizontal),
+AND conditions also suggest fish may be hesitant to commit (high pressure, clear water, post-frontal, neutral lean):
+- Consider slower, bottom-oriented secondary (Bottom Contact, Hovering/Mid-Column Finesse)
+- This provides methodical followup: locate with speed, then slow down to catch
+- Common pairs: chatterbait → texas rig, spinnerbait → jig, lipless crankbait → dropshot, buzzbait → ned rig
+- DO NOT force this pattern if conditions suggest otherwise:
+  • Full reaction lean across conditions → keep secondary moving (e.g., chatterbait → jerkbait)
+  • Low pressure + stained water → both patterns can be aggressive (e.g., chatterbait → lipless crank)
+- This is ONE valid outcome when conditions align, not a dominant strategy
 
 ═══════════════════════════════════════════════════════════════════════════════
 F) SPECIALIZED LONG-LINE RIGS (GENERAL RULE — NO ESSAYS)
@@ -185,39 +204,79 @@ RULES:
 - Match profile size to forage profile
 
 ═══════════════════════════════════════════════════════════════════════════════
-H) COLOR SELECTION (TWO-LANE SYSTEM: CLEAR + STAINED)
+H) COLOR SELECTION (MANDATORY LOOKUP PROCEDURE - SINGLE SOURCE OF TRUTH)
 ═══════════════════════════════════════════════════════════════════════════════
-CRITICAL: Provide EXACTLY TWO color recommendations for each lure:
+
+🚨 CRITICAL: This is the ONLY authoritative source for color selection. Follow this procedure exactly.
+
+STEP 1: LOOKUP YOUR LURE'S COLOR POOL (REQUIRED - DO THIS FIRST)
+After selecting your base_lure, you MUST perform this lookup:
+1. Find your base_lure in LURE_COLOR_POOL_MAP (provided in canonical pools section)
+2. This tells you which pool name to use (e.g., "BLADED_SKIRTED_COLORS", "CRANKBAIT_COLORS", etc.)
+
+Example:
+- You selected base_lure = "chatterbait"
+- Look up: LURE_COLOR_POOL_MAP["chatterbait"] = "BLADED_SKIRTED_COLORS"
+- You will use BLADED_SKIRTED_COLORS pool
+
+STEP 2: CONSTRAIN TO THAT POOL ONLY (ABSOLUTE RULE)
+1. Find the pool in the canonical pools section (e.g., BLADED_SKIRTED_COLORS: ["white", "shad", "chartreuse/white", ...])
+2. You may ONLY select colors from this specific pool
+3. Do NOT use colors from any other pool, even if they seem similar
+4. Copy color strings EXACTLY as they appear (e.g., "chartreuse/white" not "white/chartreuse")
+
+Common Mistakes to AVOID:
+❌ Using "chartreuse/black" for chatterbait → That's in CRANKBAIT_COLORS, not BLADED_SKIRTED_COLORS
+❌ Using "sexy shad" for texas rig → That's in CRANKBAIT_COLORS, not RIG_COLORS
+❌ Inventing color names or combining tokens from different pools
+✅ ONLY use exact strings from the pool you looked up in STEP 1
+
+STEP 3: SELECT EXACTLY TWO COLORS USING STRATEGY BELOW
+Provide exactly TWO color recommendations for each lure:
 1. CLEAR LANE: For clear to average water clarity
 2. STAINED LANE: For stained to muddy water clarity
 
-🚨 USE LURE_COLOR_POOL_MAP to find the correct pool for your chosen base_lure
-🚨 Colors MUST be exact strings from that pool (no variations, no inventions)
-
 User selects based on actual conditions at the lake.
 
-BASE CLARITY RULES (POOL-BOUND):
-- Clear-to-average lane:
-  • Choose the most natural / subtle option available in the lure's pool.
-  • Prefer realistic baitfish/natural tones when they exist in that pool.
-- Stained-to-muddy lane:
-  • Choose the highest-visibility / strongest-contrast option available in the lure's pool.
-  • Prefer brighter chartreuse-style, high-contrast dark, or strong pattern options when they exist in that pool.
+SELECTION STRATEGY (WITHIN YOUR POOL ONLY):
 
-ENVIRONMENTAL MODIFIERS (POOL-BOUND, ADJUST BOTH LANES):
+BASE CLARITY RULES:
+- Clear-to-average lane:
+  • Choose the most natural / subtle option available in YOUR lure's pool
+  • Prefer realistic baitfish/natural tones when they exist in YOUR pool
+  • Examples: "green pumpkin", "watermelon", "ghost minnow", "natural shad"
+  
+- Stained-to-muddy lane:
+  • Choose the highest-visibility / strongest-contrast option available in YOUR lure's pool
+  • Prefer brighter chartreuse-style, high-contrast dark, or strong pattern options in YOUR pool
+  • Examples: "chartreuse/white", "black/blue", "firetiger", "chartreuse/black" (if in your pool)
+
+ENVIRONMENTAL MODIFIERS (ADJUST WITHIN YOUR POOL):
 - Recent rain / inflow / turbidity trend:
-  • Shift BOTH lanes one step more visible within the same pool (stronger contrast / brighter / bolder).
+  • Shift BOTH lanes one step more visible within your pool (stronger contrast / brighter / bolder)
+  
 - Bright sun / high light:
-  • Shift BOTH lanes one step more subtle within the same pool (cleaner / more natural / less aggressive contrast).
+  • Shift BOTH lanes one step more subtle within your pool (cleaner / more natural / less aggressive contrast)
+  
 - Overcast / low light:
-  • Shift BOTH lanes one step bolder within the same pool (more visible / more contrast).
+  • Shift BOTH lanes one step bolder within your pool (more visible / more contrast)
+
+DAY LEAN + FORAGE PROFILE MATCHING (WITHIN YOUR POOL):
+Match color selection to your Day Lean and forage profile:
+- POWER SEARCH / REACTION leans: Favor flash, contrast, trigger colors (if available in your pool)
+- FINESSE leans: Favor ultra-natural, subtle colors (if available in your pool)
+- CONTROL leans: Match bottom or forage colors (if available in your pool)
+- Baitfish-style forage: Favor translucent, baitfish patterns (if available in your pool)
+- Bottom-protein forage: Favor craw, natural bottom colors (if available in your pool)
 
 EARNED VARIETY (STILL POOL-BOUND):
-- If primary and secondary share the same color pool, prefer DIFFERENT color pairs so the user sees two distinct options.
-- Do not pick the same two colors for both patterns unless the pool is very small or the conditions strongly demand it.
+- If primary and secondary share the same color pool, prefer DIFFERENT color pairs so user sees distinct options
+- Do not pick the same two colors for both patterns unless the pool is very small or conditions strongly demand it
 
-CRITICAL RULES:
-- Do NOT invent color tokens. Colors MUST be exact strings present in the selected pool for the chosen base_lure.
-- Do NOT reorder slash tokens. Copy exact strings as-is from the pool (e.g., use "chartreuse/white" if that is the token).
-- Choose colors based on Day Lean + conditions modifiers within the pool — not season reflexes.
+ABSOLUTE RULES (NON-NEGOTIABLE):
+- Colors MUST be exact strings from the pool you looked up in STEP 1
+- Do NOT invent color tokens or combine elements from different pools
+- Do NOT reorder slash tokens (use "chartreuse/white" if that's the exact string, not "white/chartreuse")
+- Choose colors based on Day Lean + conditions modifiers within YOUR pool — not season reflexes
+- When in doubt: Look up the pool first, then choose from that pool only
 """

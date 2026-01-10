@@ -128,8 +128,22 @@ async def sync_members_from_stripe():
 # VARIETY SYSTEM HELPER
 # ========================================
 
-def get_recent_lures(email: str, limit: int = 3) -> dict[str, list[str]]:
-    """Get user's N most recent primary AND secondary lures from plan history."""
+def get_recent_lures(email: str, current_lake_name: str, limit: int = 3) -> dict[str, any]:
+    """
+    Get user's N most recent primary AND secondary lures from plan history.
+    Also returns regeneration context (location, timing, last combination).
+    
+    Returns:
+    {
+        "primary": [lure1, lure2, ...],
+        "secondary": [lure1, lure2, ...],
+        "context": {
+            "last_lake_name": str or None,
+            "minutes_since_last_gen": int or None,
+            "last_combination": (primary_lure, secondary_lure) or None
+        }
+    }
+    """
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     
     try:
@@ -142,14 +156,40 @@ def get_recent_lures(email: str, limit: int = 3) -> dict[str, list[str]]:
         )
     except Exception as e:
         print(f"Failed to get plan history for {email}: {e}")
-        return {"primary": [], "secondary": []}
+        return {
+            "primary": [], 
+            "secondary": [],
+            "context": {
+                "last_lake_name": None,
+                "minutes_since_last_gen": None,
+                "last_combination": None
+            }
+        }
     
     primary_lures = []
     secondary_lures = []
+    last_lake_name = None
+    minutes_since_last = None
+    last_combination = None
     
-    for plan_hist in recent_history:
+    for idx, plan_hist in enumerate(recent_history):
         token = plan_hist.get("plan_link_id")
         if not token: continue
+        
+        # Capture context from most recent plan (first in list)
+        if idx == 0:
+            last_lake_name = plan_hist.get("lake_name")
+            gen_date_str = plan_hist.get("generation_date")
+            
+            # Calculate time since last generation
+            if gen_date_str:
+                try:
+                    gen_date = datetime.fromisoformat(gen_date_str.replace('Z', '+00:00'))
+                    now = datetime.now(timezone.utc)
+                    delta = now - gen_date
+                    minutes_since_last = int(delta.total_seconds() / 60)
+                except Exception as e:
+                    print(f"Failed to parse generation date: {e}")
         
         try:
             full_plan_data = plan_links.get_plan(token)
@@ -161,12 +201,24 @@ def get_recent_lures(email: str, limit: int = 3) -> dict[str, list[str]]:
             
             s_lure = plan.get("secondary", {}).get("base_lure")
             if s_lure: secondary_lures.append(s_lure)
+            
+            # Capture most recent combination
+            if idx == 0 and p_lure and s_lure:
+                last_combination = (p_lure, s_lure)
                 
         except Exception as e:
             print(f"Failed to extract lures from plan {token}: {e}")
             continue
     
-    return {"primary": primary_lures, "secondary": secondary_lures}
+    return {
+        "primary": primary_lures,
+        "secondary": secondary_lures,
+        "context": {
+            "last_lake_name": last_lake_name,
+            "minutes_since_last_gen": minutes_since_last,
+            "last_combination": last_combination
+        }
+    }
 
 # ========================================
 # REQUEST MODELS
@@ -238,7 +290,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     current_month = datetime.now().month
     phase = determine_phase(temp_f=weather["temp_f"], month=current_month, latitude=latitude)
     
-    recent_lures = get_recent_lures(email, limit=2)
+    recent_data = get_recent_lures(email, current_lake_name=body.location_name, limit=2)
     trip_date = datetime.now().strftime("%B %d, %Y")
     
     try:
@@ -250,8 +302,10 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             longitude=longitude,
             access_type=access_type,
             is_member=is_member,
-            recent_primary_lures=recent_lures["primary"],
-            recent_secondary_lures=recent_lures["secondary"],
+            current_lake_name=body.location_name,
+            recent_primary_lures=recent_data["primary"],
+            recent_secondary_lures=recent_data["secondary"],
+            regen_context=recent_data["context"],
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Plan generation error: {e}")
@@ -297,7 +351,11 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         plan_data=plan,
     )
     
-    plan_url = f"{WEB_BASE_URL}/plan/view/{token}"
+    # ✅ Use query param format that matches frontend routing
+    plan_url = f"{WEB_BASE_URL}/plan?token={token}"
+    
+    # ✅ Add plan_url to the plan object itself for frontend Share/Copy functionality
+    plan["plan_url"] = plan_url
     
     plan_history_store.add_plan(
         user_email=email,

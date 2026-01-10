@@ -38,9 +38,10 @@ export function PlanPage() {
       );
       const data = await res.json();
 
-      // ✅ FIX: Match the Account History format (?token=)
+      // Backend already provides plan_url - use it as-is
+      // Only construct if missing
       if (!data.plan_url) {
-        data.plan_url = `${window.location.origin}/plan?token=${tokenValue}`;
+        data.plan_url = `${window.location.origin}/plan/view/${tokenValue}`;
       }
 
       setTokenPlan(data);

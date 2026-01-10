@@ -77,11 +77,8 @@ export function PlanHistory() {
   };
 
   const copyPlanLink = (plan: Plan) => {
-    const token =
-      plan.plan_url.split("token=").pop() || plan.plan_url.split("/").pop();
-    const url = `${window.location.origin}/plan/view/${token}`;
-    // const url = `${window.location.origin}${plan.plan_url}`;
-    navigator.clipboard.writeText(url);
+    // Use the backend's plan_url directly - it's already in correct format
+    navigator.clipboard.writeText(plan.plan_url);
 
     const toast = document.createElement("div");
     toast.textContent = "Link copied to clipboard!";
