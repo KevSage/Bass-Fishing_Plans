@@ -60,6 +60,8 @@ from app.canon.validate import (
 )
 from app.canon.retrieve_rules import LURE_TIP_BANK
 
+from app.canon.lure_selection_policy import LURE_SELECTION_POLICY_PROMPT
+
 
 # ----------------------------------------
 # System Prompt (LOCKED RULES) — Bass Clarity
@@ -286,41 +288,6 @@ Examples:
   secondary: dropshot + finesse worm (same soft plastic ❌)
 
   
-🚨 CRITICAL VALIDATION RULE #4 - CAROLINA RIG MUST BE EARNED:
-⚠️ SPECIAL CAROLINA RIG RULE:
-If user recently used Carolina rig (check VARIETY CONTEXT), you MUST use an alternative unless:
-1. Water temp < 45°F AND offshore structure selected (humps, ledges) AND no wind
-2. AND no other bottom-contact lure is viable
-
-Valid alternatives to Carolina rig for cold water bottom contact:
-✅ Texas rig (faster to fish, more versatile)
-✅ Football jig (better feel on rocky bottom)
-✅ Casting jig (can hop or drag)
-✅ Shaky head (finesse alternative)
-
-Default thought process:
-"Carolina rig was recently used → Can texas rig or jig work? → YES → Pick texas rig or jig"
-NOT: "Carolina rig works → Pick carolina rig"
-Carolina rig as PRIMARY is only justified when:
-✅ Conditions strongly indicate slow, methodical dragging (post-front, high pressure, very cold water <50°F)
-✅ At least one offshore target selected (humps, ledges, main-lake points, basin-adjacent structure)
-✅ Bass are clearly inactive or holding tight to deep structure
-
-Do NOT default to Carolina rig when:
-❌ Multiple bottom-contact options are equally valid → prefer texas rig, jig, shaky head
-❌ Boat access with only transition targets (points, breaks) → use more versatile presentations
-❌ Active conditions (wind, warming trend, pre-spawn movement) → choose reaction baits
-❌ Water temp >55°F with feeding activity → use faster-moving presentations
-
-Common mistake: "Carolina rig works everywhere, so I'll pick it"
-Correct approach: "Conditions X, Y, Z specifically demand slow dragging at distance → Carolina rig"
-
-If using Carolina rig as primary:
-- Explain WHY slow dragging is optimal for THESE SPECIFIC conditions
-- Reference which targets demand long-line presentations
-- Justify why faster presentations won't work
-  
-
 AUTHORITY / LANGUAGE (LOCKED):
 - Never state certainty about fish behavior. Use: may, might, can, suggests, tends to.
 - Do NOT say what bass ARE doing; suggest what they MAY be doing.
@@ -331,7 +298,11 @@ NO RANKINGS (LOCKED):
 - Variety is intentional (freedom within structure), never random.
 
 ANALYSIS ORDER (NON-NEGOTIABLE):
+{LURE_SELECTION_POLICY_PROMPT}
 Season/Phase → Current Conditions → Targets → Presentation Family → Lure → Retrieves
+
+{LURE_SELECTION_POLICY_PROMPT}
+
 
 PRESENTATION
 - Max 28–32 words providing a description of the presentation and why this particular presentation is chosen based on the current weather/condition/phase analysis and how it relates to the selected targets.
@@ -740,7 +711,7 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
         "- These are the targets the angler can realistically reach from " + access_type + "\n" +
         "- For work_it_cards definitions, use target_definitions[target_name]\n" +
         "\n" +
-        "ANALYSIS ORDER (NON-NEGOTIABLE):\n" +
+        "ANALYSIS ORDER (NON-NEGOTIABLE):{LURE_SELECTION_POLICY_PROMPT}\n" +
         "1. Analyze season/phase and current conditions\n" +
         "2. Identify 3 targets from accessible_targets list where bass are likely positioned\n" +
         "3. Determine best presentation family for those targets\n" +
@@ -888,113 +859,6 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
             
         weather_guidance += "\n"
     
-
-    # -------------------------------------------------------------------
-    # FRONTEND WEATHER CARD INSIGHTS (NO-DRIFT ADDITION)
-    # Goal: Always provide at least one insight line per WeatherSection card
-    # so the modal never falls back to generic defaults.
-    #
-    # Frontend keyword routing (WeatherSection.tsx):
-    # - Temperature card looks for "temp"
-    # - Wind card looks for "wind"
-    # - Pressure card looks for "pressure"
-    # - Light & Sky card looks for "uv", "visibility", or "light"
-    # -------------------------------------------------------------------
-    def _has_insight_kw(kw: str) -> bool:
-        kw = kw.lower()
-        return any(kw in str(s).lower() for s in weather_insights)
-
-    # Temperature (always)
-    if not _has_insight_kw("temp"):
-        _t_cur = weather.get("temp_f")
-        _t_hi = weather.get("temp_high")
-        _t_lo = weather.get("temp_low")
-        try:
-            _t_cur_f = float(_t_cur) if _t_cur is not None else None
-        except Exception:
-            _t_cur_f = None
-        try:
-            _t_hi_f = float(_t_hi) if _t_hi is not None else (_t_cur_f if _t_cur_f is not None else None)
-        except Exception:
-            _t_hi_f = _t_cur_f
-        try:
-            _t_lo_f = float(_t_lo) if _t_lo is not None else (_t_cur_f if _t_cur_f is not None else None)
-        except Exception:
-            _t_lo_f = _t_cur_f
-
-        _swing = (_t_hi_f - _t_lo_f) if (_t_hi_f is not None and _t_lo_f is not None) else None
-
-        if _t_cur_f is not None and _swing is not None:
-            if _swing >= 10:
-                weather_insights.append(
-                    f"Temp: Big swing ({int(round(_t_lo_f))}–{int(round(_t_hi_f))}°F) — expect a noticeable bite shift; start slower early and speed up as the water warms."
-                )
-            else:
-                weather_insights.append(
-                    f"Temp: Steady range ({int(round(_t_lo_f))}–{int(round(_t_hi_f))}°F) — bass behavior should be consistent; refine depth/cover instead of chasing constant changes."
-                )
-        elif _t_cur_f is not None:
-            weather_insights.append(
-                f"Temp: Around {int(round(_t_cur_f))}°F — use temperature to set your pace (colder = slower/closer, warmer = faster/more aggressive)."
-            )
-        else:
-            weather_insights.append(
-                "Temp: Use water/air warmth to set tempo — colder trends tighten the strike zone; warming trends widen it."
-            )
-
-    # Wind (always)
-    if not _has_insight_kw("wind"):
-        _w = wind_mph if wind_mph is not None else 0
-        try:
-            _w_f = float(_w)
-        except Exception:
-            _w_f = 0.0
-
-        if _w_f <= 5:
-            weather_insights.append(
-                "Wind: Light wind — less surface distortion means bass rely on cover/structure; slow down and fish targets thoroughly."
-            )
-        elif _w_f <= 12:
-            weather_insights.append(
-                "Wind: Moderate wind — a productive chop breaks up light; prioritize wind-blown banks and moving baits to cover water."
-            )
-        else:
-            weather_insights.append(
-                "Wind: Strong wind — current and turbulence reposition bait; focus on protected windward transitions and high-percentage ambush cover."
-            )
-
-    # Pressure (always)
-    if not _has_insight_kw("pressure"):
-        if pressure_trend:
-            _pt = str(pressure_trend).lower()
-            if "fall" in _pt:
-                weather_insights.append("Pressure: Falling — fish often feed ahead of change; lean reaction and cover water.")
-            elif "ris" in _pt:
-                weather_insights.append("Pressure: Rising — bite can tighten; slow down and key on shade/cover edges.")
-            else:
-                weather_insights.append("Pressure: Stable — normal positioning; win by dialing depth/cover and cadence.")
-        else:
-            weather_insights.append(
-                "Pressure: Trend unavailable — assume neutral behavior and let cover + retrieve speed dictate your adjustments."
-            )
-
-    # Light & Sky / Visibility (always)
-    if not (_has_insight_kw("uv") or _has_insight_kw("visibility") or _has_insight_kw("light")):
-        _sky = weather.get("sky_condition") or weather.get("cloud_cover") or ""
-        _sky_l = str(_sky).lower()
-        if has_recent_rain:
-            weather_insights.append(
-                "Light: Post-rain/stained water often boosts shallow feeding; use higher-contrast or vibration to help bass track."
-            )
-        elif "overcast" in _sky_l or "cloud" in _sky_l:
-            weather_insights.append(
-                "Light: Cloud cover reduces harsh light; bass roam more—use search baits and target broader flats/edges."
-            )
-        else:
-            weather_insights.append(
-                "Light: Bright skies push bass to shade/edges; work cover lines, docks, and anything that breaks light penetration."
-            )
-
     # Humidity Analysis (topwater indicator)
     if humidity is not None and humidity > 70:
         weather_guidance += f"""
