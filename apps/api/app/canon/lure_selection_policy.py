@@ -279,4 +279,149 @@ ABSOLUTE RULES (NON-NEGOTIABLE):
 - Do NOT reorder slash tokens (use "chartreuse/white" if that's the exact string, not "white/chartreuse")
 - Choose colors based on Day Lean + conditions modifiers within YOUR pool — not season reflexes
 - When in doubt: Look up the pool first, then choose from that pool only
+
+═══════════════════════════════════════════════════════════════════════════════
+I) TARGET SELECTION POLICY
+═══════════════════════════════════════════════════════════════════════════════
+
+DECISION ORDER:
+You have determined your Day Lean and selected your lures based on conditions.
+Now select 3 targets that align with your Day Lean strategy and are compatible with your lures.
+
+STEP 1: IDENTIFY DAY LEAN TARGET PREFERENCES
+Based on your Day Lean, determine which target categories match fish positioning:
+
+POWER SEARCH → Aggressive zones where active fish roam/feed:
+  • High priority: wind-blown banks, grass edges, offshore points, current breaks
+  • Medium priority: flats, channel swings
+  
+REACTION → Ambush cover and edges where fish are positioned to strike:
+  • High priority: grass edges, laydowns, riprap, channel swings
+  • Medium priority: wind-blown banks, isolated cover
+  
+FINESSE → Precision spots where neutral/pressured fish hold:
+  • High priority: isolated cover, docks, shaded banks, brush piles
+  • Medium priority: depth breaks, transitions
+  
+CONTROL → Heavy cover and deep structure where defensive fish hide:
+  • High priority: laydowns, standing timber, brush piles
+  • Medium priority: docks, deep offshore structure, shaded banks
+  
+FRONT/INSTABILITY → Deep stable zones where fish seek security:
+  • High priority: deep offshore structure, creek channels, depth breaks (deep)
+  • Medium priority: channel swings, hard-bottom transitions
+
+STEP 2: APPLY SEASONAL MODIFIERS
+Adjust target preferences based on season/temperature:
+
+Winter / Cold Water (below 50°F):
+  • Prioritize: deep offshore structure, creek channels, depth breaks (deep)
+  • Deprioritize: shallow flats, wind-blown banks (unless warming), grass edges (if dead)
+
+Spring Transition (50-68°F, warming):
+  • Prioritize: flats (warming shallows), shaded banks transitioning to sun, depth breaks (first breaks)
+  • Deprioritize: deep offshore structure, creek channels
+
+Summer (above 70°F, stable warm):
+  • Prioritize: deep offshore structure, depth breaks (deeper), grass edges (deep grass), offshore points
+  • Deprioritize: shallow flats (midday), modify for early/late (wind-blown banks for oxygen)
+
+Fall Transition (cooling, 65-55°F):
+  • Prioritize: offshore points, wind-blown banks, transitions, channel swings, grass edges
+  • Deprioritize: heavy cover (fish less defensive)
+
+STEP 3: CHECK LURE COMPATIBILITY
+Ensure your selected lure can effectively fish the target:
+
+Horizontal Reaction Baits (chatterbait, spinnerbait, lipless, crankbait, buzzbait):
+  • Excel: grass edges, wind-blown banks, flats, offshore points, current breaks, riprap (crankbait deflection)
+  • Avoid: standing timber, brush piles (interior), heavy matted grass
+
+Vertical Reaction Baits (jerkbait, blade bait):
+  • Excel: depth breaks, offshore points, channel swings, transitions
+  • Avoid: laydowns, standing timber, brush piles, heavy grass
+
+Bottom Contact - Dragging (texas rig, carolina rig, football jig):
+  • Excel: ALL targets (most versatile category)
+  • Particularly strong: depth breaks, hard-bottom transitions, offshore structure, flats
+
+Bottom Contact - Hopping (casting jig, ned rig, shakey head):
+  • Excel: laydowns, standing timber, brush piles, docks, riprap, isolated cover, depth breaks
+  • Avoid: large open flats (inefficient)
+
+Hovering/Finesse (dropshot, wacky rig, neko rig):
+  • Excel: docks, isolated cover, depth breaks, shaded banks, brush piles, transitions
+  • Avoid: heavy grass, strong current, large flats
+
+Topwater (walking bait, buzzbait, popper, frogs):
+  • Excel: grass edges, wind-blown banks, laydowns, shaded banks, isolated cover
+  • Avoid: deep offshore structure, creek channels, deep breaks
+
+STEP 4: ENSURE TACTICAL VARIETY
+Your 3 targets should represent different tactical approaches:
+  • Mix depth zones (shallow, mid, deep)
+  • Mix water types (open zones, cover, transitions)
+  • Mix casting approaches (search, precision, vertical)
+
+BAD (redundant): laydowns, standing timber, brush piles (all heavy cover, same approach)
+GOOD (variety): laydowns (cover), grass edges (edge), depth breaks (transition)
+
+BAD (redundant): wind-blown banks, flats, offshore points (all open search)
+GOOD (variety): wind-blown banks (search), docks (precision), depth breaks (depth)
+
+STEP 5: SEARCH AND PICK APART (IF APPLICABLE)
+If you've selected Power Search primary (horizontal reaction) AND Pick Apart secondary (bottom contact):
+
+Approach A - Same Targets, Different Tactics:
+  • Both patterns fish same zones with different speeds
+  • Example: Chatterbait searches grass edges, texas rig picks apart grass edges
+  • Works when: Zones are large and warrant thorough coverage
+
+Approach B - Related Targets (Progression):
+  • Secondary targets are precision elements within search zones
+  • Example: Primary (grass edges, wind-blown banks), Secondary (isolated cover near grass, shaded pockets)
+  • Works when: Precision features exist within search zones
+
+Approach C - Hybrid (Mix):
+  • One shared target, some unique to each
+  • Example: Grass edges (both), wind-blown banks (primary only), isolated cover (secondary only)
+  • Most versatile approach
+
+FINAL VALIDATION:
+  • All 3 targets from accessible_targets list ✓
+  • All 3 align with Day Lean preferences ✓
+  • All 3 compatible with chosen lures ✓
+  • All 3 represent different tactical approaches ✓
+
+═══════════════════════════════════════════════════════════════════════════════
+J) DAY LEAN → FISHING STYLE CONNECTION
+═══════════════════════════════════════════════════════════════════════════════
+
+Your Day Lean determination influences the overall FISHING APPROACH and should be reflected 
+in both outlook_blurb (implicit) and strategy (explicit).
+
+POWER SEARCH LEAN → Search-Oriented Fishing:
+Outlook language: "active feeding windows", "roaming fish", "positioned on aggressive feeding lanes", "search zones"
+Strategy approach: "Adopt a search-oriented approach", "cover water to locate zones", "let fish tell you where they're positioned"
+Fishing style: Move quickly to find fish, then slow down and work productive zones
+
+REACTION LEAN → Edge and Cover Triggering:
+Outlook language: "positioned on cover", "edge-oriented", "ready to strike", "ambush positioning"
+Strategy approach: "Target visible cover systematically", "work edges with reaction triggers", "focus on deflection and contact"
+Fishing style: Fish specific cover/edges with reaction presentations, trigger strikes through contact
+
+FINESSE LEAN → Precision and Patience:
+Outlook language: "neutral positioning", "relating to specific structure", "precision needed", "cautious behavior"
+Strategy approach: "Fish with a precision mindset", "thorough coverage of high-percentage spots", "multiple presentations per target"
+Fishing style: Slow down, target verified locations, work fewer spots more methodically
+
+CONTROL LEAN → Penetrate and Commit:
+Outlook language: "tight to cover", "defensive mode", "seeking security", "buried in structure"
+Strategy approach: "Commit to penetrating heavy cover", "work interior of structure", "slow methodical presentations"
+Fishing style: Get into thick cover, slow way down, fish where others won't
+
+FRONT/INSTABILITY LEAN → Deep and Stable:
+Outlook language: "seeking stability", "deep positioning", "minimal movement", "defensive behavior"
+Strategy approach: "Focus on deep stable zones", "target sanctuaries", "let fish come to the bait"
+Fishing style: Target deep structure, very slow presentations, patience over coverage
 """

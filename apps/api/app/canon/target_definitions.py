@@ -24,214 +24,186 @@ __all__ = [
 # Full target definitions with access metadata
 TARGET_DEFINITIONS = {
     # ========================================
-    # SHORELINE FEATURES
+    # CATEGORY A: AGGRESSIVE ZONE TARGETS (Power Search / Reaction)
     # ========================================
     
-    "banks": {
-        "definition": "The shoreline edge - can hold shallow or deep water",
-        "bank_friendly": True,
-    },
-    "wind-blown banks": {
-        "definition": "Shorelines getting hit by wind - concentrates bait and oxygen",
-        "bank_friendly": True,
-        "strategic_difference": "Active, oxygenated water with pushed-in baitfish vs calm banks",
-    },
-    "shaded banks": {
-        "definition": "Shorelines with overhead cover from trees or bluffs",
-        "bank_friendly": True,
-        "strategic_difference": "Comfort zone for inactive fish vs open sunny banks",
-    },
-    "chunk rock banks": {
-        "definition": "Shorelines with large scattered rocks",
-        "bank_friendly": True,
-    },
-    "riprap": {
-        "definition": "Large rocks along shorelines - hard cover and shade",
-        "bank_friendly": True,
-    },
-    
-    # ========================================
-    # SHALLOW COVER
-    # ========================================
-    
-    "laydowns": {
-        "definition": "Fallen trees lying in the water - prime ambush cover",
-        "bank_friendly": True,
-    },
-    "standing timber": {
-        "definition": "Upright dead trees in the water - vertical structure bass relate to",
-        "bank_friendly": True,
-    },
-    "brush piles": {
-        "definition": "Submerged brush or trees placed as fish habitat",
-        "bank_friendly": True,
-    },
-    "docks": {
-        "definition": "Boat docks and piers - provide shade and vertical structure",
-        "bank_friendly": True,
-    },
-    "isolated cover": {
-        "definition": "Single pieces of cover away from other structure",
-        "bank_friendly": True,
-    },
     "grass edges": {
-        "definition": "Transition zone between grass and open water",
+        "definition": "Transition zone where vegetation meets open water",
         "bank_friendly": True,
-        "note": "Consolidates: grass lines, edges of vegetation (all mean the same)",
+        "strategic_category": "aggressive_zones",
+        "note": "Consolidates: grass lines, edges of vegetation",
     },
     
-    # ========================================
-    # SHALLOW AREAS
-    # ========================================
-    
-    "pockets": {
-        "definition": "Small coves or indentations in the shoreline - protected shallow areas",
+    "wind-blown banks": {
+        "definition": "Shorelines actively receiving wind and wave action",
         "bank_friendly": True,
-        "note": "Consolidates: spawning pockets, shallow warm pockets (context explains purpose)",
+        "strategic_category": "aggressive_zones",
+        "note": "Consolidates: wind-blown points, active shorelines",
     },
+    
+    "offshore points": {
+        "definition": "Points on main lake extending into deep water",
+        "bank_friendly": False,
+        "strategic_category": "aggressive_zones",
+        "note": "Consolidates: main-lake points, secondary points, points",
+    },
+    
     "flats": {
         "definition": "Large shallow areas with relatively even depth",
         "bank_friendly": True,
-        "note": "Consolidates: shallow flats (redundant modifier)",
+        "strategic_category": "aggressive_zones",
+        "note": "Consolidates: shallow flats, flats adjacent to deep water (context explains depth access)",
     },
-    
-    # ========================================
-    # POINTS
-    # ========================================
-    
-    "points": {
-        "definition": "Fingers of land extending into the water - key ambush and travel routes",
-        "bank_friendly": True,
-        "note": "Consolidates: secondary points, wind-blown points (LLM explains staging/wind context)",
-    },
-    "main-lake points": {
-        "definition": "Primary points on the main body of the lake - major feeding and transition zones",
-        "bank_friendly": False,
-        "strategic_difference": "Offshore positioning required vs shore-accessible points",
-    },
-    
-    # ========================================
-    # DEPTH TRANSITIONS
-    # ========================================
-    
-    "first depth break": {
-        "definition": "The first significant drop from shallow to deeper water",
-        "bank_friendly": True,
-        "strategic_difference": "Initial transition vs deeper breaks - different bass positioning",
-    },
-    "breaks": {
-        "definition": "Any distinct change in bottom contour or depth",
-        "bank_friendly": True,
-        "note": "Consolidates: drop-offs, steeper breaks (degree of change is contextual)",
-    },
-    "transitions": {
-        "definition": "Where one type of bottom or cover changes to another",
-        "bank_friendly": True,
-    },
-    "hard-bottom transitions": {
-        "definition": "Where soft mud or sand meets hard rock or clay - feeding zones",
-        "bank_friendly": True,
-    },
-    
-    # ========================================
-    # CHANNELS & BENDS
-    # ========================================
     
     "channel swings": {
-        "definition": "Where the creek channel bends or curves - natural ambush zones",
+        "definition": "Where creek channels bend or curve",
         "bank_friendly": True,
+        "strategic_category": "aggressive_zones",
+        "note": "Consolidates: inside turns, outside bends, channel bends",
     },
-    "inside turns": {
-        "definition": "Inside bend of creek channels or shorelines - shallower, calmer areas",
+    
+    "current breaks": {
+        "definition": "Where moving water meets still water or structure deflects current",
         "bank_friendly": True,
+        "strategic_category": "aggressive_zones",
+        "note": "Consolidates: current seams, current-influenced areas, eddies",
     },
-    "outside bends": {
-        "definition": "Outside bend of creek channels - deeper water with current deflection",
+    
+    # ========================================
+    # CATEGORY B: AMBUSH COVER TARGETS (Reaction / Control)
+    # ========================================
+    
+    "laydowns": {
+        "definition": "Fallen trees lying in the water",
         "bank_friendly": True,
+        "strategic_category": "ambush_cover",
     },
+    
+    "standing timber": {
+        "definition": "Upright dead trees in the water",
+        "bank_friendly": True,
+        "strategic_category": "ambush_cover",
+    },
+    
+    "docks": {
+        "definition": "Boat docks and piers",
+        "bank_friendly": True,
+        "strategic_category": "ambush_cover",
+        "note": "Consolidates: docks and man-made structure",
+    },
+    
+    "riprap": {
+        "definition": "Large rocks along shorelines",
+        "bank_friendly": True,
+        "strategic_category": "ambush_cover",
+        "note": "Consolidates: chunk rock banks, riprap",
+    },
+    
+    "isolated cover": {
+        "definition": "Single pieces of cover away from other structure",
+        "bank_friendly": True,
+        "strategic_category": "ambush_cover",
+    },
+    
+    # ========================================
+    # CATEGORY C: TRANSITION ZONE TARGETS (Finesse / Neutral)
+    # ========================================
+    
+    "depth breaks": {
+        "definition": "Any significant change from shallow to deeper water",
+        "bank_friendly": True,
+        "strategic_category": "transitions",
+        "note": "Consolidates: first depth break, breaks, drop-offs, ledges, steeper breaks",
+    },
+    
+    "hard-bottom transitions": {
+        "definition": "Where soft bottom meets hard bottom",
+        "bank_friendly": True,
+        "strategic_category": "transitions",
+    },
+    
+    "transitions": {
+        "definition": "Where one type of cover or bottom changes to another",
+        "bank_friendly": True,
+        "strategic_category": "transitions",
+    },
+    
+    # ========================================
+    # CATEGORY D: DEEP STRUCTURE TARGETS (Control / Offshore)
+    # ========================================
+    
+    "deep offshore structure": {
+        "definition": "Underwater mounds, humps, deep points, and basin-adjacent structure",
+        "bank_friendly": False,
+        "strategic_category": "deep_structure",
+        "note": "Consolidates: humps, main lake structure, mid-lake structure, basin-adjacent structure, roadbeds, saddles",
+    },
+    
     "creek channels": {
-        "definition": "Submerged creek beds - deep water highways",
+        "definition": "Submerged creek beds and deep-water highways",
         "bank_friendly": False,
+        "strategic_category": "deep_structure",
     },
     
     # ========================================
-    # CURRENT & FLOW
+    # CATEGORY E: PRECISION/SHADE TARGETS (Finesse)
     # ========================================
     
-    "current seams": {
-        "definition": "Where moving water meets still water - feeding lanes",
+    "shaded banks": {
+        "definition": "Shorelines with overhead cover from trees or bluffs",
         "bank_friendly": True,
-    },
-    "current-influenced areas": {
-        "definition": "Zones with water movement from wind, inflow, or dam discharge",
-        "bank_friendly": True,
-    },
-    "eddies": {
-        "definition": "Calm pockets behind structure in current",
-        "bank_friendly": True,
+        "strategic_category": "precision_shade",
     },
     
-    # ========================================
-    # OFFSHORE STRUCTURE (BOAT ONLY)
-    # ========================================
-    
-    "humps": {
-        "definition": "Underwater mounds that rise from the bottom - isolated feeding stations",
-        "bank_friendly": False,
-    },
-    "ledges": {
-        "definition": "Underwater shelves or drop-offs - major depth transitions bass use",
-        "bank_friendly": False,
-    },
-    "saddles": {
-        "definition": "Low spots between two high points underwater",
-        "bank_friendly": False,
-    },
-    "roadbeds": {
-        "definition": "Old submerged roads - deep structure highways",
-        "bank_friendly": False,
-    },
-    "main lake structure": {
-        "definition": "Points, humps, and ledges on the main body of the lake",
-        "bank_friendly": False,
-    },
-    "mid-lake structure": {
-        "definition": "Isolated structure in the middle sections of the lake",
-        "bank_friendly": False,
-    },
-    "basin-adjacent structure": {
-        "definition": "Structure (points, humps, ledges) positioned near the deepest parts of the lake",
-        "bank_friendly": False,
-    },
-    "flats adjacent to deep water": {
-        "definition": "Shallow areas next to channels or deep basins - requires boat to fish both zones",
-        "bank_friendly": False,
-        "strategic_difference": "Offshore flat/deep combo vs simple shallow flats",
+    "brush piles": {
+        "definition": "Submerged brush or trees placed as fish habitat",
+        "bank_friendly": True,
+        "strategic_category": "precision_shade",
     },
 }
 
 
 # ============================================================================
-# REMOVED TARGETS (Consolidated into others)
+# REMOVED TARGETS (Consolidated from 34 → 18)
 # ============================================================================
 
 REMOVED_TARGETS = {
-    # These were removed because they're redundant with existing targets:
+    # Consolidated into strategic categories:
     
-    "secondary points": "Consolidated into 'points' - LLM can explain staging areas",
-    "wind-blown points": "Consolidated into 'points' - LLM can explain wind influence",
+    "banks": "Too vague - consolidated into wind-blown banks, shaded banks, riprap",
+    "chunk rock banks": "Consolidated into 'riprap'",
+    "pockets": "Consolidated into 'flats' with seasonal context",
+    "points": "Consolidated into 'offshore points'",
+    "main-lake points": "Consolidated into 'offshore points'",
+    "secondary points": "Consolidated into 'offshore points'",
+    "wind-blown points": "Consolidated into 'offshore points' or 'wind-blown banks'",
     "grass lines": "Duplicate of 'grass edges'",
     "edges of vegetation": "Duplicate of 'grass edges'",
     "shallow flats": "Redundant modifier - consolidated into 'flats'",
-    "spawning pockets": "Consolidated into 'pockets' - spawning context is seasonal",
-    "shallow warm pockets": "Consolidated into 'pockets' - warmth is seasonal context",
+    "flats adjacent to deep water": "Consolidated into 'flats' with depth context",
+    "spawning pockets": "Consolidated into 'flats' - spawning context is seasonal",
+    "shallow warm pockets": "Consolidated into 'flats' - warmth is seasonal context",
     "docks and man-made structure": "Duplicate of 'docks'",
-    "drop-offs": "Consolidated into 'breaks'",
-    "steeper breaks": "Consolidated into 'breaks' - steepness is contextual",
-    "shade lines and shadow edges": "Not a target - it's a positioning detail within other targets",
-    "bottom-oriented cover: wood/rock/grasslines": "Redundant - covered by laydowns/riprap/grass edges",
+    "first depth break": "Consolidated into 'depth breaks'",
+    "breaks": "Consolidated into 'depth breaks'",
+    "drop-offs": "Consolidated into 'depth breaks'",
+    "ledges": "Consolidated into 'depth breaks' or 'deep offshore structure'",
+    "steeper breaks": "Consolidated into 'depth breaks' - steepness is contextual",
+    "inside turns": "Consolidated into 'channel swings'",
+    "outside bends": "Consolidated into 'channel swings'",
+    "current seams": "Consolidated into 'current breaks'",
+    "current-influenced areas": "Consolidated into 'current breaks'",
+    "eddies": "Consolidated into 'current breaks' - calm pocket context",
+    "humps": "Consolidated into 'deep offshore structure'",
+    "saddles": "Consolidated into 'deep offshore structure'",
+    "roadbeds": "Consolidated into 'deep offshore structure' or 'creek channels'",
+    "main lake structure": "Consolidated into 'deep offshore structure'",
+    "mid-lake structure": "Consolidated into 'deep offshore structure'",
+    "basin-adjacent structure": "Consolidated into 'deep offshore structure'",
+    "shade lines and shadow edges": "Not a target - positioning detail",
+    "bottom-oriented cover": "Redundant - covered by specific targets",
     "intersections": "Vague and offshore-biased - removed",
-    "staging structure near spawning pockets": "Too specific - covered by 'flats adjacent to deep water'",
+    "staging structure near spawning pockets": "Too specific - covered by other targets",
 }
 
 

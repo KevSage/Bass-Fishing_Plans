@@ -285,11 +285,11 @@ RETURN JSON ONLY:
     "presentation":"<from PRESENTATIONS>",
     "base_lure":"<from LURE_POOL>",
 
-    "soft_plastic": null | "<ONLY for terminal tackle rigs; MUST be null for any jig/skirted/bladed>",
-    "soft_plastic_why": null | "<1-2 sentences>",
+    "soft_plastic": null | "<REQUIRED for terminal tackle ONLY: texas rig, carolina rig, dropshot, ned rig, shakey head, wacky rig, neko rig. MUST be null for ALL other lures>",
+    "soft_plastic_why": null | "<1-2 sentences explaining soft plastic choice; only if soft_plastic is set>",
 
-    "trailer": null | "<ONLY if lure uses a trailer; MUST be null for terminal tackle>",
-    "trailer_why": null | "<1 sentence only if trailer used>",
+    "trailer": null | "<REQUIRED for jigs and bladed baits: casting jig, football jig, swim jig, chatterbait, spinnerbait, buzzbait. MUST be null for terminal tackle and all other lures>",
+    "trailer_why": null | "<1 sentence explaining trailer choice; only if trailer is set>",
 
     "color_recommendations":["<COLOR_CLEAR_OR_AVG>","<COLOR_STAINED_OR_MUDDY>"],
 
@@ -297,7 +297,7 @@ RETURN JSON ONLY:
 
     "why_this_works":"2-3 sentences total. MUST explain why THIS lure + presentation fits phase/conditions AND include color guidance in Choose A if... Choose B if... format.",
     "pattern_summary":"2-3 sentences. Suggestive language only (may/might/can/suggests).",
-    "strategy":"2-3 sentences. Practical, calm, no hype.",
+    "strategy":"2-3 sentences explaining FISHING STYLE that matches your Day Lean (Section J). Connect Day Lean → approach. Examples: Power Search='adopt search-oriented approach, cover water to locate zones' | Finesse='fish with precision mindset, thorough coverage of fewer spots' | Control='penetrate cover, commit to heavy structure' | Reaction='target visible cover, work edges systematically'. Practical, calm tone.",
 
     "work_it":[
       "<Target 1>: <specific cadence using LURE_TIP_BANK>",
@@ -316,11 +316,11 @@ RETURN JSON ONLY:
     "presentation":"<from PRESENTATIONS; MUST be different from primary.presentation>",
     "base_lure":"<from LURE_POOL>",
 
-    "soft_plastic": null | "<same rules as primary>",
-    "soft_plastic_why": null | "<1-2 sentences>",
+    "soft_plastic": null | "<REQUIRED for terminal tackle ONLY. MUST be null for jigs/bladed baits. If primary used soft_plastic, secondary MUST use DIFFERENT soft_plastic>",
+    "soft_plastic_why": null | "<1-2 sentences explaining soft plastic choice; only if soft_plastic is set>",
 
-    "trailer": null | "<same rules as primary>",
-    "trailer_why": null | "<1 sentence only if trailer used>",
+    "trailer": null | "<REQUIRED for jigs and bladed baits ONLY. MUST be null for terminal tackle. If primary used trailer, secondary MUST use DIFFERENT trailer>",
+    "trailer_why": null | "<1 sentence explaining trailer choice; only if trailer is set>",
 
     "color_recommendations":["<COLOR_CLEAR_OR_AVG>","<COLOR_STAINED_OR_MUDDY>"],
 
@@ -328,7 +328,7 @@ RETURN JSON ONLY:
 
     "why_this_works":"2-3 sentences total. MUST reference primary and explain the pivot assumption (different presentation family). Include Choose A if... Choose B if... color guidance.",
     "pattern_summary":"2-3 sentences. Suggestive language only.",
-    "strategy":"2-3 sentences. Practical pivot, no hype.",
+    "strategy":"2-3 sentences explaining pivot APPROACH. Reference how this differs from primary pattern and what conditions/assumption justify this alternative. Use Day Lean language from Section J if applicable. Practical, calm tone.",
 
     "work_it":[
       "<Target 1>: <specific cadence using LURE_TIP_BANK>",
@@ -406,7 +406,7 @@ RETURN JSON ONLY:
   "sky_uv":"1-2 sentences. No numbers. No tactics. How cloud cover/UV (light) may affect bass activity today."
 },
 
-"outlook_blurb":"Max 28–32 words of weather/phase context only. No exact numbers. No fishing strategy."
+"outlook_blurb":"3 sentences analyzing weather/conditions/phase. MUST implicitly explain Day Lean reasoning by connecting conditions → fish behavior → approach. Use Day Lean language from Section J without saying 'Day Lean'. Examples: Power Search='active feeding windows, roaming fish, aggressive feeding lanes' | Finesse='neutral positioning, precision needed, cautious behavior' | Control='tight to cover, defensive mode, seeking security'. No exact numbers. No fishing tactics."
 }
 """
 
@@ -523,9 +523,15 @@ HARD RULES (validator enforced):
 - Use natural capitalization (not ALL CAPS).
 
 TARGETS (LOCKED):
-- targets must be exactly 3 items
-- Each target MUST be from the accessible_targets list provided in the user message
-- Each targets[i] MUST be an exact key from accessible_targets (match spelling and spacing)
+⚠️ See LURE SELECTION POLICY Section I for complete target selection procedure.
+- You MUST select exactly 3 targets from accessible_targets list
+- Follow TARGET SELECTION POLICY strategic guidance:
+  • STEP 1: Identify Day Lean target preferences
+  • STEP 2: Apply seasonal modifiers
+  • STEP 3: Check lure compatibility
+  • STEP 4: Ensure tactical variety (different approaches, not redundant)
+  • STEP 5: If Search and Pick Apart, consider target pairing strategy
+- Each target MUST be an exact key from accessible_targets (match spelling and spacing)
 
 WORK_IT_CARDS (STRICT)
 - You MUST generate exactly 3 cards.
@@ -578,9 +584,23 @@ DAY PROGRESSION (EXTENDED FORMAT):
 
 
 TERMINAL TACKLE:
-- If base_lure is terminal tackle, you MUST set soft_plastic and soft_plastic_why.
+- If base_lure is terminal tackle (texas rig, carolina rig, dropshot, ned rig, shakey head, wacky rig, neko rig), you MUST set soft_plastic and soft_plastic_why.
+- Terminal tackle does NOT use trailer field (must be null).
 Allowed plastics:
 {chr(10).join(terminal_rules)}
+
+JIGS AND BLADED BAITS (TRAILER REQUIRED):
+- If base_lure is jig or bladed bait (casting jig, football jig, swim jig, chatterbait, spinnerbait, buzzbait), you MUST set trailer and trailer_why.
+- Jigs and bladed baits do NOT use soft_plastic field (must be null).
+Allowed trailers:
+{chr(10).join(trailer_rules)}
+
+CRITICAL RULE - soft_plastic vs trailer:
+  ❌ WRONG: casting jig with soft_plastic="craw" → This will FAIL validation
+  ✅ CORRECT: casting jig with trailer="craw"
+  
+  ❌ WRONG: texas rig with trailer="creature bait" → This will FAIL validation
+  ✅ CORRECT: texas rig with soft_plastic="creature bait"
 
 DROPSHOT SPECIAL CASE (STRICT):
 - If base_lure is "dropshot", you MUST set:
@@ -862,6 +882,10 @@ async def call_openai_plan(
                 if same_location:
                     regeneration_note += "\nUser Intent: WANTS DIFFERENT LURES (rapid regeneration at same location)\n"
                     regeneration_note += "- You MUST avoid all lures in recent lists unless absolutely no other option fits your Day Lean\n"
+                    if recent_primary_lures:
+                        regeneration_note += f"  • PRIMARY: Do NOT use {', '.join(recent_primary_lures)}\n"
+                    if recent_secondary_lures:
+                        regeneration_note += f"  • SECONDARY: Do NOT use {', '.join(recent_secondary_lures)}\n"
                     regeneration_note += "- Provide variety while maintaining condition-based logic\n"
                 else:
                     regeneration_note += "\nUser Intent: NEW LOCATION (rapid regeneration at different spot)\n"
@@ -872,6 +896,10 @@ async def call_openai_plan(
                 regeneration_note += "\nUser Intent: WANTS TO TRY SOMETHING DIFFERENT (1-3 hours later)\n"
                 regeneration_note += "- User is looking for alternative approaches\n"
                 regeneration_note += "- Avoid recent lures unless conditions have changed significantly\n"
+                if recent_primary_lures:
+                    regeneration_note += f"  • PRIMARY: Prefer lures NOT in [{', '.join(recent_primary_lures)}]\n"
+                if recent_secondary_lures:
+                    regeneration_note += f"  • SECONDARY: Prefer lures NOT in [{', '.join(recent_secondary_lures)}]\n"
             
             elif 180 <= minutes_ago < 360:  # 3-6 hours
                 regeneration_note += "\nUser Intent: CHECKING IF CONDITIONS CHANGED (3-6 hours later)\n"
@@ -888,6 +916,10 @@ async def call_openai_plan(
             # No timing info, use soft guidance
             regeneration_note += "\nWhen selecting within your Day Lean:\n"
             regeneration_note += "- If multiple lures fit equally well, prefer lures NOT in recent lists\n"
+            if recent_primary_lures:
+                regeneration_note += f"  • PRIMARY: Prefer to avoid {', '.join(recent_primary_lures)}\n"
+            if recent_secondary_lures:
+                regeneration_note += f"  • SECONDARY: Prefer to avoid {', '.join(recent_secondary_lures)}\n"
             regeneration_note += "- Recent lures are still valid if they're clearly optimal for conditions\n"
         
         regeneration_note += "\n"
