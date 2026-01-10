@@ -49,11 +49,6 @@ from app.canon.target_definitions import (
     TARGET_DEFINITIONS,           # For system prompt dump
     filter_targets_by_access,     # For access filtering
 )
-from app.canon.variety import (
-    get_variety_mode,
-    get_lure_tiers_for_presentation,
-    get_color_candidates,
-)
 from app.canon.validate import (
     validate_lure_and_presentation,
     validate_colors_for_lure,
@@ -61,6 +56,178 @@ from app.canon.validate import (
 from app.canon.retrieve_rules import LURE_TIP_BANK
 
 from app.canon.lure_selection_policy import LURE_SELECTION_POLICY_PROMPT
+
+# ----------------------------------------
+# Debug + deterministic color coercion (shape-safe)
+# ----------------------------------------
+
+def _log_color_intent(stage: str, plan: Dict[str, Any]) -> None:
+    """Lightweight debug log for lure + 2-color selection behavior."""
+    try:
+        if not isinstance(plan, dict):
+            return
+        p = plan.get("primary", {}) if isinstance(plan.get("primary", {}), dict) else {}
+        s = plan.get("secondary", {}) if isinstance(plan.get("secondary", {}), dict) else {}
+        # Non-member plans may not have primary/secondary
+        if not p and not s:
+            # fall back to root shape
+            lure = plan.get("base_lure")
+            cols = plan.get("color_recommendations")
+            print(f"LLM_PLAN [{stage}] lure={lure} colors={cols}")
+            return
+
+        print(
+            f"LLM_PLAN [{stage}] "
+            f"primary_lure={p.get('base_lure')} primary_colors={p.get('color_recommendations')} | "
+            f"secondary_lure={s.get('base_lure')} secondary_colors={s.get('color_recommendations')}"
+        )
+    except Exception:
+        pass
+
+
+def _normalize_color_token(s: str) -> str:
+    return (
+        str(s or "")
+        .strip()
+        .lower()
+        .replace("—", "-")
+        .replace("–", "-")
+    )
+
+
+def _coerce_two_colors_to_pool(
+    lure: Optional[str],
+    soft_plastic: Optional[str],
+    colors: Any,
+) -> Tuple[List[str], bool, List[str]]:
+    """
+    Ensure exactly 2 color tokens and that both are from the correct lure-specific pool.
+    Returns: (final_colors, changed, reasons)
+    """
+    reasons: List[str] = []
+    if not lure:
+        return ["", ""], False, ["missing_lure"]
+
+    try:
+        allowed = list(get_color_pool_for_lure(lure, soft_plastic))
+    except Exception:
+        allowed = []
+
+    if not allowed:
+        # No pool => leave as-is (validator should catch if needed)
+        base = colors if isinstance(colors, list) else []
+        base2 = [str(x) for x in base[:2]]
+        if len(base2) == 1:
+            base2 = [base2[0], base2[0]]
+        if len(base2) == 0:
+            base2 = ["", ""]
+        return base2, False, ["empty_allowed_pool"]
+
+    # Normalize allowed lookup
+    allowed_norm = {_normalize_color_token(a): a for a in allowed}
+
+    raw = colors if isinstance(colors, list) else []
+    raw2 = [str(x) for x in raw[:2]]
+
+    coerced: List[str] = []
+    changed = False
+
+    for c in raw2:
+        if c in allowed:
+            coerced.append(c)
+            continue
+
+        cn = _normalize_color_token(c)
+
+        # direct normalized match
+        if cn in allowed_norm:
+            coerced.append(allowed_norm[cn])
+            changed = True
+            reasons.append(f"norm:{c}->{allowed_norm[cn]}")
+            continue
+
+        # slash reorder match (treat a/b and b/a as equivalent)
+        if "/" in cn:
+            parts = [p.strip() for p in cn.split("/") if p.strip()]
+            parts_set = set(parts)
+            found = None
+            for a in allowed:
+                an = _normalize_color_token(a)
+                if "/" in an:
+                    aparts = [p.strip() for p in an.split("/") if p.strip()]
+                    if set(aparts) == parts_set:
+                        found = a
+                        break
+            if found:
+                coerced.append(found)
+                changed = True
+                reasons.append(f"swap:{c}->{found}")
+                continue
+
+        # intent-preserving snap: dark / high-vis / natural
+        intent = "natural"
+        if any(k in cn for k in ["black", "blue", "junebug"]):
+            intent = "dark"
+        elif any(k in cn for k in ["chartreuse", "fire", "tiger"]):
+            intent = "high_vis"
+
+        fallback = None
+        if intent == "dark":
+            for a in allowed:
+                an = _normalize_color_token(a)
+                if "black" in an or "junebug" in an:
+                    fallback = a
+                    break
+        elif intent == "high_vis":
+            for a in allowed:
+                an = _normalize_color_token(a)
+                if "chartreuse" in an or "fire" in an or "tiger" in an:
+                    fallback = a
+                    break
+        else:
+            for a in allowed:
+                an = _normalize_color_token(a)
+                if any(k in an for k in ["ghost", "sexy shad", "shad", "natural", "baby bass", "watermelon", "green pumpkin", "bluegill", "brown"]):
+                    fallback = a
+                    break
+
+        if fallback is None:
+            fallback = allowed[0]
+
+        coerced.append(fallback)
+        changed = True
+        reasons.append(f"snap:{c}->{fallback}")
+
+    # If we didn't get 2, deterministically fill using heuristic buckets
+    if len(coerced) != 2:
+        changed = True
+        reasons.append("fallback_fill")
+        # buckets
+        natural_kw = {"green pumpkin", "watermelon", "baby bass", "ghost", "sexy shad", "shad", "white", "pearl", "bluegill", "brown"}
+        highvis_kw = {"chartreuse", "black", "black/blue", "junebug", "fire", "red craw", "peanut butter", "green pumpkin orange"}
+
+        def score(token: str, kws: set) -> int:
+            tn = _normalize_color_token(token)
+            return sum(1 for k in kws if k in tn)
+
+        a = max(allowed, key=lambda t: (score(t, natural_kw), -allowed.index(t)))
+        b = max(allowed, key=lambda t: (score(t, highvis_kw), -allowed.index(t)))
+        if a == b:
+            for cand in allowed:
+                if cand != a:
+                    b = cand
+                    break
+        coerced = [a, b]
+
+    # Ensure exactly two strings (never None)
+    coerced = [str(coerced[0]), str(coerced[1])]
+
+    return coerced, changed, reasons
+
+
+# ----------------------------------------
+# System Prompt (LOCKED RULES) — Bass Clarity
+# ----------------------------------------
 
 
 # ----------------------------------------
@@ -522,44 +689,39 @@ def _extract_first_json_object(text: str) -> Optional[str]:
                     return s[start : i + 1]
     return None
 
-
 def expand_plan_color_zones(plan: Dict[str, Any], is_member: bool) -> Dict[str, Any]:
     """
-    Expand LLM color arrays into the frontend-ready payload.
-
-    Contract (frontend expects):
-      - non-member: plan["colors"]["asset_key"]
-      - member: plan["primary"]["colors"]["asset_key"] and plan["secondary"]["colors"]["asset_key"]
+    V1 SAFETY VERSION:
+    - Dynamic lure color zones are NOT used.
+    - Swatches are driven by color_recommendations (two strings).
+    - We only attach a stable asset_key so the frontend can render the lure image.
+    - Must never crash (no retry needed just because asset enrichment failed).
     """
+
     def _apply(obj: Dict[str, Any]) -> None:
         if not isinstance(obj, dict):
             return
+
         lure = obj.get("base_lure")
-        colors = obj.get("color_recommendations") or []
         if not lure:
             return
 
-        # expand_color_zones may raise if lure/colors invalid; let caller handle/log
-        expanded = expand_color_zones(lure, colors)
+        # Stable lure silhouette/image key (no soft_plastic dependency)
+        asset_key = f"{str(lure).replace(' ', '_')}.png"
 
-        # ✅ Canonical key for PlanScreen.tsx: pattern.colors.asset_key
-        obj["colors"] = expanded
+        # Keep both keys for backward compatibility
+        obj["colors"] = {"asset_key": asset_key}
+        obj["color"] = {"asset_key": asset_key}
 
-        # 🔒 Back-compat: if other code still reads `color`, keep it in sync
-        obj["color"] = expanded
+        # IMPORTANT: do not modify color_recommendations here
 
     if is_member:
-        _apply(plan.get("primary", {}))
-        _apply(plan.get("secondary", {}))
+        _apply(plan.get("primary", {}) or {})
+        _apply(plan.get("secondary", {}) or {})
     else:
         _apply(plan)
 
     return plan
-
-# ============================================================================
-# PART 2: call_openai_plan function
-# ============================================================================
-# UPDATED: Now includes enhanced weather data (pressure, moon, precipitation, UV, humidity)
 
 async def call_openai_plan(
     weather: dict,
@@ -613,11 +775,7 @@ async def call_openai_plan(
         if target in TARGET_DEFINITIONS
     }
     
-    # ✅ STEP 2: Get variety mode (40% best, 40% alternate, 20% deep_cut)
-    variety_mode = get_variety_mode()
-    print("LLM_PLAN: Variety mode=" + variety_mode)
-
-    # ✅ STEP 3: Build user input with accessible targets and ENHANCED WEATHER
+    # ✅ STEP 2: Build user input with accessible targets and ENHANCED WEATHER
     user_input = {
         "location": location,
         "phase": phase,
@@ -651,103 +809,34 @@ async def call_openai_plan(
         },
         "accessible_targets": accessible_targets,
         "target_definitions": accessible_target_defs,
-        "variety_mode": variety_mode,
         "instructions": "",
     }
     
-    # Build variety context for BOTH patterns
-    variety_instructions = "🚨 VARIETY REQUIREMENT (ABSOLUTE PRIORITY):\n\n"
-    
-    if recent_primary_lures:
-        variety_instructions += "RECENT PRIMARY LURES: " + ', '.join(recent_primary_lures) + "\n"
-        variety_instructions += "⛔ DO NOT use these lures for PRIMARY pattern unless NO alternatives exist\n\n"
-    
-    if recent_secondary_lures:
-        variety_instructions += "RECENT SECONDARY LURES: " + ', '.join(recent_secondary_lures) + "\n"
-        variety_instructions += "⛔ DO NOT use these lures for SECONDARY pattern unless NO alternatives exist\n\n"
-    
-    if not recent_primary_lures and not recent_secondary_lures:
-        variety_instructions += "No recent plan history - you have full freedom of lure selection.\n\n"
-    else:
-        primary_list = ', '.join(recent_primary_lures) if recent_primary_lures else 'none'
-        secondary_list = ', '.join(recent_secondary_lures) if recent_secondary_lures else 'none'
+    # Build regeneration context if recent lures exist
+    regeneration_note = ""
+    if recent_primary_lures or recent_secondary_lures:
+        regeneration_note = "\n🔄 REGENERATION CONTEXT:\n"
+        regeneration_note += "User has recent plan history. When selecting within your Day Lean:\n"
         
-        variety_instructions += """
-DECISION RULE (APPLIES TO BOTH PATTERNS INDEPENDENTLY):
-
-For PRIMARY pattern:
-1. Evaluate conditions → identify viable presentation families
-2. List ALL valid lures for chosen presentation
-3. EXCLUDE recent primary lures: """ + primary_list + """
-4. Pick from remaining lures
-5. Only repeat if it's the SOLE viable option
-
-For SECONDARY pattern:
-1. Evaluate conditions → identify viable presentation families (DIFFERENT from primary)
-2. List ALL valid lures for chosen presentation
-3. EXCLUDE recent secondary lures: """ + secondary_list + """
-4. Pick from remaining lures
-5. Only repeat if it's the SOLE viable option
-
-EXAMPLE:
-Conditions: 37°F, no wind, winter
-Recent Primary: [carolina rig, texas rig]
-Recent Secondary: [jig, chatterbait]
-
-PRIMARY Analysis:
-- Bottom Contact optimal for conditions
-- Valid lures: carolina rig, texas rig, jig (all work)
-- Recent primary: carolina rig, texas rig
-- ✅ CORRECT: Pick jig (avoid recent primary lures)
-- ❌ WRONG: Pick carolina rig (ignores variety requirement)
-
-SECONDARY Analysis:
-- Reaction presentation for pivot
-- Valid lures: jig, chatterbait, lipless crank
-- Recent secondary: jig, chatterbait  
-- ✅ CORRECT: Pick lipless crank (avoid recent secondary lures)
-- ❌ WRONG: Pick jig (ignores variety requirement)
-
-Both patterns should show variety INDEPENDENTLY.
-If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERENT viable colors for each to give the angler options.
-"""
+        if recent_primary_lures:
+            regeneration_note += f"Recent primary lures: {', '.join(recent_primary_lures)}\n"
+        if recent_secondary_lures:
+            regeneration_note += f"Recent secondary lures: {', '.join(recent_secondary_lures)}\n"
+            
+        regeneration_note += "- If multiple lures fit the lean equally well, prefer lures NOT in recent lists\n"
+        regeneration_note += "- Recent lures are still valid if they're clearly optimal for conditions\n"
+        regeneration_note += "- This helps provide variety when user regenerates\n\n"
     
-    # ✅ FIX 1: DIVERSIFY Nudge - No longer forces single colors
-    color_variety_nudge = """
-🎨 COLOR VARIETY REQUIREMENT:
-- DIVERSITY: Avoid using the exact same color pair for Primary and Secondary if possible.
-- Winter/Cold: Do NOT default to "black/blue" for every plan. 
-  * Clear water alternatives: "green pumpkin orange", "watermelon red", "peanut butter & jelly".
-  * Stained water alternatives: "junebug", "red craw".
-"""
-
+    
     user_input["instructions"] = (
-        variety_instructions + "\n\n" +
-        color_variety_nudge + "\n\n" +
+        regeneration_note +
         "ACCESSIBLE TARGETS (based on " + access_type + " access):\n" +
         "- You MUST choose 3 targets ONLY from the accessible_targets list\n" +
         "- Available targets: " + str(accessible_targets) + "\n" +
         "- These are the targets the angler can realistically reach from " + access_type + "\n" +
         "- For work_it_cards definitions, use target_definitions[target_name]\n" +
         "\n" +
-        "ANALYSIS ORDER (NON-NEGOTIABLE):{LURE_SELECTION_POLICY_PROMPT}\n" +
-        "1. Analyze season/phase and current conditions\n" +
-        "2. Identify 3 targets from accessible_targets list where bass are likely positioned\n" +
-        "3. Determine best presentation family for those targets\n" +
-        "4. Select lure that best executes that presentation\n" +
-        "\n" +
-        "PRIMARY PATTERN (Confidence Anchor):\n" +
-        "- Choose presentation that represents highest-probability way bass should feed\n" +
-        "- This is the truth-telling pattern\n" +
-        "\n" +
-        "SECONDARY PATTERN (Intentional Complement):\n" +
-        "- MUST use DIFFERENT presentation than primary\n" +
-        "- Either: ALTERNATIVE (different bass position) OR COMPLEMENT (search + cleanup)\n" +
-        "- Explain the relationship to primary in why_this_works\n" +
-        "\n" +
-        "VARIETY NOTE:\n" +
-        "- Variety mode is '" + variety_mode + "' but you should choose the optimal lure\n" +
-        "- Variety will be applied in post-processing\n"
+        LURE_SELECTION_POLICY_PROMPT
     )
     
     # Add boat advantage strategic requirements
@@ -798,7 +887,7 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
             )
 
         dt = time.time() - t0
-        print("LLM_PLAN: OpenAI call took " + str(round(dt, 2)) + "s (mode=" + variety_mode + ")")
+        print("LLM_PLAN: OpenAI call took " + str(round(dt, 2)) + "s")
 
         if response.status_code != 200:
             print("LLM_PLAN: HTTP " + str(response.status_code))
@@ -829,9 +918,7 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
             print("LLM_PLAN: Extracted preview: " + extracted[:500])
             return None
 
-        # Return plan with variety_mode attached for post-processing
-        plan["_variety_mode"] = variety_mode
-        
+        # Return plan
         return plan
 
     except Exception as e:
@@ -842,133 +929,6 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
 # ============================================================================
 # PART 3: Post-processing and Validation functions
 # ============================================================================
-
-# ============================================================================
-# POST-PROCESSING: LURE VARIETY SWAP
-# ============================================================================
-
-def swap_lures_for_variety(
-    plan: Dict[str, Any],
-    variety_mode: str,
-    weather: Dict[str, Any],
-    phase: str,
-) -> Dict[str, Any]:
-    """
-    Swap lures to tier 2/3 options while maintaining presentation compatibility.
-    
-    This happens AFTER the LLM picks optimal lures, allowing us to add variety
-    without compromising the target-first analysis.
-    
-    Args:
-        plan: LLM-generated plan with primary + secondary patterns
-        variety_mode: "best" | "alternate" | "deep_cut"
-        weather: Weather conditions (for tier selection)
-        phase: Bass phase (for tier selection)
-    
-    Returns:
-        Plan with lures potentially swapped to tier 2/3
-    """
-    if variety_mode == "best":
-        # No swap - LLM's choice is optimal
-        return plan
-    
-    for pattern_name in ["primary", "secondary"]:
-        if pattern_name not in plan:
-            continue
-        
-        pattern = plan[pattern_name]
-        current_lure = pattern.get("base_lure")
-        presentation = pattern.get("presentation")
-        
-        if not current_lure or not presentation:
-            continue
-        
-        # Get condition-aware tiers for this presentation
-        tiers = get_lure_tiers_for_presentation(presentation, weather, phase)
-        
-        # Select alternative tier based on variety mode
-        if variety_mode == "alternate":
-            alternatives = tiers.get("tier2", [])
-        else:  # deep_cut
-            alternatives = tiers.get("tier3", [])
-        
-        # Only swap if:
-        # 1. Alternatives exist
-        # 2. Current lure is NOT already in that tier (avoid swapping tier2 to tier2)
-        if alternatives and current_lure not in alternatives:
-            new_lure = random.choice(alternatives)
-            pattern["base_lure"] = new_lure
-            print("LLM_PLAN: " + pattern_name + " lure swap: " + current_lure + " → " + new_lure + " (" + variety_mode + ")")
-            
-            # Important: Clear soft_plastic and trailer when swapping lures
-            # The LLM will have set these for the original lure
-            # Validation will enforce correct values for new lure
-            if "soft_plastic" in pattern:
-                pattern["soft_plastic"] = None
-            if "soft_plastic_why" in pattern:
-                pattern["soft_plastic_why"] = None
-            if "trailer" in pattern:
-                pattern["trailer"] = None
-            if "trailer_why" in pattern:
-                pattern["trailer_why"] = None
-    
-    return plan
-
-
-# ============================================================================
-# POST-PROCESSING: COLOR VARIETY
-# ============================================================================
-
-def apply_color_variety(
-    plan: Dict[str, Any],
-    variety_mode: str,
-) -> Dict[str, Any]:
-    """
-    Apply color variety to LLM-selected colors.
-    Swaps colors based on variety_mode to prevent repetition.
-    
-    Args:
-        plan: LLM output with primary + secondary patterns
-        variety_mode: "best" | "alternate" | "deep_cut"
-    
-    Returns:
-        Modified plan with varied colors
-    """
-    def _swap_colors(pattern: Dict[str, Any], pattern_name: str) -> None:
-        """Swap colors for a single pattern"""
-        if "base_lure" not in pattern or "color_recommendations" not in pattern:
-            return
-        
-        lure = pattern["base_lure"]
-        soft_plastic = pattern.get("soft_plastic")
-        current_colors = pattern["color_recommendations"]
-        
-        if not current_colors or len(current_colors) != 2:
-            return  # LLM didn't provide 2 colors, skip variety
-        
-        # Get color candidates with variety
-        color_candidates = get_color_candidates(lure, soft_plastic, variety_mode)
-        
-        # Replace colors if variety mode isn't "best"
-        if variety_mode != "best" and color_candidates:
-            clear_options = color_candidates.get("clear", [])
-            stained_options = color_candidates.get("stained", [])
-            
-            if clear_options:
-                pattern["color_recommendations"][0] = random.choice(clear_options)
-            if stained_options:
-                pattern["color_recommendations"][1] = random.choice(stained_options)
-            
-            print("LLM_PLAN: " + pattern_name + " color variety (" + variety_mode + "): " + str(pattern["color_recommendations"]))
-    
-    # Apply to both patterns (always dual-pattern now)
-    if "primary" in plan:
-        _swap_colors(plan["primary"], "primary")
-    if "secondary" in plan:
-        _swap_colors(plan["secondary"], "secondary")
-    
-    return plan
-
 
 # ----------------------------------------
 # Validation (service-level, aligned to Bass Clarity rules)
@@ -1051,20 +1011,6 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
         errors.append("outlook_blurb contains exact temperature (use descriptive language instead)")
     if re.search(wind_pattern, str(outlook)):
         errors.append("outlook_blurb contains exact wind speed (use descriptive language instead)")
-
-    # weather_card_insights validation
-    insights = plan.get("weather_card_insights")
-    if not insights:
-        errors.append("Missing required field: weather_card_insights")
-    elif not isinstance(insights, dict):
-        errors.append("weather_card_insights must be a dictionary/object")
-    else:
-        required_insight_keys = ["temperature", "wind", "pressure", "sky_uv"]
-        for key in required_insight_keys:
-            if key not in insights:
-                errors.append("weather_card_insights missing required key: " + key)
-            elif not insights[key] or not isinstance(insights[key], str) or len(insights[key].strip()) < 10:
-                errors.append("weather_card_insights." + key + " must be a non-empty string (at least 10 chars)")
 
     # block specific depth-in-water phrasing (allow retrieve distance like "drag 2-3 feet")
     depth_pattern = r"(?<!drag\s)(?<!hop\s)(?<!swim\s)(?<!move\s)(?<!pull\s)\d+[-–]?\d*\s*[-–]?\s*(feet|ft|foot)\s+(of\s+water|deep|depth|down)"
@@ -1228,27 +1174,13 @@ async def generate_llm_plan_with_retries(
             recent_primary_lures=recent_primary_lures,
             recent_secondary_lures=recent_secondary_lures,
         )
+        if plan is not None:
+         _log_color_intent(f"raw_llm_attempt_{attempt + 1}", plan)
 
         if not plan:
             await asyncio.sleep(0.75 * (attempt + 1))
             print("LLM_PLAN: Attempt " + str(attempt + 1) + " failed (no response)")
             continue
-
-        # Extract variety mode from plan (attached in call_openai_plan)
-        variety_mode = plan.pop("_variety_mode", "best")
-
-        # 🚨 VARIETY SWAPPING DISABLED - Use temperature for natural variety instead
-        # Problem: Swapping colors/lures after LLM generates text creates mismatches
-        # - LLM writes: "Choose green pumpkin if clear..."
-        # - We swap colors to: watermelon red
-        # - Text still says "green pumpkin" but shows "watermelon red" ❌
-        #
-        # Solution: Use temperature=0.6 for natural LLM variety
-        # - LLM picks different lures/colors across requests
-        # - Text always matches because LLM generated it
-        # - Simpler, no post-processing needed
-        if variety_mode != "best":
-            pass  # No swapping - LLM handles variety via temperature
 
         # Validate plan
         is_valid, errors = validate_llm_plan(plan, is_member=is_member)
@@ -1258,7 +1190,8 @@ async def generate_llm_plan_with_retries(
                 plan = expand_plan_color_zones(plan, is_member=is_member)
             except Exception as e:
                 print("LLM_PLAN: Color zone expansion failed: " + str(e))
-                continue   # retry LLM, do NOT return unexpanded plan
+                return plan  # return valid plan without enrichment
+
 
             return plan
 
