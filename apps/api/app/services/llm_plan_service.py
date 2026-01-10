@@ -1,3 +1,5 @@
+# app/services/llm_plan_service.py
+
 """
 LLM Plan Generator with Strict Guardrails
 100% LLM-driven, but ONLY chooses from canonical pools.
@@ -622,6 +624,9 @@ async def call_openai_plan(
     variety_mode = get_variety_mode()
     print("LLM_PLAN: Variety mode=" + variety_mode)
 
+    # --- NEW: Weather Insights List (for Frontend Cards) ---
+    weather_insights: List[str] = []
+
     # ✅ STEP 3: Build user input with accessible targets and ENHANCED WEATHER
     user_input = {
         "location": location,
@@ -761,6 +766,7 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
     
     pressure_mb = weather.get("pressure_mb")
     pressure_trend = weather.get("pressure_trend")
+    wind_mph = weather.get("wind_mph") or weather.get("wind_speed") or 0
     moon_phase = weather.get("moon_phase")
     is_major_period = weather.get("is_major_period", False)
     has_recent_rain = weather.get("has_recent_rain", False)
@@ -783,6 +789,9 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
 - Strategy tone: "Falling pressure triggers aggressive feeding—bass will chase reaction baits"
 
 """
+            # CAPTURE INSIGHT (KEYWORD: Pressure)
+            weather_insights.append("Pressure Falling: Bass feeding aggressively on reaction baits.")
+
         elif pressure_trend == "rising":
             weather_guidance += """
 ✅ RISING PRESSURE = ACTIVE FEEDING
@@ -792,6 +801,9 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
 - Strategy tone: "Rising pressure indicates active bass—expect strikes on moving baits"
 
 """
+            # CAPTURE INSIGHT (KEYWORD: Pressure)
+            weather_insights.append("Pressure Rising: Active bite window expected.")
+
         else:  # stable
             weather_guidance += """
 ✅ STABLE PRESSURE = NORMAL CONDITIONS
@@ -801,6 +813,9 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
 - Transition temps (50-60°F): Match presentation to phase and structure
 
 """
+            # CAPTURE INSIGHT (KEYWORD: Pressure)
+            weather_insights.append("Pressure Stable: Normal activity levels.")
+
     
     # Moon Phase & Solunar Analysis
     if moon_phase:
@@ -815,6 +830,8 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
 - Strategy tone: "You're fishing during a major solunar period—bass are in an active feeding window"
 
 """
+            # CAPTURE INSIGHT
+            weather_insights.append("Major Solunar Period: Active feeding window.")
         else:
             weather_guidance += "\n"
             if "full" in moon_phase or "gibbous" in moon_phase:
@@ -823,7 +840,7 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
                 weather_guidance += "- Minimal moonlight, bass feed during daylight hours\n"
             weather_guidance += "\n"
     
-    # ✅ FIX 2: REMOVED "FOR BOTH RECOMMENDATIONS" CONSTRAINT
+    # RAIN / VISIBILITY (Keywords: Light, Visibility)
     if has_recent_rain:
         weather_guidance += """
 💧 RECENT RAIN DETECTED
@@ -831,6 +848,14 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
 - Oxygen levels INCREASED (active bass)
 - SHIFT COLORS toward high-visibility options (chartreuse, white, black/blue).
 - Strategy tone: "Recent rain has stained the water—bright colors improve visibility in reduced clarity"\n"""
+        
+        # CAPTURE INSIGHT (KEYWORD: Light or Visibility)
+        weather_insights.append("Light & Visibility: Recent rain reduces light penetration; bass roam more.")
+
+    # WIND (Keyword: Wind)
+    if wind_mph > 6:
+        # ✅ FIX: Add Wind Insight
+        weather_insights.append(f"Wind ({wind_mph} mph): Use wind-blown banks.")
     
     # UV Index Analysis
     if uv_index is not None:
@@ -845,6 +870,9 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
 - Strategy tone: "High UV index drives bass to shade—focus on docks and overhead cover"
 
 """
+            # CAPTURE INSIGHT (KEYWORD: UV)
+            weather_insights.append(f"UV High ({uv_index}): Bass hold tight to shade.")
+
         elif uv_index < 3:
             weather_guidance += """
 ☁️ LOW UV = BASS ROAM OPEN WATER
@@ -855,8 +883,118 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
 - Strategy tone: "Low light conditions reduce cover dependency—bass will roam more freely"
 
 """
+            # CAPTURE INSIGHT (KEYWORD: UV)
+            weather_insights.append(f"UV Low ({uv_index}): Bass roaming open water.")
+            
         weather_guidance += "\n"
     
+
+    # -------------------------------------------------------------------
+    # FRONTEND WEATHER CARD INSIGHTS (NO-DRIFT ADDITION)
+    # Goal: Always provide at least one insight line per WeatherSection card
+    # so the modal never falls back to generic defaults.
+    #
+    # Frontend keyword routing (WeatherSection.tsx):
+    # - Temperature card looks for "temp"
+    # - Wind card looks for "wind"
+    # - Pressure card looks for "pressure"
+    # - Light & Sky card looks for "uv", "visibility", or "light"
+    # -------------------------------------------------------------------
+    def _has_insight_kw(kw: str) -> bool:
+        kw = kw.lower()
+        return any(kw in str(s).lower() for s in weather_insights)
+
+    # Temperature (always)
+    if not _has_insight_kw("temp"):
+        _t_cur = weather.get("temp_f")
+        _t_hi = weather.get("temp_high")
+        _t_lo = weather.get("temp_low")
+        try:
+            _t_cur_f = float(_t_cur) if _t_cur is not None else None
+        except Exception:
+            _t_cur_f = None
+        try:
+            _t_hi_f = float(_t_hi) if _t_hi is not None else (_t_cur_f if _t_cur_f is not None else None)
+        except Exception:
+            _t_hi_f = _t_cur_f
+        try:
+            _t_lo_f = float(_t_lo) if _t_lo is not None else (_t_cur_f if _t_cur_f is not None else None)
+        except Exception:
+            _t_lo_f = _t_cur_f
+
+        _swing = (_t_hi_f - _t_lo_f) if (_t_hi_f is not None and _t_lo_f is not None) else None
+
+        if _t_cur_f is not None and _swing is not None:
+            if _swing >= 10:
+                weather_insights.append(
+                    f"Temp: Big swing ({int(round(_t_lo_f))}–{int(round(_t_hi_f))}°F) — expect a noticeable bite shift; start slower early and speed up as the water warms."
+                )
+            else:
+                weather_insights.append(
+                    f"Temp: Steady range ({int(round(_t_lo_f))}–{int(round(_t_hi_f))}°F) — bass behavior should be consistent; refine depth/cover instead of chasing constant changes."
+                )
+        elif _t_cur_f is not None:
+            weather_insights.append(
+                f"Temp: Around {int(round(_t_cur_f))}°F — use temperature to set your pace (colder = slower/closer, warmer = faster/more aggressive)."
+            )
+        else:
+            weather_insights.append(
+                "Temp: Use water/air warmth to set tempo — colder trends tighten the strike zone; warming trends widen it."
+            )
+
+    # Wind (always)
+    if not _has_insight_kw("wind"):
+        _w = wind_mph if wind_mph is not None else 0
+        try:
+            _w_f = float(_w)
+        except Exception:
+            _w_f = 0.0
+
+        if _w_f <= 5:
+            weather_insights.append(
+                "Wind: Light wind — less surface distortion means bass rely on cover/structure; slow down and fish targets thoroughly."
+            )
+        elif _w_f <= 12:
+            weather_insights.append(
+                "Wind: Moderate wind — a productive chop breaks up light; prioritize wind-blown banks and moving baits to cover water."
+            )
+        else:
+            weather_insights.append(
+                "Wind: Strong wind — current and turbulence reposition bait; focus on protected windward transitions and high-percentage ambush cover."
+            )
+
+    # Pressure (always)
+    if not _has_insight_kw("pressure"):
+        if pressure_trend:
+            _pt = str(pressure_trend).lower()
+            if "fall" in _pt:
+                weather_insights.append("Pressure: Falling — fish often feed ahead of change; lean reaction and cover water.")
+            elif "ris" in _pt:
+                weather_insights.append("Pressure: Rising — bite can tighten; slow down and key on shade/cover edges.")
+            else:
+                weather_insights.append("Pressure: Stable — normal positioning; win by dialing depth/cover and cadence.")
+        else:
+            weather_insights.append(
+                "Pressure: Trend unavailable — assume neutral behavior and let cover + retrieve speed dictate your adjustments."
+            )
+
+    # Light & Sky / Visibility (always)
+    if not (_has_insight_kw("uv") or _has_insight_kw("visibility") or _has_insight_kw("light")):
+        _sky = weather.get("sky_condition") or weather.get("cloud_cover") or ""
+        _sky_l = str(_sky).lower()
+        if has_recent_rain:
+            weather_insights.append(
+                "Light: Post-rain/stained water often boosts shallow feeding; use higher-contrast or vibration to help bass track."
+            )
+        elif "overcast" in _sky_l or "cloud" in _sky_l:
+            weather_insights.append(
+                "Light: Cloud cover reduces harsh light; bass roam more—use search baits and target broader flats/edges."
+            )
+        else:
+            weather_insights.append(
+                "Light: Bright skies push bass to shade/edges; work cover lines, docks, and anything that breaks light penetration."
+            )
+
     # Humidity Analysis (topwater indicator)
     if humidity is not None and humidity > 70:
         weather_guidance += f"""
@@ -911,6 +1049,9 @@ If patterns share a color pool (e.g. Jig and Chatterbait), try to select DIFFERE
             "EXTREME"
         )
         
+        # ✅ FIX: Add Temp Insight so the Temperature Card modal has details
+        weather_insights.append(f"Temperature Swing ({temp_swing}°): Activity increases as water warms.")
+
         temp_swing_instructions = """
 🌡️ TEMPERATURE SWING DETECTED (""" + swing_category + """):
 Current temp: """ + str(temp_current) + """°F
@@ -1038,6 +1179,10 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
 
         # Return plan with variety_mode attached for post-processing
         plan["_variety_mode"] = variety_mode
+        
+        # ✅ CAPTURED WEATHER INSIGHTS INJECTED HERE
+        plan["weather_insights"] = weather_insights
+        
         return plan
 
     except Exception as e:
@@ -1045,9 +1190,7 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
         return None
 
 
-
-
-
+# ============================================================================
 # PART 3: Post-processing and Validation functions
 # ============================================================================
 
