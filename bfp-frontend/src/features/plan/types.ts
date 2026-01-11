@@ -8,6 +8,19 @@ export type Geo = {
   name?: string | null;
 };
 
+// New Forecast Rating Object
+export type ForecastRating = {
+  score: number;
+  rating:
+    | "AGGRESSIVE"
+    | "ACTIVE"
+    | "OPPORTUNISTIC"
+    | "SELECTIVE"
+    | "DEFENSIVE"
+    | string;
+  explanation: string;
+};
+
 // Updated to allow the merged weather_insights from PlanScreen
 export type PlanConditions = {
   location_name: string;
@@ -24,6 +37,17 @@ export type PlanConditions = {
 
   // ✅ ADDED: Allows WeatherSection to receive the AI analysis
   weather_insights?: string[];
+
+  // ✅ ADDED: Forecast Rating for the Badge
+  forecast_rating?: ForecastRating | null;
+
+  // ✅ ADDED: Weather insights for the modal
+  weather_card_insights?: {
+    temperature?: string | null;
+    wind?: string | null;
+    pressure?: string | null;
+    sky_uv?: string | null;
+  } | null;
 };
 
 export type ColorZones = {
@@ -78,6 +102,10 @@ export type Pattern = {
 export type Plan = {
   // ✅ ADDED: Missing root fields
   location: string;
+
+  // ✅ ADDED: Forecast Rating (Root Level from LLM)
+  forecast_rating?: ForecastRating;
+
   weather_card_insights?: {
     temperature: string;
     wind: string;

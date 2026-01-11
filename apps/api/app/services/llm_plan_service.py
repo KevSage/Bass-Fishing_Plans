@@ -29,6 +29,7 @@ from app.canon.pools import (
     LURE_TO_PRESENTATION,
     # terminal + trailer pools
     TERMINAL_PLASTIC_MAP,
+    TRAILER_REQUIREMENT,
     TRAILER_BUCKET_BY_LURE,
     CHATTER_SWIMJIG_TRAILERS,
     SPINNER_BUZZ_TRAILERS,
@@ -228,11 +229,6 @@ def _coerce_two_colors_to_pool(
 # ----------------------------------------
 # System Prompt (LOCKED RULES) — Bass Clarity
 # ----------------------------------------
-
-
-# ----------------------------------------
-# System Prompt (LOCKED RULES) — Bass Clarity
-# ----------------------------------------
 def build_system_prompt(include_pattern_2: bool = False) -> str:
     """
     Bass Clarity system prompt:
@@ -268,12 +264,23 @@ def build_system_prompt(include_pattern_2: bool = False) -> str:
         terminal_rules.append(f"- {lure}: {sorted(list(plastics))}")
 
     # ---------- trailer rules (human-readable list) ----------
+    required_trailer_lures = sorted([k for k, v in TRAILER_REQUIREMENT.items() if v == "required"])
+    optional_trailer_lures = sorted([k for k, v in TRAILER_REQUIREMENT.items() if v == "optional"])
+
     trailer_rules = [
-        "REQUIRED:",
+        "TRAILER REQUIREMENT (MUST FOLLOW):",
+        f"- REQUIRED base_lure values (MUST include trailer + trailer_why): {required_trailer_lures}",
+        f"- OPTIONAL base_lure values (may include trailer + trailer_why; if omitted, omit both keys): {optional_trailer_lures}",
+        "",
+        "ALLOWED TRAILERS (if trailer is included, MUST be from the allowed list for that base_lure):",
         f"- chatterbait, swim jig: {sorted(list(CHATTER_SWIMJIG_TRAILERS))}",
         f"- casting jig, football jig: {sorted(list(JIG_TRAILERS))}",
-        "OPTIONAL:",
         f"- spinnerbait, buzzbait: {sorted(list(SPINNER_BUZZ_TRAILERS))}",
+        "",
+        "STRICT RULES:",
+        "- If base_lure requires a trailer, you MUST include both keys trailer and trailer_why (do not omit; do not set null).",
+        "- If base_lure is terminal or has no trailer, you MUST OMIT trailer and trailer_why keys entirely.",
+        "- Chunk trailer is only valid for casting jig or football jig.",
     ]
 
     # ---------- output format ----------
@@ -285,17 +292,18 @@ RETURN JSON ONLY:
     "presentation":"<from PRESENTATIONS>",
     "base_lure":"<from LURE_POOL>",
 
-    "soft_plastic": null | "<REQUIRED for terminal tackle ONLY: texas rig, carolina rig, dropshot, ned rig, shakey head, wacky rig, neko rig. MUST be null for ALL other lures>",
-    "soft_plastic_why": null | "<1-2 sentences explaining soft plastic choice; only if soft_plastic is set>",
+    "soft_plastic": "<OMIT KEY unless base_lure in TERMINAL_PLASTIC_MAP. If included, choose from TERMINAL_PLASTIC_MAP[base_lure]>",
+    "soft_plastic_why": "<OMIT KEY unless soft_plastic included. 1-2 sentences>",
 
-    "trailer": null | "<REQUIRED for jigs and bladed baits: casting jig, football jig, swim jig, chatterbait, spinnerbait, buzzbait. MUST be null for terminal tackle and all other lures>",
-    "trailer_why": null | "<1 sentence explaining trailer choice; only if trailer is set>",
+    "trailer": "<REQUIRED if TRAILER_REQUIREMENT[base_lure]==required. OPTIONAL if ==optional. OMIT KEY if ==none or ==terminal. If included, choose from allowed trailers for this base_lure (see trailer rules above).>",
+    "trailer_why": "<OMIT KEY unless trailer included. 1-2 sentences>",
+
 
     "color_recommendations":["<COLOR_CLEAR_OR_AVG>","<COLOR_STAINED_OR_MUDDY>"],
 
     "targets":["<target>","<target>","<target>"],
 
-    "why_this_works":"2-3 sentences total. MUST explain why THIS lure + presentation fits phase/conditions AND include color guidance in Choose A if... Choose B if... format.",
+    "why_this_works":"2-3 sentences total. MUST explain why THIS lure + presentation fits phase/conditions AND include color guidance in Choose A if... Choose B if... color guidance.",
     "pattern_summary":"2-3 sentences. Suggestive language only (may/might/can/suggests).",
     "strategy":"2-3 sentences explaining FISHING STYLE that matches your Day Lean (Section J). Connect Day Lean → approach. Examples: Power Search='adopt search-oriented approach, cover water to locate zones' | Finesse='fish with precision mindset, thorough coverage of fewer spots' | Control='penetrate cover, commit to heavy structure' | Reaction='target visible cover, work edges systematically'. Practical, calm tone.",
 
@@ -319,8 +327,8 @@ RETURN JSON ONLY:
     "soft_plastic": null | "<REQUIRED for terminal tackle ONLY. MUST be null for jigs/bladed baits. If primary used soft_plastic, secondary MUST use DIFFERENT soft_plastic>",
     "soft_plastic_why": null | "<1-2 sentences explaining soft plastic choice; only if soft_plastic is set>",
 
-    "trailer": null | "<REQUIRED for jigs and bladed baits ONLY. MUST be null for terminal tackle. If primary used trailer, secondary MUST use DIFFERENT trailer>",
-    "trailer_why": null | "<1 sentence explaining trailer choice; only if trailer is set>",
+    "trailer": "<REQUIRED if TRAILER_REQUIREMENT[base_lure]==required. OPTIONAL if ==optional. OMIT KEY if ==none or ==terminal. If included, choose from allowed trailers for this base_lure (see trailer rules above).>",
+    "trailer_why": "<REQUIRED if trailer included. 1 sentence explaining trailer choice. OMIT if trailer omitted.>",
 
     "color_recommendations":["<COLOR_CLEAR_OR_AVG>","<COLOR_STAINED_OR_MUDDY>"],
 
@@ -341,6 +349,12 @@ RETURN JSON ONLY:
       {"name":"<Target 2>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"2-3 sentences"},
       {"name":"<Target 3>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"2-3 sentences"}
     ]
+  },
+
+  "forecast_rating": {
+    "score": <integer 1-10>,
+    "rating": "<AGGRESSIVE | ACTIVE | OPPORTUNISTIC | SELECTIVE | DEFENSIVE>",
+    "explanation": "<1 short sentence justifying the score based on pressure/weather/phase>"
   },
 
   "day_progression":[
@@ -367,11 +381,12 @@ RETURN JSON ONLY:
   "presentation":"<from PRESENTATIONS>",
   "base_lure":"<from LURE_POOL>",
 
-  "soft_plastic": null | "<ONLY for terminal tackle rigs; MUST be null for any jig/skirted/bladed>",
-  "soft_plastic_why": null | "<1-2 sentences>",
+  "soft_plastic": "<OMIT KEY unless base_lure in TERMINAL_PLASTIC_MAP. If included, choose from TERMINAL_PLASTIC_MAP[base_lure]>",
+  "soft_plastic_why": "<OMIT KEY unless soft_plastic included. 1-2 sentences>",
 
-  "trailer": null | "<ONLY if lure uses a trailer; MUST be null for terminal tackle>",
-  "trailer_why": null | "<1 sentence only if trailer used>",
+    "trailer": "<REQUIRED if TRAILER_REQUIREMENT[base_lure]==required. OPTIONAL if ==optional. OMIT KEY if ==none or ==terminal. If included, choose from allowed trailers for this base_lure (see trailer rules above).>",
+  "trailer_why": "<OMIT KEY unless trailer included. 1-2 sentences>",
+
 
   "color_recommendations":["<COLOR_CLEAR_OR_AVG>","<COLOR_STAINED_OR_MUDDY>"],
 
@@ -392,6 +407,12 @@ RETURN JSON ONLY:
     {"name":"<Target 2>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"Max 28–32 words"},
     {"name":"<Target 3>","definition":"<EXACT from TARGET_DEFINITIONS>","how_to_fish":"Max 28–32 words"}
   ],
+
+  "forecast_rating": {
+    "score": <integer 1-10>,
+    "rating": "<AGGRESSIVE | ACTIVE | OPPORTUNISTIC | SELECTIVE | DEFENSIVE>",
+    "explanation": "<1 short sentence justifying the score based on pressure/weather/phase>"
+  },
 
   "day_progression":[
     "Morning: Max 28–32 words. Where+why + tactical adjustment. No colors. No exact numbers.",
@@ -515,6 +536,29 @@ WEATHER CARD INSIGHTS (UI) (LOCKED):
 - Use suggestive language only (may/might/can/tends to).
 - Do NOT restate the metric value; the UI already shows it.
 
+FORECAST SCORING RULES (Mental Model):
+Assign a score (1-10) and rating based on these strict tier definitions:
+
+1-2: DEFENSIVE
+   • Conditions: Severe cold front, bluebird skies, rapid temperature drop, high rising pressure (>1025mb).
+   • Mood: Bass are buried in cover, non-active.
+   
+3-4: SELECTIVE
+   • Conditions: Post-frontal, slick calm water, bright sun, high pressure.
+   • Mood: Bass are finicky, require precision and patience.
+   
+5-6: OPPORTUNISTIC
+   • Conditions: Stable high pressure, average days, no distinct weather advantage or disadvantage.
+   • Mood: Neutral activity; bass feed if presented correctly.
+   
+7-8: ACTIVE
+   • Conditions: Stable low pressure, overcast skies, steady wind, minor pre-frontal warming.
+   • Mood: Bass are roaming and willing to chase.
+   
+9-10: AGGRESSIVE
+   • Conditions: Major pre-frontal pressure drop, storm approaching, perfect "Power Search" wind + cloud alignment, major lunar window.
+   • Mood: Feeding frenzy, reaction strikes are dominant.
+
 HARD RULES (validator enforced):
 - Add a space after every period. "word. Word" not "word.Word"
 - No specific depths in feet for water depth (e.g., "in 10 feet of water").
@@ -602,6 +646,44 @@ CRITICAL RULE - soft_plastic vs trailer:
   ❌ WRONG: texas rig with trailer="creature bait" → This will FAIL validation
   ✅ CORRECT: texas rig with soft_plastic="creature bait"
 
+COMPLETE JSON EXAMPLES (Follow These Patterns):
+
+Example 1 - Casting Jig (uses trailer):
+{{
+  "base_lure": "casting jig",
+  "soft_plastic": null,
+  "soft_plastic_why": null,
+  "trailer": "craw",
+  "trailer_why": "Craw profile matches bottom-protein forage for Control lean."
+}}
+
+Example 2 - Texas Rig (uses soft_plastic):
+{{
+  "base_lure": "texas rig",
+  "soft_plastic": "creature bait",
+  "soft_plastic_why": "Creature bait bulk penetrates heavy cover.",
+  "trailer": null,
+  "trailer_why": null
+}}
+
+Example 3 - Chatterbait (uses trailer):
+{{
+  "base_lure": "chatterbait",
+  "soft_plastic": null,
+  "soft_plastic_why": null,
+  "trailer": "paddle tail swimbait",
+  "trailer_why": "Swimming action enhances blade vibration."
+}}
+
+Example 4 - Shallow Crankbait (uses neither):
+{{
+  "base_lure": "shallow crankbait",
+  "soft_plastic": null,
+  "soft_plastic_why": null,
+  "trailer": null,
+  "trailer_why": null
+}}
+
 DROPSHOT SPECIAL CASE (STRICT):
 - If base_lure is "dropshot", you MUST set:
   - presentation: "Hovering / Mid-Column Finesse"  
@@ -639,13 +721,32 @@ Allowed trailers:
 {chr(10).join(trailer_rules)}
 
 ✅ CRITICAL FIELD-USAGE RULE (must be impossible to miss)
-Terminal tackle (texas rig, carolina rig, dropshot, neko rig, wacky rig, ned rig, shaky head):
-✅ uses soft_plastic
-❌ must set trailer: null
-Jig / skirted / bladed (football jig, casting jig, swim jig, chatterbait, spinnerbait, buzzbait):
-✅ uses trailer (required/optional per lure)
-❌ must set soft_plastic: null
-If you violate this, the plan is rejected.
+
+You MUST follow the canon maps exactly. These rules are enforced by server validators.
+
+A) Presentation is NOT free text.
+- You MUST set `presentation` by LOOKUP:
+  presentation := LURE_TO_PRESENTATION[base_lure]
+- Copy the string EXACTLY. Do NOT paraphrase (e.g., never invent "Bottom Contact - Hopping").
+- If you cannot comply, you must choose a different base_lure that you can map correctly.
+
+B) Terminal tackle vs Trailer usage is mutually exclusive by lure family.
+Use these canon maps:
+
+1) Terminal tackle (base_lure in TERMINAL_PLASTIC_MAP):
+✅ include `soft_plastic` AND `soft_plastic_why`
+❌ DO NOT include `trailer` or `trailer_why` keys AT ALL (omit them)
+
+2) Trailer-required lures (base_lure in TRAILER_BUCKET_BY_LURE):
+✅ include `trailer` AND `trailer_why` (choose ONLY from the allowed trailer list for that lure)
+❌ DO NOT include `soft_plastic` or `soft_plastic_why` keys AT ALL (omit them)
+
+3) All other lures (base_lure in neither map):
+❌ DO NOT include any of: soft_plastic, soft_plastic_why, trailer, trailer_why (omit all)
+
+C) Hard fail rule:
+If you output a lure that requires trailer but you include soft_plastic (even null), the plan will be rejected.
+If you output a terminal tackle lure and omit soft_plastic, the plan will be rejected.
 
 CANONICAL POOLS (MUST USE EXACT VALUES — NO INVENTION):
 PRESENTATIONS: {jdump(PRESENTATIONS)}
@@ -848,7 +949,13 @@ async def call_openai_plan(
     
     # Build context-aware regeneration note
     regeneration_note = ""
+    # DYNAMIC TEMPERATURE: Increase temp if regeneration context exists to encourage variety
+    current_temperature = 0.6
+    
     if recent_primary_lures or recent_secondary_lures:
+        # Bump temperature for variety
+        current_temperature = 0.75
+        
         # Default context if not provided
         if not regen_context:
             regen_context = {
@@ -880,13 +987,10 @@ async def call_openai_plan(
         if minutes_ago is not None:
             if minutes_ago < 60:  # <1 hour
                 if same_location:
-                    regeneration_note += "\nUser Intent: WANTS DIFFERENT LURES (rapid regeneration at same location)\n"
-                    regeneration_note += "- You MUST avoid all lures in recent lists unless absolutely no other option fits your Day Lean\n"
-                    if recent_primary_lures:
-                        regeneration_note += f"  • PRIMARY: Do NOT use {', '.join(recent_primary_lures)}\n"
-                    if recent_secondary_lures:
-                        regeneration_note += f"  • SECONDARY: Do NOT use {', '.join(recent_secondary_lures)}\n"
-                    regeneration_note += "- Provide variety while maintaining condition-based logic\n"
+                    regeneration_note += "\nUser Intent: FORCE VARIETY (Rapid Regeneration)\n"
+                    regeneration_note += "1. You are FORBIDDEN from selecting: " + str(recent_primary_lures + recent_secondary_lures) + "\n"
+                    regeneration_note += "2. You MUST select the NEXT BEST optimal lure that is NOT in the list above.\n"
+                    regeneration_note += "3. If the 'Day Lean' logic forces a forbidden lure, you MUST pivot to the secondary appropriate presentation family.\n"
                 else:
                     regeneration_note += "\nUser Intent: NEW LOCATION (rapid regeneration at different spot)\n"
                     regeneration_note += "- Same lures are acceptable if they're optimal for this location's conditions\n"
@@ -978,13 +1082,13 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
                         {"role": "user", "content": json.dumps(user_input, ensure_ascii=False)},
                     ],
                     "response_format": {"type": "json_object"},
-                    "temperature": 0.6,
+                    "temperature": current_temperature,
                     "max_completion_tokens": max_tokens,
                 },
             )
 
         dt = time.time() - t0
-        print("LLM_PLAN: OpenAI call took " + str(round(dt, 2)) + "s")
+        print(f"LLM_PLAN: OpenAI call took {round(dt, 2)}s | Temp: {current_temperature}")
 
         if response.status_code != 200:
             print("LLM_PLAN: HTTP " + str(response.status_code))
@@ -1014,6 +1118,41 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
             print("LLM_PLAN JSON ERROR: " + repr(e))
             print("LLM_PLAN: Extracted preview: " + extracted[:500])
             return None
+      
+
+
+        def _dbg_pattern(label: str, p: dict) -> None:
+            if not isinstance(p, dict):
+                print(f"LLM_PLAN DBG {label}: <not dict> {type(p)}")
+                return
+
+            lure = p.get("base_lure")
+            pres = p.get("presentation")
+
+            # key presence matters for your validator
+            has_soft = "soft_plastic" in p
+            has_trailer = "trailer" in p
+
+            soft_val = p.get("soft_plastic")
+            trailer_val = p.get("trailer")
+
+            # canon expectations (if these maps are imported in this file)
+            expected_pres = LURE_TO_PRESENTATION.get(lure) if lure else None
+            trailer_req = TRAILER_REQUIREMENT.get(lure) if lure else None
+            trailer_bucket = TRAILER_BUCKET_BY_LURE.get(lure) if lure else None
+
+            print(
+                "LLM_PLAN DBG "
+                f"{label} lure={lure!r} "
+                f"presentation={pres!r} expected_presentation={expected_pres!r} "
+                f"soft_key={has_soft} soft_val={soft_val!r} "
+                f"trailer_key={has_trailer} trailer_val={trailer_val!r} "
+                f"trailer_req={trailer_req!r} trailer_bucket={trailer_bucket!r}"
+            )
+
+        # ---- call this once per request, right after JSON parse ----
+        _dbg_pattern("primary", plan.get("primary", {}))
+        _dbg_pattern("secondary", plan.get("secondary", {}))
 
         # Return plan
         return plan
@@ -1197,6 +1336,29 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
             if t not in canonical_targets:
                 errors.append(pattern_name + ": Invalid target '" + t + "' (must be from TARGET_DEFINITIONS keys)")
 
+    # ============================================================================
+    # AUTO-CORRECTION: Fix LLM field confusion before validation
+    # ============================================================================
+    # If LLM set soft_plastic for a jig/bladed bait, move it to trailer field
+    if base_lure in TRAILER_BUCKET_BY_LURE:
+        if pattern.get("soft_plastic") and not pattern.get("trailer"):
+            # LLM set wrong field - auto-correct
+            pattern["trailer"] = pattern["soft_plastic"]
+            pattern["trailer_why"] = pattern.get("soft_plastic_why", "")
+            pattern["soft_plastic"] = None
+            pattern["soft_plastic_why"] = None
+            print(f"AUTO-CORRECTED {pattern_name}: Moved soft_plastic='{pattern['trailer']}' to trailer field for {base_lure}")
+    
+    # If LLM set trailer for terminal tackle, move it to soft_plastic field  
+    if base_lure in TERMINAL_PLASTIC_MAP:
+        if pattern.get("trailer") and not pattern.get("soft_plastic"):
+            # LLM set wrong field - auto-correct
+            pattern["soft_plastic"] = pattern["trailer"]
+            pattern["soft_plastic_why"] = pattern.get("trailer_why", "")
+            pattern["trailer"] = None
+            pattern["trailer_why"] = None
+            print(f"AUTO-CORRECTED {pattern_name}: Moved trailer='{pattern['soft_plastic']}' to soft_plastic field for {base_lure}")
+
     # soft_plastic rules
     if "soft_plastic" in pattern and pattern["soft_plastic"]:
         if base_lure in TERMINAL_PLASTIC_MAP:
@@ -1284,6 +1446,9 @@ async def generate_llm_plan_with_retries(
             await asyncio.sleep(0.75 * (attempt + 1))
             print("LLM_PLAN: Attempt " + str(attempt + 1) + " failed (no response)")
             continue
+        
+        
+
 
         # Validate plan
         is_valid, errors = validate_llm_plan(plan, is_member=is_member)

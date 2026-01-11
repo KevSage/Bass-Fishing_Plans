@@ -50,10 +50,125 @@ export type PlanConditions = {
     pressure?: string | null;
     sky_uv?: string | null;
   } | null;
+  // New Forecast Rating Object (optional for backward compatibility)
+  forecast_rating?: {
+    score: number;
+    rating: string;
+    explanation: string;
+  } | null;
   // Flat keys provided by Python backend
   sunriseTime?: string;
   sunsetTime?: string;
   solarNoonTime?: string;
+};
+
+// --- ACTIVITY BADGE COMPONENT (INTERNAL) ---
+const ActivityBadge = ({ rating }: { rating: string; score?: number }) => {
+  const r = rating.toUpperCase();
+
+  // Config: Color and Pulse Speed per state
+  // Using pure CSS variables for performance
+  let color = "#4A90E2"; // Default Blue
+  let speed = "2s"; // Default Speed
+
+  if (r.includes("AGGRESSIVE")) {
+    color = "#4ade80"; // Green
+    speed = "0.6s"; // Fast
+  } else if (r.includes("ACTIVE")) {
+    color = "#60a5fa"; // Blue
+    speed = "1.2s"; // Steady
+  } else if (r.includes("OPPORTUNISTIC")) {
+    color = "#facc15"; // Yellow
+    speed = "2.0s"; // Medium
+  } else if (r.includes("SELECTIVE")) {
+    color = "#fb923c"; // Orange
+    speed = "3.5s"; // Slow
+  } else if (r.includes("DEFENSIVE")) {
+    color = "#f87171"; // Red
+    speed = "5.0s"; // Very Slow
+  }
+
+  return (
+    <div
+      style={
+        {
+          background: "rgba(10, 10, 10, 0.6)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          borderRadius: "20px",
+          padding: "6px 12px 6px 8px", // tight padding
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+          "--badge-color": color,
+          "--pulse-speed": speed,
+        } as React.CSSProperties
+      }
+    >
+      {/* The Activity Orb (Distinct from MapOrb) */}
+      <div className="activity-orb" />
+
+      {/* The Label */}
+      <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+        <span
+          style={{
+            fontSize: "0.55rem",
+            color: "rgba(255,255,255,0.6)",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            marginBottom: 2,
+          }}
+        >
+          Activity Level
+        </span>
+        <span
+          style={{
+            fontSize: "0.75rem",
+            fontWeight: 800,
+            color: "#fff",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          {rating}
+        </span>
+      </div>
+
+      <style>{`
+        .activity-orb {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background-color: var(--badge-color);
+          position: relative;
+          box-shadow: 0 0 8px var(--badge-color);
+        }
+        
+        .activity-orb::after {
+          content: "";
+          position: absolute;
+          inset: -4px; /* ring size */
+          border-radius: 50%;
+          border: 1.5px solid var(--badge-color);
+          opacity: 0;
+          animation: activity-ping var(--pulse-speed) infinite ease-out;
+        }
+
+        @keyframes activity-ping {
+          0% {
+            transform: scale(0.8);
+            opacity: 0.8;
+          }
+          100% {
+            transform: scale(2);
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
 };
 
 export function WeatherSection({
@@ -243,6 +358,7 @@ export function WeatherSection({
               padding: "28px 24px",
               display: "flex",
               justifyContent: "space-between",
+              alignItems: "flex-start", // ensure top alignment
             }}
           >
             <span
@@ -251,24 +367,38 @@ export function WeatherSection({
                 fontWeight: 800,
                 color: "#4A90E2",
                 textTransform: "uppercase",
+                background: "rgba(0,0,0,0.6)", // Legibility background
+                padding: "4px 8px",
+                borderRadius: "8px",
+                backdropFilter: "blur(4px)",
               }}
             >
               {conditions.trip_date}
             </span>
-            {derived.phase && (
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  background: "rgba(74, 144, 226, 0.2)",
-                  border: "1px solid rgba(74, 144, 226, 0.4)",
-                  color: "#fff",
-                  padding: "4px 12px",
-                  borderRadius: 20,
-                  fontWeight: 700,
-                }}
-              >
-                {derived.phase}
-              </span>
+
+            {/* --- ACTIVITY BADGE OR PHASE PILL --- */}
+            {conditions.forecast_rating ? (
+              <ActivityBadge
+                rating={conditions.forecast_rating.rating}
+                score={conditions.forecast_rating.score}
+              />
+            ) : (
+              derived.phase && (
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    background: "rgba(74, 144, 226, 0.2)",
+                    border: "1px solid rgba(74, 144, 226, 0.4)",
+                    color: "#fff",
+                    padding: "4px 12px",
+                    borderRadius: 20,
+                    fontWeight: 700,
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  {derived.phase}
+                </span>
+              )
             )}
           </div>
 
