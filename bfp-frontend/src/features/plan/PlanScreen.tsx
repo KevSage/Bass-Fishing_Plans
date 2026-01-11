@@ -1,7 +1,4 @@
 // src/features/plan/PlanScreen.tsx
-// Complete plan display: consolidated plan UI with weather extracted to WeatherSection.
-// UPDATE: Added id="weather" wrapper so PlanNavigation can scroll to it.
-
 import React from "react";
 import type { PlanGenerateResponse, Pattern } from "./types";
 import { PlanNavigation } from "./PlanNavigation";
@@ -39,6 +36,7 @@ const UI: Record<string, React.CSSProperties> = {
     margin: "18px 0",
   },
 };
+
 function getTimeIcon(label: string) {
   const normalized = label.toLowerCase();
 
@@ -96,14 +94,20 @@ function getTimeIcon(label: string) {
   );
 }
 
-export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
+// ✅ FIX: Added enableLiveUpdates to props interface
+export function PlanScreen({
+  response,
+  enableLiveUpdates = false,
+}: {
+  response: PlanGenerateResponse;
+  enableLiveUpdates?: boolean;
+}) {
   const { plan } = response;
 
   // Merge the insights directly into conditions
   const activeConditions = {
     ...(plan.conditions as any),
     weather_card_insights: plan.weather_card_insights || {},
-    // Pass forecast rating to weather section
     forecast_rating: plan.forecast_rating || null,
   };
 
@@ -112,11 +116,12 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
       <div style={{ marginTop: 18, paddingBottom: 100 }}>
         {/* Extra padding for mobile nav */}
 
-        {/* ✅ FIX: Added ID wrapper for Navigation */}
+        {/* Added ID wrapper for Navigation */}
         <div id="weather">
           <WeatherSection
             conditions={activeConditions}
             outlookBlurb={plan.outlook_blurb}
+            enableLiveUpdates={enableLiveUpdates}
           />
         </div>
 
