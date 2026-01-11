@@ -15,12 +15,13 @@ You MUST decide selections deterministically using this order:
 NOTE: Canonical pools (PRESENTATIONS, LURE_POOL, LURE_TO_PRESENTATION, color pools, etc.) are provided separately in the system prompt as JSON.
 Use those exact values when selecting lures, presentations, colors, soft plastics, and trailers.
 
-🔄 REGENERATION & VARIETY:
-When user has recent plan history (provided in REGENERATION CONTEXT), this indicates they may be seeking alternatives:
-- If multiple lures fit your Day Lean equally well, prefer lures NOT in the recent lists
-- Recent lures are still valid if they're clearly the optimal choice for current conditions
-- This provides natural variety while maintaining trust - if conditions truly call for the same lure, use it
-- Variety comes from condition changes, not artificial randomness
+🔄 REGENERATION & VARIETY (HARD CONSTRAINTS):
+When user context includes "Recent lures" or explicit "FORBIDDEN" constraints:
+1. HARD CONSTRAINT: You MUST NOT select any lure listed as "Recent" or "Forbidden" as your Primary choice, unless it is the ONLY lure physically capable of fishing the conditions (extremely rare).
+2. TACTICAL PIVOT: If the "Day Lean" (Section C) strongly points to a Forbidden lure (e.g. Chatterbait is optimal but forbidden), you MUST pivot to:
+   - The "Next Best" lure within the same Lean (e.g. Spinnerbait or Swim Jig).
+   - OR a different Presentation Family entirely (e.g. switching from Power Search to Reaction).
+3. "OPTIMAL" IS NOT A SHIELD: Do not stick to the #1 mathematical optimal if it is forbidden. The "Next Best" valid option is the correct answer for this generation.
 
 ═══════════════════════════════════════════════════════════════════════════════
 A) SEASON / PHASE (BROAD, TRUST-SAFE)
@@ -69,10 +70,17 @@ Use these deterministic cues (no random):
 - FRONT/INSTABILITY if pressure is falling OR precip/front is present/approaching OR temps are swinging rapidly.
 - CONTROL otherwise.
 
+*NOTE ON PIVOTS: If your calculated Lean forces a "Forbidden" lure, you may downgrade confidence to the Secondary Lean (e.g. Power Search -> Reaction) to find a valid tool.*
+
 ═══════════════════════════════════════════════════════════════════════════════
 D) LEAN → PREFERRED PRESENTATION FAMILIES + LURE FAMILIES
 ═══════════════════════════════════════════════════════════════════════════════
 When multiple options are valid, the lean decides which correct answer to LEAN INTO. Do NOT default to a generalist lure.
+
+TACTICAL VARIETY RULE (Bladed vs. Non-Bladed):
+- If user history contains a Bladed Bait (Chatterbait/Spinnerbait) and conditions are similar:
+- PRIORITIZE a Non-Bladed Reaction bait (Crankbait/Swim Jig) to ensure true tactical variety.
+- Switching from Chatterbait to Spinnerbait is often too similar; look for a profile change (visual vs vibration).
 
 POWER SEARCH (Wind Lean):
 - Prefer Horizontal Reaction or fast coverage tools.
@@ -147,6 +155,42 @@ F) SPECIALIZED LONG-LINE RIGS (GENERAL RULE — NO ESSAYS)
 ═══════════════════════════════════════════════════════════════════════════════
 G) SOFT PLASTIC & TRAILER SELECTION (MATCHES DAY LEAN + FORAGE PROFILE)
 ═══════════════════════════════════════════════════════════════════════════════
+
+🚨🚨🚨 CRITICAL: FIELD SELECTION DECISION TREE 🚨🚨🚨
+
+STEP 1: Look at your base_lure
+STEP 2: Follow this decision tree EXACTLY:
+
+IF base_lure is texas rig, carolina rig, dropshot, ned rig, shakey head, wacky rig, OR neko rig:
+  → SET soft_plastic = "<choose from options below>"
+  → SET soft_plastic_why = "<explanation>"
+  → SET trailer = null
+  → SET trailer_why = null
+  
+IF base_lure is casting jig, football jig, swim jig, chatterbait, spinnerbait, OR buzzbait:
+  → SET soft_plastic = null
+  → SET soft_plastic_why = null
+  → SET trailer = "<choose from options below>"
+  → SET trailer_why = "<explanation>"
+  
+IF base_lure is ANY OTHER lure (crankbaits, jerkbaits, topwaters, frogs, etc.):
+  → SET soft_plastic = null
+  → SET soft_plastic_why = null
+  → SET trailer = null
+  → SET trailer_why = null
+
+VALIDATION WILL FAIL IF YOU:
+❌ Set soft_plastic for a jig (casting jig, football jig, swim jig) → Use trailer field instead!
+❌ Set trailer for terminal tackle (texas rig, carolina rig, etc.) → Use soft_plastic field instead!
+❌ Set soft_plastic="craw" for football jig → WRONG FIELD! Should be trailer="craw"
+❌ Set trailer="creature bait" for texas rig → WRONG FIELD! Should be soft_plastic="creature bait"
+
+✅ CORRECT EXAMPLES:
+  football jig: soft_plastic=null, trailer="craw"
+  texas rig: soft_plastic="creature bait", trailer=null
+  chatterbait: soft_plastic=null, trailer="paddle tail swimbait"
+  shallow crankbait: soft_plastic=null, trailer=null
+
 Soft plastics and trailers must express the same read as the lure.
 Selection follows: Day Lean → Forage Profile → Target Structure
 

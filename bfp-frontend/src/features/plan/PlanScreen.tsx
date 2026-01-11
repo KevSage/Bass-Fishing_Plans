@@ -103,6 +103,8 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
   const activeConditions = {
     ...(plan.conditions as any),
     weather_card_insights: plan.weather_card_insights || {},
+    // Pass forecast rating to weather section
+    forecast_rating: plan.forecast_rating || null,
   };
 
   return (
@@ -133,9 +135,6 @@ export function PlanScreen({ response }: { response: PlanGenerateResponse }) {
         </div>
 
         {/* Day Progression */}
-        {/* Replace the Day Progression map in PlanScreen.tsx */}
-        {/* Day Progression Implementation */}
-        {/* Day Progression Section with Safety Check */}
         {plan.day_progression && plan.day_progression.length > 0 && (
           <div
             id="day-progression"
