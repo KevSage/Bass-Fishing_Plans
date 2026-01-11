@@ -88,7 +88,6 @@ app.add_middleware(
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
 
-
 async def sync_members_from_stripe():
     """
     Scans Stripe for active/trialing subscriptions and syncs them to Postgres.
@@ -132,17 +131,6 @@ def get_recent_lures(email: str, current_lake_name: str, limit: int = 3) -> dict
     """
     Get user's N most recent primary AND secondary lures from plan history.
     Also returns regeneration context (location, timing, last combination).
-    
-    Returns:
-    {
-        "primary": [lure1, lure2, ...],
-        "secondary": [lure1, lure2, ...],
-        "context": {
-            "last_lake_name": str or None,
-            "minutes_since_last_gen": int or None,
-            "last_combination": (primary_lure, secondary_lure) or None
-        }
-    }
     """
     seven_days_ago = datetime.now(timezone.utc) - timedelta(days=7)
     
@@ -235,7 +223,6 @@ class SubscribeRequest(BaseModel):
     email: EmailStr
 
 
-
 # ========================================
 # SYNC STRIPE MEMBERS
 # ========================================
@@ -243,6 +230,29 @@ class SubscribeRequest(BaseModel):
 async def startup_event():
     # This runs every time Render deploys or restarts your API
     await sync_members_from_stripe()
+
+
+# ========================================
+# WEATHER UTILS
+# ========================================
+
+@app.get("/weather/current")
+async def weather_current(lat: float, lon: float):
+    """
+    Lightweight endpoint to fetch live weather for the UI.
+    Used by WeatherSection to update the 'face' of the card without
+    regenerating the entire plan.
+    """
+    try:
+        # Reuse your existing weather service
+        weather = await get_weather_snapshot(lat, lon)
+        return weather
+    except Exception as e:
+        # Frontend fails gracefully (stays offline) if this errors
+        print(f"Live weather fetch failed: {e}")
+        raise HTTPException(status_code=500, detail="Weather unavailable")
+
+
 # ========================================
 # PLAN GENERATION (UNIFIED ENDPOINT)
 # ========================================
@@ -345,6 +355,10 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "sunsetTime": weather.get("sunsetTime", "--:--"),
     }
     
+    # Store Forecast Rating at top level if available (it comes from LLM plan)
+    if "forecast_rating" in plan:
+        plan["conditions"]["forecast_rating"] = plan["forecast_rating"]
+
     token = plan_links.save_plan(
         email=email,
         is_member=is_member,
@@ -416,8 +430,6 @@ async def billing_portal(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=500, detail=f"Portal error: {e}")
     return {"portal_url": portal_url}
 
-# apps/api/app/main.py
-
 @app.post("/webhooks/stripe")
 async def stripe_webhook(request: Request):
     payload = await request.body()
@@ -469,6 +481,7 @@ async def stripe_webhook(request: Request):
                     print(f"Welcome email failed for {email}: {e}")
     
     return {"ok": True}
+
 # ========================================
 # HEALTH CHECK & ROOT
 # ========================================

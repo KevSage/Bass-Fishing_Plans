@@ -23,6 +23,7 @@ const titleCase = (s: string): string =>
     .join(" ");
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Ensure this is available in your .env
 
 // Moving CardId to top-level scope to ensure accessibility in all functions
 export type CardId = "temp" | "wind" | "pressure" | "light";
@@ -50,7 +51,7 @@ export type PlanConditions = {
     pressure?: string | null;
     sky_uv?: string | null;
   } | null;
-  // New Forecast Rating Object (optional for backward compatibility)
+  // Added Forecast Rating
   forecast_rating?: {
     score: number;
     rating: string;
@@ -67,7 +68,6 @@ const ActivityBadge = ({ rating }: { rating: string; score?: number }) => {
   const r = rating.toUpperCase();
 
   // Config: Color and Pulse Speed per state
-  // Using pure CSS variables for performance
   let color = "#4A90E2"; // Default Blue
   let speed = "2s"; // Default Speed
 
@@ -106,7 +106,7 @@ const ActivityBadge = ({ rating }: { rating: string; score?: number }) => {
         } as React.CSSProperties
       }
     >
-      {/* The Activity Orb (Distinct from MapOrb) */}
+      {/* The Activity Orb */}
       <div className="activity-orb" />
 
       {/* The Label */}
@@ -174,30 +174,76 @@ const ActivityBadge = ({ rating }: { rating: string; score?: number }) => {
 export function WeatherSection({
   conditions,
   outlookBlurb,
+  enableLiveUpdates = false,
 }: {
   conditions: PlanConditions;
   outlookBlurb?: string | null;
+  enableLiveUpdates?: boolean;
 }) {
-  // 🔍 IMMEDIATE DEBUG - Will fire on every render
-  console.log("===== WEATHER SECTION RENDERED =====");
-  console.log("conditions:", conditions);
-  console.log(
-    "weather_card_insights:",
-    (conditions as any).weather_card_insights
-  );
-
   const [locationCity, setLocationCity] = useState<string>("");
   const [locationState, setLocationState] = useState<string>("");
-  const hasGeocodedRef = useRef(false);
   const [activeCard, setActiveCard] = useState<CardId | null>(null);
 
-  const derived = useMemo(() => {
-    const raw: any = conditions;
+  // DYNAMIC WEATHER STATE
+  // Initialize with plan conditions (Offline First Strategy)
+  const [liveConditions, setLiveConditions] =
+    useState<PlanConditions>(conditions);
+  const [isLive, setIsLive] = useState(false);
+  const hasFetchedLive = useRef(false);
+  const hasGeocodedRef = useRef(false);
 
-    // ✅ PLUMBING FIX: Direct root access to times provided by backend
-    const sunrise = conditions.sunriseTime || "--:--";
-    const sunset = conditions.sunsetTime || "--:--";
-    const solarNoon = conditions.solarNoonTime || "--:--";
+  // 1. Live Weather Fetcher (Updates face of card only)
+  useEffect(() => {
+    // GUARD: Only fetch if enabled (not shared view) AND online AND not fetched yet
+    if (
+      !enableLiveUpdates ||
+      !navigator.onLine ||
+      hasFetchedLive.current ||
+      !API_BASE_URL
+    )
+      return;
+
+    const fetchLiveWeather = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/weather/current?lat=${conditions.latitude}&lon=${conditions.longitude}`
+        );
+
+        if (res.ok) {
+          const liveData = await res.json();
+
+          // Merge live data with existing conditions
+          setLiveConditions((prev) => ({
+            ...prev,
+            temp_f: liveData.temp_f ?? prev.temp_f,
+            wind_speed: liveData.wind_speed ?? prev.wind_speed,
+            wind_mph: liveData.wind_mph ?? prev.wind_mph,
+            wind_direction: liveData.wind_direction ?? prev.wind_direction,
+            pressure_mb: liveData.pressure_mb ?? prev.pressure_mb,
+            pressure_trend: liveData.pressure_trend ?? prev.pressure_trend,
+            sky_condition: liveData.sky_condition ?? prev.sky_condition,
+            uv_index: liveData.uv_index ?? prev.uv_index,
+          }));
+
+          setIsLive(true);
+          hasFetchedLive.current = true;
+        }
+      } catch (err) {
+        // Silent fail - stick to plan conditions (Offline Mode)
+        console.log("Live weather fetch failed, using plan snapshot");
+      }
+    };
+
+    fetchLiveWeather();
+  }, [conditions.latitude, conditions.longitude, enableLiveUpdates]);
+
+  // 2. Derive metrics from liveConditions (which defaults to conditions)
+  const derived = useMemo(() => {
+    const raw: any = liveConditions;
+
+    const sunrise = liveConditions.sunriseTime || "--:--";
+    const sunset = liveConditions.sunsetTime || "--:--";
+    const solarNoon = liveConditions.solarNoonTime || "--:--";
 
     // Temperature Logic
     const tempF = numOrNull(raw.temp_f);
@@ -250,18 +296,20 @@ export function WeatherSection({
       pressureSecondary,
       lightPrimary,
       uvValue,
-      phase: conditions.phase ? titleCase(String(conditions.phase)) : "",
+      phase: liveConditions.phase
+        ? titleCase(String(liveConditions.phase))
+        : "",
     };
-  }, [conditions]);
+  }, [liveConditions]);
 
   const expansion = useMemo(() => {
     if (!activeCard) return null;
-    return buildExpansion(activeCard, conditions);
-  }, [activeCard, conditions]);
+    return buildExpansion(activeCard, liveConditions);
+  }, [activeCard, liveConditions]);
 
   const lakeZoom = getLakeZoom(conditions.location_name);
 
-  // Geocoding logic preserved from source
+  // Geocoding logic
   useEffect(() => {
     if (hasGeocodedRef.current) return;
     async function getCityState() {
@@ -358,23 +406,25 @@ export function WeatherSection({
               padding: "28px 24px",
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "flex-start", // ensure top alignment
+              alignItems: "flex-start",
             }}
           >
-            <span
-              style={{
-                fontSize: "0.85rem",
-                fontWeight: 800,
-                color: "#4A90E2",
-                textTransform: "uppercase",
-                background: "rgba(0,0,0,0.6)", // Legibility background
-                padding: "4px 8px",
-                borderRadius: "8px",
-                backdropFilter: "blur(4px)",
-              }}
-            >
-              {conditions.trip_date}
-            </span>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span
+                style={{
+                  fontSize: "0.85rem",
+                  fontWeight: 800,
+                  color: "#4A90E2",
+                  textTransform: "uppercase",
+                  background: "rgba(0,0,0,0.6)",
+                  padding: "4px 8px",
+                  borderRadius: "8px",
+                  backdropFilter: "blur(4px)",
+                }}
+              >
+                {conditions.trip_date}
+              </span>
+            </div>
 
             {/* --- ACTIVITY BADGE OR PHASE PILL --- */}
             {conditions.forecast_rating ? (
@@ -429,11 +479,52 @@ export function WeatherSection({
                 color: "rgba(255,255,255,0.7)",
                 paddingLeft: 34,
                 fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
               }}
             >
-              {locationCity && locationState
-                ? `${locationCity}, ${locationState}`
-                : locationCity || locationState}
+              <span>
+                {locationCity && locationState
+                  ? `${locationCity}, ${locationState}`
+                  : locationCity || locationState}
+              </span>
+
+              {/* ✅ LIVE INDICATOR - MOVED HERE */}
+              {isLive && (
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(74, 222, 128, 0.15)",
+                    border: "1px solid rgba(74, 222, 128, 0.3)",
+                    padding: "2px 8px",
+                    borderRadius: "20px",
+                    backdropFilter: "blur(4px)",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      backgroundColor: "#4ade80",
+                      boxShadow: "0 0 8px #4ade80",
+                    }}
+                  />
+                  <span
+                    style={{
+                      color: "#4ade80",
+                      fontSize: "0.65rem",
+                      fontWeight: 800,
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    LIVE
+                  </span>
+                </span>
+              )}
             </div>
           </div>
         </div>
