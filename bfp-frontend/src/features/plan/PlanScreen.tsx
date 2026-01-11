@@ -541,7 +541,7 @@ function PatternCard({
                     color: "rgba(74, 144, 226, 0.8)",
                   }}
                 >
-                  Color Palette
+                  Suggested Colors
                 </div>
                 <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                   {pattern.color_recommendations.map((color, i) => (
@@ -578,7 +578,12 @@ function PatternCard({
           <div style={{ gridColumn: "span 2" }}>
             <div style={UI.eyebrow}>Trailer / Soft Plastic</div>
             <div
-              style={{ fontSize: "1.15rem", fontWeight: 600, color: "#fff" }}
+              style={{
+                fontSize: "1.15rem",
+                fontWeight: 600,
+                color: "#fff",
+                textTransform: "capitalize",
+              }}
             >
               {pattern.soft_plastic || pattern.trailer || "None"}
             </div>
@@ -601,7 +606,12 @@ function PatternCard({
           <div>
             <div style={UI.eyebrow}>Rod</div>
             <div
-              style={{ fontSize: "0.95rem", fontWeight: 600, color: "#fff" }}
+              style={{
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                color: "#fff",
+                textTransform: "capitalize",
+              }}
             >
               {pattern.gear?.rod || "N/A"}
             </div>
@@ -609,7 +619,12 @@ function PatternCard({
           <div>
             <div style={UI.eyebrow}>Reel</div>
             <div
-              style={{ fontSize: "0.95rem", fontWeight: 600, color: "#fff" }}
+              style={{
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                color: "#fff",
+                textTransform: "capitalize",
+              }}
             >
               {pattern.gear?.reel || "N/A"}
             </div>
@@ -683,7 +698,7 @@ function PatternCard({
               </div>
               <h4
                 style={{
-                  fontSize: "0.8rem",
+                  fontSize: "1rem",
                   fontWeight: 800,
                   textTransform: "uppercase",
                   letterSpacing: "0.15em",
@@ -746,7 +761,7 @@ function PatternCard({
               </div>
               <h4
                 style={{
-                  fontSize: "0.8rem",
+                  fontSize: "1rem",
                   fontWeight: 800,
                   textTransform: "uppercase",
                   letterSpacing: "0.15em",
