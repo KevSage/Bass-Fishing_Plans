@@ -1531,7 +1531,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/ProductionScreenshots/Strategy.png"
+                  src="/images/ProductionScreenshots/Strategy1.png"
                   alt="Strategy cards and progression"
                   style={{
                     width: "100%",
