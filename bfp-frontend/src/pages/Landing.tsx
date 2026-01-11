@@ -980,7 +980,7 @@ export function Landing() {
                 style={{
                   position: "absolute",
                   top: "3.8%",
-                  left: "4.2%",
+                  left: "3.5%",
                   width: "92.6%",
                   height: "92.4%",
                   borderRadius: "70px",
@@ -1042,12 +1042,20 @@ export function Landing() {
                 >
                   {[
                     {
-                      title: "Four Data Cards",
+                      title: "Live Weather Updates",
                       desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
                     },
                     {
-                      title: "Want a Deeper Dive?",
-                      desc: "A quick tap expands the cards and explains how these conditions impact your day on the water.",
+                      title: "Bass Mood Indicator",
+                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
+                    },
+                    {
+                      title: "Solunar Chart",
+                      desc: "An overview of your day from daybreak to last cast",
+                    },
+                    {
+                      title: "4 Interactive Metrics",
+                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
                     },
                     {
                       title: "Conditions & Outlook",
@@ -1186,7 +1194,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/mobile_screenshots/Primary1.png"
+                  src="/images/ProductionScreenshots/Primary.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -1291,7 +1299,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/ProductionScreenshots/pivot.png"
+                  src="/images/ProductionScreenshots/Secondary.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -1401,7 +1409,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/ProductionScreenshots/Why.png"
+                  src="/images/ProductionScreenshots/TechSpecs.png"
                   alt="Pattern card (example)"
                   style={{
                     width: "100%",
@@ -1523,7 +1531,7 @@ export function Landing() {
                 }}
               >
                 <img
-                  src="/images/ProductionScreenshots/Targets.png"
+                  src="/images/ProductionScreenshots/Strategy.png"
                   alt="Strategy cards and progression"
                   style={{
                     width: "100%",
@@ -1574,20 +1582,20 @@ export function Landing() {
                 >
                   {[
                     {
-                      title: "Why This Works",
-                      desc: "Nothing left to intrepret, just sound reasoning.",
+                      title: "The Logic ",
+                      desc: "Why this presentation fits your conditions on the water",
                     },
                     {
-                      title: "Strategy",
+                      title: "The Gameplan",
+                      desc: "Commit to the plan. A brief overview of your lure and plan for execution",
+                    },
+                    {
+                      title: "Targets",
                       desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
                     },
                     {
                       title: "Retrieve Guidance",
                       desc: "More than 130+ lure specific retrieves that adjusts for targets and conditions",
-                    },
-                    {
-                      title: "Full Day Progression",
-                      desc: "A coherent plan arc without constant second-guessing.",
                     },
                   ].map((x, i) => (
                     <li
@@ -1677,7 +1685,7 @@ export function Landing() {
             <div
               style={{
                 position: "absolute",
-                top: "3.8%",
+                top: "4.8%",
                 left: "2.2%",
                 width: "94.6%",
                 height: "92.4%",

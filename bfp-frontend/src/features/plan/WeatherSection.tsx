@@ -464,8 +464,8 @@ export function WeatherSection({
               <MapPinIcon size={24} style={{ color: "#4A90E2" }} />
               <h2
                 style={{
-                  fontSize: "2rem",
-                  fontWeight: 800,
+                  fontSize: "1.5rem",
+                  fontWeight: 600,
                   color: "#fff",
                   margin: 0,
                 }}
