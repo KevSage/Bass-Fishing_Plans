@@ -18,7 +18,7 @@ from app.services.plan_history import plan_history_store
 router = APIRouter()
 subscriber_store = SubscriberStore()
 rate_limit_store = RateLimitStore()
-
+WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
 async def verify_clerk_session(authorization: Optional[str]) -> str:
     """
@@ -219,7 +219,7 @@ async def get_plan_history(
                 "generation_date": plan["generation_date"],
                 "plan_type": plan["plan_type"],
                 "conditions": plan["conditions"],
-                "plan_url": f"/plan?token={plan['plan_link_id']}",
+                "plan_url": f"{WEB_BASE_URL}/plan?token={plan['plan_link_id']}",
             }
             for plan in plans
         ],

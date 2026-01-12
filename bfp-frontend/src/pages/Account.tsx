@@ -54,6 +54,7 @@ export function Account() {
 
         const data: MemberStatus = await response.json();
         setMemberStatus(data);
+        console.log("members/status:", data);
 
         if (data.is_member && data.next_billing_date) {
           let mappedStatus: "active" | "inactive" | "cancelled" | "expired" =
