@@ -1047,7 +1047,7 @@ export function Landing() {
                     },
                     {
                       title: "Bass Mood Indicator",
-                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
+                      desc: "Shows you how active the fish are expected to be due to present conditions.",
                     },
                     {
                       title: "Solunar Chart",
@@ -1055,7 +1055,7 @@ export function Landing() {
                     },
                     {
                       title: "4 Interactive Metrics",
-                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
+                      desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day. Cick the card for provide additional context",
                     },
                     {
                       title: "Conditions & Outlook",

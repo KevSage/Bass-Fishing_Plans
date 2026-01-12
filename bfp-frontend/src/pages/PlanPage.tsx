@@ -78,11 +78,16 @@ export function PlanPage() {
       );
       const data = await res.json();
 
-      if (!data.plan_url) {
-        data.plan_url = `${window.location.origin}/plan/view/${tokenValue}`;
-      }
+      // Reshape to match PlanGenerateResponse structure
+      const shaped: PlanGenerateResponse = {
+        plan: data.plan,
+        plan_url:
+          data.plan_url || `${window.location.origin}/plan?token=${tokenValue}`,
+        token: tokenValue,
+        email_sent: false,
+      };
 
-      setTokenPlan(data);
+      setTokenPlan(shaped);
       setLoading(false);
     } catch (err: any) {
       setError(err.message);
@@ -90,7 +95,6 @@ export function PlanPage() {
       hasFetched.current = false;
     }
   }, []);
-
   // Load plan by token
   useEffect(() => {
     if (token && !planResponse && !hasFetched.current) {

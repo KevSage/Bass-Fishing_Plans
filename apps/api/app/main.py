@@ -400,6 +400,7 @@ async def plan_view(token: str):
         raise HTTPException(status_code=404, detail="Plan not found")
     return {
         "plan": plan_data["plan"],
+        "plan_url": plan_data["plan"].get("plan_url") or f"{WEB_BASE_URL}/plan?token={token}",
         "created_at": plan_data["created_at"],
         "views": plan_data["views"],
     }
