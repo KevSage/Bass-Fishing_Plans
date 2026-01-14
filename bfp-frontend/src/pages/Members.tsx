@@ -1,7 +1,12 @@
 // src/pages/Members.tsx
-// UPDATE: Restored "Find Your Water" Gradient Overlay & Text.
+// CHANGELOG:
+// - Fixed memory leak: Added AbortController for async fetch cleanup
+// - Fixed memory leak: Store and remove controls explicitly
+// - Fixed memory leak: Remove 'load' event listener
+// - Fixed memory leak: Track mounted state to prevent setState after unmount
+// - Fixed memory leak: Proper marker element cleanup
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -159,10 +164,17 @@ export function Members() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+  const markerElementRef = useRef<HTMLDivElement | null>(null); // Track marker DOM element
   const initialized = useRef(false);
   const rafRef = useRef<number | null>(null);
+  const isMountedRef = useRef(true); // Track mounted state
+  const controlsRef = useRef<mapboxgl.IControl[]>([]); // Track controls for cleanup
+  const abortControllerRef = useRef<AbortController | null>(null); // For fetch cleanup
 
   useEffect(() => {
+    // Set mounted flag
+    isMountedRef.current = true;
+
     if (
       initialized.current ||
       !mapContainer.current ||
@@ -186,21 +198,24 @@ export function Members() {
     mapRef.current = m;
     m.dragRotate.disable();
     m.touchZoomRotate.disableRotation();
-    m.addControl(new mapboxgl.NavigationControl(), "top-right");
-    m.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: false,
-        showUserLocation: true,
-      }),
-      "top-right"
-    );
+
+    // Create and track controls for proper cleanup
+    const navControl = new mapboxgl.NavigationControl();
+    const geoControl = new mapboxgl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: false,
+      showUserLocation: true,
+    });
+
+    m.addControl(navControl, "top-right");
+    m.addControl(geoControl, "top-right");
+    controlsRef.current = [navControl, geoControl];
 
     const onMove = (e: mapboxgl.MapMouseEvent) => {
       if (rafRef.current) return;
       rafRef.current = window.requestAnimationFrame(() => {
         rafRef.current = null;
-        if (!mapRef.current) return;
+        if (!mapRef.current || !isMountedRef.current) return;
         try {
           const features = mapRef.current.queryRenderedFeatures(e.point);
           const water = features.find(isWaterFeature);
@@ -213,28 +228,55 @@ export function Members() {
     };
 
     const onClick = async (e: mapboxgl.MapMouseEvent) => {
-      if (!mapRef.current) return;
+      if (!mapRef.current || !isMountedRef.current) return;
+
+      // Cancel any pending geocoding request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
       try {
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
         if (!water) return;
 
         const { lng, lat } = e.lngLat;
-        setSelectedCoords({ lat, lng });
 
+        // Check mounted before setting state
+        if (!isMountedRef.current) return;
+
+        setSelectedCoords({ lat, lng });
         setInputMode("manual");
         setWaterName("");
         setShowModal(true);
 
-        if (markerRef.current) markerRef.current.remove();
-        markerRef.current = new mapboxgl.Marker({ element: createOrbMarker() })
+        // Clean up old marker element
+        if (markerRef.current) {
+          markerRef.current.remove();
+          markerRef.current = null;
+        }
+        if (markerElementRef.current) {
+          markerElementRef.current.remove();
+          markerElementRef.current = null;
+        }
+
+        // Create new marker with tracked element
+        const markerEl = createOrbMarker();
+        markerElementRef.current = markerEl;
+        markerRef.current = new mapboxgl.Marker({ element: markerEl })
           .setLngLat([lng, lat])
           .addTo(mapRef.current);
 
         try {
           const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
+            { signal: abortControllerRef.current.signal }
           );
+
+          // Check mounted before processing response
+          if (!isMountedRef.current) return;
+
           const data = await response.json();
           const context = data?.features?.[0]?.context;
           if (context) {
@@ -245,24 +287,32 @@ export function Members() {
               context
                 .find((c: any) => String(c.id).startsWith("region"))
                 ?.short_code?.replace("US-", "") || "";
-            setWaterName(
-              `Water near ${[city, state].filter(Boolean).join(", ")}`
-            );
+
+            // Final mounted check before setState
+            if (isMountedRef.current) {
+              setWaterName(
+                `Water near ${[city, state].filter(Boolean).join(", ")}`
+              );
+            }
           } else {
-            setWaterName("Dropped Pin Location");
+            if (isMountedRef.current) {
+              setWaterName("Dropped Pin Location");
+            }
           }
-        } catch (e2) {
-          console.error("Geocode failed:", e2);
+        } catch (e2: any) {
+          // Ignore abort errors
+          if (e2.name !== "AbortError") {
+            console.error("Geocode failed:", e2);
+          }
         }
       } catch (err) {
         console.debug("Click handler error", err);
       }
     };
 
-    m.on("mousemove", onMove);
-    m.on("click", onClick);
+    const onLoad = () => {
+      if (!isMountedRef.current) return;
 
-    m.on("load", () => {
       const params = new URLSearchParams(window.location.search);
       const lat = params.get("lat");
       const lng = params.get("lng");
@@ -271,20 +321,61 @@ export function Members() {
         const l = parseFloat(lng);
         const lt = parseFloat(lat);
         m.flyTo({ center: [l, lt], zoom: 14, speed: 1.2 });
-        if (lake) {
+        if (lake && isMountedRef.current) {
           setInputMode("manual");
           setWaterName(lake);
           setSelectedCoords({ lat: lt, lng: l });
           setShowModal(true);
         }
       }
-    });
+    };
+
+    m.on("mousemove", onMove);
+    m.on("click", onClick);
+    m.on("load", onLoad);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      // Mark as unmounted first to prevent any async callbacks from setting state
+      isMountedRef.current = false;
+
+      // Cancel any pending fetch
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+
+      // Cancel any pending RAF
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+
+      // Remove event listeners
       m.off("mousemove", onMove);
       m.off("click", onClick);
-      markerRef.current?.remove();
+      m.off("load", onLoad);
+
+      // Remove controls explicitly
+      controlsRef.current.forEach((control) => {
+        try {
+          m.removeControl(control);
+        } catch (e) {
+          // Control may already be removed
+        }
+      });
+      controlsRef.current = [];
+
+      // Clean up marker and its DOM element
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+      if (markerElementRef.current) {
+        markerElementRef.current.remove();
+        markerElementRef.current = null;
+      }
+
+      // Remove the map
       m.remove();
       mapRef.current = null;
       initialized.current = false;
@@ -307,8 +398,20 @@ export function Members() {
         duration: 1500,
       });
 
-      if (markerRef.current) markerRef.current.remove();
-      markerRef.current = new mapboxgl.Marker({ element: createOrbMarker() })
+      // Clean up old marker
+      if (markerRef.current) {
+        markerRef.current.remove();
+        markerRef.current = null;
+      }
+      if (markerElementRef.current) {
+        markerElementRef.current.remove();
+        markerElementRef.current = null;
+      }
+
+      // Create new marker with tracked element
+      const markerEl = createOrbMarker();
+      markerElementRef.current = markerEl;
+      markerRef.current = new mapboxgl.Marker({ element: markerEl })
         .setLngLat([location.longitude, location.latitude])
         .addTo(mapRef.current);
     }
@@ -499,140 +602,134 @@ export function Members() {
                 alignItems: "center",
               }}
             >
-              <h2
-                style={{
-                  fontSize: "1.1rem",
-                  fontWeight: 700,
-                  margin: 0,
-                  color: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span style={{ color: "#4A90E2" }}>✦</span> Tactical Scout
-              </h2>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <FishIcon size={20} />
+                <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>
+                  Scout Report
+                </span>
+              </div>
               <button
                 onClick={() => setShowModal(false)}
                 style={{
-                  background: "transparent",
+                  background: "rgba(255,255,255,0.05)",
                   border: "none",
-                  color: "rgba(255,255,255,0.5)",
+                  borderRadius: 8,
+                  width: 32,
+                  height: 32,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   cursor: "pointer",
-                  fontSize: "1.5rem",
-                  padding: "0",
-                  lineHeight: 1,
+                  color: "rgba(255,255,255,0.6)",
+                  fontSize: "1.2rem",
                 }}
               >
                 ×
               </button>
             </div>
 
-            {/* BODY */}
+            {/* Content */}
             <div
               style={{
                 padding: "24px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 24,
+                gap: 20,
               }}
             >
-              {/* Toggle Section */}
+              {err && (
+                <div
+                  style={{
+                    padding: 12,
+                    background: "rgba(255,0,0,0.1)",
+                    borderRadius: 10,
+                    fontSize: "0.9rem",
+                    color: "#ff6b6b",
+                  }}
+                >
+                  {err}
+                </div>
+              )}
+
+              {/* Mode Toggle */}
               <div
                 style={{
-                  background: "rgba(255,255,255,0.05)",
-                  borderRadius: "12px",
-                  padding: "4px",
                   display: "flex",
-                  gap: "4px",
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: 10,
+                  padding: 4,
+                  gap: 4,
                 }}
               >
                 <button
                   onClick={() => setInputMode("search")}
                   style={{
                     flex: 1,
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: "none",
                     background:
                       inputMode === "search"
                         ? "rgba(74, 144, 226, 0.2)"
                         : "transparent",
                     color:
                       inputMode === "search" ? "#fff" : "rgba(255,255,255,0.5)",
-                    border:
-                      inputMode === "search"
-                        ? "1px solid rgba(74, 144, 226, 0.5)"
-                        : "1px solid transparent",
-                    borderRadius: "10px",
-                    padding: "10px",
-                    fontSize: "0.9rem",
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "8px",
-                    transition: "all 0.2s ease",
+                    gap: 6,
+                    fontSize: "0.85rem",
                   }}
                 >
-                  <SearchIcon /> Database
+                  <SearchIcon /> Search
                 </button>
                 <button
                   onClick={() => setInputMode("manual")}
                   style={{
                     flex: 1,
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: "none",
                     background:
                       inputMode === "manual"
                         ? "rgba(74, 144, 226, 0.2)"
                         : "transparent",
                     color:
                       inputMode === "manual" ? "#fff" : "rgba(255,255,255,0.5)",
-                    border:
-                      inputMode === "manual"
-                        ? "1px solid rgba(74, 144, 226, 0.5)"
-                        : "1px solid transparent",
-                    borderRadius: "10px",
-                    padding: "10px",
-                    fontSize: "0.9rem",
                     fontWeight: 600,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "8px",
-                    transition: "all 0.2s ease",
+                    gap: 6,
+                    fontSize: "0.85rem",
                   }}
                 >
-                  <PinIcon /> Manual / Map
+                  <PinIcon /> Manual
                 </button>
               </div>
 
-              {/* Dynamic Input Section */}
+              {/* Location Input */}
               <div>
                 {inputMode === "search" ? (
                   <>
-                    <label className="modal-label">Search Verified Lakes</label>
-                    <div className="glass-search-wrapper">
+                    <label className="modal-label">Find Water</label>
+                    <div style={{ position: "relative" }}>
                       <style>{`
-                        .glass-search-wrapper input {
-                           background: rgba(0,0,0,0.3) !important;
-                           border: 1px solid rgba(255,255,255,0.1) !important;
-                           color: #fff !important;
-                           border-radius: 10px !important;
-                           padding: 14px !important;
-                           font-size: 1rem !important;
-                        }
-                        .glass-search-wrapper .location-results {
-                           background: #1a1a1a !important;
-                           border: 1px solid rgba(255,255,255,0.1) !important;
-                           z-index: 9999 !important;
-                        }
-                        .glass-search-wrapper .location-result-item {
-                           color: rgba(255,255,255,0.8) !important;
-                           border-bottom: 1px solid rgba(255,255,255,0.05) !important;
-                           padding: 12px !important;
-                        }
-                        .glass-search-wrapper .location-result-item:hover {
-                           background: rgba(74, 144, 226, 0.15) !important;
-                           color: #fff !important;
+                        .location-search-dropdown {
+                          position: absolute !important;
+                          top: 100% !important;
+                          left: 0 !important;
+                          right: 0 !important;
+                          z-index: 9999 !important;
+                          max-height: 200px !important;
+                          overflow-y: auto !important;
+                          background: rgba(20, 20, 30, 0.98) !important;
+                          border: 1px solid rgba(255,255,255,0.1) !important;
+                          border-radius: 10px !important;
+                          margin-top: 4px !important;
                         }
                       `}</style>
                       <LocationSearch
