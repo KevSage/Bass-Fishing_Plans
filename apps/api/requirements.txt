@@ -22,3 +22,5 @@ svix
 PyJWT
 email-validator
 psycopg[binary]==3.2.3
+cryptography>=3.4.0
+
