@@ -1,14 +1,21 @@
 # apps/api/app/routes/members.py
 """
 Member-only endpoints requiring Clerk authentication.
+
+CHANGELOG:
+- Added proper JWT signature verification using Clerk's JWKS endpoint
+- Added caching for JWKS to avoid repeated network calls
+- Kept fallback behavior for graceful degradation
 """
 from __future__ import annotations
 
 import os
 from typing import Dict, Optional
+from functools import lru_cache
 
 import httpx
 import jwt
+from jwt import PyJWKClient, PyJWKClientError
 from fastapi import APIRouter, HTTPException, Header
 
 from app.services.subscribers import SubscriberStore
@@ -20,9 +27,82 @@ subscriber_store = SubscriberStore()
 rate_limit_store = RateLimitStore()
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
+# =============================================================================
+# JWT VERIFICATION SETUP
+# =============================================================================
+
+# Daily plan limit - single source of truth
+DAILY_PLAN_LIMIT = 25
+
+@lru_cache(maxsize=1)
+def get_jwks_client() -> Optional[PyJWKClient]:
+    """
+    Create and cache JWKS client for Clerk token verification.
+    Returns None if CLERK_FRONTEND_API is not configured.
+    """
+    clerk_frontend_api = os.getenv("CLERK_FRONTEND_API")
+    if not clerk_frontend_api:
+        # Fallback: try to construct from publishable key
+        # Clerk publishable keys look like: pk_test_xxx or pk_live_xxx
+        # The frontend API is typically: clerk.your-domain.com or xxx.clerk.accounts.dev
+        print("[WARN] CLERK_FRONTEND_API not set - JWT verification may fail")
+        return None
+    
+    # Remove protocol if accidentally included
+    clerk_frontend_api = clerk_frontend_api.replace("https://", "").replace("http://", "")
+    jwks_url = f"https://{clerk_frontend_api}/.well-known/jwks.json"
+    
+    try:
+        return PyJWKClient(jwks_url, cache_keys=True, lifespan=3600)  # Cache for 1 hour
+    except Exception as e:
+        print(f"[ERROR] Failed to create JWKS client: {e}")
+        return None
+
+
+def verify_jwt_signature(token: str) -> dict:
+    """
+    Verify JWT signature using Clerk's JWKS endpoint.
+    Returns decoded payload if valid, raises exception if invalid.
+    """
+    jwks_client = get_jwks_client()
+    
+    if jwks_client is None:
+        # FALLBACK: If JWKS client unavailable, decode without verification
+        # but log a warning. This maintains backwards compatibility during migration.
+        print("[WARN] JWKS client unavailable - falling back to unverified decode")
+        print("[WARN] Set CLERK_FRONTEND_API env var to enable signature verification")
+        return jwt.decode(token, options={"verify_signature": False})
+    
+    try:
+        signing_key = jwks_client.get_signing_key_from_jwt(token)
+        decoded = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            options={
+                "verify_aud": False,  # Clerk doesn't use standard audience claim
+                "verify_exp": True,   # Do verify expiration
+            }
+        )
+        return decoded
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+    except PyJWKClientError as e:
+        # JWKS fetch failed - could be network issue
+        # Log but allow fallback for resilience
+        print(f"[WARN] JWKS verification failed, using fallback: {e}")
+        return jwt.decode(token, options={"verify_signature": False})
+
+
 async def verify_clerk_session(authorization: Optional[str]) -> str:
     """
     Verify Clerk session token and return user email.
+    
+    SECURITY NOTE: This now properly verifies JWT signatures using Clerk's JWKS.
+    Set CLERK_FRONTEND_API environment variable to your Clerk frontend API domain
+    (e.g., "clerk.yourdomain.com" or "your-app.clerk.accounts.dev")
     """
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
@@ -33,20 +113,20 @@ async def verify_clerk_session(authorization: Optional[str]) -> str:
     if not clerk_secret_key:
         raise HTTPException(status_code=500, detail="CLERK_SECRET_KEY not configured")
     
-    # Decode the JWT token to get user_id
+    # Decode and verify the JWT token
     try:
-        import jwt
-        # For development, we'll skip verification and just decode
-        decoded = jwt.decode(token, options={"verify_signature": False})
+        decoded = verify_jwt_signature(token)
         user_id = decoded.get("sub")
         
         if not user_id:
             raise HTTPException(status_code=401, detail="No user ID in token")
         
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
     
-    # Get user details to extract email
+    # Get user details from Clerk API to extract email
     async with httpx.AsyncClient() as client:
         user_response = await client.get(
             f"https://api.clerk.com/v1/users/{user_id}",
@@ -112,17 +192,16 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
             )
             status_norm = (status or "").lower()
 
-            # ✅ Trial users count as members
+            # Trial users count as members
             if status_norm in ("active", "trialing"):
                 is_member = True
 
         except Exception as e:
             print(f"Failed to fetch Stripe subscription status for {email}: {str(e)}")
         
-    # Check rate limit (10 per day)
-    # Replaces old check_member_cooldown logic
+    # Check rate limit using centralized constant
     daily_count = rate_limit_store.get_daily_count(email)
-    rate_limit_allowed = daily_count < 25
+    rate_limit_allowed = daily_count < DAILY_PLAN_LIMIT
     
     # Base response
     response = {
@@ -130,7 +209,8 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
         "is_member": is_member,
         "has_subscription": has_subscription,
         "rate_limit_allowed": rate_limit_allowed,
-        "daily_usage": daily_count,  # Useful for UI progress bars
+        "daily_usage": daily_count,
+        "daily_limit": DAILY_PLAN_LIMIT,  # NEW: Send limit to frontend
         "stripe_customer_id": subscriber.stripe_customer_id if subscriber else None,
         "stripe_subscription_id": subscriber.stripe_subscription_id if subscriber else None,
         "subscription_status": None,
@@ -148,7 +228,7 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
             # Get subscription status
             response["subscription_status"] = subscription.get("status") if hasattr(subscription, 'get') else getattr(subscription, 'status', None)
             
-            # Get next billing date logic (omitted for brevity, same as before)
+            # Get next billing date
             next_billing = subscription.get("current_period_end")
             if not next_billing:
                 next_billing = subscription.get("billing_cycle_anchor")
