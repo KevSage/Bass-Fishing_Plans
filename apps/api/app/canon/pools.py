@@ -360,6 +360,69 @@ LURE_COLOR_POOL_MAP = {
     "popping frog": FROG_COLORS,
 }
 
+
+# ----------------------------------------
+# COLOR DETECTABILITY TAGS (LOCKED)
+# ----------------------------------------
+# Tags guide internal color selection only and NEVER appear in output.
+# Canon tags: REALISM, SILHOUETTE, REFLECTIVE, SIGNAL
+#
+# Notes:
+# - "chartreuse/white" is REFLECTIVE (flash/edge definition), NOT SIGNAL.
+# - Dark colors (e.g., "black/blue") can be natural via SILHOUETTE, especially for bottom-contact.
+COLOR_DETECTABILITY_TAGS = {
+    "baby bass": "REALISM",
+    "black": "SILHOUETTE",
+    "black/blue": "SILHOUETTE",
+    "bluegill": "REALISM",
+    "bone": "REALISM",
+    "brown": "REALISM",
+    "chartreuse": "SIGNAL",
+    "chartreuse/black": "SIGNAL",
+    "chartreuse/white": "REFLECTIVE",
+    "chrome": "REFLECTIVE",
+    "citrus shad": "SIGNAL",
+    "craw": "REALISM",
+    "firetiger": "SIGNAL",
+    "ghost minnow": "REALISM",
+    "ghost shad": "REALISM",
+    "gold": "REFLECTIVE",
+    "green": "REALISM",
+    "green pumpkin": "REALISM",
+    "green pumpkin orange": "REALISM",
+    "junebug": "SILHOUETTE",
+    "morning dawn": "REALISM",
+    "natural shad": "REALISM",
+    "peanut butter & jelly": "REALISM",
+    "pearl": "REFLECTIVE",
+    "pro blue": "REALISM",
+    "red craw": "REALISM",
+    "sexy shad": "REALISM",
+    "shad": "REALISM",
+    "table rock": "REALISM",
+    "translucent": "REALISM",
+    "transparent": "REALISM",
+    "watermelon": "REALISM",
+    "watermelon red": "REALISM",
+    "white": "REFLECTIVE",
+    "yellow": "SIGNAL",
+}
+
+# ----------------------------------------
+# POOL DETECTABILITY PREFERENCE (LOCKED)
+# ----------------------------------------
+# This defines how detectability should be achieved per color pool.
+# Higher priority tags should be attempted first; fall back only if the pool lacks options.
+POOL_DETECTABILITY_PREFERENCE = {
+    "RIG_COLORS": ['SILHOUETTE', 'REALISM', 'REFLECTIVE', 'SIGNAL'],
+    "BLADED_SKIRTED_COLORS": ['REFLECTIVE', 'SILHOUETTE', 'REALISM', 'SIGNAL'],
+    "SOFT_SWIMBAIT_COLORS": ['REALISM', 'REFLECTIVE', 'SILHOUETTE', 'SIGNAL'],
+    "CRANKBAIT_COLORS": ['REALISM', 'REFLECTIVE', 'SILHOUETTE', 'SIGNAL'],
+    "JERKBAIT_COLORS": ['REALISM', 'REFLECTIVE', 'SILHOUETTE', 'SIGNAL'],
+    "TOPWATER_COLORS": ['SILHOUETTE', 'REFLECTIVE', 'REALISM', 'SIGNAL'],
+    "FROG_COLORS": ['SILHOUETTE', 'REALISM', 'REFLECTIVE', 'SIGNAL'],
+}
+
 def get_color_pool_for_lure(lure: str, soft_plastic: Optional[str] = None) -> List[str]:
     """
     Get the appropriate color pool for a lure.
