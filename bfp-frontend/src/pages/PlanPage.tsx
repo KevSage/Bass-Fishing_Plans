@@ -1,5 +1,7 @@
 // src/pages/PlanPage.tsx
-// Fixed: Separated copy states so buttons don't animate simultaneously
+// CHANGELOG:
+// - Fixed: Plan now persists when phone sleeps by using token in URL
+// - Fixed: enableLiveUpdates now checks for fresh generation via state, not absence of token
 
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
@@ -11,6 +13,7 @@ export function PlanPage() {
   const navigate = useNavigate();
   const hasFetched = useRef(false);
 
+  // Plan data passed via router state (fresh generation)
   const planResponse = location.state?.planResponse as
     | PlanGenerateResponse
     | undefined;
@@ -21,7 +24,14 @@ export function PlanPage() {
     return params.get("token");
   }, [location.search]);
 
+  // Check if user is the plan owner (enables live weather)
+  const isOwner = React.useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("owner") === "1";
+  }, [location.search]);
+
   const [tokenPlan, setTokenPlan] = useState<PlanGenerateResponse | null>(null);
+  // Only show loading if we have a token but no state data
   const [loading, setLoading] = useState(!!token && !planResponse);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,17 +105,20 @@ export function PlanPage() {
       hasFetched.current = false;
     }
   }, []);
-  // Load plan by token
+
+  // Load plan by token if we don't have it from state
   useEffect(() => {
     if (token && !planResponse && !hasFetched.current) {
       fetchPlan(token);
     }
   }, [token, planResponse, fetchPlan]);
 
+  // Use state data if available (fresh generation), otherwise use fetched data
   const plan = planResponse || tokenPlan;
 
-  // COST PROTECTION: Only enable live weather calls if this is a NEW generation
-  const enableLiveUpdates = !!planResponse && !token;
+  // COST PROTECTION: Only enable live weather calls if user is the plan owner
+  // owner=1 param is added on generation, not stored in DB, so shared links won't have it
+  const enableLiveUpdates = isOwner;
 
   if (loading) {
     return (
@@ -129,7 +142,7 @@ export function PlanPage() {
           {error}
         </p>
         <Link
-          to="/preview"
+          to="/members"
           className="btn primary"
           style={{ marginTop: 24, display: "inline-block" }}
         >
@@ -150,7 +163,7 @@ export function PlanPage() {
           It looks like you haven't generated a plan yet.
         </p>
         <Link
-          to="/preview"
+          to="/members"
           className="btn primary"
           style={{ marginTop: 24, display: "inline-block" }}
         >

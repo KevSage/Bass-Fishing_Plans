@@ -434,7 +434,11 @@ export function Members() {
         access_type: accessType,
       });
       setDailyUsage((prev) => prev + 1);
-      navigate("/plan", { state: { planResponse: response } });
+      // Include token in URL so plan persists if phone sleeps/browser suspends
+      // owner=1 flag enables live weather updates (not stored in DB, won't be in shared links)
+      navigate(`/plan?token=${response.token}&owner=1`, {
+        state: { planResponse: response },
+      });
     } catch (e: any) {
       if (e instanceof RateLimitError) {
         setRateLimitInfo({
