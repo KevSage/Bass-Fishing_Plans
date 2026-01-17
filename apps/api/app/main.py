@@ -297,8 +297,20 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Weather service error: {e}")
     
-    current_month = datetime.now().month
-    phase = determine_phase(temp_f=weather["temp_f"], month=current_month, latitude=latitude)
+    # Phase selection (V1): date + region baseline via season_selector.
+    # Non-breaking: we keep determine_phase available for legacy debugging,
+    # but the active phase for seasonal policies is date/region-based.
+    from datetime import date as _date
+    from app.utils.season_selector import get_season as _get_season
+
+    raw_season = _get_season(_date.today(), latitude, longitude)
+    # Normalize to canonical module keys used by seasonal policies
+    if raw_season in ("pre_spawn", "pre-spawn", "pre spawn"):
+        phase = "prespawn"
+    elif raw_season in ("post_spawn", "post-spawn", "post spawn"):
+        phase = "postspawn"
+    else:
+        phase = raw_season
     
     recent_data = get_recent_lures(email, current_lake_name=body.location_name, limit=2)
     trip_date = datetime.now().strftime("%B %d, %Y")
