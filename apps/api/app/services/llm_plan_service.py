@@ -58,6 +58,284 @@ from app.canon.retrieve_rules import LURE_TIP_BANK
 
 from app.canon.lure_selection_policy import LURE_SELECTION_POLICY_PROMPT
 
+
+# -----------------------------------------------------------------------------
+# Presentation family helpers (V1)
+#
+# Bass Clarity rule: primary + secondary must come from DIFFERENT presentation
+# families (not just different presentation strings).
+#
+# Families:
+#   - Bottom Contact: Dragging / Hopping
+#   - Topwater: Horizontal / Precision
+#   - Otherwise: the presentation itself (Horizontal Reaction, Vertical Reaction,
+#     Hovering / Mid-Column Finesse)
+# -----------------------------------------------------------------------------
+
+
+def _presentation_family(presentation: Any) -> str:
+    p = str(presentation or "").strip()
+    if p.startswith("Bottom Contact"):
+        return "Bottom Contact"
+    if p.startswith("Topwater"):
+        return "Topwater"
+    return p
+
+# -----------------------------------------------------------------------------
+# Seasonal policy integration (V1, non-breaking)
+#
+# Goals:
+# - Provide the LLM explicit phase-specific lure constraints (strong/conditional/avoid).
+# - Optionally preselect 3 targets deterministically, with a diversity constraint
+#   on TARGET_DEFINITIONS[*].get('strategic_category').
+#
+# Safety:
+# - If seasonal policy modules are missing or malformed, we fall back to legacy
+#   behavior (no extra constraints) so plan generation never hard-fails.
+# -----------------------------------------------------------------------------
+
+def _load_seasonal_policy(phase: str) -> Dict[str, Any]:
+    """Best-effort loader for /app/canon/seasonal_policies/<phase>.py.
+
+    Expected shape (see winter.py style):
+      WINTER_SEASON = {"lure_rankings": {"strong": [...], "conditional": [...], "avoid": [...]}, ...}
+
+    Returns a dict with keys: strong, conditional, avoid, raw (original object).
+    Never raises.
+    """
+    phase_key = (phase or "").strip().lower()
+    # Normalize legacy naming
+    if phase_key in ("pre_spawn", "pre-spawn", "pre spawn"):
+        phase_key = "prespawn"
+    if phase_key in ("post_spawn", "post-spawn", "post spawn"):
+        phase_key = "postspawn"
+
+    module_name_map = {
+        "winter": "app.canon.seasonal_policies.winter",
+        "prespawn": "app.canon.seasonal_policies.prespawn",
+        "spawn": "app.canon.seasonal_policies.spawn",
+        "postspawn": "app.canon.seasonal_policies.postspawn",
+        "summer": "app.canon.seasonal_policies.summer",
+        "fall": "app.canon.seasonal_policies.fall",
+    }
+
+    mod_name = module_name_map.get(phase_key)
+    if not mod_name:
+        return {"strong": [], "conditional": [], "avoid": [], "raw": None, "phase": phase_key}
+
+    try:
+        import importlib
+
+        mod = importlib.import_module(mod_name)
+        # Common constants by file
+        season_obj = getattr(mod, "WINTER_SEASON", None) or getattr(mod, "PRESPAWN_SEASON", None) \
+            or getattr(mod, "SPAWN_SEASON", None) or getattr(mod, "POSTSPAWN_SEASON", None) \
+            or getattr(mod, "SEASON", None)
+
+        if not isinstance(season_obj, dict):
+            # Fallback to WINTER_SEASON style in modules created in this chat
+            season_obj = getattr(mod, "WINTER_SEASON", None)
+        if not isinstance(season_obj, dict):
+            return {"strong": [], "conditional": [], "avoid": [], "raw": None, "phase": phase_key}
+
+        lure_rankings = season_obj.get("lure_rankings", {}) if isinstance(season_obj, dict) else {}
+        strong = lure_rankings.get("strong", []) if isinstance(lure_rankings, dict) else []
+        conditional = lure_rankings.get("conditional", []) if isinstance(lure_rankings, dict) else []
+        avoid = lure_rankings.get("avoid", []) if isinstance(lure_rankings, dict) else []
+
+        # Ensure list[str] and stable ordering
+        def _as_list(v: Any) -> List[str]:
+            if v is None:
+                return []
+            if isinstance(v, (list, tuple)):
+                return [str(x) for x in v]
+            return [str(v)]
+
+        return {
+            "phase": phase_key,
+            "strong": _as_list(strong),
+            "conditional": _as_list(conditional),
+            "avoid": _as_list(avoid),
+            "raw": season_obj,
+        }
+    except Exception:
+        return {"strong": [], "conditional": [], "avoid": [], "raw": None, "phase": phase_key}
+
+
+def _get_target_meta(name: str) -> Dict[str, Any]:
+    """Safe lookup for TARGET_DEFINITIONS[name], returning dict with defaults."""
+    meta = TARGET_DEFINITIONS.get(name, {}) if isinstance(TARGET_DEFINITIONS, dict) else {}
+    if not isinstance(meta, dict):
+        meta = {}
+    return meta
+
+
+def _select_diverse_targets(
+    *,
+    accessible_targets: List[str],
+    phase: str,
+    access_type: str,
+    weather: Dict[str, Any],
+    k: int = 3,
+) -> List[str]:
+    """Deterministically pick k targets with strategic_category diversity.
+
+    Never raises; if metadata is missing, falls back to first k alphabetical.
+    """
+    targets = [t for t in (accessible_targets or []) if isinstance(t, str)]
+    targets = sorted(set(targets))
+    if not targets:
+        return []
+
+    # Phase → category bias (light-touch, safe defaults)
+    phase_key = (phase or "").strip().lower()
+    if phase_key in ("pre_spawn", "pre-spawn", "pre spawn"):
+        phase_key = "prespawn"
+    if phase_key in ("post_spawn", "post-spawn", "post spawn"):
+        phase_key = "postspawn"
+
+    category_priority_by_phase: Dict[str, List[str]] = {
+        "winter": ["deep_structure", "transitions", "precision_shade", "ambush_cover", "aggressive_zones"],
+        "prespawn": ["transitions", "aggressive_zones", "ambush_cover", "deep_structure", "precision_shade"],
+        "spawn": ["precision_shade", "ambush_cover", "transitions", "aggressive_zones", "deep_structure"],
+        "postspawn": ["ambush_cover", "aggressive_zones", "transitions", "precision_shade", "deep_structure"],
+        "summer": ["deep_structure", "transitions", "ambush_cover", "precision_shade", "aggressive_zones"],
+        "fall": ["aggressive_zones", "ambush_cover", "transitions", "precision_shade", "deep_structure"],
+    }
+    category_priority = category_priority_by_phase.get(phase_key, [
+        "transitions", "ambush_cover", "aggressive_zones", "precision_shade", "deep_structure"
+    ])
+    category_rank = {c: i for i, c in enumerate(category_priority)}
+
+    # Simple condition flags (optional; do not overfit)
+    wind_mph = weather.get("wind_mph") or weather.get("wind_speed")
+    try:
+        wind_val = float(wind_mph) if wind_mph is not None else 0.0
+    except Exception:
+        wind_val = 0.0
+    is_windy = wind_val >= 10.0
+    is_calm = wind_val <= 5.0
+
+    # Score targets
+    scored: List[Tuple[Tuple[int, int, str], str]] = []
+    for t in targets:
+        meta = _get_target_meta(t)
+        cat = str(meta.get("strategic_category") or "")
+        # Unknown categories go to the back
+        cat_idx = category_rank.get(cat, 999)
+
+        # Boat: prefer at least one non-bank_friendly (often offshore) if available
+        bank_friendly = bool(meta.get("bank_friendly", False))
+        boat_bonus = 0
+        if access_type == "boat" and not bank_friendly:
+            boat_bonus = -1
+
+        # Wind bias: slight preference for aggressive_zones on windy days, precision_shade on calm
+        wind_bias = 0
+        if is_windy and cat == "aggressive_zones":
+            wind_bias = -1
+        if is_calm and cat == "precision_shade":
+            wind_bias = -1
+
+        key = (cat_idx + wind_bias, boat_bonus, t)
+        scored.append((key, t))
+
+    scored.sort(key=lambda x: x[0])
+
+    # Select with category diversity
+    picked: List[str] = []
+    used_cats: set[str] = set()
+    for _, t in scored:
+        meta = _get_target_meta(t)
+        cat = str(meta.get("strategic_category") or "")
+        if cat and cat in used_cats:
+            continue
+        if access_type == "bank":
+            # Bank plans should prioritize bank-friendly targets, but don't hard-fail.
+            if not bool(meta.get("bank_friendly", False)) and any(
+                bool(_get_target_meta(t2).get("bank_friendly", False)) for _, t2 in scored[:5]
+            ):
+                continue
+
+        picked.append(t)
+        if cat:
+            used_cats.add(cat)
+        if len(picked) >= k:
+            break
+
+    # If we couldn't fill k with unique cats, fill remaining in score order
+    if len(picked) < k:
+        for _, t in scored:
+            if t in picked:
+                continue
+            picked.append(t)
+            if len(picked) >= k:
+                break
+
+    return picked[:k]
+
+
+def _validate_policy_constraints(
+    plan: Dict[str, Any],
+    seasonal_policy: Dict[str, Any],
+    primary_targets: Optional[List[str]] = None,
+    secondary_targets: Optional[List[str]] = None,
+) -> List[str]:
+    """Extra validation layered on top of validate_llm_plan.
+
+    Returns list of human-readable errors. Never raises.
+    """
+    errors: List[str] = []
+    if not isinstance(plan, dict):
+        return ["Plan is not a dict"]
+
+    strong = set(seasonal_policy.get("strong") or [])
+    conditional = set(seasonal_policy.get("conditional") or [])
+    avoid = set(seasonal_policy.get("avoid") or [])
+    allowed = strong | conditional
+
+    def _check_pattern(obj: Dict[str, Any], label: str) -> None:
+        if not isinstance(obj, dict):
+            return
+        lure = obj.get("base_lure")
+        if allowed and isinstance(lure, str):
+            if lure in avoid:
+                errors.append(f"{label}.base_lure '{lure}' is in seasonal AVOID list")
+            elif lure not in allowed:
+                errors.append(f"{label}.base_lure '{lure}' is not in seasonal STRONG/CONDITIONAL lists")
+        # Target locking (only when we pre-split targets)
+        expected_targets: Optional[List[str]] = None
+        if label == "primary":
+            expected_targets = primary_targets
+        elif label == "secondary":
+            expected_targets = secondary_targets
+        else:
+            # root/non-member plans: if a target set was provided, use primary_targets as the expected set
+            expected_targets = primary_targets
+
+        if expected_targets:
+            tlist = obj.get("targets")
+            if isinstance(tlist, list):
+                # Require targets to be exactly the expected set (order-insensitive)
+                try:
+                    got = [str(x) for x in tlist]
+                except Exception:
+                    got = []
+                if set(got) != set(expected_targets):
+                    errors.append(
+                        f"{label}.targets must match expected targets exactly. expected={expected_targets} got={got}"
+                    )
+
+    # Member plans have primary/secondary
+    if isinstance(plan.get("primary"), dict) or isinstance(plan.get("secondary"), dict):
+        _check_pattern(plan.get("primary", {}), "primary")
+        _check_pattern(plan.get("secondary", {}), "secondary")
+    else:
+        _check_pattern(plan, "root")
+
+    return errors
+
+
 # ----------------------------------------
 # Debug + deterministic color coercion (shape-safe)
 # ----------------------------------------
@@ -434,6 +712,7 @@ RETURN JSON ONLY:
     return f"""You are Bass Clarity, an expert bass fishing guide.
 
 CRITICAL: Return a SINGLE JSON OBJECT only. No markdown. No extra keys. No wrapper objects.
+CRITICAL: When evaluating temperature-dependent behavior, prioritize weather.temp_window_f.
 
 🚨 COLOR POOL INTEGRITY RULE (CRITICAL):
 YOU MUST FOLLOW THE LOOKUP PROCEDURE IN LURE SELECTION POLICY SECTION H.
@@ -456,7 +735,6 @@ Common Hallucinations to AVOID:
 1. Selected "chatterbait" → Look up LURE_COLOR_POOL_MAP["chatterbait"] = "BLADED_SKIRTED_COLORS"
 2. Find BLADED_SKIRTED_COLORS: ["white", "shad", "chartreuse/white", "chartreuse", "black/blue", ...]
 3. Choose from this list only: e.g., ["chartreuse/white", "black/blue"]
-
 🚨 CRITICAL VALIDATION RULE #1 - ONLY ONE BOTTOM CONTACT PRESENTATION PER PLAN:
 
 Bottom Contact presentations are:
@@ -501,6 +779,24 @@ Examples:
 ❌ INVALID (PLAN WILL BE REJECTED):
   primary: carolina rig + finesse worm
   secondary: dropshot + finesse worm (same soft plastic ❌)
+
+🚨 CRITICAL VALIDATION RULE #4 — TARGETS MUST DIFFER
+
+primary.targets and secondary.targets MUST NOT be identical.
+They may share at most ONE target. At least TWO targets must differ.
+Choose targets that make sense for the presentation family (Vertical/Bottom/Horizontal).
+Do not repeat the same three “default” targets unless conditions strongly justify it.  
+
+🚨 SEASONAL LURE POLICY (HARD CONSTRAINT):
+- The user message includes a `seasonal_policy` object with STRONG / CONDITIONAL / AVOID.
+- You MUST choose base_lure ONLY from STRONG or CONDITIONAL.
+- You MUST NOT choose any lure in AVOID.
+- Water clarity affects COLOR choice only, not lure eligibility.
+
+🚨 TARGET LOCK (HARD CONSTRAINT when provided):
+- The user message may include `primary_targets` and `secondary_targets`.
+- If present, you MUST use EXACTLY `primary_targets` for primary.targets and EXACTLY `secondary_targets` for secondary.targets.
+- Do not invent targets or pull from outside the provided lists.
 
   
 AUTHORITY / LANGUAGE (LOCKED):
@@ -576,6 +872,8 @@ TARGETS (LOCKED):
   • STEP 4: Ensure tactical variety (different approaches, not redundant)
   • STEP 5: If Search and Pick Apart, consider target pairing strategy
 - Each target MUST be an exact key from accessible_targets (match spelling and spacing)
+
+
 
 WORK_IT_CARDS (STRICT)
 - You MUST generate exactly 3 cards.
@@ -868,6 +1166,10 @@ async def call_openai_plan(
     recent_primary_lures: list[str] = None,
     recent_secondary_lures: list[str] = None,
     regen_context: dict = None,
+    seasonal_policy: Optional[Dict[str, Any]] = None,
+    primary_targets: Optional[List[str]] = None,
+    secondary_targets: Optional[List[str]] = None,
+
 ) -> dict:
     """
     Generate LLM plan with access filtering and variety system.
@@ -901,25 +1203,79 @@ async def call_openai_plan(
     # ✅ STEP 1: Filter targets by access type
     accessible_targets = filter_targets_by_access(access_type)
     print("LLM_PLAN: Access=" + access_type + ", " + str(len(accessible_targets)) + " accessible targets")
-    
-    # Build target definitions dict for only accessible targets
+
+    # ✅ STEP 1b: Load seasonal policy (best-effort; non-breaking)
+    if seasonal_policy is None:
+        seasonal_policy = _load_seasonal_policy(phase)
+
+    # ✅ STEP 1c: Deterministically preselect & split targets for primary vs secondary (best-effort; non-breaking)
+    # If caller didn't provide targets, build a small diverse pool and split it deterministically.
+    if primary_targets is None or secondary_targets is None:
+        targets_pool = _select_diverse_targets(
+            accessible_targets=accessible_targets,
+            phase=phase,
+            access_type=access_type,
+            weather={
+                "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
+                "wind_speed": weather.get("wind_speed"),
+            },
+            k=5,
+        )
+
+        # Primary gets first 3; Secondary shares at most 1 target (targets_pool[0]) when possible.
+        if len(targets_pool) >= 5:
+            primary_targets = targets_pool[:3]
+            secondary_targets = [targets_pool[0], targets_pool[3], targets_pool[4]]
+        else:
+            # Safe fallback: not enough unique targets available
+            primary_targets = targets_pool[:3]
+            secondary_targets = targets_pool[:3]
+
+    # Build target definitions dict
     from app.canon.target_definitions import TARGET_DEFINITIONS
+    # Prefer selected targets (if we have them), otherwise fall back to accessible targets
+    _targets_for_defs = (primary_targets or []) + (secondary_targets or [])
+    if not _targets_for_defs:
+        _targets_for_defs = accessible_targets
     accessible_target_defs = {
         target: TARGET_DEFINITIONS[target]
-        for target in accessible_targets
+        for target in _targets_for_defs
         if target in TARGET_DEFINITIONS
     }
-    
+
     # ✅ STEP 2: Build user input with accessible targets and ENHANCED WEATHER
+    # ✅ STEP 2: Build user input with accessible targets and ENHANCED WEATHER
+    temp_f = weather.get("temp_f")
+    temp_high = weather.get("temp_high")
+    temp_low = weather.get("temp_low")
+
+    # Derive daylight-window temperature (used for lure biasing, not display)
+    if temp_f is not None and temp_high is not None:
+        temp_window_f = (temp_f + temp_high) / 2
+    elif temp_f is not None:
+        temp_window_f = temp_f
+    elif temp_high is not None:
+        temp_window_f = temp_high
+    else:
+        temp_window_f = None
+
+
     user_input = {
         "location": location,
         "phase": phase,
+        "seasonal_policy": {
+            "phase": seasonal_policy.get("phase"),
+            "strong": seasonal_policy.get("strong", []),
+            "conditional": seasonal_policy.get("conditional", []),
+            "avoid": seasonal_policy.get("avoid", []),
+        },
         "weather": {
             # Temperature
             "temp_f": weather.get("temp_f"),
-            "temp_high": weather.get("temp_high"),
-            "temp_low": weather.get("temp_low"),
-            
+            "temp_high": temp_high,
+            "temp_low": temp_low,
+            "temp_window_f": temp_window_f,
+
             # Wind & Sky
             "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
             "cloud_cover": weather.get("cloud_cover") or weather.get("sky_condition"),
@@ -943,6 +1299,9 @@ async def call_openai_plan(
             "clarity_estimate": weather.get("clarity_estimate"),
         },
         "accessible_targets": accessible_targets,
+        "primary_targets": primary_targets,
+        "secondary_targets": secondary_targets,
+
         "target_definitions": accessible_target_defs,
         "instructions": "",
     }
@@ -1029,12 +1388,43 @@ async def call_openai_plan(
         regeneration_note += "\n"
     
     
+    # Seasonal lure constraints (hard)
+    seasonal_note = ""
+    try:
+        sp_strong = seasonal_policy.get("strong") or []
+        sp_cond = seasonal_policy.get("conditional") or []
+        sp_avoid = seasonal_policy.get("avoid") or []
+
+        if sp_strong or sp_cond or sp_avoid:
+            seasonal_note += "\n\n🎯 SEASONAL LURE POLICY (HARD CONSTRAINTS):\n"
+            seasonal_note += "- You MUST choose base_lure ONLY from STRONG or CONDITIONAL lists below.\n"
+            seasonal_note += "- You MUST NOT choose any lure in AVOID.\n"
+            seasonal_note += "- Water clarity affects COLOR choice only, not lure eligibility.\n\n"
+            seasonal_note += f"STRONG: {sp_strong}\n"
+            seasonal_note += f"CONDITIONAL: {sp_cond}\n"
+            seasonal_note += f"AVOID: {sp_avoid}\n"
+            seasonal_note += "\n"
+    except Exception:
+        seasonal_note = ""
+
+    # Target lock (hard) if we have selected targets
+    target_lock_note = ""
+    if primary_targets or secondary_targets:
+        target_lock_note += "\n🎯 TARGET SELECTION (HARD CONSTRAINTS):\n"
+        target_lock_note += "- PRIMARY must use EXACTLY primary_targets for primary.targets.\n"
+        target_lock_note += "- SECONDARY must use EXACTLY secondary_targets for secondary.targets.\n"
+        target_lock_note += "- Do not invent targets or pull from outside these lists.\n"
+        target_lock_note += "- Do not use any targets outside this list.\n"
+        target_lock_note += f"- primary_targets: {primary_targets}\n"
+        target_lock_note += f"- secondary_targets: {secondary_targets}\n\n"
+
     user_input["instructions"] = (
         regeneration_note +
+        seasonal_note +
+        target_lock_note +
         "ACCESSIBLE TARGETS (based on " + access_type + " access):\n" +
-        "- You MUST choose 3 targets ONLY from the accessible_targets list\n" +
-        "- Available targets: " + str(accessible_targets) + "\n" +
         "- These are the targets the angler can realistically reach from " + access_type + "\n" +
+        "- Accessible targets: " + str(accessible_targets) + "\n" +
         "- For work_it_cards definitions, use target_definitions[target_name]\n" +
         "\n" +
         LURE_SELECTION_POLICY_PROMPT
@@ -1192,9 +1582,16 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
         errors.extend(_validate_pattern(plan["primary"], "primary"))
         errors.extend(_validate_pattern(plan["secondary"], "secondary"))
 
-        # presentations must differ
-        if plan.get("primary", {}).get("presentation") == plan.get("secondary", {}).get("presentation"):
+        # Presentations must differ (exact string) AND must come from different
+        # presentation families (e.g., no Bottom Contact + Bottom Contact).
+        p1 = plan.get("primary", {}).get("presentation")
+        p2 = plan.get("secondary", {}).get("presentation")
+        if p1 == p2:
             errors.append("Primary and secondary must have DIFFERENT presentations")
+        if _presentation_family(p1) == _presentation_family(p2):
+            errors.append(
+                "Primary and secondary must be from DIFFERENT presentation families"
+            )
 
         # shared fields
         for field in ("day_progression", "outlook_blurb"):
@@ -1425,6 +1822,22 @@ async def generate_llm_plan_with_retries(
         regen_context: Context dict with last_lake_name, minutes_since_last_gen, last_combination
         max_attempts: Number of retry attempts
     """
+    # Best-effort: load seasonal policy and preselect targets once for the retry loop
+    seasonal_policy = _load_seasonal_policy(phase)
+    accessible_targets = filter_targets_by_access(access_type)
+    targets_pool = _select_diverse_targets(
+        accessible_targets=accessible_targets,
+        phase=phase,
+        access_type=access_type,
+        weather={
+            "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
+            "wind_speed": weather.get("wind_speed"),
+        },
+        k=5,
+    )
+    primary_targets = targets_pool[:3]
+    secondary_targets = [targets_pool[0], targets_pool[3], targets_pool[4]]
+
     for attempt in range(max_attempts):
         plan = await call_openai_plan(
             weather=weather,
@@ -1438,6 +1851,9 @@ async def generate_llm_plan_with_retries(
             recent_primary_lures=recent_primary_lures,
             recent_secondary_lures=recent_secondary_lures,
             regen_context=regen_context,
+            seasonal_policy=seasonal_policy,
+            primary_targets=primary_targets,
+            secondary_targets=secondary_targets
         )
         if plan is not None:
          _log_color_intent(f"raw_llm_attempt_{attempt + 1}", plan)
@@ -1447,11 +1863,14 @@ async def generate_llm_plan_with_retries(
             print("LLM_PLAN: Attempt " + str(attempt + 1) + " failed (no response)")
             continue
         
-        
-
 
         # Validate plan
         is_valid, errors = validate_llm_plan(plan, is_member=is_member)
+        # Layer seasonal/target constraints on top (non-breaking; only enforced when present)
+        extra_errors = _validate_policy_constraints(plan, seasonal_policy, primary_targets, secondary_targets)
+        if extra_errors:
+            is_valid = False
+            errors.extend(extra_errors)
 
         if is_valid:
             try:
