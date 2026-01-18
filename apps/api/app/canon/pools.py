@@ -698,7 +698,10 @@ LURE_TO_PRESENTATION = {
     "shallow crankbait": "Horizontal Reaction",
     "mid crankbait": "Horizontal Reaction",
     "deep crankbait": "Horizontal Reaction",
-    "lipless crankbait": "Horizontal Reaction",
+    "lipless crankbait": [
+        "Horizontal Reaction",
+        "Vertical Reaction"
+        ],
     "flat-sided crankbait": "Horizontal Reaction",
     "chatterbait": "Horizontal Reaction",
     "spinnerbait": "Horizontal Reaction",

@@ -303,8 +303,11 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     from datetime import date as _date
     from app.utils.season_selector import get_season as _get_season
 
-    raw_season = _get_season(_date.today(), latitude, longitude)
-    # Normalize to canonical module keys used by seasonal policies
+# ✅ NEW: Pass 'weather' so the overrides can trigger
+    raw_season = _get_season(_date.today(), latitude, longitude, weather=weather)
+    
+    # Optional: Debug Print to confirm it worked in the logs
+    print(f"DEBUG: Calendar Date=Winter, but Detected Phase={raw_season} (Temp: {weather.get('temp_f')})")    # Normalize to canonical module keys used by seasonal policies
     if raw_season in ("pre_spawn", "pre-spawn", "pre spawn"):
         phase = "prespawn"
     elif raw_season in ("post_spawn", "post-spawn", "post spawn"):
