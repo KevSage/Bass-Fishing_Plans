@@ -1,13 +1,23 @@
 # /app/utils/season_selector.py
 """
 Season selector for Bass Clarity.
-Determines fishing season from date and lake coordinates.
+Determines fishing season from date, lake coordinates, AND biological conditions.
+
+Logic Flow:
+1. Determine Region (e.g., 'florida', 'north')
+2. Determine 'Calendar Season' based on strict date ranges
+3. Apply 'Biological Overrides' based on current weather (Temp/Moon)
+   - Warm Winter -> Pre-Spawn
+   - Cold Summer -> Fall
+   - Warm Pre-Spawn + Moon -> Spawn
 """
 
 from datetime import date
+from typing import Optional, Dict, Any
 
-# Region definitions based on latitude/longitude
-# Florida is checked first as a special case (state boundary)
+# ==========================================================
+# 1. REGION DEFINITIONS
+# ==========================================================
 REGIONS = {
     "florida": {
         "description": "FL state",
@@ -48,7 +58,9 @@ REGIONS = {
     },
 }
 
-# Season date ranges by region (month-day format)
+# ==========================================================
+# 2. CALENDAR DATE RANGES (Baseline)
+# ==========================================================
 SEASON_DATES = {
     "florida": {
         "winter": ("12-01", "02-15"),
@@ -108,36 +120,27 @@ SEASON_DATES = {
     },
 }
 
+# ==========================================================
+# 3. HELPER FUNCTIONS
+# ==========================================================
 
 def get_region(lat: float, lng: float) -> str:
-    """
-    Determines region from lake coordinates.
-    
-    Args:
-        lat: Latitude of lake
-        lng: Longitude of lake
-        
-    Returns:
-        Region string: 'florida', 'gulf_south', 'deep_south', 
-                       'mid_south', 'north', 'west', 'pacific_nw'
-    """
-    # Florida special case (state boundary check)
+    """Determines region from lake coordinates."""
+    # Florida special case
     if lat <= 31.0 and -87.6 <= lng <= -80.0:
         return "florida"
-    
-    # Also catch south Florida
     if lat <= 28.0 and -83.0 <= lng <= -80.0:
         return "florida"
     
-    # Pacific Northwest (OR, WA, ID, MT)
+    # Pacific Northwest
     if lat >= 42.0 and lng <= -104.0:
         return "pacific_nw"
     
-    # West (CA, AZ, NM, NV, UT, CO, West TX)
+    # West
     if lng <= -105.0 and lat < 42.0:
         return "west"
     
-    # East of Rockies regions (by latitude bands)
+    # East of Rockies
     if lat < 32.0:
         return "gulf_south"
     elif lat < 34.0:
@@ -155,74 +158,99 @@ def _parse_month_day(month_day: str, year: int) -> date:
 
 
 def _is_date_in_range(check_date: date, start_md: str, end_md: str) -> bool:
-    """
-    Check if date falls within a season range.
-    Handles year wraparound (e.g., winter: 12-01 to 02-15).
-    """
+    """Check if date falls within a season range (handles year wrap for Winter)."""
     year = check_date.year
     start = _parse_month_day(start_md, year)
     end = _parse_month_day(end_md, year)
     
-    # Handle year wraparound (winter spans Dec-Feb)
     if start > end:
-        # Check if date is in Dec portion or Jan-Feb portion
-        end_next_year = _parse_month_day(end_md, year + 1)
-        start_prev_year = _parse_month_day(start_md, year - 1)
-        
+        # Wrap-around (e.g. Dec to Feb)
+        # Check if date is after start OR before end
         return check_date >= start or check_date <= end
     else:
         return start <= check_date <= end
 
 
-def get_season(plan_date: date, lat: float, lng: float) -> str:
+# ==========================================================
+# 4. MAIN LOGIC (With Biological Overrides)
+# ==========================================================
+
+def get_season(plan_date: date, lat: float, lng: float, weather: Optional[Dict[str, Any]] = None) -> str:
     """
-    Determines fishing season from date and lake coordinates.
+    Determines season based on Calendar + Biological Overrides.
+    """
     
-    Args:
-        plan_date: Date for the fishing plan
-        lat: Latitude of lake
-        lng: Longitude of lake
-        
-    Returns:
-        Season string: 'winter', 'pre_spawn', 'spawn', 
-                       'post_spawn', 'summer', 'fall'
-    """
+    # --- STEP 1: CALENDAR BASELINE ---
     region = get_region(lat, lng)
     season_ranges = SEASON_DATES[region]
     
-    # Check each season (order matters for overlapping dates)
-    # Priority: spawn > pre_spawn > post_spawn > summer > fall > winter
+    calendar_season = "winter" # Default fallback
+    
+    # Priority: spawn > pre > post > summer > fall > winter
     season_priority = ["spawn", "pre_spawn", "post_spawn", "summer", "fall", "winter"]
     
     for season in season_priority:
         start_md, end_md = season_ranges[season]
         if _is_date_in_range(plan_date, start_md, end_md):
-            return season
+            calendar_season = season
+            break
+            
+    # If no weather data provided, return the calendar baseline
+    if not weather:
+        return calendar_season
+
+    # --- STEP 2: BIOLOGICAL OVERRIDES ---
+    # Bass are cold-blooded; temperature dictates behavior more than the calendar.
     
-    # Fallback (should not reach here if ranges cover full year)
-    return "winter"
+    temp_f = weather.get("temp_f", 0)
+    temp_high = weather.get("temp_high", temp_f)
+    moon_phase = str(weather.get("moon_phase", "")).lower()
+    
+    # ----------------------------------------------------
+    # OVERRIDE A: WARM WINTER -> PRE-SPAWN
+    # ----------------------------------------------------
+    # Fixes Florida/South "Winter" issue.
+    # If it's technically Winter, but the water is warm enough (approx > 58-60F),
+    # bass will move shallow and chase (Pre-Spawn behavior).
+    if calendar_season == "winter":
+        if temp_f > 60.0:
+            return "pre_spawn"
+
+    # ----------------------------------------------------
+    # OVERRIDE B: COLD SUMMER -> FALL
+    # ----------------------------------------------------
+    # "False Fall" / Early Cold Snap.
+    # If it's technically Summer, but we get a cold snap (Highs < 70F),
+    # bass will start feeding up for winter (Fall behavior).
+    if calendar_season == "summer":
+        if temp_high < 70.0:
+            return "fall"
+
+    # ----------------------------------------------------
+    # OVERRIDE C: WARM PRE-SPAWN + MOON -> SPAWN
+    # ----------------------------------------------------
+    # The "Wave" Trigger.
+    # If it's Pre-Spawn, temps are ideal (65+), and we have a Full/New moon,
+    # a wave of fish is likely locking onto beds (Spawn behavior).
+    if calendar_season == "pre_spawn":
+        is_major_moon = "full" in moon_phase or "new" in moon_phase
+        if temp_f > 65.0 and is_major_moon:
+            return "spawn"
+
+    # ----------------------------------------------------
+    # OVERRIDE D: INDIAN SUMMER (FALL -> SUMMER)
+    # ----------------------------------------------------
+    # If it's technically Fall (Oct/Nov) but we get a heat wave (80F+),
+    # fish may suspend or retreat to summer haunts.
+    if calendar_season == "fall":
+        if temp_high > 80.0:
+            return "summer"
+
+    return calendar_season
 
 
-def get_season_with_region(plan_date: date, lat: float, lng: float) -> tuple[str, str]:
-    """
-    Returns both season and region for logging/debugging.
-    
-    Args:
-        plan_date: Date for the fishing plan
-        lat: Latitude of lake
-        lng: Longitude of lake
-        
-    Returns:
-        Tuple of (season, region)
-    """
+def get_season_with_region(plan_date: date, lat: float, lng: float, weather: Optional[Dict[str, Any]] = None) -> tuple[str, str]:
+    """Helper for logging: returns (season, region) tuple."""
     region = get_region(lat, lng)
-    season_ranges = SEASON_DATES[region]
-    
-    season_priority = ["spawn", "pre_spawn", "post_spawn", "summer", "fall", "winter"]
-    
-    for season in season_priority:
-        start_md, end_md = season_ranges[season]
-        if _is_date_in_range(plan_date, start_md, end_md):
-            return (season, region)
-    
-    return ("winter", region)
+    season = get_season(plan_date, lat, lng, weather)
+    return (season, region)

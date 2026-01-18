@@ -1210,26 +1210,26 @@ async def call_openai_plan(
 
     # ✅ STEP 1c: Deterministically preselect & split targets for primary vs secondary (best-effort; non-breaking)
     # If caller didn't provide targets, build a small diverse pool and split it deterministically.
-    if primary_targets is None or secondary_targets is None:
-        targets_pool = _select_diverse_targets(
-            accessible_targets=accessible_targets,
-            phase=phase,
-            access_type=access_type,
-            weather={
-                "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
-                "wind_speed": weather.get("wind_speed"),
-            },
-            k=5,
-        )
+    # if primary_targets is None or secondary_targets is None:
+    #     targets_pool = _select_diverse_targets(
+    #         accessible_targets=accessible_targets,
+    #         phase=phase,
+    #         access_type=access_type,
+    #         weather={
+    #             "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
+    #             "wind_speed": weather.get("wind_speed"),
+    #         },
+    #         k=5,
+    #     )
 
-        # Primary gets first 3; Secondary shares at most 1 target (targets_pool[0]) when possible.
-        if len(targets_pool) >= 5:
-            primary_targets = targets_pool[:3]
-            secondary_targets = [targets_pool[0], targets_pool[3], targets_pool[4]]
-        else:
-            # Safe fallback: not enough unique targets available
-            primary_targets = targets_pool[:3]
-            secondary_targets = targets_pool[:3]
+    #     # Primary gets first 3; Secondary shares at most 1 target (targets_pool[0]) when possible.
+    #     if len(targets_pool) >= 5:
+    #         primary_targets = targets_pool[:3]
+    #         secondary_targets = [targets_pool[0], targets_pool[3], targets_pool[4]]
+    #     else:
+    #         # Safe fallback: not enough unique targets available
+    #         primary_targets = targets_pool[:3]
+    #         secondary_targets = targets_pool[:3]
 
     # Build target definitions dict
     from app.canon.target_definitions import TARGET_DEFINITIONS
@@ -1299,8 +1299,8 @@ async def call_openai_plan(
             "clarity_estimate": weather.get("clarity_estimate"),
         },
         "accessible_targets": accessible_targets,
-        "primary_targets": primary_targets,
-        "secondary_targets": secondary_targets,
+        "primary_targets": None,
+        "secondary_targets": None,
 
         "target_definitions": accessible_target_defs,
         "instructions": "",
@@ -1791,6 +1791,111 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
 # PART 4: Main generation function with retries
 # ============================================================================
 
+# async def generate_llm_plan_with_retries(
+#     weather: dict,
+#     phase: str,
+#     location: str,
+#     latitude: float,
+#     longitude: float,
+#     access_type: str = "boat",
+#     is_member: bool = False,
+#     current_lake_name: str = "",
+#     recent_primary_lures: list[str] = None,
+#     recent_secondary_lures: list[str] = None,
+#     regen_context: dict = None,
+#     max_attempts: int = 5,
+# ) -> dict:
+#     """
+#     Generate LLM plan with validation and retries.
+#     Returns validated plan or None.
+
+#     Args:
+#         weather: Weather data
+#         location: Location name
+#         latitude: Latitude
+#         longitude: Longitude
+#         access_type: "boat" or "bank" - filters accessible targets
+#         is_member: All users are members now (kept for compatibility)
+#         current_lake_name: Current lake name for regeneration context
+#         recent_primary_lures: List of recently used primary lures
+#         recent_secondary_lures: List of recently used secondary lures
+#         regen_context: Context dict with last_lake_name, minutes_since_last_gen, last_combination
+#         max_attempts: Number of retry attempts
+#     """
+#     # Best-effort: load seasonal policy and preselect targets once for the retry loop
+#     seasonal_policy = _load_seasonal_policy(phase)
+#     print(f"LLM_PLAN [{phase}]")
+#     print(seasonal_policy["phase"])
+    
+#     accessible_targets = filter_targets_by_access(access_type)
+#     # targets_pool = _select_diverse_targets(
+#     #     accessible_targets=accessible_targets,
+#     #     phase=phase,
+#     #     access_type=access_type,
+#     #     weather={
+#     #         "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
+#     #         "wind_speed": weather.get("wind_speed"),
+#     #     },
+#     #     k=5,
+#     # )
+#     # primary_targets = targets_pool[:3]
+#     # secondary_targets = [targets_pool[0], targets_pool[3], targets_pool[4]]
+
+#     for attempt in range(max_attempts):
+#         plan = await call_openai_plan(
+#             weather=weather,
+#             phase=phase,
+#             location=location,
+#             latitude=latitude,
+#             longitude=longitude,
+#             access_type=access_type,
+#             is_member=is_member,
+#             current_lake_name=current_lake_name,
+#             recent_primary_lures=recent_primary_lures,
+#             recent_secondary_lures=recent_secondary_lures,
+#             regen_context=regen_context,
+#             seasonal_policy=seasonal_policy,
+#             primary_targets= None,
+#             secondary_targets= None
+#         )
+#         if plan is not None:
+#          _log_color_intent(f"raw_llm_attempt_{attempt + 1}", plan)
+
+#         if not plan:
+#             await asyncio.sleep(0.75 * (attempt + 1))
+#             print("LLM_PLAN: Attempt " + str(attempt + 1) + " failed (no response)")
+#             continue
+        
+
+#         # Validate plan
+#         is_valid, errors = validate_llm_plan(plan, is_member=is_member)
+#         # Layer seasonal/target constraints on top (non-breaking; only enforced when present)
+#         extra_errors = _validate_policy_constraints(plan, seasonal_policy, primary_targets, secondary_targets)
+#         if extra_errors:
+#             is_valid = False
+#             errors.extend(extra_errors)
+
+#         if is_valid:
+#             try:
+#                 plan = expand_plan_color_zones(plan, is_member=is_member)
+#             except Exception as e:
+#                 print("LLM_PLAN: Color zone expansion failed: " + str(e))
+#                 return plan  # return valid plan without enrichment
+
+
+#             return plan
+
+#         print("LLM_PLAN: Attempt " + str(attempt + 1) + " validation failed:")
+#         for err in errors[:6]:
+#             print("  - " + err)
+
+#         await asyncio.sleep(0.75 * (attempt + 1))
+
+#     print("LLM_PLAN: All attempts failed")
+#     return None
+
+# In app/services/llm_plan_service.py
+
 async def generate_llm_plan_with_retries(
     weather: dict,
     phase: str,
@@ -1808,35 +1913,23 @@ async def generate_llm_plan_with_retries(
     """
     Generate LLM plan with validation and retries.
     Returns validated plan or None.
-
-    Args:
-        weather: Weather data
-        location: Location name
-        latitude: Latitude
-        longitude: Longitude
-        access_type: "boat" or "bank" - filters accessible targets
-        is_member: All users are members now (kept for compatibility)
-        current_lake_name: Current lake name for regeneration context
-        recent_primary_lures: List of recently used primary lures
-        recent_secondary_lures: List of recently used secondary lures
-        regen_context: Context dict with last_lake_name, minutes_since_last_gen, last_combination
-        max_attempts: Number of retry attempts
     """
-    # Best-effort: load seasonal policy and preselect targets once for the retry loop
+    # Best-effort: load seasonal policy
     seasonal_policy = _load_seasonal_policy(phase)
+    print(f"LLM_PLAN [{phase}]")
+    print(seasonal_policy["phase"])
+    
     accessible_targets = filter_targets_by_access(access_type)
-    targets_pool = _select_diverse_targets(
-        accessible_targets=accessible_targets,
-        phase=phase,
-        access_type=access_type,
-        weather={
-            "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
-            "wind_speed": weather.get("wind_speed"),
-        },
-        k=5,
-    )
-    primary_targets = targets_pool[:3]
-    secondary_targets = [targets_pool[0], targets_pool[3], targets_pool[4]]
+
+    # ✅ FIX: Explicitly define these as None. 
+    # This prevents the "name 'primary_targets' is not defined" error in the validation step below.
+    primary_targets = None
+    secondary_targets = None
+
+    # ❌ PREVIOUSLY COMMENTED OUT BLOCK (Kept commented for reference)
+    # targets_pool = _select_diverse_targets(...)
+    # primary_targets = targets_pool[:3]
+    # secondary_targets = [targets_pool[0], targets_pool[3], targets_pool[4]]
 
     for attempt in range(max_attempts):
         plan = await call_openai_plan(
@@ -1852,22 +1945,26 @@ async def generate_llm_plan_with_retries(
             recent_secondary_lures=recent_secondary_lures,
             regen_context=regen_context,
             seasonal_policy=seasonal_policy,
+            # ✅ PASS THE VARIABLES (which are now safely None)
             primary_targets=primary_targets,
             secondary_targets=secondary_targets
         )
+
         if plan is not None:
-         _log_color_intent(f"raw_llm_attempt_{attempt + 1}", plan)
+             _log_color_intent(f"raw_llm_attempt_{attempt + 1}", plan)
 
         if not plan:
             await asyncio.sleep(0.75 * (attempt + 1))
             print("LLM_PLAN: Attempt " + str(attempt + 1) + " failed (no response)")
             continue
         
-
         # Validate plan
         is_valid, errors = validate_llm_plan(plan, is_member=is_member)
-        # Layer seasonal/target constraints on top (non-breaking; only enforced when present)
+        
+        # ✅ FIX: Now this line works because primary_targets is defined (as None)
+        # The validator handles None gracefully by skipping the target check.
         extra_errors = _validate_policy_constraints(plan, seasonal_policy, primary_targets, secondary_targets)
+        
         if extra_errors:
             is_valid = False
             errors.extend(extra_errors)
@@ -1879,7 +1976,6 @@ async def generate_llm_plan_with_retries(
                 print("LLM_PLAN: Color zone expansion failed: " + str(e))
                 return plan  # return valid plan without enrichment
 
-
             return plan
 
         print("LLM_PLAN: Attempt " + str(attempt + 1) + " validation failed:")
@@ -1890,7 +1986,6 @@ async def generate_llm_plan_with_retries(
 
     print("LLM_PLAN: All attempts failed")
     return None
-
 
 def llm_enabled() -> bool:
     """Check if LLM plan generation is enabled"""
