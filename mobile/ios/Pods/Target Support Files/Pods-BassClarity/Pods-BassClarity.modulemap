@@ -1,0 +1,6 @@
+module Pods_BassClarity {
+  umbrella header "Pods-BassClarity-umbrella.h"
+
+  export *
+  module * { export * }
+}
