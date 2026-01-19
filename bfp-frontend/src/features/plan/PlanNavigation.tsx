@@ -71,7 +71,7 @@ export function PlanNavigation({
       <style>{`
         .plan-navigation-container {
           position: fixed;
-          bottom: 30px;
+          bottom: 20px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 1000;

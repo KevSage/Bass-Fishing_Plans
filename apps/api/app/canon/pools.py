@@ -748,8 +748,10 @@ LURE_TO_PRESENTATION = {
     ],
     
     # Ned rig - HOPPING ONLY (exposed hook = snag risk when dragging on bottom)
-    "ned rig": "Bottom Contact - Hopping / Targeted",
-
+    "ned rig": [
+        "Bottom Contact - Dragging",
+        "Bottom Contact - Hopping / Targeted",
+    ],
     # ========================================
     # HOVERING / MID-COLUMN FINESSE
     # (Most can also work as vertical reaction)
