@@ -1,6 +1,9 @@
 import { SignIn } from "@clerk/clerk-react";
 
 export default function SignInPage() {
+  // Define the destination dynamically
+  // This produces "http://localhost:5173/members" or "https://bassclarity.com/members"
+  const destination = `${window.location.origin}/members`;
   return (
     <div
       style={{
@@ -16,7 +19,7 @@ export default function SignInPage() {
         routing="path"
         path="/sign-in"
         signUpUrl="/sign-up"
-        redirectUrl="/members"
+        forceRedirectUrl={destination}
         appearance={{
           elements: {
             rootBox: {

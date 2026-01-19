@@ -600,6 +600,7 @@ BAITFISH_PLASTICS = [
 JIG_TRAILERS = [
     "craw",
     "chunk",
+    "creature bait",
 ]
 
 # ----------------------------------------
