@@ -8,6 +8,8 @@ type LocationSearchProps = {
     latitude: number;
     longitude: number;
     mapbox_place_id?: string;
+    city?: string;
+    state?: string;
   }) => void;
   placeholder?: string;
   initialValue?: string;
@@ -53,14 +55,32 @@ export function LocationSearch({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = (feature: MapboxFeature) => {
+  const handleSelect = (feature: MapboxFeature & { context?: any[] }) => {
     const [longitude, latitude] = feature.center;
+
+    // Attempt to extract City and State from Mapbox Context
+    let city = "";
+    let state = "";
+
+    if (feature.context) {
+      const placeCtx = feature.context.find((c: any) =>
+        c.id.startsWith("place"),
+      );
+      const regionCtx = feature.context.find((c: any) =>
+        c.id.startsWith("region"),
+      );
+
+      if (placeCtx) city = placeCtx.text;
+      if (regionCtx) state = regionCtx.text; // or regionCtx.short_code for "AL"
+    }
 
     onSelect({
       name: feature.text,
       latitude,
       longitude,
       mapbox_place_id: feature.properties.mapbox_id,
+      city,
+      state,
     });
 
     setInputValue(feature.place_name);
@@ -81,6 +101,17 @@ export function LocationSearch({
         }}
         placeholder={placeholder}
         autoComplete="off"
+        style={{
+          // Inline style to match the glass aesthetic passed from parent styles usually
+          width: "100%",
+          padding: "14px 16px",
+          borderRadius: "12px",
+          fontSize: "1rem",
+          background: "rgba(0,0,0,0.4)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          color: "#fff",
+          outline: "none",
+        }}
       />
 
       {loading && (
@@ -92,6 +123,7 @@ export function LocationSearch({
             transform: "translateY(-50%)",
             fontSize: "0.9em",
             opacity: 0.5,
+            color: "#fff",
           }}
         >
           Searching...
@@ -118,13 +150,14 @@ export function LocationSearch({
             top: "calc(100% + 4px)",
             left: 0,
             right: 0,
-            background: "#1a1a1a",
+            background: "rgba(20, 20, 25, 0.95)",
+            backdropFilter: "blur(12px)",
             border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: 8,
+            borderRadius: 12,
             maxHeight: 300,
             overflowY: "auto",
             zIndex: 1000,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
           }}
         >
           {results.map((feature) => (
@@ -134,14 +167,14 @@ export function LocationSearch({
               className="location-result-item"
               style={{
                 width: "100%",
-                padding: "12px 16px",
+                padding: "14px 16px",
                 border: "none",
                 background: "transparent",
-                color: "inherit",
+                color: "#fff",
                 textAlign: "left",
                 cursor: "pointer",
                 borderBottom: "1px solid rgba(255,255,255,0.05)",
-                transition: "background 0.15s",
+                transition: "background 0.2s",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "rgba(255,255,255,0.05)";
@@ -150,8 +183,10 @@ export function LocationSearch({
                 e.currentTarget.style.background = "transparent";
               }}
             >
-              <div style={{ fontWeight: 500 }}>{feature.text}</div>
-              <div style={{ fontSize: "0.85em", opacity: 0.6, marginTop: 2 }}>
+              <div style={{ fontWeight: 600, fontSize: "0.95rem" }}>
+                {feature.text}
+              </div>
+              <div style={{ fontSize: "0.85em", opacity: 0.5, marginTop: 4 }}>
                 {feature.place_name}
               </div>
             </button>

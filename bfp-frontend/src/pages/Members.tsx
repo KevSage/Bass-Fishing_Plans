@@ -1,26 +1,74 @@
 // src/pages/Members.tsx
-// CHANGELOG:
-// - Fixed memory leak: Added AbortController for async fetch cleanup
-// - Fixed memory leak: Store and remove controls explicitly
-// - Fixed memory leak: Remove 'load' event listener
-// - Fixed memory leak: Track mounted state to prevent setState after unmount
-// - Fixed memory leak: Proper marker element cleanup
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { generateMemberPlan, RateLimitError } from "@/lib/api";
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
-import { FishIcon } from "@/components/UnifiedIcons";
+import {
+  FishIcon,
+  RadarIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  TrashIcon,
+  SaveIcon,
+  CheckIcon,
+  CrosshairIcon,
+} from "@/components/UnifiedIcons";
+
+import { MapOrb } from "@/components/MapOrb";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-const MAX_DAILY_PLANS = 10;
-const WARNING_THRESHOLD = 8;
+
+type FavoriteLake = {
+  id: string;
+  name: string;
+  city?: string;
+  state?: string;
+  lat: number;
+  lng: number;
+  zoom: number;
+  image: string;
+};
+
+type CatchLog = {
+  id: string;
+  date: string;
+  lure: string;
+  weight?: string;
+  notes?: string;
+  lat: number;
+  lng: number;
+};
+
+// --- HELPER HOOKS ---
+function useLocalStorage<T>(key: string, initialValue: T) {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      console.log(error);
+      return initialValue;
+    }
+  });
+  const setValue = (value: T | ((val: T) => T)) => {
+    try {
+      const valueToStore =
+        value instanceof Function ? value(storedValue) : value;
+      setStoredValue(valueToStore);
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  return [storedValue, setValue] as const;
+}
 
 function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
   return f.source === "composite" && f.sourceLayer === "water";
@@ -32,7 +80,14 @@ const createOrbMarker = () => {
   return el;
 };
 
-// --- ICONS ---
+const createGoldMarker = () => {
+  const el = document.createElement("div");
+  el.className = "catch-marker-map";
+  el.innerHTML = "🐟";
+  return el;
+};
+
+// --- ICONS (Local) ---
 const BoatIcon = ({ active }: { active: boolean }) => (
   <svg
     width="18"
@@ -40,7 +95,7 @@ const BoatIcon = ({ active }: { active: boolean }) => (
     viewBox="0 0 24 24"
     fill="none"
     stroke={active ? "#4A90E2" : "currentColor"}
-    strokeWidth="2"
+    strokeWidth="1.5"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -50,6 +105,7 @@ const BoatIcon = ({ active }: { active: boolean }) => (
     <path d="M18 6l-1-3H7L6 6" />
   </svg>
 );
+
 const BankIcon = ({ active }: { active: boolean }) => (
   <svg
     width="18"
@@ -57,7 +113,7 @@ const BankIcon = ({ active }: { active: boolean }) => (
     viewBox="0 0 24 24"
     fill="none"
     stroke={active ? "#4A90E2" : "currentColor"}
-    strokeWidth="2"
+    strokeWidth="1.5"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -68,6 +124,7 @@ const BankIcon = ({ active }: { active: boolean }) => (
     <path d="M5.5 21a9 9 0 0 1 12.8 0" />
   </svg>
 );
+
 const SearchIcon = () => (
   <svg
     width="14"
@@ -75,7 +132,7 @@ const SearchIcon = () => (
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="3"
+    strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -83,6 +140,7 @@ const SearchIcon = () => (
     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
   </svg>
 );
+
 const PinIcon = () => (
   <svg
     width="14"
@@ -90,7 +148,7 @@ const PinIcon = () => (
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
-    strokeWidth="3"
+    strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
@@ -98,83 +156,113 @@ const PinIcon = () => (
     <circle cx="12" cy="10" r="3"></circle>
   </svg>
 );
-const RadarIcon = ({ size = 20 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z" />
-    <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
-    <path d="M12 2v2" />
-    <path d="M12 22v-2" />
-    <path d="M2 12h2" />
-    <path d="M22 12h-2" />
-  </svg>
-);
 
 export function Members() {
   const { user } = useUser();
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
+  // --- PERSISTENT STATE ---
+  const [favorites, setFavorites] = useLocalStorage<FavoriteLake[]>(
+    "aiq_favorite_lakes",
+    [],
+  );
+  const [catches, setCatches] = useLocalStorage<CatchLog[]>(
+    "aiq_user_catches",
+    [],
+  );
+  const [lastPlanUrl, setLastPlanUrl] = useState<string | null>(() =>
+    sessionStorage.getItem("aiq_last_plan_url"),
+  );
+
+  // --- LOCAL STATE ---
   const [rateLimitInfo, setRateLimitInfo] = useState<{
     message: string;
     secondsRemaining: number;
   } | null>(null);
-  const [dailyUsage, setDailyUsage] = useState(0);
-
-  useEffect(() => {
-    if (!rateLimitInfo || rateLimitInfo.secondsRemaining <= 0) return;
-    const timer = setInterval(() => {
-      setRateLimitInfo((prev) => {
-        if (!prev || prev.secondsRemaining <= 1) {
-          clearInterval(timer);
-          return null;
-        }
-        return { ...prev, secondsRemaining: prev.secondsRemaining - 1 };
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [rateLimitInfo]);
-
-  const formatTime = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`;
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}m ${secs}s`;
-  };
-
   const [showModal, setShowModal] = useState(false);
+  const [showCatchModal, setShowCatchModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Favorite Navigation State
+  const [viewingFavoriteId, setViewingFavoriteId] = useState<string | null>(
+    null,
+  );
+
+  // Inputs
   const [inputMode, setInputMode] = useState<"search" | "manual">("search");
   const [waterName, setWaterName] = useState("");
+  const [locationDetails, setLocationDetails] = useState<{
+    city?: string;
+    state?: string;
+  }>({});
   const [selectedCoords, setSelectedCoords] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
   const [accessType, setAccessType] = useState<"boat" | "bank">("boat");
+
+  // Catch Inputs
+  const [catchLure, setCatchLure] = useState("");
+  const [catchWeight, setCatchWeight] = useState("");
+  const [catchNotes, setCatchNotes] = useState("");
+
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Map Refs
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
-  const markerElementRef = useRef<HTMLDivElement | null>(null); // Track marker DOM element
+  const markerElementRef = useRef<HTMLDivElement | null>(null);
+  const catchMarkersRef = useRef<mapboxgl.Marker[]>([]);
+
   const initialized = useRef(false);
-  const rafRef = useRef<number | null>(null);
-  const isMountedRef = useRef(true); // Track mounted state
-  const controlsRef = useRef<mapboxgl.IControl[]>([]); // Track controls for cleanup
-  const abortControllerRef = useRef<AbortController | null>(null); // For fetch cleanup
+  const isMountedRef = useRef(true);
+  const controlsRef = useRef<mapboxgl.IControl[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const showModalRef = useRef(false);
+  const showCatchModalRef = useRef(false);
+  const viewingFavoriteIdRef = useRef<string | null>(null);
+
+  // --- DERIVED STATE ---
+  const isCurrentLocationSaved = React.useMemo(() => {
+    if (!selectedCoords) return false;
+    return favorites.some(
+      (lake) =>
+        lake.name === waterName ||
+        (Math.abs(lake.lat - selectedCoords.lat) < 0.001 &&
+          Math.abs(lake.lng - selectedCoords.lng) < 0.001),
+    );
+  }, [favorites, selectedCoords, waterName]);
+
+  const currentFavorite = React.useMemo(() => {
+    return favorites.find((f) => f.id === viewingFavoriteId) || null;
+  }, [favorites, viewingFavoriteId]);
 
   useEffect(() => {
-    // Set mounted flag
-    isMountedRef.current = true;
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
+  // Sync refs for event handlers
+  useEffect(() => {
+    showModalRef.current = showModal;
+  }, [showModal]);
+  useEffect(() => {
+    showCatchModalRef.current = showCatchModal;
+  }, [showCatchModal]);
+  useEffect(() => {
+    viewingFavoriteIdRef.current = viewingFavoriteId;
+  }, [viewingFavoriteId]);
+
+  // --- MAP INITIALIZATION ---
+  useEffect(() => {
+    isMountedRef.current = true;
     if (
       initialized.current ||
       !mapContainer.current ||
@@ -186,274 +274,402 @@ export function Members() {
     initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
+    // Default center (Alabama)
+    const defaultCenter: [number, number] = [-86.7816, 33.5186];
+    let initialZoom = 6;
+
+    // 1. Check for URL Params (Coming back from Plan Page)
+    const urlLat = searchParams.get("lat");
+    const urlLng = searchParams.get("lng");
+    const urlLake = searchParams.get("lake");
+
+    let startCenter = defaultCenter;
+    if (urlLat && urlLng) {
+      startCenter = [parseFloat(urlLng), parseFloat(urlLat)];
+      initialZoom = 12;
+    }
+
     const m = new mapboxgl.Map({
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/outdoors-v12",
-      center: [-86.7816, 33.5186],
-      zoom: 6,
+      center: startCenter,
+      zoom: initialZoom,
       pitch: 0,
       preserveDrawingBuffer: true,
+      attributionControl: false,
     });
 
     mapRef.current = m;
     m.dragRotate.disable();
     m.touchZoomRotate.disableRotation();
 
-    // Create and track controls for proper cleanup
-    const navControl = new mapboxgl.NavigationControl();
+    // Standard Controls
+    const navControl = new mapboxgl.NavigationControl({ showCompass: false });
     const geoControl = new mapboxgl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
       trackUserLocation: false,
       showUserLocation: true,
     });
-
     m.addControl(navControl, "top-right");
     m.addControl(geoControl, "top-right");
     controlsRef.current = [navControl, geoControl];
 
-    const onMove = (e: mapboxgl.MapMouseEvent) => {
-      if (rafRef.current) return;
-      rafRef.current = window.requestAnimationFrame(() => {
-        rafRef.current = null;
-        if (!mapRef.current || !isMountedRef.current) return;
-        try {
-          const features = mapRef.current.queryRenderedFeatures(e.point);
-          const water = features.find(isWaterFeature);
-          const isHovering = !!water;
-          mapRef.current.getCanvas().style.cursor = isHovering ? "pointer" : "";
-        } catch (err) {
-          console.debug("Map interaction error", err);
-        }
+    // --- SETUP INITIAL PIN FROM URL IF PRESENT ---
+    if (urlLat && urlLng) {
+      const lat = parseFloat(urlLat);
+      const lng = parseFloat(urlLng);
+
+      // Set State
+      setSelectedCoords({ lat, lng });
+      setWaterName(urlLake ? decodeURIComponent(urlLake) : "Pinned Location");
+
+      // We assume it's Manual mode if coming from URL, but trigger search for metadata
+      setInputMode("manual");
+
+      // Add Marker
+      if (markerRef.current) markerRef.current.remove();
+      const markerEl = createOrbMarker();
+      markerElementRef.current = markerEl;
+      markerRef.current = new mapboxgl.Marker({ element: markerEl })
+        .setLngLat([lng, lat])
+        .addTo(m);
+
+      // Attempt to fetch city/state metadata for this pin
+      fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          if (!isMountedRef.current) return;
+          const context = data?.features?.[0]?.context;
+          if (context) {
+            const city = context.find((c: any) =>
+              String(c.id).startsWith("place"),
+            )?.text;
+            const state = context
+              .find((c: any) => String(c.id).startsWith("region"))
+              ?.short_code?.replace("US-", "");
+            setLocationDetails({ city, state });
+          }
+        })
+        .catch(console.error);
+    }
+
+    const renderCatchPins = () => {
+      catchMarkersRef.current.forEach((mk) => mk.remove());
+      catchMarkersRef.current = [];
+      catches.forEach((c) => {
+        const el = createGoldMarker();
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat([c.lng, c.lat])
+          .addTo(m);
+        catchMarkersRef.current.push(marker);
       });
     };
 
     const onClick = async (e: mapboxgl.MapMouseEvent) => {
       if (!mapRef.current || !isMountedRef.current) return;
-
-      // Cancel any pending geocoding request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
+      if (
+        showCatchModalRef.current ||
+        showModalRef.current ||
+        viewingFavoriteIdRef.current
+      ) {
+        setViewingFavoriteId(null);
+        return;
       }
+
+      if (abortControllerRef.current) abortControllerRef.current.abort();
       abortControllerRef.current = new AbortController();
 
       try {
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
-        if (!water) return;
 
-        const { lng, lat } = e.lngLat;
+        if (water) {
+          const { lng, lat } = e.lngLat;
+          setSelectedCoords({ lat, lng });
+          setInputMode("manual");
+          setWaterName("");
+          setLocationDetails({});
+          setShowModal(true);
 
-        // Check mounted before setting state
-        if (!isMountedRef.current) return;
+          if (markerRef.current) markerRef.current.remove();
+          if (markerElementRef.current) markerElementRef.current.remove();
+          const markerEl = createOrbMarker();
+          markerElementRef.current = markerEl;
+          markerRef.current = new mapboxgl.Marker({ element: markerEl })
+            .setLngLat([lng, lat])
+            .addTo(mapRef.current);
 
-        setSelectedCoords({ lat, lng });
-        setInputMode("manual");
-        setWaterName("");
-        setShowModal(true);
-
-        // Clean up old marker element
-        if (markerRef.current) {
-          markerRef.current.remove();
-          markerRef.current = null;
-        }
-        if (markerElementRef.current) {
-          markerElementRef.current.remove();
-          markerElementRef.current = null;
-        }
-
-        // Create new marker with tracked element
-        const markerEl = createOrbMarker();
-        markerElementRef.current = markerEl;
-        markerRef.current = new mapboxgl.Marker({ element: markerEl })
-          .setLngLat([lng, lat])
-          .addTo(mapRef.current);
-
-        try {
-          const response = await fetch(
-            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
-            { signal: abortControllerRef.current.signal }
-          );
-
-          // Check mounted before processing response
-          if (!isMountedRef.current) return;
-
-          const data = await response.json();
-          const context = data?.features?.[0]?.context;
-          if (context) {
-            const city =
-              context.find((c: any) => String(c.id).startsWith("place"))
-                ?.text || "";
-            const state =
-              context
-                .find((c: any) => String(c.id).startsWith("region"))
-                ?.short_code?.replace("US-", "") || "";
-
-            // Final mounted check before setState
-            if (isMountedRef.current) {
+          try {
+            const response = await fetch(
+              `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
+              { signal: abortControllerRef.current.signal },
+            );
+            if (!isMountedRef.current) return;
+            const data = await response.json();
+            const context = data?.features?.[0]?.context;
+            if (context) {
+              const city =
+                context.find((c: any) => String(c.id).startsWith("place"))
+                  ?.text || "";
+              const state =
+                context
+                  .find((c: any) => String(c.id).startsWith("region"))
+                  ?.short_code?.replace("US-", "") || "";
               setWaterName(
-                `Water near ${[city, state].filter(Boolean).join(", ")}`
+                `Water near ${[city, state].filter(Boolean).join(", ")}`,
               );
-            }
-          } else {
-            if (isMountedRef.current) {
+              setLocationDetails({ city, state });
+            } else {
               setWaterName("Dropped Pin Location");
             }
-          }
-        } catch (e2: any) {
-          // Ignore abort errors
-          if (e2.name !== "AbortError") {
-            console.error("Geocode failed:", e2);
+          } catch (e2: any) {
+            if (e2.name !== "AbortError") console.error("Geocode failed:", e2);
           }
         }
       } catch (err) {
-        console.debug("Click handler error", err);
+        console.debug(err);
       }
     };
 
     const onLoad = () => {
-      if (!isMountedRef.current) return;
-
-      const params = new URLSearchParams(window.location.search);
-      const lat = params.get("lat");
-      const lng = params.get("lng");
-      const lake = params.get("lake");
-      if (lat && lng) {
-        const l = parseFloat(lng);
-        const lt = parseFloat(lat);
-        m.flyTo({ center: [l, lt], zoom: 14, speed: 1.2 });
-        if (lake && isMountedRef.current) {
-          setInputMode("manual");
-          setWaterName(lake);
-          setSelectedCoords({ lat: lt, lng: l });
-          setShowModal(true);
-        }
-      }
+      if (isMountedRef.current) renderCatchPins();
     };
-
-    m.on("mousemove", onMove);
     m.on("click", onClick);
     m.on("load", onLoad);
+    if (m.loaded()) renderCatchPins();
 
     return () => {
-      // Mark as unmounted first to prevent any async callbacks from setting state
       isMountedRef.current = false;
-
-      // Cancel any pending fetch
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-
-      // Cancel any pending RAF
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
-
-      // Remove event listeners
-      m.off("mousemove", onMove);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
       m.off("click", onClick);
       m.off("load", onLoad);
-
-      // Remove controls explicitly
-      controlsRef.current.forEach((control) => {
-        try {
-          m.removeControl(control);
-        } catch (e) {
-          // Control may already be removed
-        }
-      });
-      controlsRef.current = [];
-
-      // Clean up marker and its DOM element
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
-      if (markerElementRef.current) {
-        markerElementRef.current.remove();
-        markerElementRef.current = null;
-      }
-
-      // Remove the map
+      if (markerRef.current) markerRef.current.remove();
+      catchMarkersRef.current.forEach((mk) => mk.remove());
+      controlsRef.current.forEach((control) => m.removeControl(control));
       m.remove();
       mapRef.current = null;
       initialized.current = false;
     };
-  }, [isActive]);
+  }, [isActive, catches]); // Run only once basically (plus auth check)
 
-  function handleSearchSelect(location: {
-    name: string;
-    latitude: number;
-    longitude: number;
-  }) {
-    setWaterName(location.name);
-    setSelectedCoords({ lat: location.latitude, lng: location.longitude });
-    setInputMode("manual");
+  // --- HANDLERS ---
+  const handleSearchSelect = useCallback(
+    (location: {
+      name: string;
+      latitude: number;
+      longitude: number;
+      city?: string;
+      state?: string;
+    }) => {
+      setWaterName(location.name);
+      // Metadata from search result
+      setLocationDetails({ city: location.city, state: location.state });
+      setSelectedCoords({ lat: location.latitude, lng: location.longitude });
+      setInputMode("manual");
 
-    if (mapRef.current) {
-      mapRef.current.flyTo({
-        center: [location.longitude, location.latitude],
-        zoom: 10.5,
-        duration: 1500,
-      });
-
-      // Clean up old marker
-      if (markerRef.current) {
-        markerRef.current.remove();
-        markerRef.current = null;
-      }
-      if (markerElementRef.current) {
-        markerElementRef.current.remove();
-        markerElementRef.current = null;
-      }
-
-      // Create new marker with tracked element
-      const markerEl = createOrbMarker();
-      markerElementRef.current = markerEl;
-      markerRef.current = new mapboxgl.Marker({ element: markerEl })
-        .setLngLat([location.longitude, location.latitude])
-        .addTo(mapRef.current);
-    }
-  }
-
-  async function handleGenerate() {
-    if (!user?.primaryEmailAddress?.emailAddress || !selectedCoords) return;
-    setErr(null);
-    setRateLimitInfo(null);
-    setLoading(true);
-
-    try {
-      const response = await generateMemberPlan({
-        email: user.primaryEmailAddress.emailAddress,
-        water: {
-          name: waterName,
-          lat: selectedCoords.lat,
-          lon: selectedCoords.lng,
-        },
-        access_type: accessType,
-      });
-      setDailyUsage((prev) => prev + 1);
-      // Include token in URL so plan persists if phone sleeps/browser suspends
-      // owner=1 flag enables live weather updates (not stored in DB, won't be in shared links)
-      navigate(`/plan?token=${response.token}&owner=1`, {
-        state: { planResponse: response },
-      });
-    } catch (e: any) {
-      if (e instanceof RateLimitError) {
-        setRateLimitInfo({
-          message: e.message,
-          secondsRemaining: e.seconds_remaining,
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [location.longitude, location.latitude],
+          zoom: 12,
+          duration: 1500,
         });
-      } else {
-        setErr(e?.message ?? "Failed to generate plan.");
+        if (markerRef.current) markerRef.current.remove();
+        const markerEl = createOrbMarker();
+        markerElementRef.current = markerEl;
+        markerRef.current = new mapboxgl.Marker({ element: markerEl })
+          .setLngLat([location.longitude, location.latitude])
+          .addTo(mapRef.current);
       }
-      setLoading(false);
-    }
-  }
+    },
+    [],
+  );
 
-  const remaining = MAX_DAILY_PLANS - dailyUsage;
-  const showUsageWarning = dailyUsage >= WARNING_THRESHOLD && remaining > 0;
+  const handleGenerate = useCallback(
+    async (e?: React.MouseEvent) => {
+      e?.preventDefault();
+      e?.stopPropagation();
+      if (!user?.primaryEmailAddress?.emailAddress || !selectedCoords) return;
+      setErr(null);
+      setRateLimitInfo(null);
+      setLoading(true);
+
+      try {
+        const response = await generateMemberPlan({
+          email: user.primaryEmailAddress.emailAddress,
+          water: {
+            name: waterName,
+            lat: selectedCoords.lat,
+            lon: selectedCoords.lng,
+          },
+          access_type: accessType,
+        });
+        const tokenUrl = `/plan?token=${response.token}&owner=1`;
+        sessionStorage.setItem("aiq_last_plan_url", tokenUrl);
+        setLastPlanUrl(tokenUrl);
+        navigate(tokenUrl, { state: { planResponse: response } });
+      } catch (e: any) {
+        if (e instanceof RateLimitError) {
+          setRateLimitInfo({
+            message: e.message,
+            secondsRemaining: e.seconds_remaining,
+          });
+        } else {
+          setErr(e?.message ?? "Failed to generate plan.");
+        }
+        setLoading(false);
+      }
+    },
+    [user, selectedCoords, waterName, accessType, navigate],
+  );
+
+  const toggleFavoriteLake = useCallback(
+    (e?: React.MouseEvent) => {
+      e?.preventDefault();
+      e?.stopPropagation();
+      if (!waterName || !selectedCoords) return;
+
+      if (isCurrentLocationSaved) {
+        setFavorites((prev) => prev.filter((l) => l.name !== waterName));
+        setSuccessMessage("Lake Removed");
+      } else {
+        const zoom = mapRef.current?.getZoom() || 10;
+        const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${selectedCoords.lng},${selectedCoords.lat},${Math.min(zoom, 13)},0/300x200?access_token=${MAPBOX_TOKEN}`;
+        const newLake: FavoriteLake = {
+          id: crypto.randomUUID(),
+          name: waterName,
+          city: locationDetails.city,
+          state: locationDetails.state,
+          lat: selectedCoords.lat,
+          lng: selectedCoords.lng,
+          zoom: zoom,
+          image: imageUrl,
+        };
+        setFavorites((prev) => [...prev, newLake]);
+        setSuccessMessage("Lake Saved");
+      }
+    },
+    [
+      waterName,
+      selectedCoords,
+      locationDetails,
+      isCurrentLocationSaved,
+      setFavorites,
+    ],
+  );
+
+  // --- NAVIGATION HANDLERS ---
+  const navigateFavorites = useCallback(
+    (direction: "prev" | "next") => {
+      if (favorites.length === 0) return;
+
+      let newIndex = 0;
+      const currentIndex = favorites.findIndex(
+        (f) => f.id === viewingFavoriteId,
+      );
+
+      if (currentIndex === -1) {
+        newIndex = 0;
+      } else {
+        if (direction === "next") {
+          newIndex = (currentIndex + 1) % favorites.length;
+        } else {
+          newIndex = (currentIndex - 1 + favorites.length) % favorites.length;
+        }
+      }
+
+      const nextLake = favorites[newIndex];
+      setViewingFavoriteId(nextLake.id);
+
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [nextLake.lng, nextLake.lat],
+          zoom: nextLake.zoom,
+          duration: 2000,
+          essential: true,
+        });
+      }
+
+      setWaterName(nextLake.name);
+      setLocationDetails({ city: nextLake.city, state: nextLake.state });
+      setSelectedCoords({ lat: nextLake.lat, lng: nextLake.lng });
+    },
+    [favorites, viewingFavoriteId],
+  );
+
+  // SMART RE-CENTER: Zooms to Selected Coords (Active Plan/Pin) OR User Location
+  const handleRecenter = useCallback(() => {
+    if (!mapRef.current) return;
+
+    if (selectedCoords) {
+      // Priority 1: Go back to the Active Pin (Scout location or Plan location)
+      mapRef.current.flyTo({
+        center: [selectedCoords.lng, selectedCoords.lat],
+        zoom: 13,
+        duration: 1500,
+        essential: true,
+      });
+    } else if (navigator.geolocation) {
+      // Priority 2: User Geolocation
+      navigator.geolocation.getCurrentPosition((pos) => {
+        mapRef.current?.flyTo({
+          center: [pos.coords.longitude, pos.coords.latitude],
+          zoom: 12,
+          duration: 1500,
+        });
+      });
+    }
+  }, [selectedCoords]);
+
+  const handleLogCatch = useCallback((e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    // Catch logging logic commented out for now
+  }, []);
+
+  const handleOpenScoutModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowModal(true);
+  };
+  const handleOpenCatchModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowCatchModal(true);
+  };
+  const handleCloseScoutModal = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowModal(false);
+  };
+  const handleCloseCatchModal = (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    setShowCatchModal(false);
+  };
+
+  const handleReturnToPlan = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (lastPlanUrl) navigate(lastPlanUrl);
+  };
+
+  const handleRemoveCurrentFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (currentFavorite) {
+      setFavorites((prev) => prev.filter((f) => f.id !== currentFavorite.id));
+      setViewingFavoriteId(null);
+      setSuccessMessage("Favorite Removed");
+    }
+  };
+
+  const handleCloseFavoriteModal = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setViewingFavoriteId(null);
+  };
 
   if (loading)
     return <PlanGenerationLoader lakeName={waterName || "Selected Water"} />;
@@ -469,273 +685,182 @@ export function Members() {
     <div
       style={{ position: "relative", height: "100vh", background: "#0a0a0a" }}
     >
-      {/* --- MAP SURFACE --- */}
       <div style={{ width: "100%", height: "100%" }}>
-        <style>{`.mapboxgl-ctrl-top-right { top: 120px !important; }`}</style>
+        <style>{`.mapboxgl-ctrl-top-right { top: 20px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
 
-      {/* --- GUIDANCE OVERLAY (The Fix) --- */}
-      {/* Positioned absolute top, fades out, transparent to clicks so map pans */}
-      {!showModal && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: "40vh",
-            maxHeight: "350px",
-            background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)",
-            pointerEvents: "none",
-            zIndex: 10,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            paddingTop: "120px", // Push below navbar
-            textAlign: "center",
-            color: "#fff",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "0.8rem",
-              fontWeight: 700,
-              letterSpacing: "0.15em",
-              color: "#4A90E2",
-              textTransform: "uppercase",
-              marginBottom: 10,
-            }}
-          >
-            Members
+      {successMessage && (
+        <div className="success-modal animate-in fade-in zoom-in">
+          <div className="success-icon">
+            <CheckIcon />
           </div>
-          <h1
-            style={{
-              fontSize: "clamp(2rem, 5vw, 3rem)",
-              fontWeight: 800,
-              margin: "0 0 8px 0",
-              textShadow: "0 4px 20px rgba(0,0,0,0.5)",
-            }}
-          >
-            Find Your Water
-          </h1>
-          <p
-            style={{
-              fontSize: "1.1rem",
-              opacity: 0.9,
-              margin: 0,
-              textShadow: "0 2px 10px rgba(0,0,0,0.5)",
-            }}
-          >
-            Search or tap any body of water
-          </p>
+          <span>{successMessage}</span>
         </div>
       )}
 
-      {/* FLOATING ACTION BUTTON */}
-      {!showModal && (
-        <button
-          onClick={() => setShowModal(true)}
-          className="glass-panel"
-          style={{
-            position: "fixed",
-            bottom: 30,
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 40,
-            padding: "14px 28px",
-            borderRadius: 100,
-            color: "#fff",
-            fontWeight: 700,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            fontSize: "1rem",
-            border: "1px solid rgba(74, 144, 226, 0.4)",
-            boxShadow:
-              "0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)",
-            background: "rgba(10, 10, 20, 0.8)",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <RadarIcon size={20} />
-          <span>Scout Water</span>
-        </button>
+      {/* --- FAVORITE LAKE CARD --- */}
+      {currentFavorite && !showModal && !showCatchModal && (
+        <div className="favorite-card-modal animate-in fade-in zoom-in">
+          <div
+            className="fav-modal-image"
+            style={{ backgroundImage: `url(${currentFavorite.image})` }}
+          >
+            <button
+              onClick={handleCloseFavoriteModal}
+              className="fav-close-btn"
+            >
+              ×
+            </button>
+            <div className="fav-modal-overlay" />
+          </div>
+
+          <div className="fav-modal-body">
+            <div style={{ marginBottom: 20, textAlign: "center" }}>
+              <h3 className="fav-lake-name">{currentFavorite.name}</h3>
+              <div className="fav-lake-location">
+                {currentFavorite.city && currentFavorite.state
+                  ? `${currentFavorite.city}, ${currentFavorite.state}`
+                  : `${currentFavorite.lat.toFixed(3)}°N, ${currentFavorite.lng.toFixed(3)}°W`}
+              </div>
+            </div>
+
+            <div className="fav-modal-actions">
+              <button
+                onClick={handleRemoveCurrentFavorite}
+                className="fav-action-btn remove"
+              >
+                <TrashIcon size={18} />
+              </button>
+              <button
+                onClick={handleGenerate}
+                className="fav-action-btn generate"
+              >
+                Generate Plan
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* COMPACT GLASS MODAL */}
+      {/* --- BOTTOM NAVIGATION (Balanced) --- */}
+      {!showModal && !showCatchModal && (
+        <div className="members-navigation-container">
+          <div className="glass-deck">
+            {/* Left Cluster: Search */}
+            <div className="nav-cluster">
+              <button
+                onClick={handleOpenScoutModal}
+                className="nav-btn"
+                aria-label="Scout"
+              >
+                <div className="icon-wrapper">
+                  <RadarIcon size={24} />
+                </div>
+              </button>
+            </div>
+
+            {/* Center Orb Cluster: Navigation & Plan Redirect */}
+            <div className="orb-nav-cluster">
+              <button
+                onClick={() => navigateFavorites("prev")}
+                className="nav-arrow-btn"
+                disabled={favorites.length === 0}
+              >
+                {/* Point Left */}
+                <ChevronDownIcon
+                  style={{ transform: "rotate(90deg)" }}
+                  size={24}
+                />
+              </button>
+
+              <div
+                className="orb-wrapper"
+                onClick={handleReturnToPlan}
+                style={{
+                  opacity: lastPlanUrl ? 1 : 0.5,
+                  cursor: lastPlanUrl ? "pointer" : "default",
+                }}
+              >
+                <div className="orb-glow-ring" />
+                <MapOrb size={30} />
+              </div>
+
+              <button
+                onClick={() => navigateFavorites("next")}
+                className="nav-arrow-btn"
+                disabled={favorites.length === 0}
+              >
+                {/* Point Right */}
+                <ChevronDownIcon
+                  style={{ transform: "rotate(-90deg)" }}
+                  size={24}
+                />
+              </button>
+            </div>
+
+            {/* Right Cluster: Recenter (Balanced) */}
+            <div className="nav-cluster">
+              <button
+                onClick={handleRecenter}
+                className="nav-btn"
+                aria-label="Recenter"
+              >
+                <div className="icon-wrapper">
+                  <CrosshairIcon size={24} />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL 1: SCOUT / GENERATE --- */}
       {showModal && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 2000,
-            background: "rgba(0,0,0,0.3)",
-            backdropFilter: "blur(4px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-          }}
-          onClick={() => setShowModal(false)}
-        >
+        <div className="modal-overlay" onClick={handleCloseScoutModal}>
           <div
-            className="glass-panel"
-            style={{
-              borderRadius: 24,
-              width: "100%",
-              maxWidth: 420,
-              display: "flex",
-              flexDirection: "column",
-              overflow: "hidden",
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: "rgba(10, 10, 15, 0.95)",
-              boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
-            }}
+            className="glass-panel modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div
-              style={{
-                padding: "18px 24px",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
+            <div className="modal-header">
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <FishIcon size={20} />
+                <RadarIcon size={20} />
                 <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>
-                  Scout Report
+                  Scout Water
                 </span>
               </div>
               <button
-                onClick={() => setShowModal(false)}
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "none",
-                  borderRadius: 8,
-                  width: 32,
-                  height: 32,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: "rgba(255,255,255,0.6)",
-                  fontSize: "1.2rem",
-                }}
+                type="button"
+                onClick={handleCloseScoutModal}
+                className="close-btn"
               >
                 ×
               </button>
             </div>
-
-            {/* Content */}
-            <div
-              style={{
-                padding: "24px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 20,
-              }}
-            >
-              {err && (
-                <div
-                  style={{
-                    padding: 12,
-                    background: "rgba(255,0,0,0.1)",
-                    borderRadius: 10,
-                    fontSize: "0.9rem",
-                    color: "#ff6b6b",
-                  }}
-                >
-                  {err}
-                </div>
-              )}
-
-              {/* Mode Toggle */}
-              <div
-                style={{
-                  display: "flex",
-                  background: "rgba(255,255,255,0.03)",
-                  borderRadius: 10,
-                  padding: 4,
-                  gap: 4,
-                }}
-              >
+            <div className="modal-body">
+              {err && <div className="error-banner">{err}</div>}
+              <div className="segment-control glass-segment">
                 <button
+                  type="button"
                   onClick={() => setInputMode("search")}
-                  style={{
-                    flex: 1,
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    border: "none",
-                    background:
-                      inputMode === "search"
-                        ? "rgba(74, 144, 226, 0.2)"
-                        : "transparent",
-                    color:
-                      inputMode === "search" ? "#fff" : "rgba(255,255,255,0.5)",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    fontSize: "0.85rem",
-                  }}
+                  className={`segment-btn ${inputMode === "search" ? "active" : ""}`}
                 >
                   <SearchIcon /> Search
                 </button>
                 <button
+                  type="button"
                   onClick={() => setInputMode("manual")}
-                  style={{
-                    flex: 1,
-                    padding: "10px 12px",
-                    borderRadius: 8,
-                    border: "none",
-                    background:
-                      inputMode === "manual"
-                        ? "rgba(74, 144, 226, 0.2)"
-                        : "transparent",
-                    color:
-                      inputMode === "manual" ? "#fff" : "rgba(255,255,255,0.5)",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    fontSize: "0.85rem",
-                  }}
+                  className={`segment-btn ${inputMode === "manual" ? "active" : ""}`}
                 >
                   <PinIcon /> Manual
                 </button>
               </div>
-
-              {/* Location Input */}
               <div>
                 {inputMode === "search" ? (
                   <>
                     <label className="modal-label">Find Water</label>
                     <div style={{ position: "relative" }}>
-                      <style>{`
-                        .location-search-dropdown {
-                          position: absolute !important;
-                          top: 100% !important;
-                          left: 0 !important;
-                          right: 0 !important;
-                          z-index: 9999 !important;
-                          max-height: 200px !important;
-                          overflow-y: auto !important;
-                          background: rgba(20, 20, 30, 0.98) !important;
-                          border: 1px solid rgba(255,255,255,0.1) !important;
-                          border-radius: 10px !important;
-                          margin-top: 4px !important;
-                        }
-                      `}</style>
+                      <style>{`.location-search-dropdown { position: absolute !important; top: 100% !important; z-index: 9999 !important; background: rgba(20, 20, 30, 0.98) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 10px !important; }`}</style>
                       <LocationSearch
                         onSelect={handleSearchSelect}
                         placeholder="Search 1,000+ Lakes..."
@@ -748,97 +873,18 @@ export function Members() {
                     <input
                       value={waterName}
                       onChange={(e) => setWaterName(e.target.value)}
-                      className="glass-input modal-input"
-                      placeholder="e.g. Lake Lanier, North Arm"
-                      style={{
-                        width: "100%",
-                        padding: "14px",
-                        borderRadius: "10px",
-                        fontSize: "1rem",
-                        background: "rgba(0,0,0,0.3)",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        color: "#fff",
-                      }}
+                      className="glass-input"
+                      placeholder="e.g. Lake Lanier"
                       autoFocus
-                      spellCheck={false}
-                      autoCorrect="off"
-                      autoComplete="off"
                     />
-                    <div
-                      style={{
-                        marginTop: "8px",
-                        fontSize: "0.8rem",
-                        color: "rgba(255,255,255,0.4)",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Tip: Rename this to match your specific section (e.g.
-                      "North Creek Arm") for better precision.
-                    </div>
                   </>
                 )}
               </div>
-
-              {/* Platform */}
-              <div>
-                <label className="modal-label">Platform</label>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => setAccessType("boat")}
-                    className={`glass-toggle modal-btn ${
-                      accessType === "boat" ? "active" : ""
-                    }`}
-                  >
-                    <BoatIcon active={accessType === "boat"} />{" "}
-                    <span>Boat</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAccessType("bank")}
-                    className={`glass-toggle modal-btn ${
-                      accessType === "bank" ? "active" : ""
-                    }`}
-                  >
-                    <BankIcon active={accessType === "bank"} />{" "}
-                    <span>Bank</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Coordinates */}
               {selectedCoords && (
-                <div
-                  style={{
-                    padding: "14px",
-                    background: "rgba(255,255,255,0.03)",
-                    borderRadius: 12,
-                    border: "1px solid rgba(255,255,255,0.05)",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
+                <div className="coords-display">
                   <div>
-                    <div
-                      style={{
-                        fontSize: "0.7rem",
-                        textTransform: "uppercase",
-                        opacity: 0.5,
-                        fontWeight: 700,
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      Confirmed Drop Point
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "monospace",
-                        color: "#4A90E2",
-                        fontSize: "0.9rem",
-                        marginTop: 4,
-                      }}
-                    >
+                    <div className="coords-label">Confirmed Drop Point</div>
+                    <div className="coords-value">
                       {selectedCoords.lat.toFixed(5)},{" "}
                       {selectedCoords.lng.toFixed(5)}
                     </div>
@@ -846,60 +892,50 @@ export function Members() {
                   <div style={{ color: "#4ecdc4", fontSize: "1.4rem" }}>✓</div>
                 </div>
               )}
-
-              <div style={{ marginTop: "auto" }}>
-                {/* 1. COOLDOWN WARNING (API Limit Hit) */}
-                {rateLimitInfo && (
-                  <div
-                    style={{
-                      padding: "12px",
-                      background: "rgba(255,255,255,0.05)",
-                      borderRadius: 10,
-                      marginBottom: 12,
-                      fontSize: "0.85rem",
-                      color: "#ffe66d",
-                      textAlign: "center",
-                    }}
+              <div>
+                <label className="modal-label">Platform</label>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setAccessType("boat")}
+                    className={`glass-toggle modal-btn ${accessType === "boat" ? "active" : ""}`}
                   >
-                    Cooldown: {formatTime(rateLimitInfo.secondsRemaining)}
-                  </div>
-                )}
-
-                {/* 2. LOW FUEL WARNING */}
-                {!rateLimitInfo && showUsageWarning && (
-                  <div
-                    style={{
-                      padding: "12px 16px",
-                      background: "rgba(255, 166, 0, 0.1)",
-                      border: "1px solid rgba(255, 166, 0, 0.3)",
-                      borderRadius: 10,
-                      marginBottom: 16,
-                      fontSize: "0.9rem",
-                      color: "#ffc107",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                    }}
+                    <BoatIcon active={accessType === "boat"} />{" "}
+                    <span>Boat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccessType("bank")}
+                    className={`glass-toggle modal-btn ${accessType === "bank" ? "active" : ""}`}
                   >
-                    <span style={{ fontSize: "1.2rem" }}>⚠️</span>
-                    <span>
-                      <strong>{remaining} plans remaining</strong> today.
-                    </span>
-                  </div>
-                )}
-
+                    <BankIcon active={accessType === "bank"} />{" "}
+                    <span>Bank</span>
+                  </button>
+                </div>
+              </div>
+              <div style={{ marginTop: "auto", display: "flex", gap: 10 }}>
                 <button
+                  type="button"
+                  onClick={toggleFavoriteLake}
+                  disabled={!selectedCoords}
+                  className={`save-fav-btn ${isCurrentLocationSaved ? "remove" : ""}`}
+                >
+                  {isCurrentLocationSaved ? <TrashIcon /> : <SaveIcon />}
+                </button>
+                <button
+                  type="button"
                   onClick={handleGenerate}
                   disabled={!!rateLimitInfo || !waterName || !selectedCoords}
                   className="generate-btn"
                   style={{
                     background: rateLimitInfo
                       ? "rgba(255,255,255,0.1)"
-                      : "#4A90E2",
-                    opacity: !waterName || !selectedCoords ? 0.6 : 1,
+                      : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                   }}
                 >
-                  {rateLimitInfo ? "Wait" : "Generate Plan"}
+                  {rateLimitInfo
+                    ? `Wait (${rateLimitInfo.secondsRemaining}s)`
+                    : "Generate Plan"}
                 </button>
               </div>
             </div>
@@ -907,76 +943,238 @@ export function Members() {
         </div>
       )}
 
+      {/* --- MODAL 2: CATCH LOG --- */}
+      {showCatchModal && (
+        <div className="modal-overlay" onClick={handleCloseCatchModal}>
+          <div
+            className="glass-panel modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <FishIcon size={20} />
+                <span style={{ fontWeight: 700, fontSize: "1.05rem" }}>
+                  Log Catch
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseCatchModal}
+                className="close-btn"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              {/* For now, just the input form. Later this will be the list + add button */}
+              <div>
+                <label className="modal-label">Lure Used</label>
+                <input
+                  className="glass-input"
+                  placeholder="e.g. Jig"
+                  value={catchLure}
+                  onChange={(e) => setCatchLure(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="modal-label">Weight (lbs)</label>
+                <input
+                  className="glass-input"
+                  type="number"
+                  placeholder="0.00"
+                  value={catchWeight}
+                  onChange={(e) => setCatchWeight(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="modal-label">Field Notes</label>
+                <textarea
+                  className="glass-input glass-textarea"
+                  rows={3}
+                  placeholder="Details..."
+                  value={catchNotes}
+                  onChange={(e) => setCatchNotes(e.target.value)}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleLogCatch}
+                className="generate-btn"
+                style={{
+                  marginTop: 10,
+                  background:
+                    "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                }}
+              >
+                Save Catch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* STYLES */}
       <style>{`
-        .modal-label {
-            display: block; 
-            font-size: 0.75rem; 
-            fontWeight: 700; 
-            opacity: 0.6; 
-            margin-bottom: 10px; 
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+        .orb-marker-map { width: 24px; height: 24px; background: radial-gradient(circle at 30% 30%, #4A90E2, #357ABD); border-radius: 50%; box-shadow: 0 0 16px rgba(74,144,226,0.6), inset 0 -2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.8); position: relative; }
+        .orb-marker-map::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(74,144,226,0.5); animation: map-orb-pulse 2s infinite ease-out; }
+        .catch-marker-map { font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); cursor: pointer; }
+        @keyframes map-orb-pulse { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
+
+        .success-modal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(16, 185, 129, 0.15); backdrop-filter: blur(20px); border: 1px solid rgba(16, 185, 129, 0.3); padding: 24px 40px; border-radius: 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; z-index: 3000; color: white; font-weight: 700; box-shadow: 0 20px 50px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1); pointer-events: none; }
+        .success-icon { width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; }
+
+        /* FAVORITE MODAL (High Center - Premium) */
+        .favorite-card-modal {
+          position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%);
+          width: 85%; max-width: 320px;
+          background: rgba(20, 20, 20, 0.9);
+          backdrop-filter: blur(30px);
+          -webkit-backdrop-filter: blur(30px);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 32px;
+          overflow: hidden;
+          z-index: 2000;
+          box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+          display: flex; flex-direction: column;
         }
-        .modal-btn {
-            flex: 1;
-            padding: 14px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 600;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.6);
-            transition: all 0.2s ease;
+        .fav-modal-image {
+          height: 180px; width: 100%; background-size: cover; background-position: center; position: relative;
         }
-        .modal-btn.active {
-            background: rgba(74, 144, 226, 0.15);
-            border-color: rgba(74, 144, 226, 0.5);
-            color: #fff;
+        .fav-modal-overlay {
+          position: absolute; bottom: 0; left: 0; right: 0;
+          height: 100%;
+          background: linear-gradient(to top, rgba(20,20,20,1) 0%, rgba(20,20,20,0) 60%);
         }
-        .generate-btn {
-            width: 100%;
-            padding: 18px;
-            color: #fff;
-            border: none;
-            border-radius: 14px;
-            font-weight: 700;
-            font-size: 1.05rem;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.3);
-            transition: all 0.2s ease;
+        .fav-close-btn {
+          position: absolute; top: 12px; right: 12px; z-index: 10;
+          width: 32px; height: 32px; border-radius: 50%;
+          background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+          color: #fff; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+          cursor: pointer; backdrop-filter: blur(4px); transition: all 0.2s;
         }
-        .generate-btn:active {
-            transform: scale(0.98);
+        .fav-close-btn:active { transform: scale(0.9); background: rgba(0,0,0,0.6); }
+
+        .fav-modal-body {
+          padding: 0 24px 28px;
+          background: rgba(20, 20, 20, 0.9);
+          display: flex; flex-direction: column;
         }
-        .orb-marker-map {
-          width: 24px;
-          height: 24px;
-          background: #4A90E2;
-          border-radius: 50%;
-          box-shadow: 0 0 12px rgba(74,144,226,0.8);
-          border: 2px solid rgba(255,255,255,0.8);
+        .fav-lake-name { margin: 0; font-size: 1.6rem; color: #fff; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; margin-top: -10px; z-index: 2; position: relative; }
+        .fav-lake-location { font-size: 0.9rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-top: 6px; }
+        
+        .fav-modal-actions {
+          display: flex; gap: 12px; margin-top: 24px; justify-content: center;
+        }
+        .fav-action-btn {
+          border: none; border-radius: 50px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;
+        }
+        .fav-action-btn:active { transform: scale(0.96); }
+        
+        .fav-action-btn.remove {
+          background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); 
+          width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+          border: 1px solid rgba(255,255,255,0.05); border-radius: 16px;
+        }
+        .fav-action-btn.remove:hover { color: #ff6b6b; background: rgba(255, 107, 107, 0.1); border-color: rgba(255, 107, 107, 0.2); }
+        
+        /* Updated Generate Button Style */
+        .fav-action-btn.generate {
+          flex: 1; 
+          background: transparent;
+          border: 1px solid rgba(74, 144, 226, 0.6);
+          color: #4A90E2;
+          height: 44px;
+          border-radius: 30px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          font-size: 0.8rem;
+          display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .fav-action-btn.generate:hover {
+          background: rgba(74, 144, 226, 0.1);
+          color: #fff;
+          border-color: #4A90E2;
+          box-shadow: 0 0 16px rgba(74, 144, 226, 0.3);
+        }
+
+        /* NAV STYLES */
+        .members-navigation-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 95%; max-width: 400px; }
+        .glass-deck {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 8px 16px; background: rgba(18, 18, 18, 0.9);
+          backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+          height: 70px; position: relative;
+        }
+        .nav-cluster { display: flex; gap: 12px; }
+        .nav-btn {
+          display: flex; align-items: center; justify-content: center; width: 48px; height: 48px;
+          border: none; background: transparent; cursor: pointer; border-radius: 16px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); color: rgba(255, 255, 255, 0.35);
+        }
+        .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .nav-btn.active { background: rgba(255, 255, 255, 0.03); transform: translateY(-2px); color: #4A90E2; }
+        .nav-btn.active svg { filter: drop-shadow(0 0 6px rgba(74, 144, 226, 0.6)); }
+        
+        .orb-nav-cluster {
+          display: flex; align-items: center; gap: 4px;
+          position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+          margin-top: -24px;
+        }
+        .orb-wrapper {
+          width: 76px; height: 76px;
+          display: flex; align-items: center; justify-content: center;
+          background: rgba(18, 18, 18, 0.95); border-radius: 50%;
+          box-shadow: 0 -10px 20px rgba(0,0,0,0.5); cursor: pointer;
           position: relative;
         }
-        .orb-marker-map::after {
-          content: '';
-          position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
-          width: 100%; height: 100%;
-          border-radius: 50%;
-          border: 2px solid rgba(74,144,226,0.5);
-          animation: map-orb-pulse 2s infinite ease-out;
+        .orb-glow-ring {
+           position: absolute; inset: -4px; border-radius: 50%;
+           background: linear-gradient(180deg, rgba(74, 144, 226, 0.6), transparent);
+           opacity: 0.3; z-index: -1; animation: orb-pulse 3s infinite;
         }
-        @keyframes map-orb-pulse {
-          0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
-          100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        
+        .nav-arrow-btn {
+           width: 32px; height: 32px; border-radius: 50%; border: none; background: rgba(0,0,0,0.5);
+           color: rgba(255,255,255,0.7); display: flex; align-items: center; justify-content: center;
+           cursor: pointer; backdrop-filter: blur(4px); transition: all 0.2s;
+           margin-top: 24px; 
         }
+        .nav-arrow-btn:active { transform: scale(0.9); }
+        .nav-arrow-btn:disabled { opacity: 0; pointer-events: none; }
+
+        .modal-overlay { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05); display: flex; flex-direction: column; overflow: hidden; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; color: white; }
+        .close-btn { background: rgba(255,255,255,0.05); border: none; border-radius: 10px; width: 36px; height: 36px; color: rgba(255,255,255,0.6); font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+        .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; color: white; }
+        .modal-label { display: block; font-size: 0.7rem; font-weight: 700; opacity: 0.5; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+        .glass-input { width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 1rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); color: #fff; outline: none; transition: all 0.2s ease; }
+        .glass-input:focus { border-color: rgba(74,144,226,0.5); background: rgba(0,0,0,0.5); box-shadow: 0 0 0 3px rgba(74,144,226,0.1); }
+        .glass-textarea { border-radius: 16px; resize: none; }
+        .glass-segment { display: flex; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 4px; gap: 4px; border: 1px solid rgba(255,255,255,0.05); }
+        .segment-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; background: transparent; color: rgba(255,255,255,0.5); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.85rem; transition: all 0.2s ease; }
+        .segment-btn.active { background: rgba(74, 144, 226, 0.2); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); }
+        .coords-display { padding: 14px 16px; background: rgba(0,0,0,0.3); border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .coords-label { font-size: 0.7rem; text-transform: uppercase; opacity: 0.5; font-weight: 700; letter-spacing: 0.05em; }
+        .coords-value { font-family: 'SF Mono', Monaco, monospace; color: #4A90E2; font-size: 0.9rem; margin-top: 4px; }
+        .modal-btn { flex: 1; padding: 14px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; font-size: 0.95rem; font-weight: 600; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); transition: all 0.2s ease; }
+        .modal-btn.active { background: rgba(74, 144, 226, 0.15); border-color: rgba(74, 144, 226, 0.4); color: #fff; }
+        .generate-btn { flex: 1; padding: 18px; color: #fff; border: none; border-radius: 16px; font-weight: 700; font-size: 1.05rem; cursor: pointer; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.25); transition: all 0.2s ease; }
+        .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .save-fav-btn { width: 60px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: #fff; cursor: pointer; transition: all 0.2s ease; }
+        .save-fav-btn.remove { border-color: rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.1); }
+        .save-fav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .error-banner { padding: 14px 16px; background: rgba(255,107,107,0.1); border: 1px solid rgba(255,107,107,0.2); border-radius: 12px; font-size: 0.9rem; color: #ff6b6b; }
+        
+        .animate-in { animation: animateIn 0.2s ease-out; }
+        .fade-in { animation: fadeIn 0.2s ease-out; }
+        .zoom-in { animation: zoomIn 0.2s ease-out; }
+        @keyframes animateIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: translate(-50%, -50%) scale(0.95); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
       `}</style>
     </div>
   );

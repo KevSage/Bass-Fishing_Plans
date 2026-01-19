@@ -1,209 +1,188 @@
 // src/features/plan/PlanNavigation.tsx
-// Updated: Better Icons (Target for Primary, Compass for Pivot) + Luxury Easing
-
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { MapOrb } from "@/components/MapOrb";
 import {
   CloudIcon,
   ClockIcon,
-  TargetIcon, // NEW: For Pattern 1 (Primary Target)
-  CompassIcon, // NEW: For Pattern 2 (Pivot/Direction)
+  TargetIcon,
+  CompassIcon,
 } from "@/components/UnifiedIcons";
 
+export type PlanTab = "weather" | "pattern1" | "pattern2" | "timeline";
+
 interface PlanNavigationProps {
-  plan: any;
+  activeTab: PlanTab;
+  onTabChange: (tab: PlanTab) => void;
+  onMapClick: () => void;
 }
 
-const HEADER_HEIGHT = 60;
-const SCROLL_OFFSET = 30;
-
-const NAV_ITEMS = [
-  { id: "weather", label: "Weather", Icon: CloudIcon },
-  { id: "pattern-1", label: "Primary", Icon: TargetIcon }, // "Primary" is tighter than "Pattern 1"
-  { id: "pattern-2", label: "Pivot", Icon: CompassIcon }, // "Pivot" is distinct from Primary
-  { id: "day-progression", label: "Timeline", Icon: ClockIcon },
+const LEFT_ITEMS = [
+  { id: "weather" as PlanTab, label: "Overview", Icon: CloudIcon },
+  { id: "pattern1" as PlanTab, label: "Primary", Icon: TargetIcon },
 ];
 
-export function PlanNavigation({ plan }: PlanNavigationProps) {
-  const [activeSection, setActiveSection] = useState<string>("weather");
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const navigate = useNavigate();
+const RIGHT_ITEMS = [
+  { id: "pattern2" as PlanTab, label: "Pivot", Icon: CompassIcon },
+  { id: "timeline" as PlanTab, label: "Timeline", Icon: ClockIcon },
+];
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Scroll Spy
-  useEffect(() => {
-    if (!isMobile) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
-        });
-      },
-      { threshold: 0.3, rootMargin: `-${HEADER_HEIGHT + 50}px 0px -50% 0px` }
-    );
-    NAV_ITEMS.forEach((item) => {
-      const element = document.getElementById(item.id);
-      if (element) observer.observe(element);
-    });
-    return () => observer.disconnect();
-  }, [isMobile]);
-
-  // --- CUSTOM SCROLL ENGINE ---
-  const smoothScrollTo = (targetY: number, duration = 800) => {
-    const startY = window.scrollY;
-    const diff = targetY - startY;
-    let startTime: number | null = null;
-
-    // Easing: easeInOutQuart
-    const easeInOutQuart = (t: number) => {
-      return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
-    };
-
-    const animation = (currentTime: number) => {
-      if (startTime === null) startTime = currentTime;
-      const timeElapsed = currentTime - startTime;
-      const progress = Math.min(timeElapsed / duration, 1);
-      const ease = easeInOutQuart(progress);
-
-      window.scrollTo(0, startY + diff * ease);
-
-      if (timeElapsed < duration) {
-        requestAnimationFrame(animation);
-      }
-    };
-
-    requestAnimationFrame(animation);
-  };
-
-  const handleFlyBack = () => {
-    if (!plan || !plan.conditions) return;
-    const { latitude, longitude, location_name } = plan.conditions;
-    navigate(
-      `/members?lat=${latitude}&lng=${longitude}&lake=${encodeURIComponent(
-        location_name
-      )}`
+export function PlanNavigation({
+  activeTab,
+  onTabChange,
+  onMapClick,
+}: PlanNavigationProps) {
+  const renderNavBtn = (item: any) => {
+    const isActive = activeTab === item.id;
+    return (
+      <button
+        key={item.id}
+        onClick={() => onTabChange(item.id)}
+        className={`nav-btn ${isActive ? "active" : ""}`}
+        aria-label={item.label}
+      >
+        <div className="icon-wrapper">
+          {/* We rely on CSS 'currentColor' inheritance now */}
+          <item.Icon size={26} />
+        </div>
+      </button>
     );
   };
-
-  const handleTap = (id: string) => {
-    if (id === "fly-back") {
-      handleFlyBack();
-      return;
-    }
-    setActiveSection(id);
-    const element = document.getElementById(id);
-
-    if (element) {
-      const elementTop =
-        element.getBoundingClientRect().top + window.pageYOffset;
-      const offsetPosition = elementTop - HEADER_HEIGHT - SCROLL_OFFSET;
-      smoothScrollTo(offsetPosition, 1000);
-    }
-  };
-
-  if (!isMobile) return null;
 
   return (
-    <nav className="plan-navigation-mobile">
-      <div className="glass-pill">
-        {NAV_ITEMS.map((item) => (
+    <nav className="plan-navigation-container">
+      <div className="glass-deck">
+        <div className="nav-cluster">{LEFT_ITEMS.map(renderNavBtn)}</div>
+
+        <div className="orb-container">
           <button
-            key={item.id}
-            onClick={() => handleTap(item.id)}
-            className={activeSection === item.id ? "active nav-btn" : "nav-btn"}
-            aria-label={item.label} // Accessibility for icons
+            onClick={onMapClick}
+            className="orb-btn"
+            aria-label="Return to Map"
           >
-            <div className="icon-wrapper">
-              <item.Icon size={20} />
-            </div>
+            <div className="orb-glow" />
+            <MapOrb size={30} />
           </button>
-        ))}
+        </div>
 
-        <div className="nav-divider" />
-
-        <button
-          onClick={() => handleTap("fly-back")}
-          className="nav-btn map-btn"
-          aria-label="Back to Map"
-        >
-          <MapOrb size={22} />
-        </button>
+        <div className="nav-cluster">{RIGHT_ITEMS.map(renderNavBtn)}</div>
       </div>
 
       <style>{`
-        .plan-navigation-mobile {
+        .plan-navigation-container {
           position: fixed;
-          bottom: 24px;
+          bottom: 30px;
           left: 50%;
           transform: translateX(-50%);
-          z-index: 100;
-          width: auto;
-          pointer-events: none;
+          z-index: 1000;
+          width: 95%;
+          max-width: 400px;
         }
 
-        .glass-pill {
+        .glass-deck {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 6px 10px;
-          background: rgba(20, 20, 20, 0.65);
+          justify-content: space-between;
+          padding: 8px 16px;
+          background: rgba(18, 18, 18, 0.9);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 32px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 28px;
           box-shadow: 
-            0 12px 32px rgba(0, 0, 0, 0.5),
+            0 20px 40px rgba(0, 0, 0, 0.6),
             inset 0 1px 0 rgba(255, 255, 255, 0.1);
-          pointer-events: auto;
+          height: 70px;
+          position: relative;
+        }
+
+        .nav-cluster {
+          display: flex;
+          gap: 12px;
         }
 
         .nav-btn {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 44px;
-          height: 44px;
+          width: 48px;
+          height: 48px;
           border: none;
           background: transparent;
           cursor: pointer;
-          border-radius: 50%;
-          color: rgba(255, 255, 255, 0.5);
-          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-          position: relative;
+          border-radius: 16px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          
+          /* DEFAULT STATE (Inactive) */
+          color: rgba(255, 255, 255, 0.35); 
         }
 
+        /* ACTIVE STATE - Bright Blue Icon */
         .nav-btn.active {
-          color: #fff;
-          background: rgba(255, 255, 255, 0.08);
-          box-shadow: 0 0 12px rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.03); /* Extremely subtle touch target highlight */
+          transform: translateY(-2px);
+          
+          /* This forces the icon to turn blue */
+          color: #4A90E2; 
+        }
+
+        /* Target the SVG inside the active button for the glow */
+        .nav-btn.active svg {
+          filter: drop-shadow(0 0 6px rgba(74, 144, 226, 0.6));
         }
 
         .nav-btn:active {
-          transform: scale(0.92);
+          transform: scale(0.95);
         }
 
-        .nav-divider {
-          width: 1px;
-          height: 24px;
-          background: rgba(255, 255, 255, 0.12);
-          margin: 0 6px;
+        .orb-container {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: 76px;
+          height: 76px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(18, 18, 18, 0.95);
+          border-radius: 50%;
+          box-shadow: 0 -10px 20px rgba(0,0,0,0.5); 
+          margin-top: -24px;
         }
 
-        .map-btn {
-          width: 44px;
+        .orb-btn {
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          border: none;
+          background: #000;
+          cursor: pointer;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.2s ease;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
         }
 
-        @media (min-width: 768px) {
-          .plan-navigation-mobile { display: none; }
+        .orb-btn:active {
+          transform: scale(0.9);
+        }
+
+        .orb-glow {
+          position: absolute;
+          inset: -4px;
+          border-radius: 50%;
+          background: linear-gradient(180deg, rgba(74, 144, 226, 0.6), transparent);
+          opacity: 0.3;
+          z-index: -1;
+          animation: orb-pulse 3s infinite;
+        }
+
+        @keyframes orb-pulse {
+          0% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(1.1); }
+          100% { opacity: 0.3; transform: scale(1); }
         }
       `}</style>
     </nav>

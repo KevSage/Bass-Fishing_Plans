@@ -3,17 +3,16 @@
 
 import React from "react";
 
-// In UnifiedIcons.tsx, change:
 type IconProps = {
   size?: number;
   className?: string;
-  style?: React.CSSProperties; // ADD THIS
+  style?: React.CSSProperties;
 };
 
 const STROKE_WIDTH = 1.5;
 const COLOR = "currentColor";
 
-// Weather Icons - Consistent stroke style
+// Weather Icons
 export function SunIcon({ size = 24, className }: IconProps) {
   return (
     <svg
@@ -64,7 +63,7 @@ export function WindIcon({ size = 24, className, style }: IconProps) {
       className={className}
       strokeWidth={STROKE_WIDTH}
       stroke={COLOR}
-      style={style} // ADD THIS
+      style={style}
     >
       <path
         d="M9.59 4.59A2 2 0 1 1 11 8H2M10.59 19.41A2 2 0 1 0 12 16H2M14.5 8A2.5 2.5 0 1 1 16 12H2"
@@ -156,6 +155,58 @@ export function TargetIcon({ size = 24, className }: IconProps) {
   );
 }
 
+export function MapIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+    >
+      <path
+        d="M1 6v14l6-2 10 4 6-2V6l-6 2-10-4-6 2z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M7 4v16M17 4v16" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function RadarIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+    >
+      <path
+        d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 12m-5 0a5 5 0 1 0 10 0a5 5 0 1 0 -10 0"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M12 12l4.5 -4.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 // Time/Calendar
 export function CalendarIcon({ size = 24, className }: IconProps) {
   return (
@@ -204,7 +255,7 @@ export function WavesIcon({ size = 24, className }: IconProps) {
       stroke={COLOR}
     >
       <path
-        d="M2 12c.6 0 1-.4 1.5-.9.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9M2 18c.6 0 1-.4 1.5-.9.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9"
+        d="M2 12c.6 0 1-.4 1.5-.9.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9M2 18c.6 0 1-.4 1.5-.9.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9s1-.4 1.5-.9c.5-.4 1.2-.9 1.5-.9s1 .5 1.5.9c.5.5.9.9 1.5.9"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -308,6 +359,38 @@ export function ChevronDownIcon({ size = 24, className }: IconProps) {
   );
 }
 
+export function ChevronUpIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+    >
+      <path d="M18 15l-6-6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+    >
+      <path d="M9 18l6-6-6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function DownloadIcon({ size = 24, className }: IconProps) {
   return (
     <svg
@@ -373,7 +456,7 @@ export function PackageIcon({ size = 24, className }: IconProps) {
     </svg>
   );
 }
-// Gear/Equipment
+
 export function CompassIcon({ size = 24, className }: IconProps) {
   return (
     <svg
@@ -385,13 +468,9 @@ export function CompassIcon({ size = 24, className }: IconProps) {
       strokeWidth={STROKE_WIDTH}
       stroke={COLOR}
     >
+      <circle cx="12" cy="12" r="10" />
       <path
-        d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"
+        d="M16.24 7.76l-2.12 6.36-6.36 2.12 2.12-6.36 6.36-2.12z"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -399,7 +478,6 @@ export function CompassIcon({ size = 24, className }: IconProps) {
   );
 }
 
-// Gear/Equipment
 export function BarChartIcon({ size = 24, className }: IconProps) {
   return (
     <svg
@@ -412,12 +490,7 @@ export function BarChartIcon({ size = 24, className }: IconProps) {
       stroke={COLOR}
     >
       <path
-        d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"
+        d="M12 20V10M18 20V4M6 20v-6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -425,33 +498,6 @@ export function BarChartIcon({ size = 24, className }: IconProps) {
   );
 }
 
-// Gear/Equipment
-export function ChevronRightIcon({ size = 24, className }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      strokeWidth={STROKE_WIDTH}
-      stroke={COLOR}
-    >
-      <path
-        d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-// Gear/Equipment
 export function LayersIcon({ size = 24, className }: IconProps) {
   return (
     <svg
@@ -463,13 +509,18 @@ export function LayersIcon({ size = 24, className }: IconProps) {
       strokeWidth={STROKE_WIDTH}
       stroke={COLOR}
     >
-      <path
-        d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+      <polygon
+        points="12 2 2 7 12 12 22 7 12 2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <path
-        d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"
+      <polyline
+        points="2 17 12 22 22 17"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="2 12 12 17 22 12"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -477,14 +528,29 @@ export function LayersIcon({ size = 24, className }: IconProps) {
   );
 }
 
-//Map Orb
-export const MapOrb = ({ size = 24, className = "" }) => (
+// Map Orb (Updated to support color prop)
+type MapOrbProps = {
+  size?: number;
+  className?: string;
+  color?: string; // New Prop
+};
+
+export const MapOrb = ({
+  size = 24,
+  className = "",
+  color = "#4A90E2",
+}: MapOrbProps) => (
   <div
     className={`map-orb-container ${className}`}
     style={{ width: size, height: size }}
   >
-    <div className="orb-core" />
-    <div className="orb-pulse" />
+    {/* Apply dynamic color via inline style to override CSS defaults */}
+    <div
+      className="orb-core"
+      style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+    />
+    <div className="orb-pulse" style={{ borderColor: color }} />
+
     <style>{`
       .map-orb-container {
         position: relative;
@@ -495,16 +561,15 @@ export const MapOrb = ({ size = 24, className = "" }) => (
       .orb-core {
         width: 45%;
         height: 45%;
-        background: #4A90E2;
         border-radius: 50%;
         z-index: 2;
-        box-shadow: 0 0 10px #4A90E2;
+        /* background & shadow handled by inline styles now */
       }
       .orb-pulse {
         position: absolute;
         width: 100%;
         height: 100%;
-        border: 2px solid #4A90E2;
+        border: 2px solid transparent; /* overridden by inline style */
         border-radius: 50%;
         animation: orb-pulsate 2s infinite ease-out;
         opacity: 0;
@@ -516,3 +581,124 @@ export const MapOrb = ({ size = 24, className = "" }) => (
     `}</style>
   </div>
 );
+
+// --- NEWLY ADDED ICONS ---
+
+export function StarIcon({
+  size = 24,
+  className,
+  filled,
+}: IconProps & { filled?: boolean }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={filled ? "#FFD700" : "none"}
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={filled ? "#FFD700" : COLOR}
+    >
+      <polygon
+        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke="#ff6b6b"
+    >
+      <polyline
+        points="3 6 5 6 21 6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function SaveIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+    >
+      <path
+        d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="17 21 17 13 7 13 7 21"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="7 3 7 8 15 8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function CheckIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH * 1.5}
+      stroke="#10B981"
+    >
+      <polyline
+        points="20 6 9 17 4 12"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function CrosshairIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="22" y1="12" x2="18" y2="12" />
+      <line x1="6" y1="12" x2="2" y2="12" />
+      <line x1="12" y1="6" x2="12" y2="2" />
+      <line x1="12" y1="22" x2="12" y2="18" />
+    </svg>
+  );
+}
