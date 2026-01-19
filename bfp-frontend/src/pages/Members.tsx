@@ -504,7 +504,7 @@ export function Members() {
   };
 
   const handleSearchSelect = useCallback(
-    (location: {
+    async (location: {
       name: string;
       latitude: number;
       longitude: number;
@@ -512,7 +512,31 @@ export function Members() {
       state?: string;
     }) => {
       setWaterName(location.name);
-      setLocationDetails({ city: location.city, state: location.state });
+
+      // FIX: Robustly ensure we have city/state, even for local results
+      let city = location.city;
+      let state = location.state;
+
+      // If local result missing context, fetch it now
+      if (!city || !state) {
+        try {
+          const res = await fetch(
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${location.longitude},${location.latitude}.json?access_token=${MAPBOX_TOKEN}`,
+          );
+          const data = await res.json();
+          const ctx = data?.features?.[0]?.context;
+          if (ctx) {
+            city = ctx.find((c: any) => String(c.id).startsWith("place"))?.text;
+            state = ctx
+              .find((c: any) => String(c.id).startsWith("region"))
+              ?.short_code?.replace("US-", "");
+          }
+        } catch (err) {
+          console.error("Geocoding fallback failed", err);
+        }
+      }
+
+      setLocationDetails({ city, state });
       setSelectedCoords({ lat: location.latitude, lng: location.longitude });
       setInputMode("manual");
 
@@ -602,7 +626,7 @@ export function Members() {
         const newLake: FavoriteLake = {
           id: crypto.randomUUID(),
           name: dbMatch?.name || waterName,
-          // Prefer DB city/state, fallback to geocoded
+          // Prefer DB city/state, fallback to geocoded fallback from search
           city: dbMatch?.city || locationDetails.city,
           state: dbMatch?.state || locationDetails.state,
           lat: selectedCoords.lat,
@@ -1076,7 +1100,7 @@ export function Members() {
         /* --- FAVORITE CARD STYLES (NEW) --- */
         .fav-card-container {
             position: absolute;
-            top: 50%; left: 50%;
+            top: 42%; left: 50%; /* LIFTED: Changed from 50% to 42% */
             transform: translate(-50%, -50%) scale(0.9);
             width: 300px; height: 320px;
             border-radius: 20px;
