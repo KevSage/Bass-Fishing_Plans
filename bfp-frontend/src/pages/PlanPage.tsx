@@ -84,7 +84,7 @@ export function PlanPage() {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/plan/view/${tokenValue}`
+        `${import.meta.env.VITE_API_BASE_URL}/plan/view/${tokenValue}`,
       );
       const data = await res.json();
 
@@ -174,7 +174,7 @@ export function PlanPage() {
   }
 
   return (
-    <div className="container" style={{ paddingTop: 44, paddingBottom: 80 }}>
+    <div className="container" style={{ paddingTop: 10, paddingBottom: 80 }}>
       {/* Pass the cost-protection flag down */}
       <PlanScreen response={plan} enableLiveUpdates={enableLiveUpdates} />
 
@@ -336,9 +336,9 @@ export function PlanPage() {
               onClick={() => {
                 window.open(
                   `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-                    getPlanUrl()
+                    getPlanUrl(),
                   )}`,
-                  "_blank"
+                  "_blank",
                 );
               }}
             />
@@ -359,9 +359,9 @@ export function PlanPage() {
               onClick={() => {
                 window.open(
                   `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    `Fishing plan for ${plan.plan.location}`
+                    `Fishing plan for ${plan.plan.location}`,
                   )}&url=${encodeURIComponent(getPlanUrl())}`,
-                  "_blank"
+                  "_blank",
                 );
               }}
             />

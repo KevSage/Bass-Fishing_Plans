@@ -756,6 +756,7 @@ export function Members() {
               >
                 <div className="icon-wrapper">
                   <RadarIcon size={24} />
+                  <span>Scout</span>
                 </div>
               </button>
             </div>
@@ -808,6 +809,7 @@ export function Members() {
               >
                 <div className="icon-wrapper">
                   <CrosshairIcon size={24} />
+                  <span>Recenter</span>
                 </div>
               </button>
             </div>
@@ -1100,7 +1102,7 @@ export function Members() {
         }
 
         /* NAV STYLES */
-        .members-navigation-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 95%; max-width: 400px; }
+        .members-navigation-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 75%; max-width: 400px; }
         .glass-deck {
           display: flex; align-items: center; justify-content: space-between;
           padding: 8px 16px; background: rgba(18, 18, 18, 0.9);
