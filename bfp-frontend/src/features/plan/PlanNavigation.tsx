@@ -42,7 +42,8 @@ export function PlanNavigation({
       >
         <div className="icon-wrapper">
           {/* We rely on CSS 'currentColor' inheritance now */}
-          <item.Icon size={26} />
+          <item.Icon size={22} />
+          <span>{item.label}</span>
         </div>
       </button>
     );
