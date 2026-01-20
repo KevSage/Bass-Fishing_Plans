@@ -19,11 +19,8 @@ import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 import {
   RadarIcon,
   ChevronDownIcon,
-  TrashIcon,
-  SaveIcon,
-  CrosshairIcon,
-  PinIcon,
   SearchIcon,
+  PinIcon,
 } from "@/components/UnifiedIcons";
 
 import { MapOrb } from "@/components/MapOrb";
@@ -48,6 +45,107 @@ import {
 import LAKES_DATA from "../data/lakes.json";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+// --- LOCAL ICONS (NAV BAR) ---
+const BookmarkIcon = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
+const MinusCircleIcon = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="8" y1="12" x2="16" y2="12" />
+  </svg>
+);
+
+const LightningIcon = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+  </svg>
+);
+
+const BoatIcon = ({ active }: { active: boolean }) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={active ? "#4A90E2" : "currentColor"}
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M2 17l1.5-4h17L22 17H2z" />
+    <path d="M6 13l2-3h8l2 3" />
+    <path d="M12 3v10" />
+    <path d="M18 6l-1-3H7L6 6" />
+  </svg>
+);
+const BankIcon = ({ active }: { active: boolean }) => (
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={active ? "#4A90E2" : "currentColor"}
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M19 21v-6" />
+    <path d="M19 15l-3-3" />
+    <path d="M22 15l-3-3" />
+    <circle cx="12" cy="7" r="4" />
+    <path d="M5.5 21a9 9 0 0 1 12.8 0" />
+  </svg>
+);
+const LogIcon = ({ size = 20 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    <line x1="8" y1="7" x2="16" y2="7" />
+    <line x1="8" y1="11" x2="16" y2="11" />
+    <line x1="8" y1="15" x2="12" y2="15" />
+  </svg>
+);
 
 // Type matching your lakes.json structure
 type LakeData = {
@@ -104,7 +202,6 @@ function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
 const createOrbMarker = () => {
   const el = document.createElement("div");
   el.className = "orb-marker-map";
-  // FIXED: Explicit dimensions ensure Mapbox calculates center anchor correctly immediately
   el.style.width = "24px";
   el.style.height = "24px";
   return el;
@@ -132,20 +229,19 @@ function getDistanceMeters(
 
 // Get match radius based on lake size
 function getMatchRadius(acres?: number): number {
-  if (!acres) return 5000; // 5km default
-  if (acres > 30000) return 20000; // 20km - Lake Guntersville, Lanier
-  if (acres > 10000) return 15000; // 15km - Large reservoirs
-  if (acres > 5000) return 10000; // 10km - Medium lakes
-  return 5000; // 5km - Small lakes/ponds
+  if (!acres) return 1000; // 5km default (also used for manual user lakes with undefined acres)
+  if (acres > 30000) return 10000; // 10km - Lake Guntersville, Lanier
+  if (acres > 10000) return 7500; // 7.5km - Large reservoirs
+  if (acres > 5000) return 5000; // 5 - Medium lakes
+  return 1000; // 1km - Small lakes/ponds
 }
 
-// Find nearest lake with dynamic radius based on lake size
+// Find nearest lake with dynamic radius based on lake size (DATABASE)
 function findNearestLake(lat: number, lng: number): LakeData | null {
   let nearest: LakeData | null = null;
   let minDist = Infinity;
 
-  // Optimization: Filter by rough bounding box first (0.2 deg ~ 22km)
-  // to avoid running Haversine on 2000+ lakes unnecessarily
+  // Optimization: Filter by rough bounding box first
   const candidates = (LAKES_DATA as LakeData[]).filter(
     (l) =>
       Math.abs(l.latitude - lat) < 0.2 && Math.abs(l.longitude - lng) < 0.2,
@@ -155,7 +251,6 @@ function findNearestLake(lat: number, lng: number): LakeData | null {
     const dist = getDistanceMeters(lat, lng, lake.latitude, lake.longitude);
     const threshold = getMatchRadius(lake.acres);
 
-    // Only consider if within this lake's threshold
     if (dist <= threshold && dist < minDist) {
       minDist = dist;
       nearest = lake;
@@ -165,62 +260,27 @@ function findNearestLake(lat: number, lng: number): LakeData | null {
   return nearest;
 }
 
-// --- ICONS (Local) ---
-const BoatIcon = ({ active }: { active: boolean }) => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={active ? "#4A90E2" : "currentColor"}
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M2 17l1.5-4h17L22 17H2z" />
-    <path d="M6 13l2-3h8l2 3" />
-    <path d="M12 3v10" />
-    <path d="M18 6l-1-3H7L6 6" />
-  </svg>
-);
-const BankIcon = ({ active }: { active: boolean }) => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={active ? "#4A90E2" : "currentColor"}
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M19 21v-6" />
-    <path d="M19 15l-3-3" />
-    <path d="M22 15l-3-3" />
-    <circle cx="12" cy="7" r="4" />
-    <path d="M5.5 21a9 9 0 0 1 12.8 0" />
-  </svg>
-);
+// NEW: Find nearest FAVORITE lake with dynamic radius (USER SAVED)
+function findNearestFavorite(
+  lat: number,
+  lng: number,
+  favorites: FavoriteLake[],
+): FavoriteLake | null {
+  let nearest: FavoriteLake | null = null;
+  let minDist = Infinity;
 
-// Notebook/Log icon for catch log
-const LogIcon = ({ size = 20 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    <line x1="8" y1="7" x2="16" y2="7" />
-    <line x1="8" y1="11" x2="16" y2="11" />
-    <line x1="8" y1="15" x2="12" y2="15" />
-  </svg>
-);
+  for (const fav of favorites) {
+    const dist = getDistanceMeters(lat, lng, fav.lat, fav.lng);
+    // Reuse the same radius logic. If acres is missing (manual pin), it gets 5km default.
+    const threshold = getMatchRadius(fav.acres);
+
+    if (dist <= threshold && dist < minDist) {
+      minDist = dist;
+      nearest = fav;
+    }
+  }
+  return nearest;
+}
 
 export function Members() {
   const { user } = useUser();
@@ -244,6 +304,7 @@ export function Members() {
     secondsRemaining: number;
   } | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
   // Favorite Navigation State
   const [viewingFavoriteId, setViewingFavoriteId] = useState<string | null>(
@@ -285,11 +346,17 @@ export function Members() {
   const showModalRef = useRef(false);
   const viewingFavoriteIdRef = useRef<string | null>(null);
   const selectedCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  const favoritesRef = useRef(favorites);
 
   // Keep selectedCoordsRef in sync
   useEffect(() => {
     selectedCoordsRef.current = selectedCoords;
   }, [selectedCoords]);
+
+  // Keep favorites ref in sync (for use in map click handler)
+  useEffect(() => {
+    favoritesRef.current = favorites;
+  }, [favorites]);
 
   // --- DERIVED STATE ---
   const isCurrentLocationSaved = useMemo(() => {
@@ -389,14 +456,15 @@ export function Members() {
 
     catchMarkersRef.current = createCatchMarkers(
       map,
-      catchLog.lakeCatches, // 1. Use the filtered list here
+      catchLog.lakeCatches,
       (entry) => catchLog.showDetail(entry),
     );
 
     return () => {
       removeCatchMarkers(catchMarkersRef.current);
     };
-  }, [catchLog.lakeCatches, mapRef.current]); // 2. Update dependency to match
+  }, [catchLog.lakeCatches, mapRef.current]);
+
   // --- MAP INITIALIZATION ---
   useEffect(() => {
     isMountedRef.current = true;
@@ -557,16 +625,33 @@ export function Members() {
           setInputMode("manual");
           setLocationDetails({});
 
-          // 2. CHECK DATABASE FOR NEARBY LAKE (Reverse Lookup)
-          const nearbyLake = findNearestLake(lat, lng);
-          if (nearbyLake) {
-            setWaterName(nearbyLake.name);
+          // NEW LOGIC: Check Favorites First (Proximity Check)
+          const nearbyFavorite = findNearestFavorite(
+            lat,
+            lng,
+            favoritesRef.current,
+          );
+
+          if (nearbyFavorite) {
+            // Found a user-saved lake nearby! Use its name.
+            setWaterName(nearbyFavorite.name);
             setLocationDetails({
-              city: nearbyLake.city,
-              state: nearbyLake.state,
+              city: nearbyFavorite.city,
+              state: nearbyFavorite.state,
             });
           } else {
-            setWaterName(""); // Placeholder until geocode returns
+            // Fallback 1: Check Database
+            const nearbyLake = findNearestLake(lat, lng);
+            if (nearbyLake) {
+              setWaterName(nearbyLake.name);
+              setLocationDetails({
+                city: nearbyLake.city,
+                state: nearbyLake.state,
+              });
+            } else {
+              // Fallback 2: Geocode
+              setWaterName(""); // Placeholder until geocode returns
+            }
           }
 
           // 3. SHOW MARKER
@@ -578,41 +663,46 @@ export function Members() {
             .setLngLat([lng, lat])
             .addTo(mapRef.current);
 
-          // 4. GEOCODE (If no database match, or to get city/state context)
-          try {
-            const response = await fetch(
-              `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
-              { signal: abortControllerRef.current.signal },
-            );
-            if (!isMountedRef.current) return;
-            const data = await response.json();
-            const context = data?.features?.[0]?.context;
+          // 4. GEOCODE (Only needed if we didn't find a Favorite OR a DB match)
+          if (!nearbyFavorite) {
+            try {
+              const response = await fetch(
+                `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
+                { signal: abortControllerRef.current.signal },
+              );
+              if (!isMountedRef.current) return;
+              const data = await response.json();
+              const context = data?.features?.[0]?.context;
 
-            let city, state;
-            if (context) {
-              city =
-                context.find((c: any) => String(c.id).startsWith("place"))
-                  ?.text || "";
-              state =
-                context
-                  .find((c: any) => String(c.id).startsWith("region"))
-                  ?.short_code?.replace("US-", "") || "";
+              let city, state;
+              if (context) {
+                city =
+                  context.find((c: any) => String(c.id).startsWith("place"))
+                    ?.text || "";
+                state =
+                  context
+                    .find((c: any) => String(c.id).startsWith("region"))
+                    ?.short_code?.replace("US-", "") || "";
 
-              setLocationDetails({ city, state });
-            }
-
-            // Only overwrite name if we didn't find a database match
-            if (!nearbyLake) {
-              if (city || state) {
-                setWaterName(
-                  `Water near ${[city, state].filter(Boolean).join(", ")}`,
-                );
-              } else {
-                setWaterName("Dropped Pin Location");
+                setLocationDetails({ city, state });
               }
+
+              // Only overwrite name if we didn't find a database match
+              // (And we already know we didn't find a favorite)
+              const nearbyLake = findNearestLake(lat, lng); // Re-check local variable isn't available
+              if (!nearbyLake) {
+                if (city || state) {
+                  setWaterName(
+                    `Water near ${[city, state].filter(Boolean).join(", ")}`,
+                  );
+                } else {
+                  setWaterName("Dropped Pin Location");
+                }
+              }
+            } catch (e2: any) {
+              if (e2.name !== "AbortError")
+                console.error("Geocode failed:", e2);
             }
-          } catch (e2: any) {
-            if (e2.name !== "AbortError") console.error("Geocode failed:", e2);
           }
         }
       } catch (err) {
@@ -633,7 +723,7 @@ export function Members() {
       mapRef.current = null;
       initialized.current = false;
     };
-  }, [isActive]);
+  }, [isActive]); // Removed `favorites` from dep array to avoid map rebuilds, using ref instead
 
   // --- HANDLERS ---
 
@@ -712,49 +802,56 @@ export function Members() {
     [],
   );
 
-  const handleGenerate = useCallback(
-    async (e?: React.MouseEvent) => {
+  const handleGenerateClick = useCallback(
+    (e?: React.MouseEvent) => {
       e?.preventDefault();
       e?.stopPropagation();
-      const targetName = currentFavorite ? currentFavorite.name : waterName;
-      const targetCoords = currentFavorite
-        ? { lat: currentFavorite.lat, lng: currentFavorite.lng }
-        : selectedCoords;
-
-      if (!user?.primaryEmailAddress?.emailAddress || !targetCoords) return;
-
-      setErr(null);
-      setRateLimitInfo(null);
-      setLoading(true);
-
-      try {
-        const response = await generateMemberPlan({
-          email: user.primaryEmailAddress.emailAddress,
-          water: {
-            name: targetName || "Selected Water",
-            lat: targetCoords.lat,
-            lon: targetCoords.lng,
-          },
-          access_type: accessType,
-        });
-        const tokenUrl = `/plan?token=${response.token}&owner=1`;
-        sessionStorage.setItem("aiq_last_plan_url", tokenUrl);
-        setLastPlanUrl(tokenUrl);
-        navigate(tokenUrl, { state: { planResponse: response } });
-      } catch (e: any) {
-        if (e instanceof RateLimitError) {
-          setRateLimitInfo({
-            message: e.message,
-            secondsRemaining: e.seconds_remaining,
-          });
-        } else {
-          setErr(e?.message ?? "Failed to generate plan.");
-        }
-        setLoading(false);
+      if (activeLake || manualWaterName || waterName) {
+        setShowGenerateConfirm(true);
       }
     },
-    [user, selectedCoords, waterName, accessType, currentFavorite, navigate],
+    [activeLake, manualWaterName, waterName],
   );
+
+  const performGeneration = useCallback(async () => {
+    setShowGenerateConfirm(false); // Close modal
+    const targetName = currentFavorite ? currentFavorite.name : waterName;
+    const targetCoords = currentFavorite
+      ? { lat: currentFavorite.lat, lng: currentFavorite.lng }
+      : selectedCoords;
+
+    if (!user?.primaryEmailAddress?.emailAddress || !targetCoords) return;
+
+    setErr(null);
+    setRateLimitInfo(null);
+    setLoading(true);
+
+    try {
+      const response = await generateMemberPlan({
+        email: user.primaryEmailAddress.emailAddress,
+        water: {
+          name: targetName || "Selected Water",
+          lat: targetCoords.lat,
+          lon: targetCoords.lng,
+        },
+        access_type: accessType,
+      });
+      const tokenUrl = `/plan?token=${response.token}&owner=1`;
+      sessionStorage.setItem("aiq_last_plan_url", tokenUrl);
+      setLastPlanUrl(tokenUrl);
+      navigate(tokenUrl, { state: { planResponse: response } });
+    } catch (e: any) {
+      if (e instanceof RateLimitError) {
+        setRateLimitInfo({
+          message: e.message,
+          secondsRemaining: e.seconds_remaining,
+        });
+      } else {
+        setErr(e?.message ?? "Failed to generate plan.");
+      }
+      setLoading(false);
+    }
+  }, [user, selectedCoords, waterName, accessType, currentFavorite, navigate]);
 
   const toggleFavoriteLake = useCallback(
     (e?: React.MouseEvent) => {
@@ -841,7 +938,6 @@ export function Members() {
   const handleOpenScoutModal = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // If we have a pin, open straight to manual mode to confirm it
     if (selectedCoords) {
       setInputMode("manual");
     } else {
@@ -867,14 +963,12 @@ export function Members() {
     (name: string) => {
       if (!selectedCoords) return;
 
-      // If it's an unknown water, update the waterName first
-      if (!lakeLabelData?.isKnown) {
-        setWaterName(name);
-      }
+      const finalName = name || waterName;
+      setWaterName(finalName);
 
       const zoom = mapRef.current?.getZoom() || 10;
       const dbMatch = hydrateLakeData(
-        name,
+        finalName,
         selectedCoords.lat,
         selectedCoords.lng,
       );
@@ -882,7 +976,7 @@ export function Members() {
 
       const newLake: FavoriteLake = {
         id: crypto.randomUUID(),
-        name: dbMatch?.name || name,
+        name: dbMatch?.name || finalName,
         city: dbMatch?.city || locationDetails.city,
         state: dbMatch?.state || locationDetails.state,
         lat: selectedCoords.lat,
@@ -894,7 +988,7 @@ export function Members() {
       };
       setFavorites((prev) => [...prev, newLake]);
     },
-    [selectedCoords, locationDetails, lakeLabelData, setFavorites],
+    [selectedCoords, locationDetails, lakeLabelData, setFavorites, waterName],
   );
 
   const handleLakeLabelRemove = useCallback(() => {
@@ -911,13 +1005,13 @@ export function Members() {
     );
   }, [selectedCoords, waterName, setFavorites]);
 
-  const handleLakeLabelGenerate = useCallback(() => {
-    // For unknown waters, use the manual name if available
-    if (!lakeLabelData?.isKnown && manualWaterName) {
-      setWaterName(manualWaterName);
-    }
-    handleGenerate();
-  }, [lakeLabelData, manualWaterName, handleGenerate]);
+  const onSaveCustomName = useCallback(
+    (name: string) => {
+      setWaterName(name); // Immediate UI update
+      handleLakeLabelSave(name); // Trigger save to favorites
+    },
+    [handleLakeLabelSave],
+  );
 
   if (loading)
     return <PlanGenerationLoader lakeName={waterName || "Selected Water"} />;
@@ -958,6 +1052,7 @@ export function Members() {
           lake={lakeLabelData}
           isVisible={lakeLabelVisible && !!selectedCoords}
           onNameChange={setManualWaterName}
+          onSave={onSaveCustomName}
           lakesData={
             LAKES_DATA as Array<{ name: string; city?: string; state?: string }>
           }
@@ -971,10 +1066,11 @@ export function Members() {
         />
       )}
 
+      {/* ICON-ONLY NAV DECK */}
       {!showModal && !catchLog.isOpen && (
         <div className="members-navigation-container">
           <div className="glass-deck">
-            {/* Left cluster: Scout (icon) + Save/Remove (text) */}
+            {/* Left cluster */}
             <div className="nav-cluster nav-cluster-left">
               <button
                 onClick={handleOpenScoutModal}
@@ -990,11 +1086,15 @@ export function Members() {
                     ? handleLakeLabelRemove
                     : () => handleLakeLabelSave(waterName || manualWaterName)
                 }
-                className={`nav-btn ${isCurrentLocationSaved ? "nav-btn-danger" : ""}`}
+                className={`nav-btn nav-btn-icon ${isCurrentLocationSaved ? "nav-btn-danger" : ""}`}
                 disabled={!activeLake && !manualWaterName}
                 aria-label={isCurrentLocationSaved ? "Remove" : "Save"}
               >
-                <span>{isCurrentLocationSaved ? "Remove" : "Save"}</span>
+                {isCurrentLocationSaved ? (
+                  <MinusCircleIcon size={22} />
+                ) : (
+                  <BookmarkIcon size={22} />
+                )}
               </button>
             </div>
 
@@ -1019,7 +1119,7 @@ export function Members() {
                 }}
               >
                 <div className="orb-glow-ring" />
-                <MapOrb size={30} />
+                <MapOrb size={26} />
               </div>
               <button
                 onClick={() => navigateFavorites("next")}
@@ -1033,15 +1133,15 @@ export function Members() {
               </button>
             </div>
 
-            {/* Right cluster: Generate + Log */}
+            {/* Right cluster */}
             <div className="nav-cluster nav-cluster-right">
               <button
-                onClick={handleLakeLabelGenerate}
-                className="nav-btn"
+                onClick={handleGenerateClick}
+                className="nav-btn nav-btn-icon nav-btn-primary"
                 disabled={!activeLake && !manualWaterName}
                 aria-label="Generate Plan"
               >
-                <span>Generate</span>
+                <LightningIcon size={22} />
               </button>
               <button
                 onClick={catchLog.open}
@@ -1057,6 +1157,58 @@ export function Members() {
         </div>
       )}
 
+      {/* GENERATE CONFIRMATION MODAL */}
+      {showGenerateConfirm && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowGenerateConfirm(false)}
+        >
+          <div
+            className="glass-panel modal-content"
+            style={{
+              maxWidth: 320,
+              alignItems: "center",
+              textAlign: "center",
+              padding: 30,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LightningIcon size={40} />
+            <h3 style={{ marginTop: 15, marginBottom: 5 }}>Generate Plan?</h3>
+            <p style={{ opacity: 0.6, fontSize: "0.9rem", marginBottom: 20 }}>
+              Create a bass fishing plan for <br />
+              <strong style={{ color: "#4A90E2" }}>
+                {currentFavorite?.name || waterName}
+              </strong>
+            </p>
+            <div style={{ display: "flex", gap: 10, width: "100%" }}>
+              <button
+                onClick={() => setShowGenerateConfirm(false)}
+                className="modal-btn"
+                style={{
+                  background: "transparent",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={performGeneration}
+                className="generate-btn"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                  padding: "12px",
+                }}
+              >
+                Generate
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SCOUT MODAL */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseScoutModal}>
           <div
@@ -1165,11 +1317,15 @@ export function Members() {
                   disabled={!selectedCoords}
                   className={`save-fav-btn ${isCurrentLocationSaved ? "remove" : ""}`}
                 >
-                  {isCurrentLocationSaved ? <TrashIcon /> : <SaveIcon />}
+                  {isCurrentLocationSaved ? (
+                    <MinusCircleIcon />
+                  ) : (
+                    <BookmarkIcon />
+                  )}
                 </button>
                 <button
                   type="button"
-                  onClick={handleGenerate}
+                  onClick={handleGenerateClick}
                   disabled={!!rateLimitInfo || !waterName || !selectedCoords}
                   className="generate-btn"
                   style={{
@@ -1215,7 +1371,7 @@ export function Members() {
         /* NAVIGATION PANEL */
         .members-navigation-container { 
           position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
-          z-index: 1000; width: 92%; max-width: 520px; 
+          z-index: 1000; width: 92%; max-width: 480px; 
         }
         .glass-deck { 
           display: flex; align-items: center; justify-content: space-between; 
@@ -1225,42 +1381,39 @@ export function Members() {
           border: 1px solid rgba(255, 255, 255, 0.12); 
           border-radius: 28px; 
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
-          height: 70px; 
+          height: 64px; 
           position: relative; 
         }
         
-        .nav-cluster { display: flex; gap: 4px; align-items: center; }
+        .nav-cluster { display: flex; gap: 8px; align-items: center; }
         .nav-cluster-left { padding-left: 8px; }
         .nav-cluster-right { padding-right: 8px; }
         
         .nav-btn { 
           display: flex; align-items: center; justify-content: center; 
-          padding: 8px 12px; min-width: 44px; height: 40px;
+          width: 44px; height: 44px;
           border: none; background: transparent; 
           cursor: pointer; border-radius: 12px; 
           transition: all 0.2s; 
           color: rgba(255, 255, 255, 0.5); 
-          font-size: 0.8rem; font-weight: 600;
         }
         .nav-btn:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,0.08); }
         .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
         
-        /* Icon-only buttons (Scout, Log) */
+        /* Icon-only buttons */
         .nav-btn-icon {
-          min-width: 40px;
-          width: 40px;
           padding: 8px;
         }
         
         /* Primary action button (Generate) */
         .nav-btn-primary { 
-          background: linear-gradient(135deg, rgba(74, 144, 226, 0.25) 0%, rgba(53, 122, 189, 0.25) 100%);
-          border: 1px solid rgba(74, 144, 226, 0.4);
           color: #4A90E2;
+          background: rgba(74, 144, 226, 0.1);
         }
         .nav-btn-primary:hover:not(:disabled) { 
-          background: linear-gradient(135deg, rgba(74, 144, 226, 0.35) 0%, rgba(53, 122, 189, 0.35) 100%);
+          background: rgba(74, 144, 226, 0.25);
           color: #fff;
+          box-shadow: 0 0 15px rgba(74, 144, 226, 0.3);
         }
         
         /* Danger button (Remove) */
@@ -1273,12 +1426,12 @@ export function Members() {
         }
 
         .orb-nav-cluster { 
-          display: flex; align-items: center; gap: 4px; 
+          display: flex; align-items: center; gap: 2px; 
           position: absolute; left: 50%; top: 50%; 
           transform: translate(-50%, -50%); margin-top: -24px; 
         }
         .orb-wrapper { 
-          width: 72px; height: 72px; 
+          width: 60px; height: 60px; 
           display: flex; align-items: center; justify-content: center; 
           background: rgba(18, 18, 18, 0.95); border-radius: 50%; 
           box-shadow: 0 -10px 20px rgba(0,0,0,0.5); 
@@ -1300,7 +1453,7 @@ export function Members() {
         .nav-arrow-btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); color: #fff; }
 
         /* MODAL STYLES */
-        .modal-overlay { position: absolute; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+        .modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
         .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; color: white; }
         .close-btn { background: rgba(255,255,255,0.05); border: none; border-radius: 10px; width: 36px; height: 36px; color: rgba(255,255,255,0.6); font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }

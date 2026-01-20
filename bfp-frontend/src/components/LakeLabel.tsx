@@ -39,6 +39,22 @@ const EditIcon = ({ size = 14, color = "currentColor" }) => (
   </svg>
 );
 
+// NEW: Checkmark for inline saving
+const CheckIcon = ({ size = 14, color = "currentColor" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="3"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -63,6 +79,8 @@ type LakeLabelProps = {
   lake: LakeLabelData | null;
   isVisible: boolean;
   onNameChange?: (name: string) => void;
+  // NEW: Explicit save handler
+  onSave?: (name: string) => void;
   onAcceptSuggestion?: (name: string, city?: string, state?: string) => void;
   lakesData?: Array<{ name: string; city?: string; state?: string }>;
 };
@@ -75,6 +93,7 @@ export function LakeLabel({
   lake,
   isVisible,
   onNameChange,
+  onSave,
   onAcceptSuggestion,
   lakesData,
 }: LakeLabelProps) {
@@ -105,6 +124,14 @@ export function LakeLabel({
       onNameChange(editableName);
     }
   }, [editableName, lake?.isKnown, onNameChange]);
+
+  // Handle manual save click
+  const handleManualSave = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onSave && editableName.trim().length > 0) {
+      onSave(editableName);
+    }
+  };
 
   // Suggestion Logic
   const suggestedMatch = useMemo((): LakeMatch | null => {
@@ -180,6 +207,16 @@ export function LakeLabel({
                   autoComplete="off"
                   spellCheck={false}
                 />
+                {/* NEW: Inline Save Button */}
+                {editableName.length > 0 && (
+                  <button
+                    onClick={handleManualSave}
+                    className="inline-save-btn"
+                    title="Save this name"
+                  >
+                    <CheckIcon />
+                  </button>
+                )}
                 <div className="edit-icon">
                   <EditIcon />
                 </div>
@@ -329,6 +366,25 @@ export function LakeLabel({
           color: rgba(255, 255, 255, 0.3);
           font-weight: 500;
         }
+
+        /* Inline Save Button */
+        .inline-save-btn {
+          background: #4A90E2; 
+          color: white; 
+          border: none; 
+          border-radius: 50%;
+          width: 24px; 
+          height: 24px; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          cursor: pointer; 
+          transition: transform 0.2s;
+          flex-shrink: 0;
+        }
+        .inline-save-btn:hover { 
+          transform: scale(1.1); 
+        }
         
         .edit-icon {
           color: rgba(255,255,255,0.3);
@@ -435,9 +491,3 @@ export function useLakeLabelVisibility(
 
   return isVisible;
 }
-
-// =============================================================================
-// EXPORTS
-// =============================================================================
-
-export type { LakeLabelProps };
