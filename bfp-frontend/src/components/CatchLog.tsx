@@ -748,7 +748,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
         .catch-modal {
           width: 100%;
           max-width: 380px;
-          max-height: 70vh;
+          max-height: 78vh;
           border-radius: 24px;
           background: rgba(18, 18, 24, 0.95);
           backdrop-filter: blur(24px);
@@ -1131,9 +1131,7 @@ export function CatchDetailView({
         <div className="catch-detail-content-compact">
           {/* Lure + Weight on same row */}
           <div className="catch-detail-title-row">
-            <span className="catch-detail-lure-compact">
-              {formatLureName(entry.lure)}
-            </span>
+            <span className="catch-detail-lure-compact">{formatLureName(entry.lure)}</span>
             {entry.weight && (
               <span className="catch-detail-weight-compact">
                 <strong>{entry.weight}</strong> lbs
@@ -1144,14 +1142,10 @@ export function CatchDetailView({
           {/* Tags: Species, Color, Length */}
           <div className="catch-detail-tags-compact">
             {entry.species && (
-              <span className="catch-tag-compact">
-                {getSpeciesLabel(entry.species)}
-              </span>
+              <span className="catch-tag-compact">{getSpeciesLabel(entry.species)}</span>
             )}
             {entry.color && (
-              <span className="catch-tag-compact">
-                {formatLureName(entry.color)}
-              </span>
+              <span className="catch-tag-compact">{formatLureName(entry.color)}</span>
             )}
             {entry.length && (
               <span className="catch-tag-compact">{entry.length}"</span>
@@ -1161,20 +1155,14 @@ export function CatchDetailView({
           {/* Meta - 2 column layout */}
           <div className="catch-detail-meta-compact">
             <div className="catch-meta-item-compact">
-              <span className="catch-meta-val-compact">
-                {formatCatchDateTime(entry.caughtAt)}
-              </span>
+              <span className="catch-meta-val-compact">{formatCatchDateTime(entry.caughtAt)}</span>
             </div>
             <div className="catch-meta-item-compact">
               <span className="catch-meta-val-compact">{entry.lakeName}</span>
               {(onLocationClick || onFlyToLocation) && (
                 <button
                   className="catch-coords-btn-compact"
-                  onClick={() =>
-                    onLocationClick
-                      ? onLocationClick()
-                      : onFlyToLocation?.(entry.catchLat, entry.catchLng)
-                  }
+                  onClick={() => onLocationClick ? onLocationClick() : onFlyToLocation?.(entry.catchLat, entry.catchLng)}
                   title="View on Map"
                 >
                   <MapPinIcon size={12} />
@@ -1258,7 +1246,7 @@ export function CatchDetailView({
         }
         .catch-detail-image-compact {
           width: 100%;
-          height: 140px;
+          height: 180px;
           background: rgba(0, 0, 0, 0.3);
           overflow: hidden;
         }
