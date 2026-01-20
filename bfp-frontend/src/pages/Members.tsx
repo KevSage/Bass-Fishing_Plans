@@ -1230,8 +1230,8 @@ export function Members() {
         }
         
         .nav-cluster { display: flex; gap: 4px; align-items: center; }
-        .nav-cluster-left { padding-left: 4px; }
-        .nav-cluster-right { padding-right: 4px; }
+        .nav-cluster-left { padding-left: 8px; }
+        .nav-cluster-right { padding-right: 8px; }
         
         .nav-btn { 
           display: flex; align-items: center; justify-content: center; 
