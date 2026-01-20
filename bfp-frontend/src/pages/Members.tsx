@@ -104,6 +104,9 @@ function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
 const createOrbMarker = () => {
   const el = document.createElement("div");
   el.className = "orb-marker-map";
+  // FIXED: Explicit dimensions ensure Mapbox calculates center anchor correctly immediately
+  el.style.width = "24px";
+  el.style.height = "24px";
   return el;
 };
 
@@ -127,28 +130,39 @@ function getDistanceMeters(
   return R * c;
 }
 
-// Find nearest lake within 5km (approx 3 miles)
+// Get match radius based on lake size
+function getMatchRadius(acres?: number): number {
+  if (!acres) return 5000; // 5km default
+  if (acres > 30000) return 20000; // 20km - Lake Guntersville, Lanier
+  if (acres > 10000) return 15000; // 15km - Large reservoirs
+  if (acres > 5000) return 10000; // 10km - Medium lakes
+  return 5000; // 5km - Small lakes/ponds
+}
+
+// Find nearest lake with dynamic radius based on lake size
 function findNearestLake(lat: number, lng: number): LakeData | null {
-  const THRESHOLD = 5000; // meters
   let nearest: LakeData | null = null;
   let minDist = Infinity;
 
-  // Optimization: Filter by rough bounding box first (1 deg ~ 111km)
+  // Optimization: Filter by rough bounding box first (0.2 deg ~ 22km)
   // to avoid running Haversine on 2000+ lakes unnecessarily
   const candidates = (LAKES_DATA as LakeData[]).filter(
     (l) =>
-      Math.abs(l.latitude - lat) < 0.1 && Math.abs(l.longitude - lng) < 0.1,
+      Math.abs(l.latitude - lat) < 0.2 && Math.abs(l.longitude - lng) < 0.2,
   );
 
   for (const lake of candidates) {
     const dist = getDistanceMeters(lat, lng, lake.latitude, lake.longitude);
-    if (dist < minDist) {
+    const threshold = getMatchRadius(lake.acres);
+
+    // Only consider if within this lake's threshold
+    if (dist <= threshold && dist < minDist) {
       minDist = dist;
       nearest = lake;
     }
   }
 
-  return minDist <= THRESHOLD ? nearest : null;
+  return nearest;
 }
 
 // --- ICONS (Local) ---
@@ -375,15 +389,14 @@ export function Members() {
 
     catchMarkersRef.current = createCatchMarkers(
       map,
-      catchLog.entries,
+      catchLog.lakeCatches, // 1. Use the filtered list here
       (entry) => catchLog.showDetail(entry),
     );
 
     return () => {
       removeCatchMarkers(catchMarkersRef.current);
     };
-  }, [catchLog.entries, mapRef.current]);
-
+  }, [catchLog.lakeCatches, mapRef.current]); // 2. Update dependency to match
   // --- MAP INITIALIZATION ---
   useEffect(() => {
     isMountedRef.current = true;
@@ -925,7 +938,19 @@ export function Members() {
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
 
-      <CatchLogModal {...catchLog} />
+      <CatchLogModal
+        {...catchLog}
+        onFlyToLocation={(lat, lng) => {
+          if (mapRef.current) {
+            mapRef.current.flyTo({
+              center: [lng, lat],
+              zoom: 15,
+              duration: 1500,
+              essential: true,
+            });
+          }
+        }}
+      />
 
       {/* Floating Lake Label */}
       {!showModal && !catchLog.isOpen && (
@@ -933,23 +958,31 @@ export function Members() {
           lake={lakeLabelData}
           isVisible={lakeLabelVisible && !!selectedCoords}
           onNameChange={setManualWaterName}
+          lakesData={
+            LAKES_DATA as Array<{ name: string; city?: string; state?: string }>
+          }
+          onAcceptSuggestion={(name, city, state) => {
+            setWaterName(name);
+            setManualWaterName(name);
+            if (city || state) {
+              setLocationDetails({ city, state });
+            }
+          }}
         />
       )}
 
       {!showModal && !catchLog.isOpen && (
         <div className="members-navigation-container">
           <div className="glass-deck">
-            {/* Left cluster: Scout + Save/Remove */}
+            {/* Left cluster: Scout (icon) + Save/Remove (text) */}
             <div className="nav-cluster nav-cluster-left">
               <button
                 onClick={handleOpenScoutModal}
-                className="nav-btn"
-                aria-label="Scout"
+                className="nav-btn nav-btn-icon"
+                aria-label="Scout Water"
+                title="Scout Water"
               >
-                <div className="icon-wrapper">
-                  <RadarIcon size={18} />
-                  <span>Scout</span>
-                </div>
+                <RadarIcon size={22} />
               </button>
               <button
                 onClick={
@@ -961,9 +994,7 @@ export function Members() {
                 disabled={!activeLake && !manualWaterName}
                 aria-label={isCurrentLocationSaved ? "Remove" : "Save"}
               >
-                <div className="icon-wrapper">
-                  <span>{isCurrentLocationSaved ? "Remove" : "Save"}</span>
-                </div>
+                <span>{isCurrentLocationSaved ? "Remove" : "Save"}</span>
               </button>
             </div>
 
@@ -1010,15 +1041,14 @@ export function Members() {
                 disabled={!activeLake && !manualWaterName}
                 aria-label="Generate Plan"
               >
-                <div className="icon-wrapper">
-                  <span>Generate</span>
-                </div>
+                <span>Generate</span>
               </button>
               <button
                 onClick={catchLog.open}
-                className="nav-btn"
+                className="nav-btn nav-btn-icon"
                 disabled={!activeLake}
                 aria-label="Catch Log"
+                title="Catch Log"
               >
                 <LogIcon size={22} />
               </button>
@@ -1087,6 +1117,10 @@ export function Members() {
                       className="glass-input"
                       placeholder="e.g. Lake Lanier"
                       autoFocus
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
                     />
                   </>
                 )}
@@ -1164,9 +1198,8 @@ export function Members() {
           box-shadow: 0 0 16px rgba(74,144,226,0.6), inset 0 -2px 4px rgba(0,0,0,0.3); 
           border: 2px solid rgba(255,255,255,0.8); 
           position: relative; 
-          transform: translate(-50%, -50%);
         }
-        .orb-marker-map::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(74,144,226,0.5); animation: map-orb-pulse 2s infinite ease-out; }
+        .orb-marker-map::after { content: ''; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(74,144,226,0.5); animation: map-orb-pulse 2s infinite ease-out; }
         @keyframes map-orb-pulse { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
 
         /* Custom Recenter Control */
@@ -1196,13 +1229,13 @@ export function Members() {
           position: relative; 
         }
         
-        .nav-cluster { display: flex; gap: 3px; align-items: center; }
-        .nav-cluster-left { padding-left: 3px; }
+        .nav-cluster { display: flex; gap: 4px; align-items: center; }
+        .nav-cluster-left { padding-left: 4px; }
         .nav-cluster-right { padding-right: 4px; }
         
         .nav-btn { 
           display: flex; align-items: center; justify-content: center; 
-          padding: 6px 8px; min-width: 44px; height: 40px;
+          padding: 8px 12px; min-width: 44px; height: 40px;
           border: none; background: transparent; 
           cursor: pointer; border-radius: 12px; 
           transition: all 0.2s; 
@@ -1211,8 +1244,13 @@ export function Members() {
         }
         .nav-btn:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,0.08); }
         .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        .nav-btn .icon-wrapper { display: flex; align-items: center; gap: 6px; }
-        .nav-btn .icon-wrapper span { white-space: nowrap; }
+        
+        /* Icon-only buttons (Scout, Log) */
+        .nav-btn-icon {
+          min-width: 40px;
+          width: 40px;
+          padding: 8px;
+        }
         
         /* Primary action button (Generate) */
         .nav-btn-primary { 

@@ -7,7 +7,7 @@ import { About } from "./pages/About";
 import { Subscribe } from "./pages/Subscribe";
 // import { PreviewEnhanced } from "./pages/Preview";
 import { Members } from "./pages/Members";
-// import { WhatYourPlanIncludes } from "./pages/WhatYourPlanIncludes";
+import { Insights } from "./pages/Insights";
 // import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
 import SignInPage from "./pages/SignIn";
@@ -84,7 +84,7 @@ export default function App() {
         <Route path="/location" element={<LocationClarityPage />} />
         <Route path="/weather" element={<WeatherClarityPage />} />
         <Route path="/presentation" element={<PresentationClarityPage />} />
-        <Route path="/strategy" element={<StrategicClarityPage />} />
+        <Route path="/insights" element={<Insights />} />
 
         <Route
           path="/members"
