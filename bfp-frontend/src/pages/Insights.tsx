@@ -715,7 +715,7 @@ export function Insights() {
 
         /* MODAL */
         .stats-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .stats-modal-content { width: 100%; max-width: 380px; max-height: 78vh; background: rgba(20,20,25,0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; }
+        .stats-modal-content { width: 100%; max-width: 380px; max-height: 86vh; background: rgba(20,20,25,0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; }
       `}</style>
     </div>
   );
