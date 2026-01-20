@@ -9,11 +9,24 @@ import React, {
   useRef,
 } from "react";
 import mapboxgl from "mapbox-gl";
-import { FishIcon } from "@/components/UnifiedIcons"; // IMPORTED PREMIUM ICON
+import {
+  FishIcon,
+  PlusIcon,
+  BackIcon,
+  EditIcon,
+  TrashIcon,
+  LocationIcon,
+  CameraIcon,
+  CloseIcon,
+  TrophyIcon,
+  MapPinIcon,
+} from "@/components/UnifiedIcons";
 
 // =============================================================================
 // TYPES
 // =============================================================================
+
+export type BassSpecies = "largemouth" | "smallmouth" | "spotted";
 
 export type CatchEntry = {
   id: string;
@@ -29,6 +42,8 @@ export type CatchEntry = {
 
   // Catch Details
   lure: string;
+  color?: string;
+  species?: BassSpecies;
   weight?: number;
   length?: number;
   notes?: string;
@@ -152,6 +167,45 @@ const LURE_GROUPS = LURE_OPTIONS.reduce(
   {} as Record<string, typeof LURE_OPTIONS>,
 );
 
+// Color options
+export const COLOR_OPTIONS = [
+  { value: "black", label: "Black" },
+  { value: "black/blue", label: "Black/Blue" },
+  { value: "junebug", label: "Junebug" },
+  { value: "green pumpkin", label: "Green Pumpkin" },
+  { value: "watermelon", label: "Watermelon" },
+  { value: "watermelon red", label: "Watermelon Red" },
+  { value: "green", label: "Green" },
+  { value: "brown", label: "Brown" },
+  { value: "peanut butter & jelly", label: "Peanut Butter & Jelly" },
+  { value: "white", label: "White" },
+  { value: "chartreuse", label: "Chartreuse" },
+  { value: "chartreuse/white", label: "Chartreuse/White" },
+  { value: "sexy shad", label: "Sexy Shad" },
+  { value: "shad", label: "Shad" },
+  { value: "bone", label: "Bone" },
+  { value: "pearl", label: "Pearl" },
+  { value: "bluegill", label: "Bluegill" },
+  { value: "perch", label: "Perch" },
+  { value: "crawfish", label: "Crawfish" },
+  { value: "red", label: "Red" },
+  { value: "orange", label: "Orange" },
+  { value: "firetiger", label: "Firetiger" },
+  { value: "citrus shad", label: "Citrus Shad" },
+  { value: "gold", label: "Gold" },
+  { value: "chrome", label: "Chrome" },
+  { value: "natural", label: "Natural" },
+  { value: "smoke", label: "Smoke" },
+  { value: "clear", label: "Clear" },
+];
+
+// Species options
+export const SPECIES_OPTIONS: { value: BassSpecies; label: string }[] = [
+  { value: "largemouth", label: "Largemouth" },
+  { value: "smallmouth", label: "Smallmouth" },
+  { value: "spotted", label: "Spotted" },
+];
+
 // Density thresholds and colors
 const DENSITY_CONFIG = {
   sparse: { min: 1, max: 3, color: "#F59E0B", pulseSpeed: 3 }, // Yellow, slow
@@ -162,123 +216,6 @@ const DENSITY_CONFIG = {
 const DENSITY_RADIUS_METERS = 100; // Radius for density calculation
 const ENTRIES_PER_PAGE = 10;
 const STORAGE_KEY = "bass_clarity_catches";
-
-// =============================================================================
-// ICONS (Internal helper icons)
-// =============================================================================
-
-const PlusIcon = ({ size = 20 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-);
-
-const BackIcon = ({ size = 20 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="15 18 9 12 15 6" />
-  </svg>
-);
-
-const EditIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-
-const TrashIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
-
-const LocationIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="3" />
-    <path d="M12 2v4" />
-    <path d="M12 18v4" />
-    <path d="M2 12h4" />
-    <path d="M18 12h4" />
-  </svg>
-);
-
-const CameraIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-    <circle cx="12" cy="13" r="4" />
-  </svg>
-);
-
-const CloseIcon = ({ size = 14 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-  >
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
 
 // =============================================================================
 // HELPERS
@@ -378,6 +315,32 @@ function generateId(): string {
   return `catch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// Check if a catch is a Personal Best for its species
+// UPDATED: Strict numeric comparison to prevent string sorting bugs
+function isPersonalBest(entry: CatchEntry, allEntries: CatchEntry[]): boolean {
+  if (!entry.weight) return false;
+
+  const species = entry.species || "largemouth";
+  const otherCatches = allEntries.filter(
+    (c) =>
+      c.id !== entry.id && (c.species || "largemouth") === species && c.weight,
+  );
+
+  if (otherCatches.length === 0) return true; // First catch of this species with weight
+
+  // Ensure weights are treated as numbers
+  const maxWeight = Math.max(...otherCatches.map((c) => Number(c.weight)));
+  return Number(entry.weight) > maxWeight;
+}
+
+// Get species label
+function getSpeciesLabel(species?: BassSpecies): string {
+  if (!species) return "Largemouth";
+  return (
+    SPECIES_OPTIONS.find((s) => s.value === species)?.label || "Largemouth"
+  );
+}
+
 // =============================================================================
 // LOCAL STORAGE
 // =============================================================================
@@ -473,6 +436,7 @@ export function useCatchLog(activeLake: ActiveLake) {
       view: "detail",
       selectedEntry: entry,
       isEditing: false,
+      isOpen: true,
     }));
   }, []);
 
@@ -683,7 +647,11 @@ export function CatchButton({
 // COMPONENT: CatchLogModal
 // =============================================================================
 
-export function CatchLogModal(props: UseCatchLogReturn) {
+type CatchLogModalProps = UseCatchLogReturn & {
+  onFlyToLocation?: (lat: number, lng: number) => void;
+};
+
+export function CatchLogModal(props: CatchLogModalProps) {
   const {
     isOpen,
     view,
@@ -701,9 +669,18 @@ export function CatchLogModal(props: UseCatchLogReturn) {
     updateCatch,
     deleteCatch,
     lakeCatches,
+    entries,
+    onFlyToLocation,
   } = props;
 
   if (!isOpen) return null;
+
+  const handleFlyToLocation = (lat: number, lng: number) => {
+    if (onFlyToLocation) {
+      close();
+      onFlyToLocation(lat, lng);
+    }
+  };
 
   return (
     <>
@@ -712,6 +689,7 @@ export function CatchLogModal(props: UseCatchLogReturn) {
           {view === "list" && (
             <CatchListView
               catches={visibleCatches}
+              allEntries={entries}
               hasMore={hasMore}
               activeLake={activeLake}
               onSelectCatch={showDetail}
@@ -723,6 +701,7 @@ export function CatchLogModal(props: UseCatchLogReturn) {
           {view === "detail" && selectedEntry && (
             <CatchDetailView
               entry={selectedEntry}
+              allEntries={entries}
               onBack={showList}
               onEdit={() => showForm(selectedEntry)}
               onDelete={() => {
@@ -730,6 +709,8 @@ export function CatchLogModal(props: UseCatchLogReturn) {
                   deleteCatch(selectedEntry.id);
                 }
               }}
+              onFlyToLocation={handleFlyToLocation}
+              readOnly={false}
             />
           )}
           {view === "form" && (
@@ -766,8 +747,8 @@ export function CatchLogModal(props: UseCatchLogReturn) {
         }
         .catch-modal {
           width: 100%;
-          max-width: 420px;
-          max-height: 85vh;
+          max-width: 380px;
+          max-height: 70vh;
           border-radius: 24px;
           background: rgba(18, 18, 24, 0.95);
           backdrop-filter: blur(24px);
@@ -788,6 +769,7 @@ export function CatchLogModal(props: UseCatchLogReturn) {
 
 type CatchListViewProps = {
   catches: CatchEntry[];
+  allEntries: CatchEntry[];
   hasMore: boolean;
   activeLake: ActiveLake;
   onSelectCatch: (entry: CatchEntry) => void;
@@ -798,6 +780,7 @@ type CatchListViewProps = {
 
 function CatchListView({
   catches,
+  allEntries,
   hasMore,
   activeLake,
   onSelectCatch,
@@ -837,39 +820,47 @@ function CatchListView({
           </div>
         ) : (
           <div className="catch-list">
-            {catches.map((entry) => (
-              <button
-                key={entry.id}
-                className="catch-list-item"
-                onClick={() => onSelectCatch(entry)}
-              >
-                <div className="catch-item-thumb">
-                  {entry.imageData ? (
-                    <img src={entry.imageData} alt="" />
-                  ) : (
-                    <div className="catch-item-no-img">
-                      <FishIcon size={20} />
+            {catches.map((entry) => {
+              // REMOVED: PB Logic from List Items to reduce visual clutter/bugs
+              return (
+                <button
+                  key={entry.id}
+                  className="catch-list-item"
+                  onClick={() => onSelectCatch(entry)}
+                >
+                  <div className="catch-item-thumb">
+                    {entry.imageData ? (
+                      <img src={entry.imageData} alt="" />
+                    ) : (
+                      <div className="catch-item-no-img">
+                        <FishIcon size={20} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="catch-item-info">
+                    <div className="catch-item-time">
+                      {formatCatchTime(entry.caughtAt)}
+                      {entry.species && entry.species !== "largemouth" && (
+                        <span className="catch-item-species">
+                          {getSpeciesLabel(entry.species)}
+                        </span>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="catch-item-info">
-                  <div className="catch-item-time">
-                    {formatCatchTime(entry.caughtAt)}
+                    <div className="catch-item-details">
+                      {entry.weight && `${entry.weight} lbs`}
+                      {entry.weight && entry.length && " • "}
+                      {entry.length && `${entry.length}"`}
+                      {!entry.weight &&
+                        !entry.length &&
+                        formatLureName(entry.lure)}
+                    </div>
                   </div>
-                  <div className="catch-item-details">
-                    {entry.weight && `${entry.weight} lbs`}
-                    {entry.weight && entry.length && " • "}
-                    {entry.length && `${entry.length}"`}
-                    {!entry.weight &&
-                      !entry.length &&
-                      formatLureName(entry.lure)}
+                  <div className="catch-item-date">
+                    {formatCatchDate(entry.caughtAt)}
                   </div>
-                </div>
-                <div className="catch-item-date">
-                  {formatCatchDate(entry.caughtAt)}
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
 
             {hasMore && (
               <button className="catch-load-more" onClick={onLoadMore}>
@@ -976,6 +967,7 @@ function CatchListView({
           background: rgba(255, 255, 255, 0.06);
           border-color: rgba(255, 255, 255, 0.1);
         }
+        /* PB styles removed from here */
         .catch-item-thumb {
           width: 52px;
           height: 52px;
@@ -983,6 +975,14 @@ function CatchListView({
           overflow: hidden;
           flex-shrink: 0;
           background: rgba(0, 0, 0, 0.3);
+          position: relative;
+        }
+        .catch-item-species {
+          margin-left: 8px;
+          font-size: 0.7rem;
+          color: rgba(255, 255, 255, 0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
         .catch-item-thumb img {
           width: 100%;
@@ -1065,134 +1065,182 @@ function CatchListView({
 }
 
 // =============================================================================
-// SUB-COMPONENT: CatchDetailView
+// UPDATED: CatchDetailView (Now Exported & accepts readOnly) - COMPACT LAYOUT
 // =============================================================================
 
 type CatchDetailViewProps = {
   entry: CatchEntry;
+  allEntries?: CatchEntry[]; // Optional now
   onBack: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  onEdit?: () => void; // Optional
+  onDelete?: () => void; // Optional
+  onFlyToLocation?: (lat: number, lng: number) => void;
+  readOnly?: boolean; // NEW: Hides edit/delete actions
+  onLocationClick?: () => void; // NEW: External navigation handler
 };
 
-function CatchDetailView({
+export function CatchDetailView({
   entry,
+  allEntries = [],
   onBack,
   onEdit,
   onDelete,
+  onFlyToLocation,
+  readOnly = false,
+  onLocationClick,
 }: CatchDetailViewProps) {
+  const isPB = isPersonalBest(entry, allEntries);
+
   return (
     <>
-      {/* Header */}
-      <div className="catch-detail-header">
-        <button onClick={onBack} className="catch-back-btn">
-          <BackIcon />
-          <span>Back</span>
+      {/* PB Banner - compact */}
+      {isPB && (
+        <div className="catch-pb-banner-compact">
+          <TrophyIcon size={14} />
+          <span>Personal Best {getSpeciesLabel(entry.species)}</span>
+        </div>
+      )}
+
+      {/* Header - compact */}
+      <div className="catch-detail-header-compact">
+        <button onClick={onBack} className="catch-back-btn-compact">
+          {readOnly ? <CloseIcon size={16} /> : <BackIcon size={16} />}
+          <span>{readOnly ? "Close" : "Back"}</span>
         </button>
-        <button onClick={onEdit} className="catch-edit-btn">
-          <EditIcon />
-        </button>
+        {!readOnly && onEdit && (
+          <button onClick={onEdit} className="catch-edit-btn-compact">
+            <EditIcon size={16} />
+          </button>
+        )}
       </div>
 
-      {/* Body */}
-      <div className="catch-detail-body">
-        {/* Image */}
-        {entry.imageData ? (
-          <div className="catch-detail-image">
+      {/* Body - compact, no scroll */}
+      <div className="catch-detail-body-compact">
+        {/* Image - reduced height */}
+        <div className="catch-detail-image-compact">
+          {entry.imageData ? (
             <img src={entry.imageData} alt="Catch" />
-          </div>
-        ) : (
-          <div className="catch-detail-no-image">
-            <FishIcon size={48} />
-            <span>No photo</span>
-          </div>
-        )}
+          ) : (
+            <div className="catch-detail-placeholder-compact">
+              <FishIcon size={32} />
+            </div>
+          )}
+        </div>
 
-        {/* Details */}
-        <div className="catch-detail-content">
-          <h3 className="catch-detail-lure">{formatLureName(entry.lure)}</h3>
-
-          <div className="catch-detail-stats">
+        {/* Content - tight layout */}
+        <div className="catch-detail-content-compact">
+          {/* Lure + Weight on same row */}
+          <div className="catch-detail-title-row">
+            <span className="catch-detail-lure-compact">
+              {formatLureName(entry.lure)}
+            </span>
             {entry.weight && (
-              <div className="catch-stat">
-                <span className="catch-stat-value">{entry.weight}</span>
-                <span className="catch-stat-label">lbs</span>
-              </div>
+              <span className="catch-detail-weight-compact">
+                <strong>{entry.weight}</strong> lbs
+              </span>
+            )}
+          </div>
+
+          {/* Tags: Species, Color, Length */}
+          <div className="catch-detail-tags-compact">
+            {entry.species && (
+              <span className="catch-tag-compact">
+                {getSpeciesLabel(entry.species)}
+              </span>
+            )}
+            {entry.color && (
+              <span className="catch-tag-compact">
+                {formatLureName(entry.color)}
+              </span>
             )}
             {entry.length && (
-              <div className="catch-stat">
-                <span className="catch-stat-value">{entry.length}</span>
-                <span className="catch-stat-label">inches</span>
-              </div>
+              <span className="catch-tag-compact">{entry.length}"</span>
             )}
           </div>
 
-          <div className="catch-detail-meta">
-            <div className="catch-meta-row">
-              <span className="catch-meta-label">When</span>
-              <span className="catch-meta-value">
+          {/* Meta - 2 column layout */}
+          <div className="catch-detail-meta-compact">
+            <div className="catch-meta-item-compact">
+              <span className="catch-meta-val-compact">
                 {formatCatchDateTime(entry.caughtAt)}
               </span>
             </div>
-            <div className="catch-meta-row">
-              <span className="catch-meta-label">Location</span>
-              <span className="catch-meta-value catch-meta-coords">
-                {formatCoord(entry.catchLat, entry.catchLng)}
-              </span>
-            </div>
-            <div className="catch-meta-row">
-              <span className="catch-meta-label">Lake</span>
-              <span className="catch-meta-value">{entry.lakeName}</span>
+            <div className="catch-meta-item-compact">
+              <span className="catch-meta-val-compact">{entry.lakeName}</span>
+              {(onLocationClick || onFlyToLocation) && (
+                <button
+                  className="catch-coords-btn-compact"
+                  onClick={() =>
+                    onLocationClick
+                      ? onLocationClick()
+                      : onFlyToLocation?.(entry.catchLat, entry.catchLng)
+                  }
+                  title="View on Map"
+                >
+                  <MapPinIcon size={12} />
+                </button>
+              )}
             </div>
           </div>
 
+          {/* Notes - inline, smaller */}
           {entry.notes && (
-            <div className="catch-detail-notes">
-              <span className="catch-notes-label">Notes</span>
-              <p>{entry.notes}</p>
+            <div className="catch-notes-compact">
+              <span className="catch-notes-text-compact">{entry.notes}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Delete Button */}
-      <div className="catch-detail-footer">
-        <button onClick={onDelete} className="catch-delete-btn">
-          <TrashIcon />
-          <span>Delete Catch</span>
-        </button>
-      </div>
+      {/* Footer - compact */}
+      {!readOnly && onDelete && (
+        <div className="catch-detail-footer-compact">
+          <button onClick={onDelete} className="catch-delete-btn-compact">
+            <TrashIcon size={14} />
+            <span>Delete</span>
+          </button>
+        </div>
+      )}
 
       <style>{`
-        .catch-detail-header {
-          padding: 16px 20px;
+        .catch-pb-banner-compact {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%);
+          border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+          color: #FBBF24;
+          font-weight: 600;
+          font-size: 0.75rem;
+        }
+        .catch-detail-header-compact {
+          padding: 10px 14px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
-        .catch-back-btn {
+        .catch-back-btn-compact {
           display: flex;
           align-items: center;
-          gap: 6px;
-          padding: 8px 12px;
-          border-radius: 10px;
+          gap: 4px;
+          padding: 6px 10px;
+          border-radius: 8px;
           border: none;
           background: transparent;
           color: rgba(255, 255, 255, 0.7);
-          font-size: 0.9rem;
+          font-size: 0.8rem;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
         }
-        .catch-back-btn:hover {
-          background: rgba(255, 255, 255, 0.05);
-          color: #fff;
-        }
-        .catch-edit-btn {
-          width: 40px;
-          height: 40px;
-          border-radius: 10px;
+        .catch-back-btn-compact:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .catch-edit-btn-compact {
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
           border: none;
           background: rgba(255, 255, 255, 0.05);
           color: rgba(255, 255, 255, 0.6);
@@ -1202,129 +1250,134 @@ function CatchDetailView({
           cursor: pointer;
           transition: all 0.2s;
         }
-        .catch-edit-btn:hover {
-          background: rgba(74, 144, 226, 0.15);
-          color: #4A90E2;
+        .catch-edit-btn-compact:hover { background: rgba(74, 144, 226, 0.15); color: #4A90E2; }
+        
+        .catch-detail-body-compact {
+          display: flex;
+          flex-direction: column;
         }
-        .catch-detail-body {
-          flex: 1;
-          overflow-y: auto;
-        }
-        .catch-detail-image {
+        .catch-detail-image-compact {
           width: 100%;
-          aspect-ratio: 4/3;
+          height: 140px;
           background: rgba(0, 0, 0, 0.3);
+          overflow: hidden;
         }
-        .catch-detail-image img {
+        .catch-detail-image-compact img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
-        .catch-detail-no-image {
+        .catch-detail-placeholder-compact {
           width: 100%;
-          aspect-ratio: 16/9;
-          background: rgba(0, 0, 0, 0.2);
+          height: 100%;
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          color: rgba(255, 255, 255, 0.2);
-          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.15);
         }
-        .catch-detail-content {
-          padding: 24px;
+        
+        .catch-detail-content-compact {
+          padding: 12px 16px;
         }
-        .catch-detail-lure {
-          margin: 0;
-          font-size: 1.4rem;
+        .catch-detail-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+        }
+        .catch-detail-lure-compact {
+          font-size: 1.1rem;
           font-weight: 700;
           color: #fff;
         }
-        .catch-detail-stats {
-          display: flex;
-          gap: 24px;
-          margin-top: 16px;
+        .catch-detail-weight-compact {
+          font-size: 0.9rem;
+          color: rgba(255, 255, 255, 0.7);
         }
-        .catch-stat {
-          display: flex;
-          align-items: baseline;
-          gap: 4px;
-        }
-        .catch-stat-value {
-          font-size: 1.8rem;
-          font-weight: 700;
+        .catch-detail-weight-compact strong {
+          font-size: 1.1rem;
           color: #4A90E2;
         }
-        .catch-stat-label {
-          font-size: 0.9rem;
-          color: rgba(255, 255, 255, 0.5);
+        
+        .catch-detail-tags-compact {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 8px;
         }
-        .catch-detail-meta {
-          margin-top: 24px;
-          padding-top: 20px;
+        .catch-tag-compact {
+          padding: 3px 8px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.7rem;
+          font-weight: 500;
+        }
+        
+        .catch-detail-meta-compact {
+          margin-top: 10px;
+          padding-top: 10px;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 6px;
         }
-        .catch-meta-row {
+        .catch-meta-item-compact {
           display: flex;
-          justify-content: space-between;
           align-items: center;
+          justify-content: space-between;
         }
-        .catch-meta-label {
+        .catch-meta-val-compact {
           font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.4);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
+          color: rgba(255, 255, 255, 0.6);
         }
-        .catch-meta-value {
-          font-size: 0.9rem;
-          color: rgba(255, 255, 255, 0.8);
+        .catch-coords-btn-compact {
+          padding: 4px 8px;
+          border-radius: 6px;
+          border: 1px solid rgba(74, 144, 226, 0.3);
+          background: rgba(74, 144, 226, 0.1);
+          color: #4A90E2;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          transition: all 0.2s;
         }
-        .catch-meta-coords {
-          font-family: 'SF Mono', Monaco, Consolas, monospace;
-          font-size: 0.85rem;
+        .catch-coords-btn-compact:hover {
+          background: rgba(74, 144, 226, 0.2);
         }
-        .catch-detail-notes {
-          margin-top: 20px;
-          padding-top: 20px;
+        
+        .catch-notes-compact {
+          margin-top: 8px;
+          padding-top: 8px;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
-        .catch-notes-label {
-          font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.4);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
+        .catch-notes-text-compact {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.5);
+          font-style: italic;
         }
-        .catch-detail-notes p {
-          margin: 8px 0 0;
-          font-size: 0.95rem;
-          color: rgba(255, 255, 255, 0.7);
-          line-height: 1.5;
-        }
-        .catch-detail-footer {
-          padding: 16px 24px 24px;
+        
+        .catch-detail-footer-compact {
+          padding: 10px 16px 14px;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
-        .catch-delete-btn {
+        .catch-delete-btn-compact {
           width: 100%;
-          padding: 14px;
-          border-radius: 12px;
+          padding: 10px;
+          border-radius: 10px;
           border: 1px solid rgba(255, 107, 107, 0.3);
           background: rgba(255, 107, 107, 0.1);
           color: #ff6b6b;
-          font-size: 0.9rem;
+          font-size: 0.8rem;
           font-weight: 600;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 6px;
           transition: all 0.2s;
         }
-        .catch-delete-btn:hover {
+        .catch-delete-btn-compact:hover {
           background: rgba(255, 107, 107, 0.2);
           border-color: rgba(255, 107, 107, 0.5);
         }
@@ -1353,6 +1406,10 @@ function CatchFormView({
   onCancel,
 }: CatchFormViewProps) {
   const [lure, setLure] = useState(entry?.lure || "");
+  const [color, setColor] = useState(entry?.color || "");
+  const [species, setSpecies] = useState<BassSpecies>(
+    entry?.species || "largemouth",
+  );
   const [weight, setWeight] = useState(entry?.weight?.toString() || "");
   const [length, setLength] = useState(entry?.length?.toString() || "");
   const [notes, setNotes] = useState(entry?.notes || "");
@@ -1417,6 +1474,8 @@ function CatchFormView({
       catchLat: catchLat || activeLake.lat,
       catchLng: catchLng || activeLake.lng,
       lure,
+      color: color || undefined,
+      species,
       weight: weight ? parseFloat(weight) : undefined,
       length: length ? parseFloat(length) : undefined,
       notes: notes || undefined,
@@ -1462,6 +1521,40 @@ function CatchFormView({
                   </option>
                 ))}
               </optgroup>
+            ))}
+          </select>
+        </div>
+
+        {/* Species Selector */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Species</label>
+          <div className="catch-species-selector">
+            {SPECIES_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                className={`catch-species-btn ${species === opt.value ? "active" : ""}`}
+                onClick={() => setSpecies(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Color Dropdown */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Color (optional)</label>
+          <select
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="catch-form-select"
+          >
+            <option value="">Select color...</option>
+            {COLOR_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
           </select>
         </div>
@@ -1691,6 +1784,31 @@ function CatchFormView({
           background: #1a1a24;
           color: rgba(255, 255, 255, 0.5);
           font-weight: 600;
+        }
+        .catch-species-selector {
+          display: flex;
+          gap: 8px;
+        }
+        .catch-species-btn {
+          flex: 1;
+          padding: 12px 8px;
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.3);
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .catch-species-btn:hover {
+          border-color: rgba(255, 255, 255, 0.2);
+          color: rgba(255, 255, 255, 0.7);
+        }
+        .catch-species-btn.active {
+          border-color: rgba(74, 144, 226, 0.5);
+          background: rgba(74, 144, 226, 0.15);
+          color: #4A90E2;
         }
         .catch-form-textarea {
           resize: none;
@@ -1960,20 +2078,30 @@ export function createCatchMarker(
   const tier = getDensityTier(entry, allCatches);
   const config = DENSITY_CONFIG[tier];
 
-  const el = document.createElement("div");
-  el.className = `catch-pin catch-pin-${tier}`;
-  el.style.cssText = `
-    width: 14px;
-    height: 14px;
-    background: radial-gradient(circle at 30% 30%, ${config.color}, ${config.color}dd);
-    border-radius: 50%;
-    cursor: pointer;
-    position: relative;
-    box-shadow: 0 0 8px ${config.color}80;
-    border: 2px solid rgba(255, 255, 255, 0.6);
-  `;
+  // 1. CONTAINER: Managed by Mapbox for positioning ONLY.
+  // No transitions allowed here!
+  const container = document.createElement("div");
+  container.className = `catch-pin-container catch-pin-${tier}`;
+  container.style.width = "14px";
+  container.style.height = "14px";
+  container.style.cursor = "pointer";
 
-  // Add pulse animation
+  // 2. INNER VISUAL: Managed by us for scaling/styling.
+  const visual = document.createElement("div");
+  visual.className = "catch-pin-visual";
+  visual.style.width = "100%";
+  visual.style.height = "100%";
+  visual.style.background = `radial-gradient(circle at 30% 30%, ${config.color}, ${config.color}dd)`;
+  visual.style.borderRadius = "50%";
+  visual.style.boxShadow = `0 0 8px ${config.color}80`;
+  visual.style.border = "2px solid rgba(255, 255, 255, 0.6)";
+
+  // Apply transitions to the INNER element only
+  visual.style.transition =
+    "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease";
+  visual.style.transformOrigin = "center center";
+
+  // Pulse animation (child of visual so it scales with it)
   const pulse = document.createElement("div");
   pulse.style.cssText = `
     position: absolute;
@@ -1985,17 +2113,19 @@ export function createCatchMarker(
     border-radius: 50%;
     border: 2px solid ${config.color};
     animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out;
+    pointer-events: none;
   `;
-  el.appendChild(pulse);
 
-  el.addEventListener("click", (e) => {
+  visual.appendChild(pulse);
+  container.appendChild(visual);
+
+  container.addEventListener("click", (e) => {
     e.stopPropagation();
     onClick(entry);
   });
 
-  return el;
+  return container;
 }
-
 // Inject keyframes for pin animations
 export function injectCatchPinStyles(): void {
   const styleId = "catch-pin-styles";
@@ -2028,15 +2158,68 @@ export function createCatchMarkers(
 ): mapboxgl.Marker[] {
   injectCatchPinStyles();
 
-  return catches.map((entry) => {
+  const markers = catches.map((entry) => {
     const el = createCatchMarker(entry, catches, onPinClick);
-    return new mapboxgl.Marker({ element: el })
-      .setLngLat([entry.catchLng, entry.catchLat])
-      .addTo(map);
+
+    // Create marker but don't add to map yet
+    const marker = new mapboxgl.Marker({ element: el }).setLngLat([
+      entry.catchLng,
+      entry.catchLat,
+    ]);
+
+    marker.addTo(map);
+    return marker;
   });
+
+  // Initial visibility update
+  updateCatchMarkersForZoom(map, markers);
+
+  // Setup zoom listener
+  const onZoom = () => updateCatchMarkersForZoom(map, markers);
+  map.on("zoom", onZoom);
+
+  // Store cleanup function
+  (markers as any)._zoomCleanup = () => map.off("zoom", onZoom);
+
+  return markers;
 }
 
+// Update markers based on zoom level
+function updateCatchMarkersForZoom(
+  map: mapboxgl.Map,
+  markers: mapboxgl.Marker[],
+): void {
+  const zoom = map.getZoom();
+  const MIN_ZOOM = 9;
+  const MAX_ZOOM = 14;
+
+  if (typeof zoom !== "number") return;
+
+  const scale = Math.min(
+    1,
+    Math.max(0.4, ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 0.6 + 0.4),
+  );
+  const opacity = zoom < MIN_ZOOM ? 0 : 1;
+
+  markers.forEach((marker) => {
+    const container = marker.getElement();
+    if (container) {
+      // Target the visual child, NOT the container itself
+      const visual = container.firstElementChild as HTMLElement;
+      if (visual) {
+        visual.style.transform = `scale(${scale})`;
+        visual.style.opacity = String(opacity);
+      }
+
+      // Handle pointer events on the container
+      container.style.pointerEvents = opacity < 0.1 ? "none" : "auto";
+    }
+  });
+}
 // Cleanup markers
 export function removeCatchMarkers(markers: mapboxgl.Marker[]): void {
+  if ((markers as any)._zoomCleanup) {
+    (markers as any)._zoomCleanup();
+  }
   markers.forEach((m) => m.remove());
 }

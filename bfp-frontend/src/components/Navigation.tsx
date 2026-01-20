@@ -33,10 +33,16 @@ export function Navigation() {
       { to: "/about", label: "About" },
       { to: "/faq", label: "FAQ" },
     ],
-    []
+    [],
   );
 
-  const memberLinks = useMemo(() => [{ to: "/account", label: "Account" }], []);
+  const memberLinks = useMemo(
+    () => [
+      { to: "/account", label: "Account" },
+      { to: "/insights", label: "Insights" },
+    ],
+    [],
+  );
 
   const isActive = (path: string) => location.pathname === path;
 

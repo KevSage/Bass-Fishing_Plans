@@ -1,9 +1,43 @@
 // src/components/LakeLabel.tsx
-// Floating lake label that appears above the map when viewing a lake
-// Info only - actions are in the nav panel
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import mapboxgl from "mapbox-gl";
+
+// =============================================================================
+// ICONS
+// =============================================================================
+
+const PinIcon = ({ size = 14, color = "currentColor" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const EditIcon = ({ size = 14, color = "currentColor" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+  </svg>
+);
 
 // =============================================================================
 // TYPES
@@ -16,72 +50,22 @@ export type LakeLabelData = {
   lat: number;
   lng: number;
   isSaved: boolean;
-  isKnown: boolean; // True if lake is in database, false if unknown water
+  isKnown: boolean;
+};
+
+type LakeMatch = {
+  name: string;
+  city?: string;
+  state?: string;
 };
 
 type LakeLabelProps = {
   lake: LakeLabelData | null;
   isVisible: boolean;
-  onNameChange?: (name: string) => void; // For unknown waters
+  onNameChange?: (name: string) => void;
+  onAcceptSuggestion?: (name: string, city?: string, state?: string) => void;
+  lakesData?: Array<{ name: string; city?: string; state?: string }>;
 };
-
-// =============================================================================
-// PULSING ORB COMPONENT (Green for saved)
-// =============================================================================
-
-function SavedOrb({ size = 12 }: { size?: number }) {
-  return (
-    <>
-      <div className="saved-orb">
-        <div className="saved-orb-core" />
-        <div className="saved-orb-pulse" />
-      </div>
-
-      <style>{`
-        .saved-orb {
-          position: relative;
-          width: ${size}px;
-          height: ${size}px;
-          flex-shrink: 0;
-        }
-
-        .saved-orb-core {
-          position: absolute;
-          inset: 0;
-          border-radius: 50%;
-          background: radial-gradient(
-            circle at 35% 35%,
-            #34D399 0%,
-            #10B981 50%,
-            #059669 100%
-          );
-          box-shadow:
-            0 0 8px rgba(16, 185, 129, 0.6),
-            0 0 16px rgba(16, 185, 129, 0.3);
-        }
-
-        .saved-orb-pulse {
-          position: absolute;
-          inset: -4px;
-          border-radius: 50%;
-          border: 2px solid rgba(16, 185, 129, 0.5);
-          animation: saved-orb-pulse 2.5s ease-out infinite;
-        }
-
-        @keyframes saved-orb-pulse {
-          0% {
-            transform: scale(0.8);
-            opacity: 0.8;
-          }
-          100% {
-            transform: scale(1.8);
-            opacity: 0;
-          }
-        }
-      `}</style>
-    </>
-  );
-}
 
 // =============================================================================
 // MAIN COMPONENT
@@ -91,22 +75,23 @@ export function LakeLabel({
   lake,
   isVisible,
   onNameChange,
+  onAcceptSuggestion,
+  lakesData,
 }: LakeLabelProps) {
   const [editableName, setEditableName] = useState("");
   const [isFadingIn, setIsFadingIn] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Reset editable name when lake changes
+  // Sync internal state when prop changes
   useEffect(() => {
     if (lake) {
       setEditableName(lake.isKnown ? lake.name : "");
     }
-  }, [lake?.lat, lake?.lng, lake?.isKnown]);
+  }, [lake?.lat, lake?.lng, lake?.isKnown, lake?.name]);
 
-  // Handle fade in animation
+  // Handle visibility animation
   useEffect(() => {
     if (isVisible && lake) {
-      // Small delay before fade in for smoother transition after map settles
       const timer = setTimeout(() => setIsFadingIn(true), 100);
       return () => clearTimeout(timer);
     } else {
@@ -114,17 +99,50 @@ export function LakeLabel({
     }
   }, [isVisible, lake]);
 
-  // Notify parent of name changes for unknown waters
+  // Notify parent of changes (for Unknown Waters)
   useEffect(() => {
     if (!lake?.isKnown && onNameChange) {
       onNameChange(editableName);
     }
   }, [editableName, lake?.isKnown, onNameChange]);
 
+  // Suggestion Logic
+  const suggestedMatch = useMemo((): LakeMatch | null => {
+    if (
+      !lakesData ||
+      !editableName ||
+      editableName.length < 3 ||
+      lake?.isKnown
+    ) {
+      return null;
+    }
+    const query = editableName.toLowerCase().trim();
+    const match = lakesData.find((l) => {
+      const name = l.name.toLowerCase();
+      return (
+        name.includes(query) || query.includes(name.replace("lake ", "").trim())
+      );
+    });
+    if (match && match.name.toLowerCase() !== query) {
+      return match;
+    }
+    return null;
+  }, [editableName, lakesData, lake?.isKnown]);
+
+  const handleAcceptSuggestion = () => {
+    if (suggestedMatch && onAcceptSuggestion) {
+      onAcceptSuggestion(
+        suggestedMatch.name,
+        suggestedMatch.city,
+        suggestedMatch.state,
+      );
+      setEditableName(suggestedMatch.name);
+    }
+  };
+
   if (!lake) return null;
 
-  // Format coordinates
-  const formatCoord = (lat: number, lng: number): string => {
+  const formatCoord = (lat: number, lng: number) => {
     const latDir = lat >= 0 ? "N" : "S";
     const lngDir = lng >= 0 ? "W" : "E";
     return `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lng).toFixed(4)}°${lngDir}`;
@@ -132,149 +150,231 @@ export function LakeLabel({
 
   return (
     <>
-      <div className={`lake-label-container ${isFadingIn ? "visible" : ""}`}>
-        <div className="lake-label-backdrop">
-          {/* Lake Name Row */}
-          <div className="lake-label-name-row">
-            {lake.isSaved && (
-              <div className="lake-label-orb">
-                <SavedOrb size={14} />
+      <div className={`lake-plaque-container ${isFadingIn ? "visible" : ""}`}>
+        <div className="lake-plaque-glass">
+          {/* Status Header */}
+          <div className="lake-plaque-status">
+            <div
+              className={`status-indicator ${lake.isSaved ? "saved" : "scout"}`}
+            >
+              <div className="status-dot" />
+              <span className="status-text">
+                {lake.isSaved ? "SAVED LOCATION" : "SCOUTING"}
+              </span>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lake-plaque-body">
+            {lake.isKnown ? (
+              <h2 className="lake-name">{lake.name}</h2>
+            ) : (
+              <div className="lake-input-wrapper">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  className="lake-name-input"
+                  placeholder="Name this water..."
+                  value={editableName}
+                  onChange={(e) => setEditableName(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <div className="edit-icon">
+                  <EditIcon />
+                </div>
               </div>
             )}
 
-            {lake.isKnown ? (
-              <h2 className="lake-label-name">{lake.name}</h2>
-            ) : (
-              <input
-                ref={inputRef}
-                type="text"
-                className="lake-label-input"
-                placeholder="Name this water..."
-                value={editableName}
-                onChange={(e) => setEditableName(e.target.value)}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            )}
+            <div className="lake-meta">
+              <PinIcon size={12} color="rgba(255,255,255,0.5)" />
+              <span className="lake-location-text">
+                {lake.isKnown && lake.city && lake.state
+                  ? `${lake.city}, ${lake.state}`
+                  : formatCoord(lake.lat, lake.lng)}
+              </span>
+            </div>
           </div>
 
-          {/* Location Row */}
-          <div className="lake-label-location">
-            {lake.isKnown && lake.city && lake.state
-              ? `${lake.city}, ${lake.state}`
-              : formatCoord(lake.lat, lake.lng)}
-          </div>
+          {/* Suggestion Pop-under */}
+          {suggestedMatch && (
+            <button
+              className="lake-suggestion-btn"
+              onClick={handleAcceptSuggestion}
+            >
+              <div className="suggestion-label">Did you mean?</div>
+              <div className="suggestion-value">{suggestedMatch.name}</div>
+            </button>
+          )}
         </div>
       </div>
 
       <style>{`
-        .lake-label-container {
+        .lake-plaque-container {
           position: fixed;
-          top: 12%;
+          top: 100px;
           left: 50%;
-          transform: translateX(-50%);
+          transform: translateX(-50%) translateY(-20px);
           z-index: 800;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          pointer-events: none;
           opacity: 0;
-          transition: opacity 0.4s ease;
+          pointer-events: none;
+          transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .lake-label-container.visible {
+        .lake-plaque-container.visible {
           opacity: 1;
+          transform: translateX(-50%) translateY(0);
           pointer-events: auto;
         }
 
-        /* Subtle backdrop pill */
-        .lake-label-backdrop {
-          padding: 12px 20px;
-          border-radius: 16px;
-          background: rgba(0, 0, 0, 0.45);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+        .lake-plaque-glass {
+          background: rgba(15, 15, 20, 0.95); /* Deep Obsidian */
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+          border-top: 1px solid rgba(255, 255, 255, 0.15); /* Top highlight */
+          box-shadow: 
+            0 20px 40px rgba(0, 0, 0, 0.6),
+            0 4px 12px rgba(0, 0, 0, 0.4);
+          border-radius: 16px;
+          padding: 16px 20px;
+          min-width: 280px;
           display: flex;
           flex-direction: column;
+          gap: 6px;
+        }
+
+        /* Status Header */
+        .lake-plaque-status {
+          display: flex;
           align-items: center;
+          margin-bottom: 2px;
+        }
+        
+        .status-indicator {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 8px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 100px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+
+        .status-indicator.saved .status-dot {
+          background: #10B981;
+          box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+        .status-indicator.saved .status-text { color: #10B981; }
+
+        .status-indicator.scout .status-dot {
+          background: #4A90E2;
+          box-shadow: 0 0 8px rgba(74, 144, 226, 0.6);
+        }
+        .status-indicator.scout .status-text { color: #4A90E2; }
+
+        .status-text {
+          font-size: 0.6rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        /* Body */
+        .lake-plaque-body {
+          display: flex;
+          flex-direction: column;
           gap: 4px;
         }
 
-        /* Name Row */
-        .lake-label-name-row {
+        .lake-name {
+          margin: 0;
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.01em;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .lake-input-wrapper {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
+          border-bottom: 1px dashed rgba(255,255,255,0.2);
+          padding-bottom: 2px;
+          transition: border-color 0.2s;
+        }
+        .lake-input-wrapper:focus-within {
+          border-bottom-style: solid;
+          border-bottom-color: #4A90E2;
         }
 
-        .lake-label-orb {
-          margin-right: 2px;
-        }
-
-        .lake-label-name {
-          margin: 0;
-          font-size: 1.4rem;
-          font-weight: 700;
-          color: #fff;
-          letter-spacing: -0.02em;
-          text-align: center;
-        }
-
-        /* Inline Input for Unknown Waters */
-        .lake-label-input {
+        .lake-name-input {
           background: transparent;
           border: none;
-          border-bottom: 1.5px solid rgba(255, 255, 255, 0.3);
           outline: none;
-          font-size: 1.4rem;
+          font-size: 1.25rem;
           font-weight: 700;
           color: #fff;
-          letter-spacing: -0.02em;
-          text-align: center;
-          padding: 4px 8px;
-          min-width: 180px;
-          max-width: 280px;
-          transition: border-color 0.2s ease;
+          width: 100%;
+          padding: 0;
         }
-
-        .lake-label-input::placeholder {
-          color: rgba(255, 255, 255, 0.45);
+        .lake-name-input::placeholder {
+          color: rgba(255, 255, 255, 0.3);
           font-weight: 500;
         }
-
-        .lake-label-input:focus {
-          border-bottom-color: rgba(255, 255, 255, 0.6);
+        
+        .edit-icon {
+          color: rgba(255,255,255,0.3);
         }
 
-        /* Location Text */
-        .lake-label-location {
+        .lake-meta {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        
+        .lake-location-text {
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.5);
+          font-family: 'SF Mono', Monaco, Consolas, monospace;
+        }
+
+        /* Suggestion Button */
+        .lake-suggestion-btn {
+          margin-top: 8px;
+          background: linear-gradient(90deg, rgba(74, 144, 226, 0.1), transparent);
+          border: none;
+          border-left: 2px solid #4A90E2;
+          padding: 8px 12px;
+          text-align: left;
+          cursor: pointer;
+          border-radius: 0 8px 8px 0;
+          transition: all 0.2s;
+        }
+        
+        .lake-suggestion-btn:hover {
+          background: linear-gradient(90deg, rgba(74, 144, 226, 0.2), transparent);
+          padding-left: 16px;
+        }
+
+        .suggestion-label {
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.4);
+          margin-bottom: 2px;
+        }
+        
+        .suggestion-value {
           font-size: 0.9rem;
-          color: rgba(255, 255, 255, 0.7);
-          text-align: center;
-          font-weight: 500;
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-          .lake-label-backdrop {
-            padding: 10px 16px;
-          }
-
-          .lake-label-name,
-          .lake-label-input {
-            font-size: 1.2rem;
-          }
-
-          .lake-label-location {
-            font-size: 0.8rem;
-          }
-
-          .lake-label-input {
-            min-width: 140px;
-            max-width: 220px;
-          }
+          font-weight: 600;
+          color: #4A90E2;
         }
       `}</style>
     </>
@@ -283,13 +383,12 @@ export function LakeLabel({
 
 // =============================================================================
 // HOOK: useLakeLabelVisibility
-// Tracks whether the active lake center is within the viewport
 // =============================================================================
 
 export function useLakeLabelVisibility(
   map: mapboxgl.Map | null,
   lakeLat: number | null,
-  lakeLng: number | null
+  lakeLng: number | null,
 ): boolean {
   const [isVisible, setIsVisible] = useState(false);
   const checkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
