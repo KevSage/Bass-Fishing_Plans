@@ -102,7 +102,7 @@ const LightningIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
-// NEW: Camera Icon for Live Logging
+// Camera Icon for Live Logging
 const CameraIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}
@@ -235,10 +235,10 @@ function getDistanceMeters(
 
 // Get match radius based on lake size
 function getMatchRadius(acres?: number): number {
-  if (!acres) return 1000; // 5km default
+  if (!acres) return 1000; // 1km default
   if (acres > 30000) return 10000; // 10km - Lake Guntersville, Lanier
   if (acres > 10000) return 7500; // 7.5km - Large reservoirs
-  if (acres > 5000) return 5000; // 5 - Medium lakes
+  if (acres > 5000) return 5000; // 5km - Medium lakes
   return 1000; // 1km - Small lakes/ponds
 }
 
@@ -1189,6 +1189,15 @@ export function Members() {
 
       {!showModal && !catchLog.isOpen && (
         <div className="members-navigation-container">
+          {/* FLOATING CAMERA ACTION BUTTON */}
+          <button
+            onClick={handleLiveCameraClick}
+            className="fab-camera"
+            aria-label="Log Catch Live"
+          >
+            <CameraIcon size={26} />
+          </button>
+
           <div className="glass-deck">
             <div className="nav-cluster nav-cluster-left">
               <button
@@ -1252,15 +1261,7 @@ export function Members() {
             </div>
 
             <div className="nav-cluster nav-cluster-right">
-              {/* LIVE CAMERA BUTTON */}
-              <button
-                onClick={handleLiveCameraClick}
-                className="nav-btn nav-btn-icon"
-                aria-label="Log Catch"
-              >
-                <CameraIcon size={22} />
-              </button>
-
+              {/* REMOVED CAMERA FROM HERE */}
               <button
                 onClick={handleGenerateClick}
                 className="nav-btn nav-btn-icon nav-btn-primary"
@@ -1575,6 +1576,30 @@ export function Members() {
         }
         .nav-arrow-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .nav-arrow-btn:hover:not(:disabled) { background: rgba(255,255,255,0.15); color: #fff; }
+
+        /* Floating Camera Button */
+        .fab-camera {
+          position: absolute;
+          top: -72px; /* Floats above the nav deck */
+          right: 8px; /* Aligns roughly with right cluster */
+          width: 56px;
+          height: 56px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);          
+          border: none;
+          color: white;
+          box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
+          z-index: 1002;
+        }
+        .fab-camera:active {
+          transform: scale(0.95);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
 
         /* MODAL STYLES */
         .modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
