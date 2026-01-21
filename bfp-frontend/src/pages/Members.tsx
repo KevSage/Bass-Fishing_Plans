@@ -311,6 +311,7 @@ export function Members() {
 
   // New: Live Camera Draft State
   const [draftEntry, setDraftEntry] = useState<Partial<any> | null>(null);
+  const clearDraftEntry = useCallback(() => setDraftEntry(null), []);
 
   // Favorite Navigation State
   const [viewingFavoriteId, setViewingFavoriteId] = useState<string | null>(
@@ -450,15 +451,26 @@ export function Members() {
   }, [catchLog.isOpen]);
 
   // If we have a draft entry (from live camera), open the log automatically
+  // If we have a draft entry (from live camera), open directly into the form
   useEffect(() => {
-    if (draftEntry && !catchLog.isOpen) {
-      catchLog.open();
+    if (!draftEntry) {
+      lastDraftOpenedRef.current = null;
+      return;
     }
+
+    // Create a stable fingerprint for this draft
+    const key = `${draftEntry.caughtAt ?? ""}|${draftEntry.lakeName ?? ""}|${draftEntry.catchLat ?? draftEntry.lakeLat ?? ""}|${draftEntry.catchLng ?? draftEntry.lakeLng ?? ""}`;
+
+    if (lastDraftOpenedRef.current === key) return;
+    lastDraftOpenedRef.current = key;
+
+    catchLog.showForm(draftEntry as any);
   }, [draftEntry, catchLog]);
 
   useEffect(() => {
     viewingFavoriteIdRef.current = viewingFavoriteId;
   }, [viewingFavoriteId]);
+  const lastDraftOpenedRef = useRef<string | null>(null);
 
   // --- LAKE LABEL VISIBILITY ---
   const lakeLabelVisible = useLakeLabelVisibility(
@@ -1156,6 +1168,7 @@ export function Members() {
 
       <CatchLogModal
         {...catchLog}
+        onDraftDone={clearDraftEntry}
         // NOTE: Please ensure CatchLogModal updates to accept `initialData={draftEntry}`
         // initialData={draftEntry}
         onFlyToLocation={(lat, lng) => {
