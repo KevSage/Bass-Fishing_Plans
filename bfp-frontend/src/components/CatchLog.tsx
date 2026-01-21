@@ -543,9 +543,10 @@ export function useCatchLog(activeLake: ActiveLake) {
   const showForm = useCallback((entry?: CatchEntry) => {
     setState((s) => ({
       ...s,
+      isOpen: true,
       view: "form",
-      selectedEntry: entry || null,
-      isEditing: !!entry,
+      selectedEntry: (entry as CatchEntry) || null,
+      isEditing: !!(entry as any)?.id,
     }));
   }, []);
 
@@ -799,6 +800,7 @@ export function CatchButton({
 
 type CatchLogModalProps = UseCatchLogReturn & {
   onFlyToLocation?: (lat: number, lng: number) => void;
+  onDraftDone?: () => void;
 };
 
 export function CatchLogModal(props: CatchLogModalProps) {
@@ -820,6 +822,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
     deleteCatch,
     entries,
     onFlyToLocation,
+    onDraftDone,
   } = props;
 
   if (!isOpen) return null;
@@ -872,11 +875,26 @@ export function CatchLogModal(props: CatchLogModalProps) {
                   updateCatch(selectedEntry.id, data);
                 } else {
                   addCatch(data as Omit<CatchEntry, "id" | "createdAt">);
+
+                  // Draft create flow complete: clear draft upstream
+                  if (!selectedEntry?.id) onDraftDone?.();
                 }
               }}
-              onCancel={
-                selectedEntry ? () => showDetail(selectedEntry) : showList
-              }
+              onCancel={() => {
+                // Draft create flow: clear draft upstream, then exit form
+                if (!isEditing && !selectedEntry?.id) {
+                  onDraftDone?.();
+                  showList();
+                  return;
+                }
+
+                // Existing behavior
+                if (selectedEntry) {
+                  showDetail(selectedEntry);
+                } else {
+                  showList();
+                }
+              }}
             />
           )}
         </div>
