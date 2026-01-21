@@ -1,5 +1,5 @@
 // src/components/CatchLog.tsx
-// Comprehensive catch logging system with density-based pins
+// Comprehensive catch logging system with density-based pins and R2 Cloud Storage
 
 import React, {
   useState,
@@ -22,6 +22,24 @@ import {
   MapPinIcon,
 } from "@/components/UnifiedIcons";
 
+// API and EXIF imports
+import { useAuth } from "@clerk/clerk-react";
+import {
+  createCatch,
+  listCatches,
+  deleteCatch as deleteCatchApi,
+  resolveLake,
+  type CatchRecord,
+  type CreateCatchInput,
+  type LakeType,
+} from "@/lib/catches-api";
+import {
+  extractExifData,
+  formatDateForApi,
+  formatTimeForApi,
+} from "@/lib/exif-utils";
+import { getPresignedUrl, uploadFileToR2 } from "@/lib/catches-api";
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -31,7 +49,9 @@ export type BassSpecies = "largemouth" | "smallmouth" | "spotted";
 export type CatchEntry = {
   id: string;
 
-  // Lake Association (for grouping/filtering)
+  // Lake Association
+  lakeId: string | null;
+  lakeType: "known" | "custom" | "unresolved";
   lakeName: string;
   lakeLat: number;
   lakeLng: number;
@@ -40,6 +60,10 @@ export type CatchEntry = {
   catchLat: number;
   catchLng: number;
 
+  // Location metadata
+  city?: string;
+  state?: string;
+
   // Catch Details
   lure: string;
   color?: string;
@@ -47,14 +71,23 @@ export type CatchEntry = {
   weight?: number;
   length?: number;
   notes?: string;
-  imageData?: string; // Base64 - placeholder until backend
+
+  // Photo - now URL instead of base64
+  photoUrl?: string;
+
+  // Legacy support for base64 (migration period)
+  imageData?: string;
 
   // Timestamps
   caughtAt: string; // ISO timestamp
   createdAt: string;
+
+  // Entry source
+  source: "camera" | "library" | "manual";
 };
 
 export type ActiveLake = {
+  id?: string; // Optional ID if known
   name: string;
   lat: number;
   lng: number;
@@ -70,6 +103,62 @@ type CatchLogState = {
   isEditing: boolean;
   visibleCount: number;
 };
+
+// =============================================================================
+// API CONVERTERS
+// =============================================================================
+
+export function apiRecordToEntry(record: CatchRecord): CatchEntry {
+  return {
+    id: record.id,
+    lakeId: record.lake_id,
+    lakeType: record.lake_type,
+    lakeName: record.lake_name || "Unknown Water",
+    lakeLat: record.lat, // Fallback to catch coords if lake coords unavailable
+    lakeLng: record.lng,
+    catchLat: record.lat,
+    catchLng: record.lng,
+    city: record.city || undefined,
+    state: record.state || undefined,
+    lure: record.lure || "",
+    color: record.color || undefined,
+    species: record.species as BassSpecies | undefined,
+    weight: record.weight || undefined,
+    length: record.length || undefined,
+    notes: record.notes || undefined,
+    photoUrl: record.photo_url || undefined,
+    caughtAt: `${record.date}T${record.time || "12:00"}:00`,
+    createdAt: record.created_at,
+    source: record.source,
+  };
+}
+
+function entryToApiInput(
+  entry: Partial<CatchEntry>,
+  activeLake: ActiveLake,
+): CreateCatchInput {
+  const caughtAt = entry.caughtAt ? new Date(entry.caughtAt) : new Date();
+
+  return {
+    date: formatDateForApi(caughtAt),
+    time: formatTimeForApi(caughtAt),
+    species: entry.species || "largemouth",
+    lat: entry.catchLat || activeLake?.lat || 0,
+    lng: entry.catchLng || activeLake?.lng || 0,
+    weight: entry.weight,
+    length: entry.length,
+    lure: entry.lure,
+    color: entry.color,
+    notes: entry.notes,
+    photo_url: entry.photoUrl || entry.imageData, // Fallback to base64 if R2 upload fails
+    lake_id: entry.lakeId || undefined,
+    lake_type: entry.lakeType || "unresolved",
+    lake_name: entry.lakeName || activeLake?.name,
+    city: entry.city,
+    state: entry.state,
+    source: entry.source || "manual",
+  };
+}
 
 // =============================================================================
 // CONSTANTS
@@ -215,7 +304,6 @@ const DENSITY_CONFIG = {
 
 const DENSITY_RADIUS_METERS = 100; // Radius for density calculation
 const ENTRIES_PER_PAGE = 10;
-const STORAGE_KEY = "bass_clarity_catches";
 
 // =============================================================================
 // HELPERS
@@ -310,11 +398,6 @@ function formatLureName(value: string): string {
     .join(" ");
 }
 
-// Generate unique ID
-function generateId(): string {
-  return `catch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-}
-
 // Check if a catch is a Personal Best for its species
 // UPDATED: Strict numeric comparison to prevent string sorting bugs
 function isPersonalBest(entry: CatchEntry, allEntries: CatchEntry[]): boolean {
@@ -342,31 +425,12 @@ function getSpeciesLabel(species?: BassSpecies): string {
 }
 
 // =============================================================================
-// LOCAL STORAGE
-// =============================================================================
-
-function loadCatches(): CatchEntry[] {
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveCatches(catches: CatchEntry[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(catches));
-  } catch (e) {
-    console.error("Failed to save catches:", e);
-  }
-}
-
-// =============================================================================
-// CUSTOM HOOK: useCatchLog
+// CUSTOM HOOK: useCatchLog (API-backed)
 // =============================================================================
 
 export function useCatchLog(activeLake: ActiveLake) {
+  const { getToken } = useAuth();
+
   const [state, setState] = useState<CatchLogState>({
     isOpen: false,
     view: "list",
@@ -376,11 +440,47 @@ export function useCatchLog(activeLake: ActiveLake) {
     visibleCount: ENTRIES_PER_PAGE,
   });
 
-  // Load catches on mount
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch catches from API on mount
   useEffect(() => {
-    const allCatches = loadCatches();
-    setState((s) => ({ ...s, entries: allCatches }));
-  }, []);
+    let mounted = true;
+
+    async function fetchCatches() {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const token = await getToken();
+        if (!token || !mounted) return;
+
+        const response = await listCatches(token, 200, 0);
+
+        if (mounted) {
+          const entries = response.catches.map(apiRecordToEntry);
+          setState((s) => ({ ...s, entries }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch catches:", err);
+        if (mounted) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load catches",
+          );
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchCatches();
+
+    return () => {
+      mounted = false;
+    };
+  }, [getToken]);
 
   // Filter entries for active lake
   const lakeCatches = useMemo(() => {
@@ -456,38 +556,55 @@ export function useCatchLog(activeLake: ActiveLake) {
     }));
   }, []);
 
+  // API-backed add
   const addCatch = useCallback(
-    (catchData: Omit<CatchEntry, "id" | "createdAt">) => {
-      const newCatch: CatchEntry = {
-        ...catchData,
-        id: generateId(),
-        createdAt: new Date().toISOString(),
-      };
+    async (catchData: Omit<CatchEntry, "id" | "createdAt">) => {
+      if (!activeLake) return null;
 
-      setState((s) => {
-        const updated = [newCatch, ...s.entries];
-        saveCatches(updated);
-        return {
+      try {
+        setIsLoading(true);
+        const token = await getToken();
+        if (!token) throw new Error("Not authenticated");
+
+        const input = entryToApiInput(catchData, activeLake);
+        const response = await createCatch(input, token);
+
+        // Create local entry for immediate UI update
+        const newEntry: CatchEntry = {
+          ...catchData,
+          id: response.catch_id,
+          createdAt: new Date().toISOString(),
+        };
+
+        setState((s) => ({
           ...s,
-          entries: updated,
+          entries: [newEntry, ...s.entries],
           view: "list",
           selectedEntry: null,
           isEditing: false,
-        };
-      });
+        }));
 
-      return newCatch;
+        return newEntry;
+      } catch (err) {
+        console.error("Failed to add catch:", err);
+        setError(err instanceof Error ? err.message : "Failed to save catch");
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [],
+    [activeLake, getToken],
   );
 
+  // API-backed update (re-fetch after update for simplicity)
   const updateCatch = useCallback(
-    (id: string, updates: Partial<CatchEntry>) => {
+    async (id: string, updates: Partial<CatchEntry>) => {
+      // For now, update locally only
+      // TODO: Add PUT endpoint when needed
       setState((s) => {
         const updated = s.entries.map((c) =>
           c.id === id ? { ...c, ...updates } : c,
         );
-        saveCatches(updated);
         const updatedEntry = updated.find((c) => c.id === id) || null;
         return {
           ...s,
@@ -501,19 +618,49 @@ export function useCatchLog(activeLake: ActiveLake) {
     [],
   );
 
-  const deleteCatch = useCallback((id: string) => {
-    setState((s) => {
-      const updated = s.entries.filter((c) => c.id !== id);
-      saveCatches(updated);
-      return {
-        ...s,
-        entries: updated,
-        view: "list",
-        selectedEntry: null,
-        isEditing: false,
-      };
-    });
-  }, []);
+  // API-backed delete
+  const deleteCatch = useCallback(
+    async (id: string) => {
+      try {
+        setIsLoading(true);
+        const token = await getToken();
+        if (!token) throw new Error("Not authenticated");
+
+        await deleteCatchApi(id, token);
+
+        setState((s) => ({
+          ...s,
+          entries: s.entries.filter((c) => c.id !== id),
+          view: "list",
+          selectedEntry: null,
+          isEditing: false,
+        }));
+      } catch (err) {
+        console.error("Failed to delete catch:", err);
+        setError(err instanceof Error ? err.message : "Failed to delete catch");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [getToken],
+  );
+
+  // Refresh from API
+  const refresh = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const token = await getToken();
+      if (!token) return;
+
+      const response = await listCatches(token, 200, 0);
+      const entries = response.catches.map(apiRecordToEntry);
+      setState((s) => ({ ...s, entries }));
+    } catch (err) {
+      console.error("Failed to refresh catches:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getToken]);
 
   return {
     // State
@@ -526,6 +673,8 @@ export function useCatchLog(activeLake: ActiveLake) {
     visibleCatches,
     hasMore,
     activeLake,
+    isLoading,
+    error,
 
     // Actions
     open,
@@ -537,6 +686,7 @@ export function useCatchLog(activeLake: ActiveLake) {
     addCatch,
     updateCatch,
     deleteCatch,
+    refresh,
   };
 }
 
@@ -668,7 +818,6 @@ export function CatchLogModal(props: CatchLogModalProps) {
     addCatch,
     updateCatch,
     deleteCatch,
-    lakeCatches,
     entries,
     onFlyToLocation,
   } = props;
@@ -757,6 +906,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
           display: flex;
           flex-direction: column;
           overflow: hidden;
+          color: white;
         }
       `}</style>
     </>
@@ -780,7 +930,6 @@ type CatchListViewProps = {
 
 function CatchListView({
   catches,
-  allEntries,
   hasMore,
   activeLake,
   onSelectCatch,
@@ -821,7 +970,6 @@ function CatchListView({
         ) : (
           <div className="catch-list">
             {catches.map((entry) => {
-              // REMOVED: PB Logic from List Items to reduce visual clutter/bugs
               return (
                 <button
                   key={entry.id}
@@ -829,8 +977,11 @@ function CatchListView({
                   onClick={() => onSelectCatch(entry)}
                 >
                   <div className="catch-item-thumb">
-                    {entry.imageData ? (
-                      <img src={entry.imageData} alt="" />
+                    {entry.photoUrl || entry.imageData ? (
+                      <img
+                        src={entry.photoUrl || entry.imageData}
+                        alt="Catch"
+                      />
                     ) : (
                       <div className="catch-item-no-img">
                         <FishIcon size={20} />
@@ -967,7 +1118,6 @@ function CatchListView({
           background: rgba(255, 255, 255, 0.06);
           border-color: rgba(255, 255, 255, 0.1);
         }
-        /* PB styles removed from here */
         .catch-item-thumb {
           width: 52px;
           height: 52px;
@@ -1065,18 +1215,18 @@ function CatchListView({
 }
 
 // =============================================================================
-// UPDATED: CatchDetailView (Now Exported & accepts readOnly) - COMPACT LAYOUT
+// SUB-COMPONENT: CatchDetailView - COMPACT LAYOUT
 // =============================================================================
 
 type CatchDetailViewProps = {
   entry: CatchEntry;
-  allEntries?: CatchEntry[]; // Optional now
+  allEntries?: CatchEntry[];
   onBack: () => void;
-  onEdit?: () => void; // Optional
-  onDelete?: () => void; // Optional
+  onEdit?: () => void;
+  onDelete?: () => void;
   onFlyToLocation?: (lat: number, lng: number) => void;
-  readOnly?: boolean; // NEW: Hides edit/delete actions
-  onLocationClick?: () => void; // NEW: External navigation handler
+  readOnly?: boolean;
+  onLocationClick?: () => void;
 };
 
 export function CatchDetailView({
@@ -1093,7 +1243,6 @@ export function CatchDetailView({
 
   return (
     <>
-      {/* PB Banner - compact */}
       {isPB && (
         <div className="catch-pb-banner-compact">
           <TrophyIcon size={14} />
@@ -1101,7 +1250,6 @@ export function CatchDetailView({
         </div>
       )}
 
-      {/* Header - compact */}
       <div className="catch-detail-header-compact">
         <button onClick={onBack} className="catch-back-btn-compact">
           {readOnly ? <CloseIcon size={16} /> : <BackIcon size={16} />}
@@ -1114,22 +1262,17 @@ export function CatchDetailView({
         )}
       </div>
 
-      {/* Body - compact, no scroll */}
       <div className="catch-detail-body-compact">
-        {/* Image - reduced height */}
         <div className="catch-detail-image-compact">
-          {entry.imageData ? (
-            <img src={entry.imageData} alt="Catch" />
+          {entry.photoUrl || entry.imageData ? (
+            <img src={entry.photoUrl || entry.imageData} alt="Catch" />
           ) : (
             <div className="catch-detail-placeholder-compact">
               <FishIcon size={32} />
             </div>
           )}
         </div>
-
-        {/* Content - tight layout */}
         <div className="catch-detail-content-compact">
-          {/* Lure + Weight on same row */}
           <div className="catch-detail-title-row">
             <span className="catch-detail-lure-compact">
               {formatLureName(entry.lure)}
@@ -1141,7 +1284,6 @@ export function CatchDetailView({
             )}
           </div>
 
-          {/* Tags: Species, Color, Length */}
           <div className="catch-detail-tags-compact">
             {entry.species && (
               <span className="catch-tag-compact">
@@ -1158,7 +1300,6 @@ export function CatchDetailView({
             )}
           </div>
 
-          {/* Meta - 2 column layout */}
           <div className="catch-detail-meta-compact">
             <div className="catch-meta-item-compact">
               <span className="catch-meta-val-compact">
@@ -1183,7 +1324,6 @@ export function CatchDetailView({
             </div>
           </div>
 
-          {/* Notes - inline, smaller */}
           {entry.notes && (
             <div className="catch-notes-compact">
               <span className="catch-notes-text-compact">{entry.notes}</span>
@@ -1192,7 +1332,6 @@ export function CatchDetailView({
         </div>
       </div>
 
-      {/* Footer - compact */}
       {!readOnly && onDelete && (
         <div className="catch-detail-footer-compact">
           <button onClick={onDelete} className="catch-delete-btn-compact">
@@ -1258,7 +1397,7 @@ export function CatchDetailView({
         }
         .catch-detail-image-compact {
           width: 100%;
-          height: 220px;
+          height: 280px; 
           background: rgba(0, 0, 0, 0.3);
           overflow: hidden;
         }
@@ -1275,7 +1414,6 @@ export function CatchDetailView({
           justify-content: center;
           color: rgba(255, 255, 255, 0.15);
         }
-        
         .catch-detail-content-compact {
           padding: 12px 16px;
         }
@@ -1297,7 +1435,6 @@ export function CatchDetailView({
           font-size: 1.1rem;
           color: #4A90E2;
         }
-        
         .catch-detail-tags-compact {
           display: flex;
           flex-wrap: wrap;
@@ -1313,7 +1450,6 @@ export function CatchDetailView({
           font-size: 0.7rem;
           font-weight: 500;
         }
-        
         .catch-detail-meta-compact {
           margin-top: 10px;
           padding-top: 10px;
@@ -1345,7 +1481,6 @@ export function CatchDetailView({
         .catch-coords-btn-compact:hover {
           background: rgba(74, 144, 226, 0.2);
         }
-        
         .catch-notes-compact {
           margin-top: 8px;
           padding-top: 8px;
@@ -1356,7 +1491,6 @@ export function CatchDetailView({
           color: rgba(255, 255, 255, 0.5);
           font-style: italic;
         }
-        
         .catch-detail-footer-compact {
           padding: 10px 16px 14px;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -1387,7 +1521,7 @@ export function CatchDetailView({
 }
 
 // =============================================================================
-// SUB-COMPONENT: CatchFormView
+// SUB-COMPONENT: CatchFormView (with EXIF support)
 // =============================================================================
 
 type CatchFormViewProps = {
@@ -1396,6 +1530,9 @@ type CatchFormViewProps = {
   activeLake: ActiveLake;
   onSave: (data: Partial<CatchEntry>) => void;
   onCancel: () => void;
+  initialSource?: "camera" | "library" | "manual";
+  initialCoords?: { lat: number; lng: number };
+  initialDateTime?: Date;
 };
 
 function CatchFormView({
@@ -1404,7 +1541,14 @@ function CatchFormView({
   activeLake,
   onSave,
   onCancel,
+  initialSource = "manual",
+  initialCoords,
+  initialDateTime,
 }: CatchFormViewProps) {
+  const { getToken } = useAuth();
+  const [isResolving, setIsResolving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
   const [lure, setLure] = useState(entry?.lure || "");
   const [color, setColor] = useState(entry?.color || "");
   const [species, setSpecies] = useState<BassSpecies>(
@@ -1413,22 +1557,36 @@ function CatchFormView({
   const [weight, setWeight] = useState(entry?.weight?.toString() || "");
   const [length, setLength] = useState(entry?.length?.toString() || "");
   const [notes, setNotes] = useState(entry?.notes || "");
+  const [source, setSource] = useState<"camera" | "library" | "manual">(
+    entry?.source || initialSource,
+  );
 
-  // UPDATED: Autopopulate location from activeLake if not editing
   const [catchLat, setCatchLat] = useState(
-    entry?.catchLat || activeLake?.lat || 0,
+    initialCoords?.lat || entry?.catchLat || activeLake?.lat || 0,
   );
   const [catchLng, setCatchLng] = useState(
-    entry?.catchLng || activeLake?.lng || 0,
+    initialCoords?.lng || entry?.catchLng || activeLake?.lng || 0,
   );
 
-  const [locationStatus, setLocationStatus] = useState<
-    "idle" | "loading" | "success" | "error"
-  >(entry ? "success" : "idle");
-  const [imageData, setImageData] = useState(entry?.imageData || "");
-  const [caughtAt, setCaughtAt] = useState(
-    entry?.caughtAt || new Date().toISOString(),
+  type LocationStatus = "idle" | "loading" | "success" | "error" | "exif";
+  const [locationStatus, setLocationStatus] = useState<LocationStatus>(
+    initialCoords ? "exif" : entry ? "success" : "idle",
   );
+
+  const [photoUrl, setPhotoUrl] = useState(entry?.photoUrl || "");
+  const [photoPreview, setPhotoPreview] = useState(
+    entry?.imageData || entry?.photoUrl || "",
+  );
+
+  const [caughtAt, setCaughtAt] = useState(
+    initialDateTime?.toISOString() ||
+      entry?.caughtAt ||
+      new Date().toISOString(),
+  );
+
+  const [exifStatus, setExifStatus] = useState<
+    "idle" | "extracting" | "found-all" | "found-time" | "none"
+  >("idle");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1437,74 +1595,220 @@ function CatchFormView({
       setLocationStatus("error");
       return;
     }
-
     setLocationStatus("loading");
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setCatchLat(position.coords.latitude);
         setCatchLng(position.coords.longitude);
         setLocationStatus("success");
+        setSource("camera");
       },
-      () => {
-        setLocationStatus("error");
-      },
+      () => setLocationStatus("error"),
       { enableHighAccuracy: true },
     );
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // UPDATED: Handles both EXIF extraction AND Cloudflare R2 Upload
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // For now, just show a placeholder - actual upload disabled until backend
+    // 1. Local Preview (Immediate feedback)
     const reader = new FileReader();
-    reader.onload = () => {
-      setImageData(reader.result as string);
-    };
+    reader.onload = () => setPhotoPreview(reader.result as string);
     reader.readAsDataURL(file);
+
+    // 2. EXIF Extraction
+    setExifStatus("extracting");
+    setSource("library");
+
+    try {
+      const exif = await extractExifData(file);
+      let foundLoc = false;
+      let foundTime = false;
+
+      if (exif.latitude && exif.longitude) {
+        setCatchLat(exif.latitude);
+        setCatchLng(exif.longitude);
+        setLocationStatus("exif");
+        foundLoc = true;
+      }
+
+      if (exif.dateTime) {
+        setCaughtAt(exif.dateTime.toISOString());
+        foundTime = true;
+      }
+
+      if (foundLoc && foundTime) setExifStatus("found-all");
+      else if (foundLoc) setExifStatus("found-all");
+      else if (foundTime) setExifStatus("found-time");
+      else setExifStatus("none");
+    } catch (err) {
+      console.warn("EXIF extraction failed:", err);
+      setExifStatus("none");
+    }
+
+    // 3. Cloud Upload (Cloudflare R2)
+    try {
+      setIsUploading(true);
+      const token = await getToken();
+      if (!token) throw new Error("No token available");
+
+      // Get secure upload URL from backend
+      const { upload_url, public_url } = await getPresignedUrl(
+        file.name,
+        file.type,
+        token,
+      );
+
+      // Upload directly to R2
+      await uploadFileToR2(upload_url, file);
+
+      // Store the public URL
+      setPhotoUrl(public_url);
+      setIsUploading(false);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setIsUploading(false);
+      // Note: We don't clear photoPreview here, so the user still sees the image
+      // and it will fallback to base64 saving if they hit save now.
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!lure || !activeLake) return;
+    setIsResolving(true);
+    try {
+      const token = await getToken();
+      let lakeId = activeLake.id;
+      let lakeType = "unresolved";
+      let lakeName = activeLake.name;
 
-    const data: Partial<CatchEntry> = {
-      lakeName: activeLake.name,
-      lakeLat: activeLake.lat,
-      lakeLng: activeLake.lng,
-      catchLat: catchLat || activeLake.lat,
-      catchLng: catchLng || activeLake.lng,
-      lure,
-      color: color || undefined,
-      species,
-      weight: weight ? parseFloat(weight) : undefined,
-      length: length ? parseFloat(length) : undefined,
-      notes: notes || undefined,
-      imageData: imageData || undefined,
-      caughtAt,
-    };
+      if (token && (catchLat !== 0 || catchLng !== 0)) {
+        try {
+          const resolution = await resolveLake(catchLat, catchLng, token);
+          if (resolution.resolved) {
+            lakeType = resolution.lake_type;
+            lakeId = resolution.lake_id || undefined;
+            lakeName = resolution.lake_name || activeLake.name;
+          }
+        } catch (err) {
+          console.warn("Lake resolution failed", err);
+        }
+      }
 
-    onSave(data);
+      const data: Partial<CatchEntry> = {
+        lakeName: lakeName,
+        lakeLat: activeLake.lat,
+        lakeLng: activeLake.lng,
+        catchLat: catchLat || activeLake.lat,
+        catchLng: catchLng || activeLake.lng,
+        lure,
+        color: color || undefined,
+        species,
+        weight: weight ? parseFloat(weight) : undefined,
+        length: length ? parseFloat(length) : undefined,
+        notes: notes || undefined,
+        photoUrl: photoUrl || undefined,
+        imageData: photoPreview || undefined,
+        caughtAt,
+        source,
+        lakeId: lakeId,
+        lakeType: lakeType as any,
+      };
+
+      onSave(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsResolving(false);
+    }
   };
 
-  const canSubmit = lure && activeLake;
+  // Prevent submit while resolving location OR uploading image
+  const canSubmit = lure && activeLake && !isResolving && !isUploading;
 
   return (
     <>
-      {/* Header */}
       <div className="catch-form-header">
-        {/* UPDATED: CANCEL BUTTON STYLE */}
         <button onClick={onCancel} className="catch-cancel-btn">
           Cancel
         </button>
         <span className="catch-form-title">
-          {isEditing ? "Edit Catch" : "Add Catch"}
+          {isEditing ? "Edit Catch" : "Log Catch"}
         </span>
-        <div style={{ width: 60 }} /> {/* Spacer for centering */}
+        <div style={{ width: 60 }} />
       </div>
 
-      {/* Body */}
       <div className="catch-form-body">
-        {/* Lure Dropdown */}
+        {/* Photo Field */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Photo</label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            style={{ display: "none" }}
+          />
+          {photoPreview ? (
+            <div className="catch-image-preview">
+              <img src={photoPreview} alt="Preview" />
+              <button
+                type="button"
+                onClick={() => {
+                  setPhotoPreview("");
+                  setPhotoUrl("");
+                  setExifStatus("idle");
+                }}
+                className="catch-image-remove"
+              >
+                <CloseIcon size={12} />
+              </button>
+
+              {/* Status Badges */}
+              {isUploading && (
+                <div
+                  className="catch-exif-badge extracting"
+                  style={{ bottom: 40 }}
+                >
+                  Uploading to Cloud...
+                </div>
+              )}
+
+              {exifStatus === "extracting" && !isUploading && (
+                <div className="catch-exif-badge extracting">
+                  Reading metadata...
+                </div>
+              )}
+              {exifStatus === "found-all" && (
+                <div className="catch-exif-badge found">
+                  📍 Location & Time extracted
+                </div>
+              )}
+              {exifStatus === "found-time" && (
+                <div className="catch-exif-badge partial">
+                  📅 Time extracted (No GPS)
+                </div>
+              )}
+              {exifStatus === "none" && (
+                <div className="catch-exif-badge none">
+                  No GPS data in photo
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="catch-photo-btn"
+            >
+              <CameraIcon size={20} />
+              <span>Add Photo</span>
+            </button>
+          )}
+        </div>
+
         <div className="catch-form-field">
           <label className="catch-form-label">Lure *</label>
           <select
@@ -1513,8 +1817,8 @@ function CatchFormView({
             className="catch-form-select"
           >
             <option value="">Select a lure...</option>
-            {Object.entries(LURE_GROUPS).map(([category, lures]) => (
-              <optgroup key={category} label={category}>
+            {Object.entries(LURE_GROUPS).map(([cat, lures]) => (
+              <optgroup key={cat} label={cat}>
                 {lures.map((l) => (
                   <option key={l.value} value={l.value}>
                     {l.label}
@@ -1525,7 +1829,6 @@ function CatchFormView({
           </select>
         </div>
 
-        {/* Species Selector */}
         <div className="catch-form-field">
           <label className="catch-form-label">Species</label>
           <div className="catch-species-selector">
@@ -1533,7 +1836,9 @@ function CatchFormView({
               <button
                 key={opt.value}
                 type="button"
-                className={`catch-species-btn ${species === opt.value ? "active" : ""}`}
+                className={`catch-species-btn ${
+                  species === opt.value ? "active" : ""
+                }`}
                 onClick={() => setSpecies(opt.value)}
               >
                 {opt.label}
@@ -1542,7 +1847,6 @@ function CatchFormView({
           </div>
         </div>
 
-        {/* Color Dropdown */}
         <div className="catch-form-field">
           <label className="catch-form-label">Color (optional)</label>
           <select
@@ -1559,14 +1863,12 @@ function CatchFormView({
           </select>
         </div>
 
-        {/* Weight & Length */}
         <div className="catch-form-row">
           <div className="catch-form-field">
             <label className="catch-form-label">Weight (lbs)</label>
             <input
               type="number"
               step="0.1"
-              min="0"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
               className="catch-form-input"
@@ -1578,7 +1880,6 @@ function CatchFormView({
             <input
               type="number"
               step="0.25"
-              min="0"
               value={length}
               onChange={(e) => setLength(e.target.value)}
               className="catch-form-input"
@@ -1587,11 +1888,16 @@ function CatchFormView({
           </div>
         </div>
 
-        {/* Location */}
         <div className="catch-form-field">
-          <label className="catch-form-label">Exact Location</label>
-          {locationStatus === "success" ||
-          (catchLat !== 0 && catchLng !== 0) ? (
+          <label className="catch-form-label">Catch Location</label>
+          {locationStatus === "exif" ? (
+            <div className="catch-location-display exif">
+              <LocationIcon size={16} />
+              <span>{formatCoord(catchLat, catchLng)}</span>
+              <span className="catch-location-source">From photo</span>
+            </div>
+          ) : locationStatus === "success" ||
+            (catchLat !== 0 && catchLng !== 0) ? (
             <div className="catch-location-display">
               <LocationIcon size={16} />
               <span>{formatCoord(catchLat, catchLng)}</span>
@@ -1622,15 +1928,18 @@ function CatchFormView({
           )}
         </div>
 
-        {/* Time */}
         <div className="catch-form-field">
-          <label className="catch-form-label">Time</label>
+          <label className="catch-form-label">
+            Time{" "}
+            {exifStatus === "found-time" && (
+              <span className="catch-form-hint-inline">(from photo)</span>
+            )}
+          </label>
           <div className="catch-time-display">
             {formatCatchDateTime(caughtAt)}
           </div>
         </div>
 
-        {/* Notes */}
         <div className="catch-form-field">
           <label className="catch-form-label">Notes</label>
           <textarea
@@ -1641,52 +1950,21 @@ function CatchFormView({
             rows={3}
           />
         </div>
-
-        {/* Photo */}
-        <div className="catch-form-field">
-          <label className="catch-form-label">Photo</label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageSelect}
-            style={{ display: "none" }}
-          />
-          {imageData ? (
-            <div className="catch-image-preview">
-              <img src={imageData} alt="Preview" />
-              <button
-                type="button"
-                onClick={() => setImageData("")}
-                className="catch-image-remove"
-              >
-                <CloseIcon size={12} />
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="catch-photo-btn"
-            >
-              <CameraIcon size={20} />
-              <span>Add Photo</span>
-            </button>
-          )}
-          <p className="catch-form-hint">
-            Image upload available when connected to server
-          </p>
-        </div>
       </div>
 
-      {/* Footer */}
       <div className="catch-form-footer">
         <button
           onClick={handleSubmit}
           disabled={!canSubmit}
           className="catch-save-btn"
         >
-          {isEditing ? "Save Changes" : "Save Catch"}
+          {isUploading
+            ? "Uploading Photo..."
+            : isResolving
+              ? "Resolving..."
+              : isEditing
+                ? "Save Changes"
+                : "Save Catch"}
         </button>
       </div>
 
@@ -1700,237 +1978,236 @@ function CatchFormView({
         }
         .catch-form-title {
           font-weight: 700;
-          font-size: 1rem;
-          color: #fff;
+          font-size: 1.05rem;
         }
-        
-        /* UPDATED: CANCEL BUTTON STYLE */
         .catch-cancel-btn {
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.8);
-          padding: 8px 16px;
-          border-radius: 12px;
-          font-size: 0.85rem;
-          font-weight: 600;
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.9rem;
           cursor: pointer;
-          transition: all 0.2s;
         }
-        .catch-cancel-btn:hover {
-          background: rgba(255, 255, 255, 0.2);
-          color: #fff;
-        }
-
         .catch-form-body {
-          flex: 1;
-          overflow-y: auto;
-          padding: 20px 24px;
+          padding: 20px;
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 16px;
+          flex: 1;
+          overflow-y: auto;
         }
         .catch-form-field {
           display: flex;
           flex-direction: column;
           gap: 8px;
         }
-        .catch-form-row {
-          display: flex;
-          gap: 12px;
-        }
-        .catch-form-row .catch-form-field {
-          flex: 1;
-        }
         .catch-form-label {
           font-size: 0.75rem;
-          font-weight: 700;
           color: rgba(255, 255, 255, 0.5);
+          font-weight: 600;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.05em;
         }
         .catch-form-input,
         .catch-form-select,
         .catch-form-textarea {
           width: 100%;
-          padding: 14px 16px;
+          padding: 12px 14px;
           border-radius: 12px;
-          font-size: 1rem;
-          background: rgba(0, 0, 0, 0.4);
+          background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #fff;
+          color: white;
+          font-size: 0.95rem;
           outline: none;
-          transition: all 0.2s;
+          transition: border-color 0.2s;
+        }
+        .catch-form-select {
+          appearance: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 10px center;
+          background-size: 16px;
+        }
+        .catch-form-select optgroup,
+        .catch-form-select option {
+          background: #1a1a1a;
+          color: white;
         }
         .catch-form-input:focus,
         .catch-form-select:focus,
         .catch-form-textarea:focus {
           border-color: rgba(74, 144, 226, 0.5);
-          background: rgba(0, 0, 0, 0.5);
-          box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-        }
-        .catch-form-select {
-          cursor: pointer;
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-          background-repeat: no-repeat;
-          background-position: right 12px center;
-          padding-right: 40px;
-        }
-        .catch-form-select option {
-          background: #1a1a24;
-          color: #fff;
-        }
-        .catch-form-select optgroup {
-          background: #1a1a24;
-          color: rgba(255, 255, 255, 0.5);
-          font-weight: 600;
+          background: rgba(255, 255, 255, 0.08);
         }
         .catch-species-selector {
           display: flex;
           gap: 8px;
+          background: rgba(255, 255, 255, 0.03);
+          padding: 4px;
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
         }
         .catch-species-btn {
           flex: 1;
-          padding: 12px 8px;
-          border-radius: 10px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(0, 0, 0, 0.3);
+          padding: 10px;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
           color: rgba(255, 255, 255, 0.5);
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s;
         }
-        .catch-species-btn:hover {
-          border-color: rgba(255, 255, 255, 0.2);
-          color: rgba(255, 255, 255, 0.7);
-        }
         .catch-species-btn.active {
-          border-color: rgba(74, 144, 226, 0.5);
-          background: rgba(74, 144, 226, 0.15);
-          color: #4A90E2;
-        }
-        .catch-form-textarea {
-          resize: none;
-          line-height: 1.5;
-        }
-        .catch-location-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          padding: 14px;
-          border-radius: 12px;
-          border: 1px dashed rgba(255, 255, 255, 0.2);
-          background: rgba(0, 0, 0, 0.2);
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.95rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .catch-location-btn:hover:not(:disabled) {
-          border-color: rgba(74, 144, 226, 0.5);
-          color: #4A90E2;
-          background: rgba(74, 144, 226, 0.1);
-        }
-        .catch-location-btn:disabled {
-          opacity: 0.7;
-          cursor: wait;
-        }
-        .catch-location-display {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 14px 16px;
-          border-radius: 12px;
-          background: rgba(16, 185, 129, 0.1);
-          border: 1px solid rgba(16, 185, 129, 0.2);
-          color: #10B981;
-          font-family: 'SF Mono', Monaco, Consolas, monospace;
-          font-size: 0.9rem;
-        }
-        .catch-location-refresh {
-          margin-left: auto;
-          padding: 4px 10px;
-          border-radius: 6px;
-          border: none;
-          background: rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .catch-location-refresh:hover {
-          background: rgba(255, 255, 255, 0.15);
+          background: rgba(74, 144, 226, 0.2);
           color: #fff;
-        }
-        .catch-time-display {
-          padding: 14px 16px;
-          border-radius: 12px;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.06);
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 0.95rem;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         .catch-photo-btn {
+          width: 100%;
+          height: 80px;
+          border: 1px dashed rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.02);
+          color: rgba(255, 255, 255, 0.5);
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 10px;
-          padding: 24px;
-          border-radius: 12px;
-          border: 1px dashed rgba(255, 255, 255, 0.2);
-          background: rgba(0, 0, 0, 0.2);
-          color: rgba(255, 255, 255, 0.5);
-          font-size: 0.95rem;
+          gap: 8px;
           cursor: pointer;
           transition: all 0.2s;
         }
         .catch-photo-btn:hover {
-          border-color: rgba(255, 255, 255, 0.3);
-          color: rgba(255, 255, 255, 0.7);
-          background: rgba(0, 0, 0, 0.3);
+          background: rgba(255, 255, 255, 0.05);
+          border-color: rgba(255, 255, 255, 0.4);
+          color: #fff;
         }
         .catch-image-preview {
-          position: relative;
+          width: 100%;
+          height: 160px;
           border-radius: 12px;
           overflow: hidden;
-          background: rgba(0, 0, 0, 0.3);
+          position: relative;
+          background: #000;
         }
         .catch-image-preview img {
           width: 100%;
-          height: auto;
-          max-height: 200px;
+          height: 100%;
           object-fit: cover;
-          display: block;
+          opacity: 0.8;
         }
         .catch-image-remove {
           position: absolute;
           top: 8px;
           right: 8px;
-          width: 28px;
-          height: 28px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
-          border: none;
           background: rgba(0, 0, 0, 0.6);
-          color: #fff;
+          color: white;
+          border: none;
           display: flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
+        }
+        .catch-exif-badge {
+          position: absolute;
+          bottom: 8px;
+          left: 8px;
+          right: 8px;
+          padding: 6px;
+          border-radius: 8px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-align: center;
+          color: white;
+        }
+        .catch-exif-badge.extracting {
+          background: rgba(74, 144, 226, 0.9);
+        }
+        .catch-exif-badge.found {
+          background: rgba(16, 185, 129, 0.9);
+        }
+        .catch-exif-badge.partial {
+          background: rgba(245, 158, 11, 0.9);
+          color: white;
+        }
+        .catch-exif-badge.none {
+          background: rgba(251, 191, 36, 0.9);
+          color: #1a1a1a;
+        }
+        .catch-form-row {
+          display: flex;
+          gap: 12px;
+        }
+        .catch-location-display {
+          padding: 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 0.9rem;
+        }
+        .catch-location-display.exif {
+          border-color: rgba(16, 185, 129, 0.3);
+          background: rgba(16, 185, 129, 0.1);
+        }
+        .catch-location-source {
+          margin-left: auto;
+          font-size: 0.65rem;
+          padding: 2px 6px;
+          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.6);
+        }
+        .catch-location-refresh {
+          margin-left: auto;
+          font-size: 0.75rem;
+          color: #4A90E2;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-decoration: underline;
+        }
+        .catch-location-btn {
+          width: 100%;
+          padding: 12px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.8);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
           transition: all 0.2s;
         }
-        .catch-image-remove:hover {
-          background: rgba(255, 107, 107, 0.8);
+        .catch-location-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
         }
-        .catch-form-hint {
-          margin: 4px 0 0;
-          font-size: 0.75rem;
-          color: rgba(255, 255, 255, 0.35);
-          font-style: italic;
+        .catch-time-display {
+          padding: 12px 14px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.9rem;
+        }
+        .catch-form-hint-inline {
+          font-weight: 400;
+          opacity: 0.5;
+          font-size: 0.65rem;
+          margin-left: 4px;
         }
         .catch-form-footer {
-          padding: 16px 24px 24px;
+          padding: 16px 20px 20px;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
         .catch-save-btn {
@@ -1940,19 +2217,18 @@ function CatchFormView({
           border: none;
           background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
           color: #fff;
-          font-size: 1rem;
           font-weight: 700;
+          font-size: 1rem;
           cursor: pointer;
-          transition: all 0.2s;
-          box-shadow: 0 8px 24px rgba(74, 144, 226, 0.25);
-        }
-        .catch-save-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 32px rgba(74, 144, 226, 0.35);
+          transition: transform 0.1s;
         }
         .catch-save-btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+          background: #333;
+        }
+        .catch-save-btn:active:not(:disabled) {
+          transform: scale(0.98);
         }
       `}</style>
     </>
@@ -2126,6 +2402,7 @@ export function createCatchMarker(
 
   return container;
 }
+
 // Inject keyframes for pin animations
 export function injectCatchPinStyles(): void {
   const styleId = "catch-pin-styles";
@@ -2216,6 +2493,7 @@ function updateCatchMarkersForZoom(
     }
   });
 }
+
 // Cleanup markers
 export function removeCatchMarkers(markers: mapboxgl.Marker[]): void {
   if ((markers as any)._zoomCleanup) {

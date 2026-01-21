@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import {
   ArrowLeftIcon,
   TrophyIcon,
@@ -17,7 +18,9 @@ import {
   CatchEntry,
   LURE_OPTIONS,
   CatchDetailView,
+  apiRecordToEntry,
 } from "@/components/CatchLog";
+import { listCatches } from "@/lib/catches-api";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -212,7 +215,36 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
 
 export function Insights() {
   const navigate = useNavigate();
-  const { entries } = useCatchLog(null);
+  const { getToken } = useAuth();
+  const [entries, setEntries] = useState<CatchEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    async function fetchData() {
+      try {
+        const token = await getToken();
+        if (!token) return;
+
+        // Fetch up to 500 catches for stats
+        const response = await listCatches(token, 500, 0);
+
+        if (mounted) {
+          const converted = response.catches.map(apiRecordToEntry);
+          setEntries(converted);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to load insights:", err);
+        if (mounted) setIsLoading(false);
+      }
+    }
+    fetchData();
+    return () => {
+      mounted = false;
+    };
+  }, [getToken]);
+
   const stats = useMemo(() => calculateStats(entries), [entries]);
 
   // View State
@@ -291,6 +323,24 @@ export function Insights() {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
   };
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          padding: 60,
+          textAlign: "center",
+          color: "rgba(255,255,255,0.5)",
+          height: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Loading catch history...
+      </div>
+    );
+  }
 
   return (
     <div className="stats-page">
@@ -438,8 +488,8 @@ export function Insights() {
 
                   {/* Bottom Image Section */}
                   <div className="pb-row-image">
-                    {pb.imageData ? (
-                      <img src={pb.imageData} alt="PB" />
+                    {pb.photoUrl || pb.imageData ? (
+                      <img src={pb.photoUrl || pb.imageData} alt="PB" />
                     ) : (
                       <div className="pb-placeholder">
                         <TrophyIcon size={40} />
@@ -546,8 +596,12 @@ export function Insights() {
                 className="wall-item"
                 onClick={() => setViewingCatch(entry)}
               >
-                {entry.imageData ? (
-                  <img src={entry.imageData} loading="lazy" alt="" />
+                {entry.photoUrl || entry.imageData ? (
+                  <img
+                    src={entry.photoUrl || entry.imageData}
+                    loading="lazy"
+                    alt=""
+                  />
                 ) : (
                   <div className="wall-placeholder">
                     <FishIcon size={20} />
@@ -669,7 +723,8 @@ export function Insights() {
         .pb-row-lure { font-size: 0.95rem; color: #fff; font-weight: 500; }
         .lure-label { color: rgba(255,255,255,0.4); margin-right: 6px; font-weight: 400; }
         
-        .pb-row-image { width: 100%; height: 240px; background: rgba(0,0,0,0.3); position: relative; }
+        /* UPDATED: Height to 280px */
+        .pb-row-image { width: 100%; height: 280px; background: rgba(0,0,0,0.3); position: relative; }
         .pb-row-image img { width: 100%; height: 100%; object-fit: cover; }
         .pb-placeholder { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.2); }
 

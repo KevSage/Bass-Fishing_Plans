@@ -52,6 +52,11 @@ from app.services.stripe_billing import (
     verify_webhook_and_parse_event,
     extract_subscription_state,
 )
+from app.routes.catches import router as catches_router
+from app.routes.lakes import router as lakes_router
+from app.routes.uploads import router as uploads_router
+# ... existing imports ...
+
 
 # ----------------------------------------
 # 1. INITIALIZE STORES FIRST
@@ -66,6 +71,9 @@ plan_history_store = PlanHistoryStore()
 # 2. APP SETUP
 # ----------------------------------------
 app = FastAPI(title="Bass Clarity API")
+app.include_router(catches_router, tags=["catches"])
+app.include_router(lakes_router, tags=["lakes"])
+app.include_router(uploads_router, tags=["uploads"])
 
 # ✅ PRODUCTION CORS CONFIGURATION
 origins = [
