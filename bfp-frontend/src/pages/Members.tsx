@@ -183,6 +183,7 @@ type LakeData = {
   acres?: number;
   tier: number;
   id?: string; // Some JSONs have IDs
+  bbox?: [number, number, number, number]; // <--- ADD THIS
 };
 
 // Augmented Favorite Type for UI (includes hydration data)
@@ -243,14 +244,28 @@ function getMatchRadius(acres?: number): number {
 }
 
 // Find nearest lake with dynamic radius based on lake size (DATABASE)
+// src/pages/Members.tsx
+
 function findNearestLake(lat: number, lng: number): LakeData | null {
+  // 1. BOUNDING BOX CHECK (Highest Priority)
+  // Precise hit detection for large lakes (Tier 1)
+  const bboxMatch = (LAKES_DATA as LakeData[]).find((l) => {
+    if (!l.bbox) return false;
+    const [minLng, minLat, maxLng, maxLat] = l.bbox;
+    return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+  });
+
+  if (bboxMatch) return bboxMatch;
+
+  // 2. DISTANCE CHECK (Fallback)
+  // Existing logic for smaller lakes without bounding boxes
   let nearest: LakeData | null = null;
   let minDist = Infinity;
 
-  // Optimization: Filter by rough bounding box first
+  // Optimization: Filter by rough bounding box first (approx +/- 20 miles)
   const candidates = (LAKES_DATA as LakeData[]).filter(
     (l) =>
-      Math.abs(l.latitude - lat) < 0.2 && Math.abs(l.longitude - lng) < 0.2,
+      Math.abs(l.latitude - lat) < 0.3 && Math.abs(l.longitude - lng) < 0.3,
   );
 
   for (const lake of candidates) {
@@ -622,6 +637,8 @@ export function Members() {
 
     const onClick = async (e: mapboxgl.MapMouseEvent) => {
       if (!mapRef.current || !isMountedRef.current) return;
+
+      // Ignore clicks if modals/menus are open
       if (
         isCatchLogOpenRef.current ||
         showModalRef.current ||
@@ -630,6 +647,7 @@ export function Members() {
         setViewingFavoriteId(null);
         return;
       }
+
       if (abortControllerRef.current) abortControllerRef.current.abort();
       abortControllerRef.current = new AbortController();
 
@@ -643,32 +661,61 @@ export function Members() {
           setInputMode("manual");
           setLocationDetails({});
 
-          // NEW LOGIC: Check Favorites First (Proximity Check)
+          // ---------------------------------------------------------
+          // 1. SMART FIX: TRY VECTOR NAME MATCHING FIRST
+          // ---------------------------------------------------------
+          // This catches large lakes (Toledo Bend) even if you click 50 miles from the center
+          const vectorName = water.properties?.name;
+          let dbMatch: LakeData | undefined;
+
+          if (vectorName) {
+            const searchName = vectorName.toLowerCase();
+            dbMatch = (LAKES_DATA as LakeData[]).find(
+              (l) =>
+                l.name.toLowerCase() === searchName ||
+                l.name.toLowerCase().includes(searchName) || // Handles "Toledo Bend" vs "Toledo Bend Reservoir"
+                searchName.includes(l.name.toLowerCase()),
+            );
+          }
+
+          // ---------------------------------------------------------
+          // 2. CHECK FAVORITES & SPATIAL FALLBACK
+          // ---------------------------------------------------------
+          // Check spatial proximity for favorites first
           const nearbyFavorite = findNearestFavorite(
             lat,
             lng,
             favoritesRef.current,
           );
 
+          // If no name match and no favorite, try standard radius check
+          const nearbyLake =
+            dbMatch || (!nearbyFavorite ? findNearestLake(lat, lng) : null);
+
+          // ---------------------------------------------------------
+          // 3. SET STATE
+          // ---------------------------------------------------------
           if (nearbyFavorite) {
             setWaterName(nearbyFavorite.name);
             setLocationDetails({
               city: nearbyFavorite.city,
               state: nearbyFavorite.state,
             });
+          } else if (nearbyLake) {
+            setWaterName(nearbyLake.name);
+            setLocationDetails({
+              city: nearbyLake.city,
+              state: nearbyLake.state,
+            });
           } else {
-            const nearbyLake = findNearestLake(lat, lng);
-            if (nearbyLake) {
-              setWaterName(nearbyLake.name);
-              setLocationDetails({
-                city: nearbyLake.city,
-                state: nearbyLake.state,
-              });
-            } else {
-              setWaterName("");
-            }
+            // If we have a vector name but it wasn't in our DB, prefer that over "Dropped Pin"
+            // This is great for small ponds that Mapbox knows but your JSON doesn't
+            setWaterName(vectorName || "");
           }
 
+          // ---------------------------------------------------------
+          // 4. PLACE MARKER
+          // ---------------------------------------------------------
           if (markerRef.current) markerRef.current.remove();
           if (markerElementRef.current) markerElementRef.current.remove();
           const markerEl = createOrbMarker();
@@ -677,7 +724,12 @@ export function Members() {
             .setLngLat([lng, lat])
             .addTo(mapRef.current);
 
-          if (!nearbyFavorite) {
+          // ---------------------------------------------------------
+          // 5. REVERSE GEOCODE (Context Fill)
+          // ---------------------------------------------------------
+          // Only fetch context if we didn't match a DB entry (which already has city/state)
+          // OR if we want to fill in missing city/state for a vector name match
+          if (!nearbyFavorite && (!nearbyLake || !nearbyLake.city)) {
             try {
               const response = await fetch(
                 `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
@@ -695,15 +747,18 @@ export function Members() {
                   context
                     .find((c: any) => String(c.id).startsWith("region"))
                     ?.short_code?.replace("US-", "") || "";
+
+                // Update state with fetched context
                 setLocationDetails({ city, state });
-              }
-              const nearbyLake = findNearestLake(lat, lng);
-              if (!nearbyLake) {
-                if (city || state)
-                  setWaterName(
-                    `Water near ${[city, state].filter(Boolean).join(", ")}`,
-                  );
-                else setWaterName("Dropped Pin Location");
+
+                // If we still don't have a name (no vector name, no DB match), construct one
+                if (!vectorName && !nearbyLake) {
+                  if (city || state)
+                    setWaterName(
+                      `Water near ${[city, state].filter(Boolean).join(", ")}`,
+                    );
+                  else setWaterName("Dropped Pin Location");
+                }
               }
             } catch (e2: any) {
               if (e2.name !== "AbortError")
@@ -818,6 +873,7 @@ export function Members() {
       city?: string;
       state?: string;
     }) => {
+      setShowModal(false); // <--- ADD THIS LINE
       setWaterName(location.name);
       let city = location.city;
       let state = location.state;
@@ -847,7 +903,8 @@ export function Members() {
           mapRef.current.flyTo({
             center: [location.longitude, location.latitude],
             zoom: 12,
-            duration: 1500,
+            duration: 3000,
+            essential: true, // <--- ADDED: Ensures animation plays even if user interacts slightly
           });
           if (markerRef.current) markerRef.current.remove();
           const markerEl = createOrbMarker();
