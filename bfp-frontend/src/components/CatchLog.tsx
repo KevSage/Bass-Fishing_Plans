@@ -257,7 +257,7 @@ const LURE_GROUPS = LURE_OPTIONS.reduce(
 );
 
 // Color options
-export const COLOR_OPTIONS = [
+const COLOR_OPTIONS = [
   { value: "black", label: "Black" },
   { value: "black/blue", label: "Black/Blue" },
   { value: "junebug", label: "Junebug" },
@@ -399,7 +399,6 @@ function formatLureName(value: string): string {
 }
 
 // Check if a catch is a Personal Best for its species
-// UPDATED: Strict numeric comparison to prevent string sorting bugs
 function isPersonalBest(entry: CatchEntry, allEntries: CatchEntry[]): boolean {
   if (!entry.weight) return false;
 
@@ -411,7 +410,6 @@ function isPersonalBest(entry: CatchEntry, allEntries: CatchEntry[]): boolean {
 
   if (otherCatches.length === 0) return true; // First catch of this species with weight
 
-  // Ensure weights are treated as numbers
   const maxWeight = Math.max(...otherCatches.map((c) => Number(c.weight)));
   return Number(entry.weight) > maxWeight;
 }
@@ -597,11 +595,9 @@ export function useCatchLog(activeLake: ActiveLake) {
     [activeLake, getToken],
   );
 
-  // API-backed update (re-fetch after update for simplicity)
+  // API-backed update
   const updateCatch = useCallback(
     async (id: string, updates: Partial<CatchEntry>) => {
-      // For now, update locally only
-      // TODO: Add PUT endpoint when needed
       setState((s) => {
         const updated = s.entries.map((c) =>
           c.id === id ? { ...c, ...updates } : c,
@@ -664,7 +660,6 @@ export function useCatchLog(activeLake: ActiveLake) {
   }, [getToken]);
 
   return {
-    // State
     isOpen: state.isOpen,
     view: state.view,
     selectedEntry: state.selectedEntry,
@@ -676,8 +671,6 @@ export function useCatchLog(activeLake: ActiveLake) {
     activeLake,
     isLoading,
     error,
-
-    // Actions
     open,
     close,
     showList,
@@ -723,23 +716,17 @@ export function CatchButton({
       <style>{`
         .catch-float-btn {
           position: fixed;
-          top: 50%; /* Vertically centered */
+          top: 50%;
           left: 20px;
-          transform: translateY(-50%); /* Center alignment fix */
+          transform: translateY(-50%);
           width: 58px;
           height: 58px;
           border-radius: 50%;
           border: 1px solid rgba(255, 255, 255, 0.15);
-          
-          /* Obsidian Glass Effect */
           background: rgba(15, 15, 20, 0.7);
           backdrop-filter: blur(16px);
           -webkit-backdrop-filter: blur(16px);
-          
-          box-shadow: 
-            0 8px 32px rgba(0, 0, 0, 0.5),
-            inset 0 1px 1px rgba(255, 255, 255, 0.15);
-            
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
           color: rgba(255, 255, 255, 0.9);
           display: flex;
           align-items: center;
@@ -748,21 +735,16 @@ export function CatchButton({
           transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           z-index: 1000;
         }
-
         .catch-float-btn:hover:not(:disabled) {
           transform: translateY(-52%) scale(1.05);
           background: rgba(20, 20, 28, 0.85);
           border-color: rgba(255, 255, 255, 0.3);
-          box-shadow: 
-            0 12px 40px rgba(0, 0, 0, 0.6),
-            inset 0 1px 1px rgba(255, 255, 255, 0.3);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3);
           color: #fff;
         }
-
         .catch-float-btn:active:not(:disabled) {
           transform: translateY(-50%) scale(0.95);
         }
-
         .catch-float-btn:disabled {
           opacity: 0.4;
           cursor: not-allowed;
@@ -770,7 +752,6 @@ export function CatchButton({
           background: rgba(10, 10, 10, 0.6);
           border-color: rgba(255,255,255,0.05);
         }
-
         .catch-badge {
           position: absolute;
           top: -2px;
@@ -875,20 +856,15 @@ export function CatchLogModal(props: CatchLogModalProps) {
                   updateCatch(selectedEntry.id, data);
                 } else {
                   addCatch(data as Omit<CatchEntry, "id" | "createdAt">);
-
-                  // Draft create flow complete: clear draft upstream
                   if (!selectedEntry?.id) onDraftDone?.();
                 }
               }}
               onCancel={() => {
-                // Draft create flow: clear draft upstream, then exit form
                 if (!isEditing && !selectedEntry?.id) {
                   onDraftDone?.();
                   showList();
                   return;
                 }
-
-                // Existing behavior
                 if (selectedEntry) {
                   showDetail(selectedEntry);
                 } else {
@@ -957,7 +933,6 @@ function CatchListView({
 }: CatchListViewProps) {
   return (
     <>
-      {/* Header */}
       <div className="catch-modal-header">
         <div className="catch-header-title">
           <FishIcon size={20} />
@@ -968,12 +943,10 @@ function CatchListView({
         </button>
       </div>
 
-      {/* Lake Context */}
       {activeLake && (
         <div className="catch-lake-context">{activeLake.name}</div>
       )}
 
-      {/* Body */}
       <div className="catch-modal-body">
         {!activeLake ? (
           <div className="catch-empty-state">
@@ -1040,7 +1013,6 @@ function CatchListView({
         )}
       </div>
 
-      {/* Add Button */}
       {activeLake && (
         <div className="catch-modal-footer">
           <button className="catch-add-btn" onClick={onAddNew}>
@@ -1233,7 +1205,7 @@ function CatchListView({
 }
 
 // =============================================================================
-// SUB-COMPONENT: CatchDetailView - COMPACT LAYOUT
+// SUB-COMPONENT: CatchDetailView
 // =============================================================================
 
 type CatchDetailViewProps = {
@@ -1553,10 +1525,6 @@ type CatchFormViewProps = {
   initialDateTime?: Date;
 };
 
-// src/components/CatchLog.tsx
-
-// ... existing imports ...
-
 // REPLACEMENT: CatchFormView
 // Fixes mobile camera disconnects and event bubbling issues
 function CatchFormView({
@@ -1614,6 +1582,40 @@ function CatchFormView({
   >("idle");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    // Re-hydrate whenever the selected entry changes (edit vs draft vs new)
+    setLure(entry?.lure || "");
+    setColor(entry?.color || "");
+    setSpecies((entry?.species as BassSpecies) || "largemouth");
+    setWeight(entry?.weight?.toString() || "");
+    setLength(entry?.length?.toString() || "");
+    setNotes(entry?.notes || "");
+
+    setSource((entry?.source as any) || initialSource);
+
+    setCatchLat(initialCoords?.lat || entry?.catchLat || activeLake?.lat || 0);
+    setCatchLng(initialCoords?.lng || entry?.catchLng || activeLake?.lng || 0);
+
+    setPhotoUrl(entry?.photoUrl || "");
+    setPhotoPreview(entry?.imageData || entry?.photoUrl || "");
+
+    setCaughtAt(
+      initialDateTime?.toISOString() ||
+        entry?.caughtAt ||
+        new Date().toISOString(),
+    );
+
+    // Reset EXIF UI status when switching entries
+    setExifStatus("idle");
+  }, [
+    entry,
+    activeLake?.lat,
+    activeLake?.lng,
+    initialCoords?.lat,
+    initialCoords?.lng,
+    initialDateTime,
+    initialSource,
+  ]);
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -1643,7 +1645,7 @@ function CatchFormView({
     reader.readAsDataURL(file);
 
     setExifStatus("extracting");
-    setSource("camera"); // Assume camera if coming from this flow
+    setSource((entry?.source as any) || initialSource);
 
     try {
       // 2. EXIF Extraction
@@ -1772,7 +1774,7 @@ function CatchFormView({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
+            {...(source === "camera" ? { capture: "environment" as any } : {})}
             onChange={handleImageSelect}
             style={{ display: "none" }}
           />
@@ -1839,8 +1841,7 @@ function CatchFormView({
           )}
         </div>
 
-        {/* ... Rest of form fields (Lure, Species, etc.) ... */}
-        {/* Note: Ensure all the standard fields from your previous file are included here */}
+        {/* Lure Field */}
         <div className="catch-form-field">
           <label className="catch-form-label">Lure *</label>
           <select
@@ -1861,7 +1862,7 @@ function CatchFormView({
           </select>
         </div>
 
-        {/* ... Include Species, Color, Weight, Length, Location, Time, Notes inputs here ... */}
+        {/* Species Field */}
         <div className="catch-form-field">
           <label className="catch-form-label">Species</label>
           <div className="catch-species-selector">
@@ -1880,6 +1881,24 @@ function CatchFormView({
           </div>
         </div>
 
+        {/* Color Field */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Color (optional)</label>
+          <select
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="catch-form-select"
+          >
+            <option value="">Select color...</option>
+            {COLOR_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Weight & Length Row */}
         <div className="catch-form-row">
           <div className="catch-form-field">
             <label className="catch-form-label">Weight (lbs)</label>
@@ -1904,6 +1923,72 @@ function CatchFormView({
             />
           </div>
         </div>
+
+        {/* Location Field */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Catch Location</label>
+          {locationStatus === "exif" ? (
+            <div className="catch-location-display exif">
+              <LocationIcon size={16} />
+              <span>{formatCoord(catchLat, catchLng)}</span>
+              <span className="catch-location-source">From photo</span>
+            </div>
+          ) : locationStatus === "success" ||
+            (catchLat !== 0 && catchLng !== 0) ? (
+            <div className="catch-location-display">
+              <LocationIcon size={16} />
+              <span>{formatCoord(catchLat, catchLng)}</span>
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                className="catch-location-refresh"
+              >
+                Refresh
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleGetLocation}
+              className="catch-location-btn"
+              disabled={locationStatus === "loading"}
+            >
+              <LocationIcon size={18} />
+              <span>
+                {locationStatus === "loading"
+                  ? "Getting location..."
+                  : locationStatus === "error"
+                    ? "Retry Location"
+                    : "Get Current Location"}
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* Time Field */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">
+            Time{" "}
+            {exifStatus === "found-time" && (
+              <span className="catch-form-hint-inline">(from photo)</span>
+            )}
+          </label>
+          <div className="catch-time-display">
+            {formatCatchDateTime(caughtAt)}
+          </div>
+        </div>
+
+        {/* Notes Field */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Notes</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="catch-form-textarea"
+            placeholder="Structure, technique, conditions..."
+            rows={3}
+          />
+        </div>
       </div>
 
       <div className="catch-form-footer">
@@ -1922,9 +2007,306 @@ function CatchFormView({
         </button>
       </div>
 
-      {/* Ensure styles are present */}
+      {/* STYLES */}
       <style>{`
-        /* ... styles from previous files ... */
+        /* ============ Catch Form ============ */
+        .catch-form-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 14px;
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          background: rgba(18,18,24,0.92);
+        }
+        .catch-cancel-btn {
+          border: none;
+          background: transparent;
+          color: rgba(255,255,255,0.65);
+          font-weight: 600;
+          font-size: 0.85rem;
+          padding: 6px 10px;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .catch-cancel-btn:hover {
+          background: rgba(255,255,255,0.06);
+          color: #fff;
+        }
+        .catch-form-title {
+          font-weight: 700;
+          font-size: 0.95rem;
+          letter-spacing: 0.2px;
+          color: #fff;
+        }
+
+        .catch-form-body {
+          padding: 14px 16px 18px;
+          overflow: auto;
+        }
+        .catch-form-field {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          margin-bottom: 14px;
+        }
+        .catch-form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        @media (max-width: 420px) {
+          .catch-form-row { grid-template-columns: 1fr; }
+        }
+
+        .catch-form-label {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: rgba(255,255,255,0.6);
+          letter-spacing: 0.2px;
+        }
+
+        .catch-form-input,
+        .catch-form-select,
+        .catch-form-textarea {
+          width: 100%;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 10px 12px;
+          color: #fff;
+          outline: none;
+          font-size: 0.9rem;
+          transition: all 0.2s;
+        }
+        .catch-form-input::placeholder, 
+        .catch-form-textarea::placeholder {
+          color: rgba(255,255,255,0.35);
+        }
+        .catch-form-input:focus,
+        .catch-form-select:focus,
+        .catch-form-textarea:focus {
+          border-color: rgba(74,144,226,0.55);
+          box-shadow: 0 0 0 3px rgba(74,144,226,0.15);
+        }
+        .catch-form-select {
+          appearance: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 10px center;
+          background-size: 16px;
+        }
+        .catch-form-select optgroup, 
+        .catch-form-select option {
+          background: #1a1a1a;
+          color: white;
+        }
+
+        /* Photo */
+        .catch-photo-btn {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px dashed rgba(255,255,255,0.18);
+          background: rgba(255,255,255,0.03);
+          color: rgba(255,255,255,0.8);
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .catch-photo-btn:hover {
+          background: rgba(74,144,226,0.10);
+          border-color: rgba(74,144,226,0.35);
+          color: #fff;
+        }
+        .catch-image-preview {
+          position: relative;
+          width: 100%;
+          height: 220px;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.10);
+          background: rgba(0,0,0,0.25);
+        }
+        .catch-image-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .catch-image-remove {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          width: 28px;
+          height: 28px;
+          border-radius: 10px;
+          border: none;
+          background: rgba(0,0,0,0.45);
+          color: rgba(255,255,255,0.9);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .catch-image-remove:hover {
+          background: rgba(0,0,0,0.65);
+        }
+
+        .catch-exif-badge {
+          position: absolute;
+          left: 10px;
+          bottom: 10px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(10px);
+          background: rgba(18,18,24,0.75);
+          color: rgba(255,255,255,0.85);
+        }
+        .catch-exif-badge.extracting {
+          border-color: rgba(74,144,226,0.25);
+          color: rgba(74,144,226,0.95);
+        }
+        .catch-exif-badge.found {
+          border-color: rgba(34,197,94,0.25);
+          color: rgba(34,197,94,0.95);
+        }
+        .catch-exif-badge.partial {
+          border-color: rgba(251,191,36,0.25);
+          color: rgba(251,191,36,0.95);
+        }
+        .catch-exif-badge.none {
+          border-color: rgba(255,255,255,0.10);
+          color: rgba(255,255,255,0.70);
+        }
+
+        /* Species selector */
+        .catch-species-selector {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .catch-species-btn {
+          padding: 8px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.10);
+          background: rgba(255,255,255,0.03);
+          color: rgba(255,255,255,0.75);
+          font-weight: 700;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .catch-species-btn:hover {
+          background: rgba(255,255,255,0.06);
+          color: #fff;
+        }
+        .catch-species-btn.active {
+          background: rgba(74,144,226,0.16);
+          border-color: rgba(74,144,226,0.35);
+          color: #4A90E2;
+        }
+
+        /* Location Display */
+        .catch-location-display {
+          padding: 12px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: rgba(255,255,255,0.8);
+          font-size: 0.9rem;
+        }
+        .catch-location-display.exif {
+          border-color: rgba(16, 185, 129, 0.3);
+          background: rgba(16, 185, 129, 0.1);
+        }
+        .catch-location-source {
+          margin-left: auto;
+          font-size: 0.65rem;
+          padding: 2px 6px;
+          border-radius: 4px;
+          background: rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.6);
+        }
+        .catch-location-refresh {
+          margin-left: auto;
+          font-size: 0.75rem;
+          color: #4A90E2;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-decoration: underline;
+        }
+        .catch-location-btn {
+          width: 100%;
+          padding: 12px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.8);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          transition: all 0.2s;
+        }
+        .catch-location-btn:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Time Display */
+        .catch-time-display {
+          padding: 12px 14px;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.9rem;
+        }
+        .catch-form-hint-inline {
+          font-weight: 400;
+          opacity: 0.5;
+          font-size: 0.65rem;
+          margin-left: 4px;
+        }
+
+        /* Footer / Save */
+        .catch-form-footer {
+          padding: 12px 16px 16px;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          background: rgba(18,18,24,0.92);
+        }
+        .catch-save-btn {
+          width: 100%;
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(74,144,226,0.35);
+          background: rgba(74,144,226,0.14);
+          color: #fff;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all .2s;
+        }
+        .catch-save-btn:hover {
+          background: rgba(74,144,226,0.20);
+          border-color: rgba(74,144,226,0.55);
+        }
+        .catch-save-btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
       `}</style>
     </>
   );

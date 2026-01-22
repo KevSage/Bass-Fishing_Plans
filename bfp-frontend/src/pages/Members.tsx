@@ -446,6 +446,8 @@ export function Members() {
   }, [showModal]);
 
   const isCatchLogOpenRef = useRef(false);
+  const lastDraftOpenedRef = useRef<string | null>(null);
+
   useEffect(() => {
     isCatchLogOpenRef.current = catchLog.isOpen;
   }, [catchLog.isOpen]);
@@ -470,7 +472,6 @@ export function Members() {
   useEffect(() => {
     viewingFavoriteIdRef.current = viewingFavoriteId;
   }, [viewingFavoriteId]);
-  const lastDraftOpenedRef = useRef<string | null>(null);
 
   // --- LAKE LABEL VISIBILITY ---
   const lakeLabelVisible = useLakeLabelVisibility(
@@ -766,6 +767,8 @@ export function Members() {
             lakeLat: latitude,
             lakeLng: longitude,
             imageData: imageData,
+            catchLat: latitude,
+            catchLng: longitude,
             // Defaults
             lure: "",
             weight: 0,
@@ -775,9 +778,6 @@ export function Members() {
           // 5. Set Draft & Open Log
           // Note: You must update CatchLogModal to accept `initialData={draftEntry}`
           setDraftEntry(newDraft);
-          if (mapRef.current) {
-            mapRef.current.flyTo({ center: [longitude, latitude], zoom: 15 });
-          }
         };
         reader.readAsDataURL(file);
       },
@@ -841,19 +841,22 @@ export function Members() {
       setLocationDetails({ city, state });
       setSelectedCoords({ lat: location.latitude, lng: location.longitude });
       setInputMode("manual");
-      if (mapRef.current) {
-        mapRef.current.flyTo({
-          center: [location.longitude, location.latitude],
-          zoom: 12,
-          duration: 1500,
-        });
-        if (markerRef.current) markerRef.current.remove();
-        const markerEl = createOrbMarker();
-        markerElementRef.current = markerEl;
-        markerRef.current = new mapboxgl.Marker({ element: markerEl })
-          .setLngLat([location.longitude, location.latitude])
-          .addTo(mapRef.current);
-      }
+
+      requestAnimationFrame(() => {
+        if (mapRef.current) {
+          mapRef.current.flyTo({
+            center: [location.longitude, location.latitude],
+            zoom: 12,
+            duration: 1500,
+          });
+          if (markerRef.current) markerRef.current.remove();
+          const markerEl = createOrbMarker();
+          markerElementRef.current = markerEl;
+          markerRef.current = new mapboxgl.Marker({ element: markerEl })
+            .setLngLat([location.longitude, location.latitude])
+            .addTo(mapRef.current);
+        }
+      });
     },
     [],
   );
@@ -1169,8 +1172,6 @@ export function Members() {
       <CatchLogModal
         {...catchLog}
         onDraftDone={clearDraftEntry}
-        // NOTE: Please ensure CatchLogModal updates to accept `initialData={draftEntry}`
-        // initialData={draftEntry}
         onFlyToLocation={(lat, lng) => {
           if (mapRef.current) {
             mapRef.current.flyTo({
