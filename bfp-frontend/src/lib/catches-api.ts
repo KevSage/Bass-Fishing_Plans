@@ -187,7 +187,9 @@ export async function createCustomLake(
     lng: number;
     city?: string;
     state?: string;
-  },
+    // Optional polygon anchors for user-defined lake boundaries
+    anchors?: { lat: number; lng: number }[];
+    },
   token: string,
 ): Promise<
   | { success: boolean; lake_id: string }
@@ -201,6 +203,26 @@ export async function createCustomLake(
     },
     token,
   );
+}
+
+
+export async function updateCustomLake(
+  lakeId: string,
+  payload: {
+    name: string;
+    lat: number;
+    lng: number;
+    city?: string | null;
+    state?: string | null;
+    anchors?: Array<{ lat: number; lng: number }>;
+  },
+  token: string,
+) {
+  return apiRequest(`/api/custom-lakes/${lakeId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  }, token);
 }
 
 export async function listCustomLakes(
