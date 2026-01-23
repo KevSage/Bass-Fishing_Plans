@@ -8,7 +8,7 @@ import os
 import uuid
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict
 import psycopg
 from psycopg.rows import dict_row
 from math import radians, cos
@@ -133,6 +133,8 @@ class CustomLakeStore:
         *,
         city: Optional[str] = None,
         state: Optional[str] = None,
+        # FIXED: Accept anchors parameter to prevent 500 error (even if DB doesn't use it yet)
+        anchors: Optional[List[Dict[str, float]]] = None, 
     ) -> str:
         """Create a new custom lake. Returns the lake ID."""
         lake_id = f"custom_{uuid.uuid4().hex[:12]}"

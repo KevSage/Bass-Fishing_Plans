@@ -95,6 +95,7 @@ class CreateCustomLakeRequest(BaseModel):
     lng: float
     city: Optional[str] = None
     state: Optional[str] = None
+    anchors: Optional[List[Dict[str, float]]] = None
 
 
 class RenameCustomLakeRequest(BaseModel):
@@ -108,6 +109,7 @@ class CustomLakeResponse(BaseModel):
     lng: float
     city: Optional[str]
     state: Optional[str]
+    anchors: Optional[List[Dict[str, float]]] = None
     catch_count: int
     created_at: str
 
@@ -153,6 +155,7 @@ async def create_custom_lake(
                 lng=existing.lng,
                 city=existing.city,
                 state=existing.state,
+                anchors=getattr(existing, 'anchors', None),
                 catch_count=existing.catch_count,
                 created_at=existing.created_at,
             ).model_dump()
@@ -165,6 +168,7 @@ async def create_custom_lake(
         lng=request.lng,
         city=request.city,
         state=request.state,
+        anchors=request.anchors,
     )
     
     return {
@@ -193,6 +197,7 @@ async def list_custom_lakes(
                 lng=lake.lng,
                 city=lake.city,
                 state=lake.state,
+                anchors=getattr(lake, 'anchors', None),
                 catch_count=lake.catch_count,
                 created_at=lake.created_at,
             ).model_dump()
@@ -393,6 +398,7 @@ async def list_favorites(
                     "lng": lake.lng,
                     "city": lake.city,
                     "state": lake.state,
+                    "anchors": getattr(lake, "anchors", None),
                     "catch_count": lake.catch_count,
                     "added_at": fav.added_at,
                 })
