@@ -19,7 +19,7 @@ import { Account } from "./pages/Account";
 import { NotFound } from "./pages/NotFound";
 import { VerifyEmail } from "./pages/VerifyEmail";
 import "./complete-styles.css";
-
+import { LakeBuilder } from "./pages/LakeBuilder";
 import { PlanPage } from "./pages/PlanPage";
 import { WeatherClarityPage } from "./pages/WeatherClarity";
 import { PresentationClarityPage } from "./pages/PresentationClarity";
@@ -85,7 +85,7 @@ export default function App() {
         <Route path="/weather" element={<WeatherClarityPage />} />
         <Route path="/presentation" element={<PresentationClarityPage />} />
         <Route path="/insights" element={<Insights />} />
-
+        <Route path="/lake-builder" element={<LakeBuilder />} />
         <Route
           path="/members"
           element={

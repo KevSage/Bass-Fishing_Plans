@@ -746,8 +746,8 @@ export function Insights() {
 
         /* CHART */
         .hero-chart-area { padding: 20px; display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; }
-        .chart-bar-row { display: flex; flex-direction: column; gap: 4px; background: transparent; border: none; cursor: pointer; width: 100%; }
-        .bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,255,255,0.8); width: 100%; }
+        .chart-bar-row { display: flex; flex-direction: column; gap: 4px; background: transparent; border: none; cursor: pointer; width: 100%; text-transform: capitalize}
+        .bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,255,255,0.8); width: 100%;  textTransform: capitalize; }
         .bar-track { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
         .bar-fill { height: 100%; background: #4A90E2; border-radius: 3px; transition: width 0.5s ease; }
         .chart-bar-row.active .bar-fill { background: #fff; }

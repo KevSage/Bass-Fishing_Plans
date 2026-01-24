@@ -1116,6 +1116,7 @@ function CatchListView({
           flex-shrink: 0;
           background: rgba(0, 0, 0, 0.3);
           position: relative;
+          object-fit: contain;
         }
         .catch-item-species {
           margin-left: 8px;
@@ -1394,7 +1395,7 @@ export function CatchDetailView({
         .catch-detail-image-compact img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
         }
         .catch-detail-placeholder-compact {
           width: 100%;
@@ -2126,7 +2127,7 @@ function CatchFormView({
         .catch-image-preview {
           position: relative;
           width: 100%;
-          height: 220px;
+          height: 300px;
           border-radius: 14px;
           overflow: hidden;
           border: 1px solid rgba(255,255,255,0.10);
@@ -2135,7 +2136,7 @@ function CatchFormView({
         .catch-image-preview img {
           width: 100%;
           height: 100%;
-          object-fit: cover;
+          object-fit: contain;
         }
         .catch-image-remove {
           position: absolute;

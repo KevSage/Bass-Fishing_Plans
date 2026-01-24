@@ -10,7 +10,7 @@ import React, {
 import { useUser, useAuth } from "@clerk/clerk-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 
 // API Imports
 import { generateMemberPlan, RateLimitError } from "@/lib/api";
@@ -20,6 +20,7 @@ import {
   removeFavorite,
   listCustomLakes,
   createCustomLake,
+  updateCustomLake,
   type CustomLake,
   type FavoriteLake as ApiFavoriteLake,
 } from "@/lib/catches-api";
@@ -52,7 +53,7 @@ import LAKES_DATA from "../data/lakes.json";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 // =============================================================================
-// LOCAL ICONS (Self-contained to prevent import errors)
+// LOCAL ICONS
 // =============================================================================
 
 const BookmarkIcon = ({ size = 20 }: { size?: number }) => (
@@ -282,7 +283,7 @@ type FavoriteLake = {
   lat: number;
   lng: number;
   zoom: number;
-  image?: string; // Optional to match FavoritesCarousel props
+  image?: string;
   acres?: number;
   tier?: number;
   anchors?: { lat: number; lng: number }[];
@@ -418,6 +419,8 @@ export function Members() {
   const { getToken } = useAuth();
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
+  const location = useLocation(); // 👈 Add this
+  const [dataVersion, setDataVersion] = useState(0); // 👈 Add this (triggers refetch)
   const [searchParams] = useSearchParams();
 
   // --- PERSISTENT STATE ---
@@ -521,6 +524,7 @@ export function Members() {
   const viewingFavoriteIdRef = useRef<string | null>(null);
   const favoritesRef = useRef(favorites);
   const customLakesRef = useRef(customLakes);
+  const pendingLakeSelectRef = useRef<string | null>(null);
 
   useEffect(() => {
     showModalRef.current = showModal;
@@ -537,6 +541,27 @@ export function Members() {
   useEffect(() => {
     customLakesRef.current = customLakes;
   }, [customLakes]);
+  // Handle Return from LakeBuilder
+  const processedRefreshRef = useRef<number | null>(null);
+  useEffect(() => {
+    const refreshTimestamp = location.state?.timestamp;
+    if (
+      location.state?.refresh &&
+      refreshTimestamp !== processedRefreshRef.current
+    ) {
+      console.log("Refreshing data...", location.state.lakeId);
+      processedRefreshRef.current = refreshTimestamp;
+      setDataVersion((v) => v + 1); // Triggers the fetches above
+
+      // Store lakeId to select after data loads
+      if (location.state.lakeId) {
+        pendingLakeSelectRef.current = location.state.lakeId;
+      }
+
+      // Clear navigation state so it doesn't loop
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // --- API FETCHERS ---
   useEffect(() => {
@@ -546,6 +571,10 @@ export function Members() {
       if (!token) return;
       try {
         const res = await listFavorites(token);
+        console.log(
+          "listFavorites API response:",
+          res.favorites?.map((f: any) => ({ id: f.lake_id, name: f.name })),
+        );
         if (mounted && res.favorites) {
           const mapped: FavoriteLake[] = res.favorites.map((f: any) => ({
             id: f.lake_id,
@@ -570,7 +599,7 @@ export function Members() {
     return () => {
       mounted = false;
     };
-  }, [getToken]);
+  }, [getToken, dataVersion]);
 
   useEffect(() => {
     let mounted = true;
@@ -589,7 +618,38 @@ export function Members() {
     return () => {
       mounted = false;
     };
-  }, [getToken]);
+  }, [getToken, dataVersion]);
+
+  // Handle pending lake selection after returning from LakeBuilder
+  useEffect(() => {
+    if (!pendingLakeSelectRef.current) return;
+    if (favorites.length === 0) return;
+
+    const targetId = pendingLakeSelectRef.current;
+    const lake = favorites.find((f) => f.id === targetId);
+
+    if (lake) {
+      // Select the lake (same pattern as FavoritesCarousel onSelect)
+      setWaterName(lake.name);
+      setViewingFavoriteId(lake.id);
+      setLocationDetails({ city: lake.city, state: lake.state });
+      setSelectedCoords({ lat: lake.lat, lng: lake.lng });
+
+      // Fly to it after a short delay to ensure map is ready
+      setTimeout(() => {
+        if (mapRef.current) {
+          mapRef.current.flyTo({
+            center: [lake.lng, lake.lat],
+            zoom: lake.zoom || 14,
+            duration: 2000,
+          });
+        }
+      }, 300);
+
+      // Clear pending
+      pendingLakeSelectRef.current = null;
+    }
+  }, [favorites]);
 
   // --- DERIVED STATE ---
   const isCurrentLocationSaved = useMemo(() => {
@@ -972,8 +1032,6 @@ export function Members() {
     );
   };
 
-  // --- SCOUT MODAL HANDLERS ---
-  // DEFINED HERE TO FIX "Cannot find name" ERROR
   const handleCloseScoutModal = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
@@ -1117,7 +1175,6 @@ export function Members() {
               Math.abs(f.lng - selectedCoords.lng) < 0.001),
         );
         if (fav) {
-          // Confirm removal from Main Map Button
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
       } else {
@@ -1130,19 +1187,23 @@ export function Members() {
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
 
-        // If strict match AND names match, use DB. Else custom.
+        // If strict match AND names match, use DB ID.
+        // If user renamed it (waterName !== dbMatch.name), force custom.
         if (dbMatch && dbMatch.id && dbMatch.name === waterName) {
           lakeId = dbMatch.id;
           lakeType = "known";
         } else {
+          // No DB match OR user renamed it -> Custom
           lakeType = "custom";
           shouldCreateCustom = true;
         }
 
         const performCustomCreation = async () => {
+          const nameToSave = manualWaterName || waterName;
+          console.log("Creating custom lake with name:", nameToSave);
           const createRes = await createCustomLake(
             {
-              name: manualWaterName || waterName,
+              name: nameToSave,
               lat: selectedCoords.lat,
               lng: selectedCoords.lng,
               city: locationDetails.city || "",
@@ -1151,14 +1212,41 @@ export function Members() {
             },
             token,
           );
-          if (createRes.success) return (createRes as any).lake_id;
-          else return (createRes as any).existing_lake?.id;
+          console.log("createCustomLake API response:", createRes);
+          if (createRes.success) {
+            return (createRes as any).lake_id;
+          } else {
+            // Existing lake found - update its name if user provided a different one
+            const existingLake = (createRes as any).existing_lake;
+            if (
+              existingLake &&
+              nameToSave &&
+              existingLake.name !== nameToSave
+            ) {
+              console.log(
+                "Updating existing lake name from",
+                existingLake.name,
+                "to",
+                nameToSave,
+              );
+              try {
+                await updateCustomLake(
+                  existingLake.id,
+                  { name: nameToSave },
+                  token,
+                );
+              } catch (err) {
+                console.error("Failed to update lake name:", err);
+              }
+            }
+            return existingLake?.id;
+          }
         };
 
         try {
           if (shouldCreateCustom) {
             lakeId = await performCustomCreation();
-            if (!lakeId) throw new Error("Failed ID");
+            if (!lakeId) throw new Error("Failed to get lake ID");
             setRecentCustomLakeId(lakeId);
             setShowOutlinePrompt(true);
           } else {
@@ -1168,7 +1256,7 @@ export function Members() {
               console.warn("Known lake 404, fallback custom...");
               lakeType = "custom";
               lakeId = await performCustomCreation();
-              if (!lakeId) throw new Error("Failed fallback");
+              if (!lakeId) throw new Error("Failed fallback creation");
               await addFavorite(lakeId, "custom", token);
               setRecentCustomLakeId(lakeId);
               setShowOutlinePrompt(true);
@@ -1194,8 +1282,8 @@ export function Members() {
           };
           setFavorites((prev) => [...prev, newLake]);
         } catch (err) {
-          console.error("Failed save", err);
-          alert("Error saving lake.");
+          console.error("Failed to save favorite", err);
+          alert("Error saving lake. Please try again.");
         }
       }
     },
@@ -1460,7 +1548,7 @@ export function Members() {
         </div>
       )}
 
-      {/* CONFIRM MODALS */}
+      {/* CONFIRM MODALS (Cases A & C) */}
       {showGenerateConfirm && (
         <div
           className="modal-overlay"
@@ -1628,6 +1716,7 @@ export function Members() {
                         suggestedName: waterName,
                         city: locationDetails.city,
                         state: locationDetails.state,
+                        lakeId: recentCustomLakeId,
                       },
                     });
                   }
@@ -1736,6 +1825,29 @@ export function Members() {
                   <div style={{ color: "#4ecdc4", fontSize: "1.4rem" }}>✓</div>
                 </div>
               )}
+              {/* RESTORED PLATFORM TOGGLES */}
+              <div>
+                <label className="modal-label">Platform</label>
+                <div style={{ display: "flex", gap: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setAccessType("boat")}
+                    className={`glass-toggle modal-btn ${accessType === "boat" ? "active" : ""}`}
+                  >
+                    <BoatIcon active={accessType === "boat"} />{" "}
+                    <span>Boat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccessType("bank")}
+                    className={`glass-toggle modal-btn ${accessType === "bank" ? "active" : ""}`}
+                  >
+                    <BankIcon active={accessType === "bank"} />{" "}
+                    <span>Bank</span>
+                  </button>
+                </div>
+              </div>
+
               <div style={{ marginTop: "auto", display: "flex", gap: 10 }}>
                 {isCurrentLocationSaved && (
                   <button
@@ -1774,7 +1886,12 @@ export function Members() {
         .orb-marker-map::after { content: ''; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(74,144,226,0.5); animation: map-orb-pulse 2s infinite ease-out; }
         @keyframes map-orb-pulse { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
 
-        .mapboxgl-ctrl-recenter { width: 29px; height: 29px; display: flex; align-items: center; justify-content: center; background: #fff; border: none; cursor: pointer; border-radius: 4px; }
+        .mapboxgl-ctrl-recenter {
+          width: 29px; height: 29px;
+          display: flex; align-items: center; justify-content: center;
+          background: #fff; border: none; cursor: pointer;
+          border-radius: 4px;
+        }
         .mapboxgl-ctrl-recenter:hover { background: #f0f0f0; }
         .mapboxgl-ctrl-recenter svg { color: #333; }
 
@@ -1844,6 +1961,7 @@ export function Members() {
         .coords-display { padding: 14px 16px; background: rgba(0,0,0,0.3); border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
         .modal-label { display: block; font-size: 0.7rem; font-weight: 700; opacity: 0.5; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
         .modal-btn { flex: 1; padding: 14px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
+        .modal-btn.active { background: rgba(74, 144, 226, 0.15); border-color: rgba(74, 144, 226, 0.4); color: #fff; }
         .generate-btn { flex: 1; padding: 18px; color: #fff; border: none; border-radius: 16px; font-weight: 700; font-size: 1.05rem; cursor: pointer; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.25); }
         .save-fav-btn { width: 60px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: #fff; cursor: pointer; }
         .save-fav-btn.remove { border-color: rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.1); }
