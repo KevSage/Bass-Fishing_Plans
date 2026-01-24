@@ -84,6 +84,25 @@ function getDistance(lat1: number, lng1: number, lat2: number, lng2: number) {
   return R * c;
 }
 
+// Calculate polygon area in acres using Shoelace formula on sphere
+function calculateAcres(coords: { lat: number; lng: number }[]): number {
+  if (coords.length < 3) return 0;
+  const R = 6378137; // Earth's radius in meters
+  let area = 0;
+  for (let i = 0; i < coords.length; i++) {
+    const j = (i + 1) % coords.length;
+    const p1 = coords[i];
+    const p2 = coords[j];
+    area +=
+      ((p2.lng * Math.PI) / 180 - (p1.lng * Math.PI) / 180) *
+      (2 +
+        Math.sin((p1.lat * Math.PI) / 180) +
+        Math.sin((p2.lat * Math.PI) / 180));
+  }
+  area = (Math.abs(area) * R * R) / 2.0;
+  return Math.round(area * 0.000247105); // Convert sq meters to acres
+}
+
 export function LakeBuilder() {
   const { state } = useLocation();
   const navigate = useNavigate();
@@ -289,9 +308,12 @@ export function LakeBuilder() {
       const token = await getToken();
       if (!token) throw new Error("No Auth");
 
-      // We assume this API function exists or will be added to catches-api.ts
-      // It hits PATCH /custom-lakes/:id with { anchors: pins }
-      await updateCustomLakeGeometry(lakeId, pins, token);
+      // Calculate acres from polygon
+      const acres = calculateAcres(pins);
+      console.log("Calculated acres:", acres);
+
+      // Save geometry and acres to DB
+      await updateCustomLakeGeometry(lakeId, pins, token, acres);
 
       // --- UPDATED NAVIGATION ---
       // Send refresh signal to Members.tsx

@@ -332,6 +332,16 @@ function getMatchRadius(acres?: number): number {
   return 1000;
 }
 
+// Calculate appropriate zoom level based on lake size
+function getZoomForLake(acres?: number): number {
+  if (!acres) return 14; // Unknown size - default medium zoom
+  if (acres > 30000) return 10; // Huge (Lake Lanier, Guntersville) - wide view
+  if (acres > 10000) return 11; // Large reservoir
+  if (acres > 5000) return 12; // Medium-large lake
+  if (acres > 1000) return 13; // Medium lake
+  return 14; // Small lake/pond - tight zoom
+}
+
 function pointInPolygon(
   point: { lat: number; lng: number },
   polygon: { lat: number; lng: number }[],
@@ -576,19 +586,23 @@ export function Members() {
           res.favorites?.map((f: any) => ({ id: f.lake_id, name: f.name })),
         );
         if (mounted && res.favorites) {
-          const mapped: FavoriteLake[] = res.favorites.map((f: any) => ({
-            id: f.lake_id,
-            lake_type: f.lake_type,
-            name: f.name,
-            lat: f.lat,
-            lng: f.lng,
-            city: f.city || undefined,
-            state: f.state || undefined,
-            acres: undefined,
-            tier: undefined,
-            zoom: 12,
-            image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${f.lng},${f.lat},12,0/600x400?access_token=${MAPBOX_TOKEN}`,
-          }));
+          const mapped: FavoriteLake[] = res.favorites.map((f: any) => {
+            const acres = f.acres || undefined;
+            const imageZoom = getZoomForLake(acres);
+            return {
+              id: f.lake_id,
+              lake_type: f.lake_type,
+              name: f.name,
+              lat: f.lat,
+              lng: f.lng,
+              city: f.city || undefined,
+              state: f.state || undefined,
+              acres: acres,
+              tier: f.tier || undefined,
+              zoom: imageZoom,
+              image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${f.lng},${f.lat},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
+            };
+          });
           setFavorites(mapped);
         }
       } catch (err) {
@@ -640,7 +654,7 @@ export function Members() {
         if (mapRef.current) {
           mapRef.current.flyTo({
             center: [lake.lng, lake.lat],
-            zoom: lake.zoom || 14,
+            zoom: getZoomForLake(lake.acres),
             duration: 2000,
           });
         }
@@ -649,7 +663,7 @@ export function Members() {
       // Clear pending
       pendingLakeSelectRef.current = null;
     }
-  }, [favorites]);
+  }, [favorites, dataVersion]);
 
   // --- DERIVED STATE ---
   const isCurrentLocationSaved = useMemo(() => {
@@ -1424,7 +1438,7 @@ export function Members() {
                   if (mapRef.current)
                     mapRef.current.flyTo({
                       center: [lake.lng, lake.lat],
-                      zoom: lake.zoom || 12,
+                      zoom: getZoomForLake(lake.acres),
                       duration: 2000,
                     });
                   setShowFavorites(false);

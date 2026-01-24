@@ -127,7 +127,12 @@ export function apiRecordToEntry(record: CatchRecord): CatchEntry {
     length: record.length || undefined,
     notes: record.notes || undefined,
     photoUrl: record.photo_url || undefined,
-    caughtAt: `${record.date}T${record.time || "12:00"}:00`,
+    caughtAt: (() => {
+      const timeStr = record.time || "12:00:00";
+      // Handle both HH:MM and HH:MM:SS formats
+      const fullTime = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+      return `${record.date}T${fullTime}`;
+    })(),
     createdAt: record.created_at,
     source: record.source,
   };
