@@ -20,7 +20,7 @@ const container = (maxWidth: number) =>
     maxWidth,
     margin: "0 auto",
     width: "100%",
-  } as const);
+  }) as const;
 
 const eyebrow = {
   fontSize: "0.82rem",
@@ -170,7 +170,7 @@ export function Landing() {
     ({
       maxWidth,
       margin: "0 auto",
-    } as const);
+    }) as const;
 
   const h1Style = {
     fontSize: "clamp(2.25rem, 6vw, 4rem)",
@@ -356,7 +356,7 @@ export function Landing() {
               marginBottom: 28,
             }}
           >
-            Bass Fishing, Clarified
+            Your history, on the water.
           </h2>
 
           <p
@@ -366,8 +366,9 @@ export function Landing() {
               marginBottom: "clamp(44px, 8vw, 72px)",
             }}
           >
-            Bass Clarity is an intelligent Bass Fishing App that interprets
-            season and conditions into a focused, actionable fishing strategy.
+            Bass Clarity helps anglers understand their water, capture their
+            fishing history, and generate clear, bass-specific strategy when it
+            matters.
             <br />
           </p>
 

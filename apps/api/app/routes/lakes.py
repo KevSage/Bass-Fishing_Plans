@@ -97,10 +97,12 @@ class CreateCustomLakeRequest(BaseModel):
     state: Optional[str] = None
     anchors: Optional[List[Dict[str, float]]] = None
 
-
 class RenameCustomLakeRequest(BaseModel):
     name: str
 
+# --- NEW MODEL FOR GEOMETRY ---
+class UpdateGeometryRequest(BaseModel):
+    anchors: List[Dict[str, float]]
 
 class CustomLakeResponse(BaseModel):
     id: str
@@ -113,11 +115,9 @@ class CustomLakeResponse(BaseModel):
     catch_count: int
     created_at: str
 
-
 class AddFavoriteRequest(BaseModel):
     lake_id: str
     lake_type: str  # 'known' or 'custom'
-
 
 class ResolveLakeRequest(BaseModel):
     lat: float
@@ -256,6 +256,32 @@ async def rename_custom_lake(
         "success": True,
         "lake_id": lake_id,
         "new_name": request.name,
+    }
+
+
+# --- NEW ENDPOINT: UPDATE GEOMETRY ---
+@router.put("/custom-lakes/{lake_id}/geometry")
+async def update_custom_lake_geometry(
+    lake_id: str,
+    request: UpdateGeometryRequest,
+    authorization: Optional[str] = Header(None),
+) -> Dict:
+    """
+    Update the boundary geometry (anchors) of a custom lake.
+    """
+    email = await verify_clerk_session(authorization)
+    
+    # We call the update_geometry method on the store
+    # Ensure your custom_lakes.py CustomLakeStore has this method!
+    updated = custom_lake_store.update_geometry(lake_id, email, request.anchors)
+    
+    if not updated:
+        raise HTTPException(status_code=404, detail="Custom lake not found or access denied")
+    
+    return {
+        "success": True,
+        "lake_id": lake_id,
+        "anchors_count": len(request.anchors)
     }
 
 
