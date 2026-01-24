@@ -103,7 +103,8 @@ class RenameCustomLakeRequest(BaseModel):
 # --- NEW MODEL FOR GEOMETRY ---
 class UpdateGeometryRequest(BaseModel):
     anchors: List[Dict[str, float]]
-
+    acres: Optional[int] = None  # Add this
+    
 class CustomLakeResponse(BaseModel):
     id: str
     name: str

@@ -23,6 +23,7 @@ export async function extractExifData(file: File): Promise<ExifData> {
       gps: true,
       pick: ["DateTimeOriginal", "CreateDate", "ModifyDate"],
     });
+    console.log("Raw EXIF data:", exif); // ADD THIS
 
     if (!exif) {
       return { latitude: null, longitude: null, dateTime: null };

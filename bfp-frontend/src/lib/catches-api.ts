@@ -232,12 +232,13 @@ export async function updateCustomLakeGeometry(
   lakeId: string,
   anchors: { lat: number; lng: number }[],
   token: string,
+  acres?: number,
 ): Promise<{ success: boolean }> {
   return apiRequest(
     `/custom-lakes/${lakeId}/geometry`,
     {
       method: "PUT",
-      body: JSON.stringify({ anchors }),
+      body: JSON.stringify({ anchors, acres }),
     },
     token,
   );

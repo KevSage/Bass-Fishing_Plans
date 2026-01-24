@@ -376,8 +376,8 @@
     "name": "Lake Allatoona",
     "state": "GA",
     "city": "Cartersville",
-    "latitude": 34.1472,
-    "longitude": -84.7244,
+    "latitude": 34.1354,
+    "longitude": -84.6338,
     "acres": 12000,
     "tier": 2
   },
@@ -385,8 +385,8 @@
     "name": "West Point Lake",
     "state": "GA",
     "city": "West Point",
-    "latitude": 32.8772,
-    "longitude": -85.1844,
+    "latitude": 32.9736,
+    "longitude": -85.1978,
     "acres": 25900,
     "tier": 2
   },
