@@ -1341,7 +1341,7 @@ export function Landing() {
 
           <p style={{ ...leadStyle, maxWidth: 980 }}>
             Know where to start, transition and adjust. Clear actionable
-            guidance, from daybreak, to last cast.
+            guidance, from daybreak to last cast.
           </p>
         </div>
 
@@ -1420,7 +1420,7 @@ export function Landing() {
                   color: "rgba(255,255,255,0.68)",
                 }}
               >
-                Clarity leads to Confidence.
+                All Day Guidance
               </div>
 
               <div style={{ height: 14 }} />
@@ -1435,16 +1435,16 @@ export function Landing() {
               >
                 {[
                   {
-                    title: "Where To Start",
-                    desc: "Bass Clarity doesn't just tell you what to throw, we tell you why it makes sense for your conditions. Nothing left to intrepret, just sound reasoning.",
+                    title: "Customized Day Progression",
+                    desc: "Morning, Midday, and Evening guidance is generated directly from your personalized plan",
                   },
                   {
-                    title: "What to Expect",
-                    desc: "Targets are narrowed to the places most likely to hold fish based on today's conditions.",
+                    title: "Plan Consistent",
+                    desc: "Each phase of the day reflects the exact lures, targets, and strategy selected for your conditions.",
                   },
                   {
-                    title: "Transitions and Adjustments",
-                    desc: "More than 130+ lure specific retrieves that adjusts for targets and conditions",
+                    title: "Guidance that Evolves",
+                    desc: "As light, activity, and positioning change, your strategy adapts without losing direction.",
                   },
                 ].map((x, i) => (
                   <li
