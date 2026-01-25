@@ -29,9 +29,9 @@ export function SupportPage() {
                 <div style={{ marginTop: 16 }}>
                   <a
                     className="btn primary"
-                    href="mailto:support@bassclarity.com"
+                    href="mailto:bassclarity@gmail.com"
                   >
-                    Email support@bassclarity.com
+                    Email bassclarity@gmail.com
                   </a>
                 </div>
 

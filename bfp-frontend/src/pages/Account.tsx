@@ -33,7 +33,7 @@ export function Account() {
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
-    null
+    null,
   );
   const [memberStatus, setMemberStatus] = useState<MemberStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,7 +84,7 @@ export function Account() {
           setSubscription({
             status: mappedStatus,
             nextBillingDate: new Date(
-              data.next_billing_date * 1000
+              data.next_billing_date * 1000,
             ).toLocaleDateString("en-US", {
               month: "long",
               day: "numeric",
@@ -523,7 +523,7 @@ export function Account() {
           <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)" }}>
             Need help?{" "}
             <a
-              href="mailto:support@bassclarity.com"
+              href="mailto:bassclarity@gmail.com"
               style={{ color: "#4a90e2", textDecoration: "none" }}
             >
               Contact support

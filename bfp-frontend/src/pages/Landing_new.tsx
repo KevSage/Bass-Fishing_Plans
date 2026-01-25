@@ -20,7 +20,7 @@ const container = (maxWidth: number) =>
     maxWidth,
     margin: "0 auto",
     width: "100%",
-  } as const);
+  }) as const;
 
 const eyebrow = {
   fontSize: "0.82rem",
@@ -170,7 +170,7 @@ export function Landing() {
     ({
       maxWidth,
       margin: "0 auto",
-    } as const);
+    }) as const;
 
   const h1Style = {
     fontSize: "clamp(2.25rem, 6vw, 4rem)",
@@ -2292,11 +2292,11 @@ export function Landing() {
                 style={{ display: "flex", flexDirection: "column", gap: 10 }}
               >
                 <a
-                  href="mailto:support@bassclarity.com"
+                  href="mailto:bassclarity@gmail.com"
                   className="muted"
                   style={{ textDecoration: "none" }}
                 >
-                  support@bassclarity.com
+                  bassclarity@gmail.com
                 </a>
 
                 <div style={{ height: 10 }} />

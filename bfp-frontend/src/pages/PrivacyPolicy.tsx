@@ -190,8 +190,8 @@ export function PrivacyPolicyPage() {
             <p>
               If you have questions or requests about this Privacy Policy,
               contact us at{" "}
-              <a className="link" href="mailto:support@bassclarity.com">
-                support@bassclarity.com
+              <a className="link" href="mailto:bassclarity@gmail.com">
+                bassclarity@gmail.com
               </a>
               .
             </p>

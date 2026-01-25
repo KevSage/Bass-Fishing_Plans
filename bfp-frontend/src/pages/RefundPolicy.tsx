@@ -74,8 +74,8 @@ export function RefundPolicyPage() {
             <h2>6. How to Contact Support</h2>
             <p>
               If you believe you were charged in error, email{" "}
-              <a className="link" href="mailto:support@bassclarity.com">
-                support@bassclarity.com
+              <a className="link" href="mailto:bassclarity@gmail.com">
+                bassclarity@gmail.com
               </a>{" "}
               with:
             </p>
