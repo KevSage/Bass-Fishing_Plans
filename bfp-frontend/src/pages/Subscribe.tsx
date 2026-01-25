@@ -319,7 +319,7 @@ export function Subscribe() {
           <p>
             Questions?{" "}
             <a
-              href="mailto:support@bassclarity.com"
+              href="mailto:bassclarity@gmail.com"
               style={{ color: "#4A90E2", textDecoration: "underline" }}
             >
               Contact support

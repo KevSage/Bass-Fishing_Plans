@@ -179,7 +179,7 @@ export function NotFound() {
             </Link>
             <span style={{ opacity: 0.3 }}>•</span>
             <a
-              href="mailto:support@bassclarity.com"
+              href="mailto:bassclarity@gmail.com"
               style={{
                 color: "#4A90E2",
                 textDecoration: "none",

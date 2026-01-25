@@ -291,7 +291,7 @@ export function Success() {
             <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.6)" }}>
               Questions or need help?{" "}
               <a
-                href="mailto:support@bassclarity.com"
+                href="mailto:bassclarity@gmail.com"
                 style={{ color: "#60a5fa", textDecoration: "none" }}
               >
                 Contact support

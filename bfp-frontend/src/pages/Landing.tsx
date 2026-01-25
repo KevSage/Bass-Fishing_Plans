@@ -1851,11 +1851,11 @@ export function Landing() {
                 style={{ display: "flex", flexDirection: "column", gap: 10 }}
               >
                 <a
-                  href="mailto:support@bassclarity.com"
+                  href="mailto:bassclarity@gmail.com"
                   className="muted"
                   style={{ textDecoration: "none" }}
                 >
-                  support@bassclarity.com
+                  bassclarity@gmail.com
                 </a>
 
                 <div style={{ height: 10 }} />

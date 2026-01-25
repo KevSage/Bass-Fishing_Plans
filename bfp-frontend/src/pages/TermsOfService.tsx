@@ -207,8 +207,8 @@ export function TermsOfServicePage() {
             <h2>17. Contact</h2>
             <p>
               Questions about these Terms? Contact{" "}
-              <a className="link" href="mailto:support@bassclarity.com">
-                support@bassclarity.com
+              <a className="link" href="mailto:bassclarity@gmail.com">
+                bassclarity@gmail.com
               </a>
               .
             </p>
