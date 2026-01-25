@@ -1,3 +1,4 @@
+// src/pages/Landing.tsx
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -306,20 +307,6 @@ export function Landing() {
           <h1 style={h1Style}>Clarity on the Water.</h1>
           <div style={{ height: 46 }} />
 
-          {/* <p
-            style={{
-              fontSize: "clamp(1.1rem, 2.5vw, 1.35rem)",
-              lineHeight: 1.65,
-              opacity: 0.9,
-              maxWidth: 900,
-              margin: "0 auto clamp(32px, 6vw, 48px)",
-              fontWeight: 400,
-            }}
-          >
-            Bass Clarity is an intelligent Bass Fishing App that interprets
-            season and conditions into a focused, actionable fishing strategy.
-          </p> */}
-
           <Link
             className="btn primary"
             to="/subscribe"
@@ -350,6 +337,7 @@ export function Landing() {
       >
         <div className="container" style={container(1200)}>
           <h2
+            className="water-text"
             style={{
               ...h2Style,
               fontSize: "clamp(2.25rem, 5.5vw, 3.5rem)",
@@ -435,7 +423,9 @@ export function Landing() {
             Location Clarity
           </div>
 
-          <h2 style={h2Style}>Your Living Record </h2>
+          <h2 className="water-text" style={h2Style}>
+            Your Living Record
+          </h2>
           <p style={leadStyle}>
             Every catch you log is stored with its location, building real
             history over time. As your experience grows, patterns emerge
@@ -588,32 +578,6 @@ export function Landing() {
           </div>
         </div>
         <div style={{ height: 18 }} />
-
-        {/* Responsive styling */}
-        <style>{`
-               /* Mobile: phone first (order: 1), then 2x2 cards below (order: 2) */
-               .strategy-phone {
-                 order: 1;
-               }
-               .strategy-cards {
-                 order: 2;
-                 grid-template-columns: repeat(2, 1fr);
-               }
-               
-               /* Desktop: 2x2 cards left (order: 1), phone right (order: 2) */
-               @media (min-width: 1024px) {
-                 .strategy-layout {
-                   grid-template-columns: 1.2fr 1fr !important;
-                 }
-                 .strategy-phone {
-                   order: 2;
-                 }
-                 .strategy-cards {
-                   order: 1;
-                   grid-template-columns: repeat(2, 1fr) !important;
-                 }
-               }
-             `}</style>
       </section>
 
       {/* HOW IT WORKS (Strategy Engine) */}
@@ -629,7 +593,9 @@ export function Landing() {
           >
             Data Clarity
           </div>
-          <h2 style={h2Style}>A Disciplined Decision Engine</h2>
+          <h2 className="water-text" style={h2Style}>
+            A Disciplined Decision Engine
+          </h2>
           <p style={leadStyle}>
             Bass Clarity quietly interprets today’s conditions and turns them
             into a focused fishing strategy — without noise, dashboards, or
@@ -791,12 +757,12 @@ export function Landing() {
               Weather Clarity
             </div>
 
-            <h1 style={h1Style}>
+            <h2 className="water-text" style={h2Style}>
               {/* Not Just Weather
                      <br /> */}
               Your Weather, Simplified
               <br />
-            </h1>
+            </h2>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               No Dashboards. No Charts. No Overlays.
@@ -971,51 +937,10 @@ export function Landing() {
                     </li>
                   ))}
                 </ul>
-
-                {/* <p style={{ ...pStyle, fontSize: "1.1rem", opacity: 0.86 }}>
-                         Only the Information You Need.
-                         <br />
-                         No translation required.
-                       </p> */}
-
-                {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                         <Link to="/subscribe" style={primaryCta}>
-                           Start Your Free Trial
-                         </Link>
-                         <Link to="/how-it-works" style={smallCta}>
-                           See how it works
-                         </Link>
-                       </div> */}
               </div>
             </div>
           </div>
         </div>
-
-        {/* Responsive styling */}
-        <style>{`
-               /* Mobile: phone first (order: 1), then 2x2 cards below (order: 2) */
-               .strategy-phone {
-                 order: 1;
-               }
-               .strategy-cards {
-                 order: 2;
-                 grid-template-columns: repeat(2, 1fr);
-               }
-               
-               /* Desktop: 2x2 cards left (order: 1), phone right (order: 2) */
-               @media (min-width: 1024px) {
-                 .strategy-layout {
-                   grid-template-columns: 1.2fr 1fr !important;
-                 }
-                 .strategy-phone {
-                   order: 2;
-                 }
-                 .strategy-cards {
-                   order: 1;
-                   grid-template-columns: repeat(2, 1fr) !important;
-                 }
-               }
-             `}</style>
       </section>
 
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
@@ -1026,7 +951,9 @@ export function Landing() {
               Technique / Presentation Clarity
             </div>
 
-            <h1 style={h1Style}>Complementary Approaches.</h1>
+            <h1 className="water-text" style={h1Style}>
+              Complementary Approaches.
+            </h1>
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               Fish with Confidence. No Decision Paralysis.
               <br />
@@ -1168,7 +1095,9 @@ export function Landing() {
               Strategic Clarity
             </div>
 
-            <h2 style={h2Style}>Fish With Intention.</h2>
+            <h2 className="water-text" style={h2Style}>
+              Fish With Intention.
+            </h2>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               Make Every Cast Deliberate. Know exactly what to do, and why
@@ -1321,15 +1250,6 @@ export function Landing() {
           </div>
         </div>
       </section>
-      {/* HOW IT WORKS (Strategy Engine) */}
-      {/* <div className="container" style={container(1100)}>
-        <h2 style={h2Style}> Make Every Cast Deliberate.</h2>
-        <p style={leadStyle}>
-          Complete strategy including target areas, retrieves specific to your
-          lure
-        </p>
-      </div> */}
-      {/* <div style={{ height: 24 }} /> */}
 
       <div className="container" style={container(1100)}>
         <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
@@ -1337,7 +1257,9 @@ export function Landing() {
             Strategic Clarity
           </div>
 
-          <h2 style={h2Style}>Full Day Progression.</h2>
+          <h2 className="water-text" style={h2Style}>
+            Full Day Progression.
+          </h2>
 
           <p style={{ ...leadStyle, maxWidth: 980 }}>
             Know where to start, transition and adjust. Clear actionable
@@ -1488,7 +1410,9 @@ export function Landing() {
             Insight Clarity
           </div>
 
-          <h2 style={h2Style}>Your Moments. Your Story.</h2>
+          <h2 className="water-text" style={h2Style}>
+            Your Moments. Your Story.
+          </h2>
 
           <p style={{ ...leadStyle, maxWidth: 980 }}>
             Insights brings your catches, locations, and photos together —
@@ -1674,7 +1598,9 @@ export function Landing() {
         }}
       >
         <div className="container" style={container(900)}>
-          <h2 style={h2Style}>Built for How Anglers Actually Fish</h2>
+          <h2 className="water-text" style={h2Style}>
+            Built for How Anglers Actually Fish
+          </h2>
 
           <p
             style={{
@@ -1703,15 +1629,12 @@ export function Landing() {
           style={{ ...container(700), textAlign: "center" }}
         >
           <h2
+            className="water-text"
             style={{
               fontSize: "clamp(3.25rem, 7vw, 5rem)",
               fontWeight: 700,
               marginBottom: 18,
               letterSpacing: "-0.03em",
-              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
               textAlign: "center",
             }}
           >
@@ -1929,6 +1852,44 @@ export function Landing() {
           </div>
         </div>
       </footer>
+      <style>{`
+          @keyframes waterFlow {
+            0% {
+              background-position: 0% 50%;
+            }
+            50% {
+              background-position: 100% 50%;
+            }
+            100% {
+              background-position: 0% 50%;
+            }
+          }
+
+          .water-text {
+            /* Fallback */
+            color: #fff;
+            
+            /* Lighter Palette for Dark Background */
+            background: linear-gradient(
+              -45deg,
+              #60a5fa, /* Blue 400 */
+              #eff6ff, /* Blue 50 - Almost White */
+              #ffffff, /* Pure White */
+              #38bdf8, /* Sky 400 */
+              #93c5fd  /* Blue 300 */
+            );
+            background-size: 300% 300%;
+            
+            /* Clip and Fill */
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent; /* Fallback for some browsers */
+            
+            /* Animation */
+            animation: waterFlow 6s ease infinite;
+          }
+      `}</style>
     </div>
   );
 }
