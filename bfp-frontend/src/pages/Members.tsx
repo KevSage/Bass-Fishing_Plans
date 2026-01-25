@@ -1340,10 +1340,48 @@ export function Members() {
   if (statusLoading)
     return (
       <div style={{ padding: 100, textAlign: "center", color: "#fff" }}>
-        Loading your Maps...
+        Loading Your Map...
       </div>
     );
-  if (!isActive) return <div />;
+  if (!isActive) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#0a0a0a",
+          color: "#fff",
+          padding: 24,
+          textAlign: "center",
+        }}
+      >
+        <h1 style={{ fontSize: "1.5rem", marginBottom: 16 }}>
+          Subscription Required
+        </h1>
+        <p style={{ opacity: 0.7, marginBottom: 24 }}>
+          Subscribe to access the full Bass Clarity experience.
+        </p>
+        <button
+          onClick={() => navigate("/account")}
+          style={{
+            background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 12,
+            fontWeight: 700,
+            padding: "14px 32px",
+            cursor: "pointer",
+            fontSize: "1rem",
+          }}
+        >
+          Go to Account
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
