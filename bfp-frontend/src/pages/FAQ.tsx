@@ -8,53 +8,52 @@ export function FAQ() {
     {
       question: "How does Bass Clarity work?",
       answer:
-        "Bass Clarity interprets current conditions — weather, seasonal phase, and location — and translates them into a clear fishing plan. Each plan includes patterns, targets, retrieves, and short explanations that show why the decisions fit the moment.",
+        "Bass Clarity combines your selected water, current conditions, and seasonal context to produce clear fishing decisions. It also preserves your catches on a living map and surfaces Insights that show how your fishing adds up over time.",
     },
     {
-      question:
-        "Is Bass Clarity an educational tool or a recommendation engine?",
+      question: "Is Bass Clarity a fishing journal or a strategy tool?",
       answer:
-        "Both. Bass Clarity provides clear recommendations, but always explains the reasoning behind them. Over time, anglers learn how conditions influence decisions, not just what to throw on a given day.",
+        "Both. The map and Insights preserve your history (your lakes, catches, and spots), while Strategy translates today’s conditions into focused, bass-specific decisions you can actually execute.",
     },
     {
-      question: "How many lakes are supported?",
+      question: "Can I import past catches?",
       answer:
-        "Bass Clarity includes over 1,000 mapped lakes across the U.S. If your water isn’t listed, you can generate a plan for any lake, reservoir, or pond directly from the interactive map.",
+        "Yes. You can upload past catch photos and Bass Clarity will place them by location and time when that information is available — so your history doesn’t start at zero.",
     },
     {
-      question: "What if conditions change while I’m fishing?",
+      question: "Is my map and catch history private?",
       answer:
-        "Plans can be regenerated on the water when conditions shift. If wind, cloud cover, or light changes meaningfully, Bass Clarity can re-evaluate and suggest an updated approach.",
+        "Yes. Your catches, locations, and saved waters are private to your account. Bass Clarity is built around your experience — not public sharing or crowdsourced spot maps.",
     },
     {
-      question: "How accurate is the seasonal logic?",
+      question: "How does Strategy work?",
       answer:
-        "Seasonal behavior is region-specific. Bass Clarity accounts for latitude and local climate rather than fixed calendar dates, allowing plans to reflect how fish actually behave in your area.",
+        "Strategy is session-based and tied to the water you’re fishing. You’ll get a clear starting presentation and a structured adjustment if conditions or activity call for a change — with short reasoning, not a long list.",
     },
     {
-      question: "How do I know which pattern to start with?",
+      question: "Do you analyze the same data as other fishing apps?",
       answer:
-        "Each plan includes a Primary pattern and a complementary Pivot pattern. Start with the Primary. If activity slows or conditions shift, the Pivot provides a natural adjustment rather than a competing idea.",
+        "Yes. Bass Clarity evaluates the same core environmental signals many apps display as charts and overlays — but translates them into decisions instead of making you interpret raw numbers.",
     },
     {
-      question: "What kind of gear recommendations are included?",
+      question: "Does it work on ponds and small waters?",
       answer:
-        "Each pattern includes rod power and action, reel gear ratio, and line type matched to the technique and presentation. Gear is selected to support execution, not to showcase variety.",
+        "Yes. You can select supported lakes, save your own waters, or tap anywhere on the map to fish unnamed ponds and small lakes.",
     },
     {
-      question: "Can I save or revisit past plans?",
+      question: "Do I have to follow the recommendations?",
       answer:
-        "Yes. Your most recent plans are saved automatically and can be reviewed from your account page for reference and learning.",
+        "No. Bass Clarity supports your judgment. Use the strategy as a clear starting point, take what helps, and fish your style.",
     },
     {
-      question: "Does Bass Clarity work for ponds and small lakes?",
+      question: "What do I need to log a catch?",
       answer:
-        "Yes. Bass Clarity is designed to work on any water body — from large reservoirs to neighborhood ponds — as long as conditions and location can be identified.",
+        "Logging is designed to be quick. Add a photo if you have one, confirm a few details, and Bass Clarity stores the catch with its place and time to build your map and Insights.",
     },
     {
-      question: "Can I cancel my subscription?",
+      question: "Can I cancel anytime?",
       answer:
-        "Yes. You can cancel at any time from your account settings. There are no contracts or long-term commitments.",
+        "Yes. You can cancel your subscription at any time from your account settings. You’ll keep access through the end of your current billing period.",
     },
   ];
 
