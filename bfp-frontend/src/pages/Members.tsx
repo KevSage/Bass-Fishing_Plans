@@ -29,7 +29,6 @@ import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 import { MapOrb } from "@/components/MapOrb";
-import { FavoritesCarousel } from "@/components/FavoritesCarousel";
 
 // --- CATCH LOG IMPORTS ---
 import {
@@ -41,11 +40,7 @@ import {
 } from "@/components/CatchLog";
 
 // --- LAKE LABEL IMPORTS ---
-import {
-  LakeLabel,
-  useLakeLabelVisibility,
-  type LakeLabelData,
-} from "@/components/LakeLabel";
+import { type LakeLabelData } from "@/components/LakeLabel";
 
 // --- DATA IMPORT ---
 import LAKES_DATA from "../data/lakes.json";
@@ -805,12 +800,6 @@ export function Members() {
     catchLog.showForm(draftEntry as any);
   }, [draftEntry, catchLog]);
 
-  const lakeLabelVisible = useLakeLabelVisibility(
-    mapRef.current,
-    selectedCoords?.lat ?? null,
-    selectedCoords?.lng ?? null,
-  );
-
   const lakeLabelData: LakeLabelData | null = useMemo(() => {
     if (!selectedCoords) return null;
     const isSaved = favorites.some(
@@ -966,14 +955,20 @@ export function Members() {
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
 
-        // Only proceed if clicking on water
+        // If clicking on land (not water)
         if (!water) {
+          // If there's an unnamed unknown lake selected, clear it
+          if (selectedCoords && !waterName && !manualWaterName.trim()) {
+            clearActiveLake();
+          }
           return;
         }
 
         setSelectedCoords({ lat, lng });
         setInputMode("manual");
         setLocationDetails({});
+        setManualWaterName(""); // Clear any previously entered name
+        setViewingFavoriteId(null); // Clear any viewing state
 
         if (markerRef.current) markerRef.current.remove();
         if (markerElementRef.current) markerElementRef.current.remove();
@@ -1154,6 +1149,22 @@ export function Members() {
     e?.stopPropagation();
     setShowModal(false);
   };
+
+  const clearActiveLake = useCallback(() => {
+    setSelectedCoords(null);
+    setWaterName("");
+    setManualWaterName("");
+    setLocationDetails({});
+    setViewingFavoriteId(null);
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+    if (markerElementRef.current) {
+      markerElementRef.current.remove();
+      markerElementRef.current = null;
+    }
+  }, []);
 
   const handleSearchSelect = useCallback(
     async (location: {
@@ -1451,7 +1462,7 @@ export function Members() {
   if (statusLoading)
     return (
       <div style={{ padding: 100, textAlign: "center", color: "#fff" }}>
-        Checking status...
+        Loading Your Map...
       </div>
     );
   if (!isActive) {
@@ -1526,32 +1537,170 @@ export function Members() {
         }}
       />
 
-      {!showModal && !catchLog.isOpen && !showFavorites && (
-        <LakeLabel
-          lake={lakeLabelData}
-          isVisible={lakeLabelVisible && !!selectedCoords}
-          onNameChange={setManualWaterName}
-          lakesData={lakeSuggestionsData}
-          onAcceptSuggestion={(name, city, state) => {
-            setWaterName(name);
-            setManualWaterName(name);
-            if (city || state) setLocationDetails({ city, state });
-          }}
-        />
-      )}
+      {/* TOP GRADIENT BAR - Always visible */}
+      {!showModal &&
+        !catchLog.isOpen &&
+        (() => {
+          // Suggestion logic for unknown waters
+          const suggestedMatch = (() => {
+            if (
+              !lakeLabelData ||
+              lakeLabelData.isKnown ||
+              !manualWaterName ||
+              manualWaterName.length < 3
+            ) {
+              return null;
+            }
+            const query = manualWaterName.toLowerCase().trim();
+            const match = lakeSuggestionsData.find((l) => {
+              const name = l.name.toLowerCase();
+              return (
+                name.includes(query) ||
+                query.includes(name.replace("lake ", "").trim())
+              );
+            });
+            if (match && match.name.toLowerCase() !== query) {
+              return match;
+            }
+            return null;
+          })();
 
-      {showFavorites && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 998,
-            background: "rgba(0,0,0,0.3)",
-            backdropFilter: "blur(2px)",
-          }}
-          onClick={() => setShowFavorites(false)}
-        />
-      )}
+          const handleAcceptSuggestion = () => {
+            if (suggestedMatch) {
+              setWaterName(suggestedMatch.name);
+              setManualWaterName(suggestedMatch.name);
+              if (suggestedMatch.city || suggestedMatch.state) {
+                setLocationDetails({
+                  city: suggestedMatch.city,
+                  state: suggestedMatch.state,
+                });
+              }
+            }
+          };
+
+          const handleSaveLakeName = () => {
+            if (manualWaterName.trim()) {
+              setWaterName(manualWaterName.trim());
+              toggleFavoriteLake();
+            }
+          };
+
+          return (
+            <div className="top-gradient-bar">
+              {selectedCoords && lakeLabelData ? (
+                <div className="top-bar-card">
+                  {/* Status Header */}
+                  <div className="top-bar-status">
+                    <div
+                      className={`status-pill ${lakeLabelData.isSaved ? "saved" : "scouting"}`}
+                    >
+                      <div className="status-dot" />
+                      <span>
+                        {lakeLabelData.isSaved ? "SAVED LOCATION" : "SCOUTING"}
+                      </span>
+                    </div>
+                    <button
+                      className="top-bar-close"
+                      onClick={clearActiveLake}
+                      aria-label="Clear selection"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Lake Name Row */}
+                  <div className="top-bar-name-row">
+                    {lakeLabelData.isKnown ? (
+                      <h2 className="top-bar-lake-name">
+                        {lakeLabelData.name}
+                      </h2>
+                    ) : (
+                      <>
+                        <input
+                          type="text"
+                          className="top-bar-name-input"
+                          placeholder="Name this water..."
+                          value={manualWaterName}
+                          onChange={(e) => setManualWaterName(e.target.value)}
+                          autoComplete="off"
+                          spellCheck={false}
+                        />
+                        <button
+                          className="top-bar-save-btn"
+                          onClick={handleSaveLakeName}
+                          disabled={!manualWaterName.trim()}
+                          aria-label="Save lake name"
+                        >
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Location */}
+                  <div className="top-bar-location">
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <span>
+                      {lakeLabelData.city && lakeLabelData.state
+                        ? `${lakeLabelData.city}, ${lakeLabelData.state}`
+                        : `${lakeLabelData.lat.toFixed(4)}°, ${lakeLabelData.lng.toFixed(4)}°`}
+                    </span>
+                  </div>
+
+                  {/* Lake Name Suggestion */}
+                  {suggestedMatch && (
+                    <button
+                      className="top-bar-suggestion"
+                      onClick={handleAcceptSuggestion}
+                    >
+                      <span className="suggestion-label">Did you mean?</span>
+                      <span className="suggestion-name">
+                        {suggestedMatch.name}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="top-bar-card top-bar-card-empty">
+                  <span className="top-bar-label">Bass Clarity</span>
+                  <h2 className="top-bar-title">Find Your Water</h2>
+                  <p className="top-bar-subtitle">
+                    Search or tap any body of water
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
       {/* NAV PANEL */}
       {!catchLog.isOpen && (
@@ -1568,30 +1717,105 @@ export function Members() {
             </button>
           )}
           <div className="glass-deck">
+            {/* INLINE FAVORITES SECTION */}
             {showFavorites && (
-              <FavoritesCarousel
-                favorites={favorites}
-                currentId={viewingFavoriteId}
-                onClose={() => setShowFavorites(false)}
-                onAddNew={() => {
-                  setShowFavorites(false);
-                  setShowModal(true);
-                }}
-                onRemove={handleRemoveSpecificLake}
-                onSelect={(lake) => {
-                  setWaterName(lake.name);
-                  setViewingFavoriteId(lake.id);
-                  setLocationDetails({ city: lake.city, state: lake.state });
-                  setSelectedCoords({ lat: lake.lat, lng: lake.lng });
-                  if (mapRef.current)
-                    mapRef.current.flyTo({
-                      center: [lake.lng, lake.lat],
-                      zoom: getZoomForLake(lake.acres),
-                      duration: 2000,
-                    });
-                  setShowFavorites(false);
-                }}
-              />
+              <div className="nav-favorites-section">
+                <div className="nav-favorites-header">
+                  <div className="nav-favorites-title">
+                    <span>My Waters</span>
+                    <span className="nav-favorites-count">
+                      {favorites.length} Saved
+                    </span>
+                  </div>
+                </div>
+                <div className="nav-favorites-scroll">
+                  {/* Add New Card */}
+                  <div
+                    className="nav-fav-card nav-fav-card-add"
+                    onClick={() => {
+                      setShowFavorites(false);
+                      setShowModal(true);
+                    }}
+                  >
+                    <div className="nav-fav-add-icon">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </div>
+                    <span>Scout New</span>
+                  </div>
+                  {/* Favorite Cards */}
+                  {favorites.map((lake) => {
+                    const isActive = lake.id === viewingFavoriteId;
+                    return (
+                      <div
+                        key={`${lake.lake_type}:${lake.id}`}
+                        className={`nav-fav-card ${isActive ? "active" : ""}`}
+                        onClick={() => {
+                          setWaterName(lake.name);
+                          setViewingFavoriteId(lake.id);
+                          setLocationDetails({
+                            city: lake.city,
+                            state: lake.state,
+                          });
+                          setSelectedCoords({ lat: lake.lat, lng: lake.lng });
+                          if (mapRef.current)
+                            mapRef.current.flyTo({
+                              center: [lake.lng, lake.lat],
+                              zoom: getZoomForLake(lake.acres),
+                              duration: 2000,
+                            });
+                          setShowFavorites(false);
+                        }}
+                        style={{
+                          backgroundImage: lake.image
+                            ? `url(${lake.image})`
+                            : undefined,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }}
+                      >
+                        <div className="nav-fav-card-gradient" />
+                        <div className="nav-fav-card-content">
+                          <div className="nav-fav-card-name">{lake.name}</div>
+                          {lake.city && lake.state && (
+                            <div className="nav-fav-card-location">
+                              {lake.city}, {lake.state}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          className="nav-fav-card-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveSpecificLake(lake);
+                          }}
+                        >
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
@@ -1604,7 +1828,12 @@ export function Members() {
                 </button>
                 <button
                   onClick={toggleFavoriteLake}
-                  disabled={!selectedCoords}
+                  disabled={
+                    !selectedCoords ||
+                    (!lakeLabelData?.isKnown &&
+                      !manualWaterName.trim() &&
+                      !isCurrentLocationSaved)
+                  }
                   className={`nav-btn nav-btn-icon ${isCurrentLocationSaved ? "nav-btn-danger" : ""}`}
                   aria-label={isCurrentLocationSaved ? "Remove" : "Save"}
                 >
@@ -1961,6 +2190,199 @@ export function Members() {
       {/* STYLES */}
       <style>
         {`
+        /* TOP GRADIENT BAR - Full width gradient with centered content */
+        .top-gradient-bar {
+          position: fixed;
+          top: 64px;
+          left: 0;
+          right: 0;
+          z-index: 800;
+          background: linear-gradient(to bottom, 
+            rgba(0,0,0,0.92) 0%, 
+            rgba(0,0,0,0.8) 50%, 
+            rgba(0,0,0,0.4) 80%,
+            transparent 100%);
+          padding: 16px 20px 45px;
+          display: flex;
+          justify-content: center;
+        }
+        .top-bar-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-width: 260px;
+          max-width: 340px;
+        }
+        .top-bar-card-empty {
+          text-align: center;
+        }
+        .top-bar-label {
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          color: #4A90E2;
+          margin-bottom: 4px;
+        }
+        .top-bar-title {
+          margin: 0;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.02em;
+        }
+        .top-bar-subtitle {
+          margin: 4px 0 0 0;
+          font-size: 0.8rem;
+          color: rgba(255,255,255,0.5);
+        }
+        .top-bar-status {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 8px;
+        }
+        .status-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 3px 8px;
+          background: rgba(255,255,255,0.05);
+          border-radius: 100px;
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+        .status-pill .status-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+        .status-pill.saved .status-dot {
+          background: #10B981;
+          box-shadow: 0 0 8px rgba(16,185,129,0.6);
+        }
+        .status-pill.saved span { color: #10B981; }
+        .status-pill.scouting .status-dot {
+          background: #4A90E2;
+          box-shadow: 0 0 8px rgba(74,144,226,0.6);
+        }
+        .status-pill.scouting span { color: #4A90E2; }
+        .status-pill span {
+          font-size: 0.55rem;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+        }
+        .top-bar-close {
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.4);
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: color 0.2s;
+        }
+        .top-bar-close:hover {
+          color: rgba(255,255,255,0.8);
+        }
+        .top-bar-name-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .top-bar-lake-name {
+          margin: 0;
+          font-size: 1.35rem;
+          font-weight: 700;
+          color: #fff;
+          letter-spacing: -0.02em;
+          line-height: 1.2;
+        }
+        .top-bar-name-input {
+          flex: 1;
+          background: transparent;
+          border: none;
+          border-bottom: 1px dashed rgba(255,255,255,0.3);
+          color: #fff;
+          font-size: 1.25rem;
+          font-weight: 700;
+          padding: 4px 0;
+          outline: none;
+          letter-spacing: -0.02em;
+          min-width: 0;
+        }
+        .top-bar-name-input:focus {
+          border-bottom-color: #4A90E2;
+        }
+        .top-bar-name-input::placeholder {
+          color: rgba(255,255,255,0.35);
+          font-style: italic;
+          font-weight: 500;
+        }
+        .top-bar-save-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+          border: none;
+          color: #fff;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: all 0.2s;
+          box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+        }
+        .top-bar-save-btn:hover:not(:disabled) {
+          transform: scale(1.05);
+          box-shadow: 0 6px 16px rgba(74, 144, 226, 0.5);
+        }
+        .top-bar-save-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+        .top-bar-location {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          color: rgba(255,255,255,0.5);
+          font-size: 0.75rem;
+          margin-top: 6px;
+        }
+        .top-bar-location svg {
+          opacity: 0.6;
+          flex-shrink: 0;
+        }
+        
+        /* Lake Name Suggestion */
+        .top-bar-suggestion {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 10px;
+          padding: 8px 12px;
+          background: rgba(74, 144, 226, 0.15);
+          border: 1px solid rgba(74, 144, 226, 0.3);
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .top-bar-suggestion:hover {
+          background: rgba(74, 144, 226, 0.25);
+          border-color: rgba(74, 144, 226, 0.5);
+        }
+        .top-bar-suggestion .suggestion-label {
+          font-size: 0.7rem;
+          color: rgba(255,255,255,0.5);
+          font-weight: 500;
+        }
+        .top-bar-suggestion .suggestion-name {
+          font-size: 0.85rem;
+          color: #4A90E2;
+          font-weight: 600;
+        }
+
         .orb-marker-map { width: 24px; height: 24px; background: radial-gradient(circle at 30% 30%, #4A90E2, #357ABD); border-radius: 50%; box-shadow: 0 0 16px rgba(74,144,226,0.6), inset 0 -2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.8); position: relative; }
         .orb-marker-map::after { content: ''; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(74,144,226,0.5); animation: map-orb-pulse 2s infinite ease-out; }
         @keyframes map-orb-pulse { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
@@ -1989,6 +2411,132 @@ export function Members() {
 
         .nav-icons-row { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
         
+        /* INLINE FAVORITES SECTION */
+        .nav-favorites-section {
+          padding: 12px 8px 8px;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          animation: nav-fav-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes nav-fav-slide-down {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .nav-favorites-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 4px 10px;
+        }
+        .nav-favorites-title {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+        }
+        .nav-favorites-title > span:first-child {
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #fff;
+        }
+        .nav-favorites-count {
+          font-size: 0.75rem;
+          color: rgba(255,255,255,0.4);
+        }
+        .nav-favorites-scroll {
+          display: flex;
+          gap: 10px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+          scrollbar-width: none;
+        }
+        .nav-favorites-scroll::-webkit-scrollbar { display: none; }
+        
+        .nav-fav-card {
+          flex: 0 0 110px;
+          height: 90px;
+          border-radius: 14px;
+          border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(30, 30, 40, 0.6);
+          position: relative;
+          overflow: hidden;
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 10px;
+          transition: all 0.2s;
+        }
+        .nav-fav-card:hover {
+          border-color: rgba(255,255,255,0.2);
+        }
+        .nav-fav-card.active {
+          border-color: #4A90E2;
+          box-shadow: 0 0 12px rgba(74,144,226,0.3);
+        }
+        .nav-fav-card-gradient {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.85) 100%);
+        }
+        .nav-fav-card-content {
+          position: relative;
+          z-index: 2;
+        }
+        .nav-fav-card-name {
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: #fff;
+          line-height: 1.15;
+          max-height: 2.3em;
+          overflow: hidden;
+        }
+        .nav-fav-card-location {
+          font-size: 0.65rem;
+          color: rgba(255,255,255,0.6);
+          margin-top: 2px;
+        }
+        .nav-fav-card-add {
+          background: rgba(255,255,255,0.03);
+          border-style: dashed;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .nav-fav-card-add span {
+          font-size: 0.75rem;
+          color: rgba(255,255,255,0.5);
+          font-weight: 600;
+        }
+        .nav-fav-add-icon {
+          color: rgba(255,255,255,0.4);
+        }
+        .nav-fav-card-delete {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 24px;
+          height: 24px;
+          padding: 0;
+          background: rgba(0,0,0,0.5);
+          border-radius: 6px;
+          border: none;
+          color: rgba(255,255,255,0.7);
+          opacity: 0;
+          z-index: 10;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: opacity 0.2s;
+        }
+        .nav-fav-card:hover .nav-fav-card-delete {
+          opacity: 1;
+        }
+        .nav-fav-card-delete:hover {
+          background: rgba(239, 68, 68, 0.8);
+          color: #fff;
+        }
+
         .favorites-scroll-area { width: 100%; padding: 16px 4px 8px; animation: slide-up 0.3s ease-out; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; }
         .fav-title-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; padding-left: 4px; }
         .fav-title-row span:first-child { font-weight: 700; color: #fff; }
