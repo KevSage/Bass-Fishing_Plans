@@ -33,7 +33,8 @@ export function About() {
             lineHeight: 1.1,
           }}
         >
-          Clarity Over Noise.
+          Your Water. Your History.
+          Clear Decisions.
         </h1>
 
         <p
@@ -45,8 +46,7 @@ export function About() {
             margin: "0 auto",
           }}
         >
-          Bass Clarity is built to help anglers understand the moment — not
-          overwhelm it.
+          Bass Clarity is an intelligent fishing app built to help anglers understand their water, preserve their fishing history, and make clear decisions when it matters.
         </p>
       </section>
 
@@ -66,7 +66,7 @@ export function About() {
               letterSpacing: "-0.01em",
             }}
           >
-            The Problem Bass Clarity Exists to Solve
+            Built Around Real Fishing
           </h2>
 
           <p
@@ -77,9 +77,7 @@ export function About() {
               marginBottom: 20,
             }}
           >
-            Fishing decisions rarely fail because of a lack of information. They
-            fail because too many signals compete for attention at the moment a
-            decision needs to be made.
+            You choose your water, fish, and log catches naturally — often starting with a photo. Over time, your map fills with real locations, real results, and lived history.
           </p>
 
           <p
@@ -89,9 +87,7 @@ export function About() {
               color: "rgba(255,255,255,0.7)",
             }}
           >
-            Bass Clarity was designed to reduce that pressure — by organizing
-            conditions, patterns, and tactics into a small set of clear,
-            situational decisions.
+            Bass Clarity is designed to preserve what you’ve earned on the water and make it accessible — without dashboards, charts, or information overload.
           </p>
         </div>
       </section>
@@ -113,7 +109,7 @@ export function About() {
             letterSpacing: "-0.02em",
           }}
         >
-          The Philosophy Behind Bass Clarity
+          How Bass Clarity Works
         </h2>
 
         <div
@@ -131,7 +127,7 @@ export function About() {
                 marginBottom: 12,
               }}
             >
-              Fishing Is a Pattern Skill
+              Your Map Is the Record
             </h3>
             <p
               style={{
@@ -140,9 +136,7 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              Bass behavior follows patterns shaped by season, weather, light,
-              and pressure. Bass Clarity is designed to surface those patterns
-              clearly and consistently.
+              Every catch is stored with its location, time, and context. As your history grows, productive areas and patterns emerge naturally through repetition and density — not guesses.
             </p>
           </div>
 
@@ -154,7 +148,7 @@ export function About() {
                 marginBottom: 12,
               }}
             >
-              Education Beats Memorization
+              Insights Bring It Together
             </h3>
             <p
               style={{
@@ -163,9 +157,7 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              Rather than listing tactics, Bass Clarity explains why decisions
-              fit the conditions — allowing understanding to build naturally
-              over time.
+              Insights turn your catches, photos, and waters into a clear record — highlighting best days, productive lakes, and what’s actually worked over time.
             </p>
           </div>
 
@@ -177,7 +169,7 @@ export function About() {
                 marginBottom: 12,
               }}
             >
-              Technology Should Teach
+              From Conditions to Decisions
             </h3>
             <p
               style={{
@@ -186,8 +178,7 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              Bass Clarity uses technology to interpret signals, not bypass
-              learning. The goal is deeper understanding, not shortcuts.
+              When it’s time to fish, Bass Clarity evaluates the same core environmental signals used by leading apps — and translates them into focused strategy: technique, targets, and execution, with simple reasoning.
             </p>
           </div>
 
@@ -199,7 +190,7 @@ export function About() {
                 marginBottom: 12,
               }}
             >
-              Restraint Is a Feature
+              Designed for Focus
             </h3>
             <p
               style={{
@@ -208,8 +199,7 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              Fewer decisions, clearly explained, lead to better execution. Bass
-              Clarity intentionally limits output to preserve focus.
+              The app is intentionally restrained. You get fewer, better decisions — and you always stay in control of how closely you follow the plan.
             </p>
           </div>
         </div>
@@ -239,10 +229,7 @@ export function About() {
             margin: "0 auto",
           }}
         >
-          Bass Clarity is built for anglers who value understanding over
-          shortcuts — whether fishing from the bank, a kayak, or a boat. It
-          supports growth without requiring expensive electronics or constant
-          guesswork.
+          Bass Clarity is for anglers who want clarity without noise — whether fishing from the bank, a kayak, or a boat. It’s built to support real fishing and real learning over time.
         </p>
       </section>
 
@@ -262,7 +249,7 @@ export function About() {
             letterSpacing: "-0.02em",
           }}
         >
-          Built to Help You See the Water More Clearly.
+          Built for the Long Run
         </h2>
 
         <p
@@ -273,8 +260,7 @@ export function About() {
             lineHeight: 1.6,
           }}
         >
-          Bass Clarity doesn’t replace the angler. It sharpens the way decisions
-          are made.
+          Upload past catch photos to bring your history in from day one, or start fresh and let it build naturally. Bass Clarity doesn’t replace intuition — it preserves experience and sharpens decisions when it matters.
         </p>
 
         <Link

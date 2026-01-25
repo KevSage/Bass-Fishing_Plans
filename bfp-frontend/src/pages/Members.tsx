@@ -1340,7 +1340,7 @@ export function Members() {
   if (statusLoading)
     return (
       <div style={{ padding: 100, textAlign: "center", color: "#fff" }}>
-        Checking status...
+        Loading your Maps...
       </div>
     );
   if (!isActive) return <div />;
