@@ -272,6 +272,7 @@ type LakeData = {
   tier: number;
   id?: string;
   bbox?: [number, number, number, number];
+  anchors?: { lat: number; lng: number }[];
 };
 
 type FavoriteLake = {
@@ -375,6 +376,74 @@ function findUserLakeByAnchors(
       if (pointInPolygon(p, anchors)) return lake as any;
     }
   }
+  return null;
+}
+
+// Unified polygon check across ALL sources: custom lakes, favorites, and lakes.json
+type PolygonMatchResult = {
+  source: "custom" | "favorite" | "known";
+  id: string;
+  name: string;
+  city?: string;
+  state?: string;
+  lat: number;
+  lng: number;
+  acres?: number;
+} | null;
+
+function findLakeByPolygon(
+  lat: number,
+  lng: number,
+  customLakes: Array<CustomLake & { anchors?: { lat: number; lng: number }[] }>,
+  favorites: FavoriteLake[],
+): PolygonMatchResult {
+  const p = { lat, lng };
+
+  // 1. Check custom lakes with anchors
+  for (const lake of customLakes) {
+    const anchors = (lake as any).anchors as
+      | { lat: number; lng: number }[]
+      | undefined;
+    if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
+      // Check if this custom lake is also a favorite
+      const isFavorite = favorites.some((f) => f.id === lake.id);
+      return {
+        source: isFavorite ? "favorite" : "custom",
+        id: lake.id,
+        name: lake.name,
+        city: lake.city || undefined,
+        state: lake.state || undefined,
+        lat: lake.lat,
+        lng: lake.lng,
+        acres: (lake as any).acres,
+      };
+    }
+  }
+
+  // 2. Check known lakes from lakes.json with anchors
+  for (const lake of LAKES_DATA as LakeData[]) {
+    const anchors = lake.anchors as { lat: number; lng: number }[] | undefined;
+    if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
+      // Check if this known lake is a favorite
+      const favorite = favorites.find(
+        (f) =>
+          f.name.toLowerCase() === lake.name.toLowerCase() ||
+          (Math.abs(f.lat - lake.latitude) < 0.01 &&
+            Math.abs(f.lng - lake.longitude) < 0.01),
+      );
+      return {
+        source: favorite ? "favorite" : "known",
+        id: favorite?.id || lake.name,
+        name: lake.name,
+        city: lake.city,
+        state: lake.state,
+        lat: lake.latitude,
+        lng: lake.longitude,
+        acres: lake.acres,
+      };
+    }
+  }
+
   return null;
 }
 
@@ -892,6 +961,16 @@ export function Members() {
 
       try {
         const { lng, lat } = e.lngLat;
+
+        // Check if click is on water FIRST
+        const features = mapRef.current.queryRenderedFeatures(e.point);
+        const water = features.find(isWaterFeature);
+
+        // Only proceed if clicking on water
+        if (!water) {
+          return;
+        }
+
         setSelectedCoords({ lat, lng });
         setInputMode("manual");
         setLocationDetails({});
@@ -904,33 +983,52 @@ export function Members() {
           .setLngLat([lng, lat])
           .addTo(mapRef.current);
 
-        const features = mapRef.current.queryRenderedFeatures(e.point);
-        const water = features.find(isWaterFeature);
         const vectorName: string | undefined = water?.properties?.name;
-        let dbMatch: LakeData | undefined;
 
-        if (vectorName) {
+        // PRIORITY 1: Check polygon boundaries first (most accurate)
+        // This checks custom lakes, favorites, AND lakes.json with anchors
+        const polygonMatch = findLakeByPolygon(
+          lat,
+          lng,
+          customLakesRef.current as any,
+          favoritesRef.current,
+        );
+
+        // PRIORITY 2: If no polygon match, check for known lake by name from vector tile
+        let dbMatch: LakeData | undefined;
+        if (!polygonMatch && vectorName) {
           const searchName = vectorName.toLowerCase();
           dbMatch = (LAKES_DATA as LakeData[]).find((l) =>
             l.name.toLowerCase().includes(searchName),
           );
         }
 
-        const nearbyFavorite = findNearestFavorite(
-          lat,
-          lng,
-          favoritesRef.current,
-        );
-        const nearbyUserLake = !nearbyFavorite
-          ? findUserLakeByAnchors(lat, lng, customLakesRef.current as any)
+        // PRIORITY 3: If no polygon or name match, try radius-based matching
+        const nearbyFavorite = !polygonMatch
+          ? findNearestFavorite(lat, lng, favoritesRef.current)
           : null;
-        const nearbyLake =
-          dbMatch ||
-          (!nearbyFavorite && !nearbyUserLake
-            ? findNearestLake(lat, lng)
-            : null);
 
-        if (nearbyFavorite) {
+        const nearbyUserLake =
+          !polygonMatch && !nearbyFavorite
+            ? findUserLakeByAnchors(lat, lng, customLakesRef.current as any)
+            : null;
+
+        const nearbyLake =
+          !polygonMatch && !nearbyFavorite && !nearbyUserLake
+            ? dbMatch || findNearestLake(lat, lng)
+            : null;
+
+        // Set state based on match priority
+        if (polygonMatch) {
+          setWaterName(polygonMatch.name);
+          setLocationDetails({
+            city: polygonMatch.city,
+            state: polygonMatch.state,
+          });
+          if (polygonMatch.source === "favorite") {
+            setViewingFavoriteId(polygonMatch.id);
+          }
+        } else if (nearbyFavorite) {
           setWaterName(nearbyFavorite.name);
           setLocationDetails({
             city: nearbyFavorite.city,
@@ -952,7 +1050,12 @@ export function Members() {
           setWaterName(vectorName || "Dropped Pin Location");
         }
 
-        if (!nearbyFavorite && (!nearbyLake || !nearbyLake.city)) {
+        // Geocode for city/state if not already known
+        if (
+          !polygonMatch &&
+          !nearbyFavorite &&
+          (!nearbyLake || !nearbyLake.city)
+        ) {
           try {
             const response = await fetch(
               `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${MAPBOX_TOKEN}`,
@@ -1059,6 +1162,7 @@ export function Members() {
       longitude: number;
       city?: string;
       state?: string;
+      acres?: number;
     }) => {
       setShowModal(false);
       setWaterName(location.name);
@@ -1066,9 +1170,19 @@ export function Members() {
       setSelectedCoords({ lat: location.latitude, lng: location.longitude });
       setInputMode("manual");
       if (mapRef.current) {
+        // Look up lake in database to get acres for zoom calculation
+        const dbLake = (LAKES_DATA as LakeData[]).find(
+          (l) =>
+            l.name.toLowerCase() === location.name.toLowerCase() ||
+            (Math.abs(l.latitude - location.latitude) < 0.01 &&
+              Math.abs(l.longitude - location.longitude) < 0.01),
+        );
+        const acres = location.acres || dbLake?.acres;
+        const zoom = getZoomForLake(acres);
+
         mapRef.current.flyTo({
           center: [location.longitude, location.latitude],
-          zoom: 12,
+          zoom,
           duration: 3000,
           essential: true,
         });
@@ -1262,8 +1376,11 @@ export function Members() {
             lakeId = await performCustomCreation();
             if (!lakeId) throw new Error("Failed to get lake ID");
             setRecentCustomLakeId(lakeId);
+            // Only prompt for outline if this is truly a new custom lake
+            // (not a known lake from the database)
             setShowOutlinePrompt(true);
           } else {
+            // This is a KNOWN lake from lakes.json - no outline prompt needed
             try {
               await addFavorite(lakeId, "known", token);
             } catch (knownErr: any) {
@@ -1273,9 +1390,11 @@ export function Members() {
               if (!lakeId) throw new Error("Failed fallback creation");
               await addFavorite(lakeId, "custom", token);
               setRecentCustomLakeId(lakeId);
+              // Only prompt for outline on fallback custom creation
               setShowOutlinePrompt(true);
               return;
             }
+            // Known lake saved successfully - NO outline prompt
           }
           if (lakeType === "custom") await addFavorite(lakeId, "custom", token);
 
@@ -1313,14 +1432,6 @@ export function Members() {
     ],
   );
 
-  const onSaveCustomName = useCallback(
-    (name: string) => {
-      setWaterName(name);
-      setTimeout(() => toggleFavoriteLake(), 0);
-    },
-    [setWaterName, toggleFavoriteLake],
-  );
-
   const handleReturnToPlan = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1340,7 +1451,7 @@ export function Members() {
   if (statusLoading)
     return (
       <div style={{ padding: 100, textAlign: "center", color: "#fff" }}>
-        Loading Your Map...
+        Checking status...
       </div>
     );
   if (!isActive) {
@@ -1420,7 +1531,6 @@ export function Members() {
           lake={lakeLabelData}
           isVisible={lakeLabelVisible && !!selectedCoords}
           onNameChange={setManualWaterName}
-          onSave={onSaveCustomName}
           lakesData={lakeSuggestionsData}
           onAcceptSuggestion={(name, city, state) => {
             setWaterName(name);
@@ -1823,109 +1933,26 @@ export function Members() {
             </div>
             <div className="modal-body">
               {err && <div className="error-banner">{err}</div>}
-              <div className="segment-control glass-segment">
-                <button
-                  type="button"
-                  onClick={() => setInputMode("search")}
-                  className={`segment-btn ${inputMode === "search" ? "active" : ""}`}
-                >
-                  <SearchIcon /> Search
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInputMode("manual")}
-                  className={`segment-btn ${inputMode === "manual" ? "active" : ""}`}
-                >
-                  <PinIcon /> Manual
-                </button>
-              </div>
               <div>
-                {inputMode === "search" ? (
-                  <>
-                    <label className="modal-label">Find Water</label>
-                    <div style={{ position: "relative" }}>
-                      <style>{`.location-search-dropdown { position: absolute !important; top: 100% !important; z-index: 9999 !important; background: rgba(20, 20, 30, 0.98) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 10px !important; }`}</style>
-                      <LocationSearch
-                        onSelect={handleSearchSelect}
-                        placeholder="Search 1,000+ Lakes..."
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <label className="modal-label">Confirm Location Name</label>
-                    <input
-                      value={waterName}
-                      onChange={(e) => setWaterName(e.target.value)}
-                      className="glass-input"
-                      placeholder="e.g. Lake Lanier"
-                      autoComplete="off"
-                      spellCheck={false}
-                    />
-                  </>
-                )}
-              </div>
-              {selectedCoords && (
-                <div className="coords-display">
-                  <div>
-                    <div className="coords-label">Confirmed Drop Point</div>
-                    <div className="coords-value">
-                      {selectedCoords.lat.toFixed(5)},{" "}
-                      {selectedCoords.lng.toFixed(5)}
-                    </div>
-                  </div>
-                  <div style={{ color: "#4ecdc4", fontSize: "1.4rem" }}>✓</div>
-                </div>
-              )}
-              {/* RESTORED PLATFORM TOGGLES */}
-              <div>
-                <label className="modal-label">Platform</label>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <button
-                    type="button"
-                    onClick={() => setAccessType("boat")}
-                    className={`glass-toggle modal-btn ${accessType === "boat" ? "active" : ""}`}
-                  >
-                    <BoatIcon active={accessType === "boat"} />{" "}
-                    <span>Boat</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAccessType("bank")}
-                    className={`glass-toggle modal-btn ${accessType === "bank" ? "active" : ""}`}
-                  >
-                    <BankIcon active={accessType === "bank"} />{" "}
-                    <span>Bank</span>
-                  </button>
+                <label className="modal-label">Find Water</label>
+                <div style={{ position: "relative" }}>
+                  <style>{`.location-search-dropdown { position: absolute !important; top: 100% !important; z-index: 9999 !important; background: rgba(20, 20, 30, 0.98) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 10px !important; }`}</style>
+                  <LocationSearch
+                    onSelect={handleSearchSelect}
+                    placeholder="Search 1,000+ Lakes..."
+                  />
                 </div>
               </div>
-
-              <div style={{ marginTop: "auto", display: "flex", gap: 10 }}>
-                {isCurrentLocationSaved && (
-                  <button
-                    type="button"
-                    onClick={toggleFavoriteLake}
-                    className="save-fav-btn remove"
-                  >
-                    <MinusCircleIcon />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleStrategyClick}
-                  disabled={!!rateLimitInfo || !waterName || !selectedCoords}
-                  className="generate-btn"
-                  style={{
-                    background: rateLimitInfo
-                      ? "rgba(255,255,255,0.1)"
-                      : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-                  }}
-                >
-                  {rateLimitInfo
-                    ? `Wait (${rateLimitInfo.secondsRemaining}s)`
-                    : "Generate Plan"}
-                </button>
-              </div>
+              <p
+                style={{
+                  fontSize: "0.85rem",
+                  color: "rgba(255,255,255,0.5)",
+                  marginTop: 16,
+                  textAlign: "center",
+                }}
+              >
+                Or tap any water on the map to select it
+              </p>
             </div>
           </div>
         </div>
