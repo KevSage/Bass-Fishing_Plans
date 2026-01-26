@@ -5,7 +5,7 @@ interface MapOrbProps {
   size?: number;
   className?: string;
   active?: boolean;
-  variant?: "default" | "indigo"; // CHANGED: gold -> indigo
+  variant?: "default" | "indigo" | "white"; // Added 'white'
 }
 
 export const MapOrb = ({
@@ -17,11 +17,22 @@ export const MapOrb = ({
   // Define colors based on variant
   // Default (Blue): #4A90E2 -> RGB: 74, 144, 226
   // Indigo: #6366f1 -> RGB: 99, 102, 241 (Tailwind Indigo-500)
-  const isIndigo = variant === "indigo";
+  // White: #ffffff -> RGB: 255, 255, 255 (Dimmed via opacity in variable)
+
+  let color = "#4A90E2";
+  let shadowRgb = "74, 144, 226";
+
+  if (variant === "indigo") {
+    color = "#6366f1";
+    shadowRgb = "99, 102, 241";
+  } else if (variant === "white") {
+    color = "rgba(255, 255, 255, 0.85)"; // Slightly dimmed white
+    shadowRgb = "255, 255, 255";
+  }
 
   const styleVars = {
-    "--orb-color": isIndigo ? "#6366f1" : "#4A90E2",
-    "--orb-shadow-rgb": isIndigo ? "99, 102, 241" : "74, 144, 226",
+    "--orb-color": color,
+    "--orb-shadow-rgb": shadowRgb,
     width: size,
     height: size,
   } as React.CSSProperties;
@@ -51,7 +62,7 @@ export const MapOrb = ({
           background: var(--orb-color);
           border-radius: 50%;
           z-index: 2;
-          box-shadow: 0 0 8px rgba(var(--orb-shadow-rgb), 0.9);
+          box-shadow: 0 0 8px rgba(var(--orb-shadow-rgb), 0.8);
           transition: background 0.3s ease, box-shadow 0.3s ease;
         }
 
@@ -71,7 +82,7 @@ export const MapOrb = ({
 
         @keyframes orb-pulsate {
           0% {
-            box-shadow: 0 0 0 0 rgba(var(--orb-shadow-rgb), 0.7);
+            box-shadow: 0 0 0 0 rgba(var(--orb-shadow-rgb), 0.6);
           }
           70% {
             box-shadow: 0 0 0 10px rgba(var(--orb-shadow-rgb), 0);

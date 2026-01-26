@@ -10,6 +10,7 @@ import {
   FishIcon,
   XIcon,
   MapPinIcon,
+  ClockIcon,
 } from "@/components/UnifiedIcons";
 
 import {
@@ -19,33 +20,31 @@ import {
   CatchDetailView,
   CatchLogModal,
   apiRecordToEntry,
+  type ActiveLake,
+  CatchFormView, // Import Form for Editing
 } from "@/components/CatchLog";
-import { listCatches } from "@/lib/catches-api";
+import { listCatches, deleteCatch as deleteCatchApi } from "@/lib/catches-api";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
-// ... [Keep useCountUp and UploadImageIcon helpers exactly as they were] ...
 // =============================================================================
-// HELPER: CountUp Animation Hook (3s Duration)
+// HELPER: CountUp Animation Hook
 // =============================================================================
-function useCountUp(end: number, duration: number = 3000) {
+function useCountUp(end: number, duration: number = 2500, delay: number = 600) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
     let startTime: number | null = null;
     let animationFrame: number;
+    let timeoutId: NodeJS.Timeout;
 
     const animate = (currentTime: number) => {
       if (!startTime) startTime = currentTime;
       const progress = currentTime - startTime;
-
       const ease = (t: number) => 1 - Math.pow(1 - t, 4);
-
       const percentage = Math.min(progress / duration, 1);
       const currentCount = Math.floor(ease(percentage) * end);
-
       setCount(currentCount);
-
       if (progress < duration) {
         animationFrame = requestAnimationFrame(animate);
       } else {
@@ -53,9 +52,19 @@ function useCountUp(end: number, duration: number = 3000) {
       }
     };
 
-    animationFrame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [end, duration]);
+    if (end > 0) {
+      timeoutId = setTimeout(() => {
+        animationFrame = requestAnimationFrame(animate);
+      }, delay);
+    } else {
+      setCount(0);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [end, duration, delay]);
 
   return count;
 }
@@ -77,7 +86,9 @@ const UploadImageIcon = ({ size = 24 }: { size?: number }) => (
   </svg>
 );
 
-// ... [Keep calculateStats and Types exactly as they were] ...
+// =============================================================================
+// STATS CALCULATOR
+// =============================================================================
 type ViewMode =
   | "total"
   | "lakes"
@@ -95,7 +106,7 @@ type StatCalculation = {
     lng: number;
     topLures: string[];
   }[];
-  pbs: CatchEntry[];
+  pbs: Record<string, CatchEntry | null>; // Changed to map for easy lookup
   bestDay: {
     date: string;
     weight: number;
@@ -112,7 +123,7 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
     return {
       totalCount: 0,
       lakes: [],
-      pbs: [],
+      pbs: { largemouth: null, smallmouth: null, spotted: null },
       bestDay: null,
       topTechniques: [],
       topLures: [],
@@ -123,21 +134,59 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
     string,
     { count: number; lat: number; lng: number; lures: Record<string, number> }
   > = {};
+  const dayMap: Record<
+    string,
+    { weight: number; count: number; lures: Set<string> }
+  > = {};
+  const pbMap: Record<string, CatchEntry | null> = {
+    largemouth: null,
+    smallmouth: null,
+    spotted: null,
+  };
+  const techMap: Record<string, number> = {};
+  const lureMap: Record<string, number> = {};
 
   entries.forEach((e) => {
-    if (!lakeMap[e.lakeName]) {
-      lakeMap[e.lakeName] = {
+    // Lakes
+    const lName = e.lakeName || "Unknown Water";
+    if (!lakeMap[lName]) {
+      lakeMap[lName] = {
         count: 0,
         lat: e.lakeLat || e.catchLat,
         lng: e.lakeLng || e.catchLng,
         lures: {},
       };
     }
-    lakeMap[e.lakeName].count++;
-    lakeMap[e.lakeName].lures[e.lure] =
-      (lakeMap[e.lakeName].lures[e.lure] || 0) + 1;
+    lakeMap[lName].count++;
+    lakeMap[lName].lures[e.lure] = (lakeMap[lName].lures[e.lure] || 0) + 1;
+
+    // Days
+    const date = e.caughtAt.split("T")[0];
+    if (!dayMap[date]) dayMap[date] = { weight: 0, count: 0, lures: new Set() };
+    dayMap[date].weight += e.weight || 0;
+    dayMap[date].count++;
+    dayMap[date].lures.add(e.lure);
+
+    // PBs
+    const species = (e.species || "largemouth").toLowerCase();
+    if (species in pbMap) {
+      const current = pbMap[species];
+      if (
+        !current ||
+        (e.weight && (!current.weight || e.weight > current.weight))
+      ) {
+        pbMap[species] = e;
+      }
+    }
+
+    // Techniques/Lures
+    lureMap[e.lure] = (lureMap[e.lure] || 0) + 1;
+    const opt = LURE_OPTIONS.find((o) => o.value === e.lure);
+    const cat = opt?.category || "Other";
+    techMap[cat] = (techMap[cat] || 0) + 1;
   });
 
+  // Process Lakes
   const lakes = Object.entries(lakeMap)
     .map(([name, data]) => ({
       name,
@@ -151,54 +200,15 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
     }))
     .sort((a, b) => b.count - a.count);
 
-  const dayMap: Record<
-    string,
-    { weight: number; count: number; lures: Set<string> }
-  > = {};
-  entries.forEach((e) => {
-    const date = e.caughtAt.split("T")[0];
-    if (!dayMap[date]) dayMap[date] = { weight: 0, count: 0, lures: new Set() };
-    dayMap[date].weight += e.weight || 0;
-    dayMap[date].count++;
-    dayMap[date].lures.add(e.lure);
-  });
-
-  const bestDateKey = Object.keys(dayMap).reduce((a, b) => {
-    if (dayMap[a].weight === dayMap[b].weight)
-      return dayMap[a].count > dayMap[b].count ? a : b;
-    return dayMap[a].weight > dayMap[b].weight ? a : b;
-  });
-
-  const pbMap: Record<string, CatchEntry> = {};
-  entries.forEach((e) => {
-    if (!e.weight) return;
-    const species = e.species || "largemouth";
-    if (
-      !pbMap[species] ||
-      Number(e.weight) > Number(pbMap[species].weight || 0)
-    ) {
-      pbMap[species] = e;
-    }
-  });
-  const pbs = Object.values(pbMap).sort(
-    (a, b) => Number(b.weight || 0) - Number(a.weight || 0),
-  );
-
-  const techMap: Record<string, number> = {};
-  const lureMap: Record<string, number> = {};
-
-  entries.forEach((e) => {
-    lureMap[e.lure] = (lureMap[e.lure] || 0) + 1;
-    const opt = LURE_OPTIONS.find((o) => o.value === e.lure);
-    const cat = opt?.category || "Other";
-    techMap[cat] = (techMap[cat] || 0) + 1;
-  });
-
-  return {
-    totalCount: entries.length,
-    lakes,
-    pbs,
-    bestDay: {
+  // Process Best Day
+  let bestDay = null;
+  if (Object.keys(dayMap).length > 0) {
+    const bestDateKey = Object.keys(dayMap).reduce((a, b) => {
+      if (dayMap[a].weight === dayMap[b].weight)
+        return dayMap[a].count > dayMap[b].count ? a : b;
+      return dayMap[a].weight > dayMap[b].weight ? a : b;
+    });
+    bestDay = {
       date: bestDateKey,
       ...dayMap[bestDateKey],
       lures: Array.from(dayMap[bestDateKey].lures),
@@ -208,7 +218,14 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
         day: "numeric",
         year: "numeric",
       }),
-    },
+    };
+  }
+
+  return {
+    totalCount: entries.length,
+    lakes,
+    pbs: pbMap,
+    bestDay,
     topTechniques: Object.entries(techMap)
       .map(([c, n]) => ({ category: c, count: n }))
       .sort((a, b) => b.count - a.count),
@@ -217,6 +234,210 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
       .sort((a, b) => b.count - a.count),
   };
 }
+
+// =============================================================================
+// SUB-COMPONENTS
+// =============================================================================
+
+const EmptyPBCard = ({ species }: { species: string }) => (
+  <div className="pb-card-empty">
+    <div className="pb-empty-icon">
+      <FishIcon size={32} />
+    </div>
+    <div className="pb-empty-info">
+      <span className="pb-empty-title">{species}</span>
+      <span className="pb-empty-subtitle">No catches logged yet</span>
+    </div>
+    <style>{`
+      .pb-card-empty {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 20px;
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        height: 120px;
+      }
+      .pb-empty-icon {
+        width: 60px; height: 60px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        color: rgba(255,255,255,0.3);
+      }
+      .pb-empty-info { display: flex; flex-direction: column; gap: 4px; }
+      .pb-empty-title { font-weight: 700; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem; }
+      .pb-empty-subtitle { font-size: 0.85rem; color: rgba(255,255,255,0.4); }
+    `}</style>
+  </div>
+);
+
+const FullPBCard = ({
+  entry,
+  onClick,
+}: {
+  entry: CatchEntry;
+  onClick: () => void;
+}) => {
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  return (
+    <div className="pb-card-full" onClick={onClick}>
+      {/* Background Image Layer */}
+      <div className="pb-bg-image">
+        {entry.photoUrl || entry.imageData ? (
+          <img src={entry.photoUrl || entry.imageData} alt="PB" />
+        ) : (
+          <div className="pb-no-image-bg">
+            <FishIcon size={60} />
+          </div>
+        )}
+      </div>
+
+      {/* Gradient Overlay - Left to Right Fade */}
+      <div className="pb-gradient-overlay" />
+
+      {/* Content Layer */}
+      <div className="pb-content">
+        <div className="pb-header">
+          <span className="pb-badge">{entry.species || "Bass"}</span>
+          {entry.isOffline && <span className="pb-offline-badge">Offline</span>}
+        </div>
+
+        <div className="pb-main-stat">
+          <span className="pb-weight-val">{entry.weight}</span>
+          <span className="pb-weight-unit">lbs</span>
+        </div>
+
+        <div className="pb-details-grid">
+          <div className="pb-detail-item">
+            <MapPinIcon size={14} />
+            <span>{entry.lakeName}</span>
+          </div>
+          <div className="pb-detail-item">
+            <CalendarIcon size={14} />
+            <span>{formatDate(entry.caughtAt)}</span>
+          </div>
+          <div className="pb-detail-item">
+            <ClockIcon size={14} />
+            <span>{formatTime(entry.caughtAt)}</span>
+          </div>
+          <div className="pb-detail-item">
+            <FishIcon size={14} />
+            <span style={{ textTransform: "capitalize" }}>{entry.lure}</span>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .pb-card-full {
+          position: relative;
+          height: 360px; /* UPDATED to 360px as requested */
+          border-radius: 20px;
+          overflow: hidden;
+          border: 1px solid rgba(255,255,255,0.1);
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .pb-card-full:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          border-color: rgba(255,255,255,0.2);
+        }
+        
+        .pb-bg-image {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+        }
+        .pb-bg-image img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          /* Ensure the image aligns to the right so the fish is visible */
+          object-position: center right; 
+        }
+        .pb-no-image-bg {
+          width: 100%; height: 100%;
+          background: #1a1a20;
+          display: flex; align-items: center; justify-content: center;
+          color: rgba(255,255,255,0.1);
+        }
+
+        /* The Magic Gradient: Solid Dark on Left, Fade to Transparent on Right */
+        .pb-gradient-overlay {
+          position: absolute;
+          inset: 0;
+          z-index: 1;
+          background: linear-gradient(90deg, 
+            rgba(10,10,12,0.95) 0%, 
+            rgba(10,10,12,0.85) 35%, 
+            rgba(10,10,12,0.4) 65%, 
+            rgba(10,10,12,0.0) 100%
+          );
+        }
+
+        .pb-content {
+          position: relative;
+          z-index: 2;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          padding: 20px;
+          justify-content: space-between;
+          max-width: 65%; /* Constrain text to the dark side */
+        }
+
+        .pb-header { display: flex; gap: 8px; }
+        .pb-badge {
+          background: rgba(255,255,255,0.15);
+          backdrop-filter: blur(4px);
+          padding: 4px 10px;
+          border-radius: 6px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: rgba(255,255,255,0.9);
+          border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .pb-main-stat { display: flex; align-items: baseline; gap: 4px; }
+        .pb-weight-val { font-size: 2.8rem; font-weight: 800; color: #FBBF24; line-height: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .pb-weight-unit { font-size: 1.1rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+        .pb-details-grid {
+          display: grid;
+          grid-template-columns: auto;
+          gap: 6px;
+        }
+        .pb-detail-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.85rem;
+          color: rgba(255,255,255,0.8);
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .pb-detail-item svg { color: rgba(255,255,255,0.4); flex-shrink: 0; }
+      `}</style>
+    </div>
+  );
+};
 
 // =============================================================================
 // MAIN COMPONENT
@@ -228,57 +449,80 @@ export function Insights() {
   const [entries, setEntries] = useState<CatchEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 1. REMOVE the ref, we don't need it anymore
-  // const uploadInputRef = useRef<HTMLInputElement>(null);
-
-  const virtualActiveLake = useMemo(
-    () => ({
-      id: "upload-session",
-      name: "Photo Upload",
-      lat: 0,
-      lng: 0,
-    }),
-    [],
-  );
-
-  const catchLog = useCatchLog(virtualActiveLake);
-
-  useEffect(() => {
-    let mounted = true;
-    async function fetchData() {
-      try {
-        const token = await getToken();
-        if (!token) return;
-
-        const response = await listCatches(token, 500, 0);
-
-        if (mounted) {
-          const converted = response.catches.map(apiRecordToEntry);
-          setEntries(converted);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        console.error("Failed to load insights:", err);
-        if (mounted) setIsLoading(false);
-      }
-    }
-    fetchData();
-    return () => {
-      mounted = false;
-    };
-  }, [getToken]);
-
-  const stats = useMemo(() => calculateStats(entries), [entries]);
-
+  // VIEWING STATE
   const [activeView, setActiveView] = useState<ViewMode>("total");
   const [selectedLake, setSelectedLake] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<{
     type: string;
     value: string;
   } | null>(null);
-  const [viewingCatch, setViewingCatch] = useState<CatchEntry | null>(null);
 
-  const animatedTotal = useCountUp(stats.totalCount, 3000);
+  // MODAL STATES
+  const [viewingCatch, setViewingCatch] = useState<CatchEntry | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Virtual Lake for Uploads
+  const virtualActiveLake = useMemo<ActiveLake>(
+    () => ({ id: "upload-session", name: "Photo Upload", lat: 0, lng: 0 }),
+    [],
+  );
+
+  // DISABLE LIST VIEW for main log hook
+  const catchLog = useCatchLog(virtualActiveLake, { disableListView: true });
+
+  const loadData = useCallback(async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+      const response = await listCatches(token, 500, 0);
+      const converted = response.catches.map(apiRecordToEntry);
+      setEntries(converted);
+      setIsLoading(false);
+    } catch (err) {
+      console.error("Failed to load insights:", err);
+      setIsLoading(false);
+    }
+  }, [getToken]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const stats = useMemo(() => calculateStats(entries), [entries]);
+  const animatedTotal = useCountUp(stats.totalCount, 2500, 600);
+
+  // --- ACTIONS ---
+
+  const handleDeleteCatch = async (id: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this catch? This cannot be undone.",
+      )
+    )
+      return;
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Offline");
+
+      await deleteCatchApi(id, token);
+
+      // Update local state immediately
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      setViewingCatch(null);
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Delete failed", err);
+      alert("Failed to delete catch.");
+    }
+  };
+
+  const handleUpdateCatch = async (data: Partial<CatchEntry>) => {
+    setViewingCatch(null);
+    setIsEditing(false);
+    loadData(); // Reload to get updates
+  };
+
+  // --- FILTER LOGIC ---
 
   useMemo(() => {
     if (activeView === "lakes" && !selectedLake && stats.lakes.length > 0) {
@@ -287,7 +531,7 @@ export function Insights() {
   }, [activeView, stats.lakes]);
 
   const filteredEntries = useMemo(() => {
-    if (activeView === "pbs") return [];
+    if (activeView === "pbs") return []; // PBs handled separately
 
     let data = [...entries];
 
@@ -320,48 +564,9 @@ export function Insights() {
     return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lake.lng},${lake.lat},13,0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false`;
   };
 
-  const handlePillChange = (view: ViewMode) => {
-    setActiveView(view);
-    setActiveFilter(null);
-  };
-
-  const toggleFilter = (type: string, value: string) => {
-    if (activeFilter?.value === value) {
-      setActiveFilter(null);
-    } else {
-      setActiveFilter({ type, value });
-    }
-  };
-
-  const formatLureName = (value: string) => {
-    return value
-      .split(" ")
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(" ");
-  };
-
-  // 2. SIMPLIFIED: Just open the form directly
   const handleUploadClick = () => {
     catchLog.showForm();
   };
-
-  // 3. REMOVED: handleFileSelect is no longer needed
-
-  const handleCatchSaved = useCallback(async () => {
-    try {
-      const token = await getToken();
-      if (!token) return;
-
-      const response = await listCatches(token, 500, 0);
-      const converted = response.catches.map(apiRecordToEntry);
-      setEntries(converted);
-
-      setActiveView("total");
-      setActiveFilter(null);
-    } catch (err) {
-      console.error("Failed to refresh catches after save:", err);
-    }
-  }, [getToken]);
 
   if (isLoading) {
     return (
@@ -370,19 +575,15 @@ export function Insights() {
           padding: 60,
           textAlign: "center",
           color: "rgba(255,255,255,0.5)",
-          height: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
         }}
       >
-        Loading catch history...
+        Loading...
       </div>
     );
   }
 
   return (
-    <div className="stats-page">
+    <div className="insights-container" style={{ paddingBottom: "80px" }}>
       <div className="stats-header">
         <button onClick={() => navigate("/members")} className="back-icon-btn">
           <ArrowLeftIcon size={24} />
@@ -402,7 +603,10 @@ export function Insights() {
         ].map((pill) => (
           <button
             key={pill.id}
-            onClick={() => handlePillChange(pill.id as ViewMode)}
+            onClick={() => {
+              setActiveView(pill.id as ViewMode);
+              setActiveFilter(null);
+            }}
             className={`pill ${activeView === pill.id ? "active" : ""}`}
           >
             {pill.label}
@@ -414,13 +618,11 @@ export function Insights() {
       <div
         className={`stats-hero ${activeView === "pbs" ? "hero-no-border" : ""}`}
       >
-        {/* TOTAL (Animated Counter with Upload) */}
+        {/* TOTAL */}
         {activeView === "total" && (
           <div className="hero-center">
             <div className="hero-big-number">{animatedTotal}</div>
             <div className="hero-label">Total Catches Logged</div>
-
-            {/* Upload Section */}
             <div className="hero-upload-section">
               <p className="hero-upload-text">
                 Upload photos from your gallery to log past catches
@@ -433,8 +635,7 @@ export function Insights() {
           </div>
         )}
 
-        {/* ... [Rest of the Hero Section remains unchanged] ... */}
-        {/* LAKES (Split View with Satellite Map) */}
+        {/* LAKES */}
         {activeView === "lakes" && (
           <div className="hero-split">
             <div className="hero-list">
@@ -462,7 +663,6 @@ export function Insights() {
                 />
               )}
               <div className="card-overlay" />
-
               <div className="card-content">
                 <h2>{selectedLake}</h2>
                 <div className="card-stat-row">
@@ -482,7 +682,13 @@ export function Insights() {
                         <button
                           key={lure}
                           className={`lure-chip ${activeFilter?.value === lure ? "active" : ""}`}
-                          onClick={() => toggleFilter("lure", lure)}
+                          onClick={() => {
+                            setActiveFilter(
+                              activeFilter?.value === lure
+                                ? null
+                                : { type: "lure", value: lure },
+                            );
+                          }}
                         >
                           {lure}
                         </button>
@@ -494,61 +700,26 @@ export function Insights() {
           </div>
         )}
 
-        {/* PERSONAL BESTS (ROW FORMAT) */}
+        {/* PERSONAL BESTS (VERTICAL STACK) */}
         {activeView === "pbs" && (
           <div className="hero-pbs-list">
-            {stats.pbs.length === 0 ? (
-              <div className="pb-empty">No personal bests recorded yet.</div>
-            ) : (
-              stats.pbs.map((pb) => (
-                <div
-                  key={pb.id}
-                  className="pb-row-card"
-                  onClick={() => setViewingCatch(pb)}
-                >
-                  <div className="pb-row-info">
-                    <div className="pb-row-header">
-                      <span className="pb-species-badge">
-                        {pb.species || "Bass"}
-                      </span>
-                      <span className="pb-weight-large">
-                        {pb.weight} <span className="unit">lbs</span>
-                      </span>
-                    </div>
-
-                    <div className="pb-row-meta">
-                      <div className="pb-meta-item">
-                        <CalendarIcon size={14} />
-                        <span>
-                          {new Date(pb.caughtAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="pb-meta-item">
-                        <MapPinIcon size={14} />
-                        <span>{pb.lakeName}</span>
-                      </div>
-                    </div>
-
-                    <div className="pb-row-lure">
-                      <span className="lure-label">Lure:</span>{" "}
-                      {formatLureName(pb.lure)}
-                    </div>
-                  </div>
-
-                  {/* Image display fix */}
-                  <div className="pb-row-image">
-                    {pb.photoUrl || pb.imageData ? (
-                      <img src={pb.photoUrl || pb.imageData} alt="PB" />
-                    ) : (
-                      <div className="pb-placeholder">
-                        <TrophyIcon size={40} />
-                        <span>No Photo</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
+            {["largemouth", "smallmouth", "spotted"].map((species) => {
+              const record = stats.pbs[species];
+              if (record) {
+                return (
+                  <FullPBCard
+                    key={species}
+                    entry={record}
+                    onClick={() => setViewingCatch(record)}
+                  />
+                );
+              } else {
+                // Capitalize for display
+                const label =
+                  species.charAt(0).toUpperCase() + species.slice(1) + " Bass";
+                return <EmptyPBCard key={species} species={label} />;
+              }
+            })}
           </div>
         )}
 
@@ -576,7 +747,13 @@ export function Insights() {
                 <button
                   key={lure}
                   className={`lure-text-btn ${activeFilter?.value === lure ? "active" : ""}`}
-                  onClick={() => toggleFilter("lure", lure)}
+                  onClick={() =>
+                    setActiveFilter(
+                      activeFilter?.value === lure
+                        ? null
+                        : { type: "lure", value: lure },
+                    )
+                  }
                 >
                   {lure}
                 </button>
@@ -595,12 +772,17 @@ export function Insights() {
               const label = "lure" in item ? item.lure : item.category;
               const type = activeView === "confidence" ? "lure" : "tech";
               const percent = (item.count / stats.totalCount) * 100;
-
               return (
                 <button
                   key={label}
                   className={`chart-bar-row ${activeFilter?.value === label ? "active" : ""}`}
-                  onClick={() => toggleFilter(type, label)}
+                  onClick={() =>
+                    setActiveFilter(
+                      activeFilter?.value === label
+                        ? null
+                        : { type, value: label },
+                    )
+                  }
                 >
                   <div className="bar-label">
                     <span>
@@ -626,7 +808,6 @@ export function Insights() {
         <div className="photo-wall">
           <div className="wall-header">
             <span className="wall-count">{filteredEntries.length} Catches</span>
-
             {activeFilter && (
               <button
                 className="clear-filter-btn"
@@ -637,7 +818,6 @@ export function Insights() {
               </button>
             )}
           </div>
-
           <div className="wall-grid">
             {filteredEntries.map((entry) => (
               <div
@@ -648,8 +828,8 @@ export function Insights() {
                 {entry.photoUrl || entry.imageData ? (
                   <img
                     src={entry.photoUrl || entry.imageData}
-                    loading="lazy"
                     alt=""
+                    loading="lazy"
                   />
                 ) : (
                   <div className="wall-placeholder">
@@ -670,7 +850,6 @@ export function Insights() {
               </div>
             ))}
           </div>
-
           {filteredEntries.length === 0 && (
             <div className="wall-empty">
               <p>No catches found for this filter.</p>
@@ -687,39 +866,52 @@ export function Insights() {
         </div>
       )}
 
-      {/* 4. REMOVED: Hidden file input */}
-
-      {/* CATCH LOG MODAL FOR UPLOADING */}
+      {/* UPLOAD MODAL */}
       <CatchLogModal
         {...catchLog}
+        disableListView={true}
         onDraftDone={() => {
-          handleCatchSaved();
+          catchLog.close();
+          loadData();
         }}
       />
 
-      {/* VIEW CATCH DETAIL MODAL */}
+      {/* EDIT / VIEW MODAL */}
       {viewingCatch && (
         <div
           className="stats-modal-overlay"
-          onClick={() => setViewingCatch(null)}
+          onClick={() => {
+            setViewingCatch(null);
+            setIsEditing(false);
+          }}
         >
           <div
             className="stats-modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            <CatchDetailView
-              entry={viewingCatch}
-              allEntries={entries}
-              onBack={() => setViewingCatch(null)}
-              onEdit={() => {}}
-              onDelete={() => {}}
-              readOnly={true}
-              onFlyToLocation={(lat, lng) => {
-                navigate(
-                  `/members?lat=${lat}&lng=${lng}&lake=${encodeURIComponent(viewingCatch.lakeName)}`,
-                );
-              }}
-            />
+            {isEditing ? (
+              <CatchFormView
+                entry={viewingCatch}
+                isEditing={true}
+                activeLake={virtualActiveLake} // We use virtual context for edits from insights
+                onSave={handleUpdateCatch}
+                onCancel={() => setIsEditing(false)}
+              />
+            ) : (
+              <CatchDetailView
+                entry={viewingCatch}
+                allEntries={entries}
+                onBack={() => setViewingCatch(null)}
+                onEdit={() => setIsEditing(true)}
+                onDelete={() => handleDeleteCatch(viewingCatch.id)}
+                readOnly={false}
+                onFlyToLocation={(lat, lng) => {
+                  navigate(
+                    `/members?lat=${lat}&lng=${lng}&lake=${encodeURIComponent(viewingCatch.lakeName)}`,
+                  );
+                }}
+              />
+            )}
           </div>
         </div>
       )}
@@ -727,12 +919,11 @@ export function Insights() {
       {/* STYLES */}
       <style>{`
         .stats-page { background: #0a0a0a; min-height: 100vh; color: white; padding-bottom: 40px; }
+        .insights-container { padding: 20px; max-width: 600px; margin: 0 auto; }
         .stats-header { padding: 20px; display: flex; align-items: center; gap: 16px; }
         .stats-header h1 { margin: 0; font-size: 1.2rem; font-weight: 700; }
         .back-icon-btn { background: rgba(255,255,255,0.1); border: none; color: white; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         
-        /* ... [ALL OTHER CSS IS IDENTICAL - Omitted for brevity, but include it in final file] ... */
-        /* You can copy the exact CSS from your previous file as I haven't changed the classes */
         .pills-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 20px 20px; scrollbar-width: none; }
         .pills-scroll::-webkit-scrollbar { display: none; }
         .pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
@@ -745,45 +936,10 @@ export function Insights() {
         .hero-big-number { font-size: 5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
         .hero-label { font-size: 0.9rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px; }
 
-        .hero-upload-section {
-          margin-top: 24px;
-          padding-top: 20px;
-          border-top: 1px solid rgba(255,255,255,0.08);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 14px;
-          width: 100%;
-        }
-        .hero-upload-text {
-          margin: 0;
-          font-size: 0.85rem;
-          color: rgba(255,255,255,0.5);
-          text-align: center;
-          line-height: 1.4;
-        }
-        .hero-upload-btn {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 24px;
-          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-          border: none;
-          border-radius: 14px;
-          color: #fff;
-          font-size: 0.95rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
-        }
-        .hero-upload-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
-        }
-        .hero-upload-btn:active {
-          transform: translateY(0);
-        }
+        .hero-upload-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+        .hero-upload-text { margin: 0; font-size: 0.85rem; color: rgba(255,255,255,0.5); text-align: center; line-height: 1.4; }
+        .hero-upload-btn { display: flex; align-items: center; gap: 10px; padding: 12px 24px; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: none; border-radius: 14px; color: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3); }
+        .hero-upload-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4); }
 
         .hero-split { display: flex; height: 280px; }
         .hero-list { width: 35%; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
@@ -856,7 +1012,7 @@ export function Insights() {
         .wall-empty-clear { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 
         .stats-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .stats-modal-content { width: 100%; max-width: 380px; max-height: 86vh; background: rgba(20,20,25,0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; }
+        .stats-modal-content { width: 100%; max-width: 360px; max-height: 86vh; background: rgba(20,20,25,0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; }
       `}</style>
     </div>
   );
