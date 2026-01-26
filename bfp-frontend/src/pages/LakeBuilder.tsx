@@ -1,3 +1,5 @@
+// src/pages/LakeBuilder.tsx
+
 import React, {
   useRef,
   useState,
@@ -18,9 +20,9 @@ import { updateCustomLakeGeometry } from "@/lib/catches-api";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 // --- CONSTANTS ---
-const MAX_PINS = 10;
-const MIN_PINS = 3; // To form a polygon
-const LEASH_DISTANCE_KM = 5.0; // Max distance from anchor
+const MAX_PINS = 100; // Increased to allow detailed shorelines
+const MIN_PINS = 3; // Minimum to form a polygon
+const LEASH_DISTANCE_KM = 80.0; // Increased to 80km to support large reservoirs
 const ADMIN_EMAIL = "your-email@example.com"; // REPLACE THIS or use env var
 
 // --- LOCAL ICONS ---
@@ -144,7 +146,7 @@ export function LakeBuilder() {
       container: mapContainer.current,
       style: "mapbox://styles/mapbox/satellite-streets-v12",
       center: [anchorLng, anchorLat],
-      zoom: 14,
+      zoom: 13, // Zoomed out slightly to accommodate larger leash
       pitch: 0,
       attributionControl: false,
     });
@@ -193,8 +195,8 @@ export function LakeBuilder() {
 
     // Clear existing line layer
     if (map.getSource("boundary-source")) {
-      map.removeLayer("boundary-line");
-      map.removeLayer("boundary-fill");
+      if (map.getLayer("boundary-line")) map.removeLayer("boundary-line");
+      if (map.getLayer("boundary-fill")) map.removeLayer("boundary-fill");
       map.removeSource("boundary-source");
     }
 

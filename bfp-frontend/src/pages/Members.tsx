@@ -42,9 +42,6 @@ import {
 // --- IMAGE UTILS ---
 import { compressImage } from "@/lib/image-utils";
 
-// --- LAKE LABEL IMPORTS ---
-import { type LakeLabelData } from "@/components/LakeLabel";
-
 // --- DATA IMPORT ---
 import LAKES_DATA from "../data/lakes.json";
 
@@ -72,6 +69,21 @@ const StarIcon = ({
     strokeLinejoin="round"
   >
     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+);
+
+const PolygonIcon = ({ size = 16 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
   </svg>
 );
 
@@ -258,6 +270,7 @@ function getMatchRadius(acres?: number): number {
   return 1000;
 }
 
+// Calculate appropriate zoom level based on lake size
 function getZoomForLake(acres?: number): number {
   if (!acres) return 14;
   if (acres > 30000) return 10;
@@ -303,6 +316,7 @@ function findUserLakeByAnchors(
   return null;
 }
 
+// Unified polygon check
 type PolygonMatchResult = {
   source: "custom" | "favorite" | "known";
   id: string;
@@ -322,6 +336,7 @@ function findLakeByPolygon(
 ): PolygonMatchResult {
   const p = { lat, lng };
 
+  // 1. Check custom lakes with anchors
   for (const lake of customLakes) {
     const anchors = (lake as any).anchors as
       | { lat: number; lng: number }[]
@@ -341,6 +356,7 @@ function findLakeByPolygon(
     }
   }
 
+  // 2. Check known lakes from lakes.json with anchors
   for (const lake of LAKES_DATA as LakeData[]) {
     const anchors = lake.anchors as { lat: number; lng: number }[] | undefined;
     if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
@@ -464,12 +480,6 @@ export function Members() {
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
-  // Outline Prompt Modal
-  const [showOutlinePrompt, setShowOutlinePrompt] = useState(false);
-  const [recentCustomLakeId, setRecentCustomLakeId] = useState<string | null>(
-    null,
-  );
-
   // Rate Limiting / Loading
   const [rateLimitInfo, setRateLimitInfo] = useState<{
     message: string;
@@ -557,6 +567,7 @@ export function Members() {
         pendingLakeSelectRef.current = location.state.lakeId;
       }
 
+      // Clear navigation state so it doesn't loop
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -717,7 +728,7 @@ export function Members() {
     catchLog.showForm(draftEntry as any);
   }, [draftEntry, catchLog]);
 
-  const lakeLabelData: LakeLabelData | null = useMemo(() => {
+  const lakeLabelData = useMemo(() => {
     if (!selectedCoords) return null;
     const isSaved = favorites.some(
       (f) =>
@@ -729,6 +740,13 @@ export function Members() {
       waterName !== "" &&
       !waterName.startsWith("Water near") &&
       !waterName.startsWith("Dropped Pin");
+
+    // Check if Edit Boundary should be shown
+    const canEditBoundary =
+      isSaved &&
+      (currentFavorite?.lake_type === "custom" ||
+        !hydrateLakeData(waterName, selectedCoords.lat, selectedCoords.lng));
+
     return {
       name: waterName,
       city: locationDetails.city,
@@ -737,8 +755,9 @@ export function Members() {
       lng: selectedCoords.lng,
       isSaved,
       isKnown,
+      canEditBoundary,
     };
-  }, [selectedCoords, waterName, locationDetails, favorites]);
+  }, [selectedCoords, waterName, locationDetails, favorites, currentFavorite]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -1219,6 +1238,7 @@ export function Members() {
     [getToken],
   );
 
+  // --- UPDATED FRICTIONLESS SAVE LOGIC ---
   const toggleFavoriteLake = useCallback(
     async (e?: React.MouseEvent) => {
       e?.preventDefault();
@@ -1228,6 +1248,7 @@ export function Members() {
       if (!token) return;
 
       if (isCurrentLocationSaved) {
+        // REMOVE LOGIC
         const fav = favorites.find(
           (f) =>
             f.name === waterName ||
@@ -1238,19 +1259,28 @@ export function Members() {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
       } else {
+        // ADD LOGIC
+        // 1. Try to match name with known database
         const dbMatch = hydrateLakeData(
-          waterName,
+          manualWaterName || waterName,
           selectedCoords.lat,
           selectedCoords.lng,
         );
+
         let lakeId = "";
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
 
-        if (dbMatch && dbMatch.id && dbMatch.name === waterName) {
+        // If matched by name, treat as known
+        if (
+          dbMatch &&
+          dbMatch.id &&
+          dbMatch.name === (manualWaterName || waterName)
+        ) {
           lakeId = dbMatch.id;
           lakeType = "known";
         } else {
+          // Otherwise, it's custom
           lakeType = "custom";
           shouldCreateCustom = true;
         }
@@ -1272,6 +1302,7 @@ export function Members() {
             return (createRes as any).lake_id;
           } else {
             const existingLake = (createRes as any).existing_lake;
+            // Name sync
             if (
               existingLake &&
               nameToSave &&
@@ -1295,18 +1326,17 @@ export function Members() {
           if (shouldCreateCustom) {
             lakeId = await performCustomCreation();
             if (!lakeId) throw new Error("Failed to get lake ID");
-            setRecentCustomLakeId(lakeId);
-            setShowOutlinePrompt(true);
+            // NOTE: No prompt. Just save.
           } else {
+            // Known lake
             try {
               await addFavorite(lakeId, "known", token);
             } catch (knownErr: any) {
+              // Fallback
               lakeType = "custom";
               lakeId = await performCustomCreation();
               if (!lakeId) throw new Error("Failed fallback creation");
               await addFavorite(lakeId, "custom", token);
-              setRecentCustomLakeId(lakeId);
-              setShowOutlinePrompt(true);
               return;
             }
           }
@@ -1328,6 +1358,7 @@ export function Members() {
             tier: dbMatch?.tier,
           };
           setFavorites((prev) => [...prev, newLake]);
+          setViewingFavoriteId(lakeId);
         } catch (err) {
           console.error("Failed to save favorite", err);
           alert("Error saving lake. Please try again.");
@@ -1358,6 +1389,21 @@ export function Members() {
     if (selectedCoords) setInputMode("manual");
     else setInputMode("search");
     setShowModal(true);
+  };
+
+  const handleEditBoundary = () => {
+    if (currentFavorite && selectedCoords) {
+      navigate("/lake-builder", {
+        state: {
+          lat: selectedCoords.lat,
+          lng: selectedCoords.lng,
+          suggestedName: currentFavorite.name,
+          city: currentFavorite.city,
+          state: currentFavorite.state,
+          lakeId: currentFavorite.id,
+        },
+      });
+    }
   };
 
   if (loading)
@@ -1421,6 +1467,7 @@ export function Members() {
         onChange={handleLiveCapture}
       />
       <div style={{ width: "100%", height: "100%" }}>
+        {/* Moves Mapbox controls down below the gradient header */}
         <style>{`.mapboxgl-ctrl-top-right { top: 180px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
@@ -1563,13 +1610,25 @@ export function Members() {
                       )}
                     </div>
 
-                    {/* Location */}
+                    {/* Location + Optional Edit Button */}
                     <div className="top-bar-location">
                       <span>
                         {lakeLabelData.city && lakeLabelData.state
                           ? `${lakeLabelData.city}, ${lakeLabelData.state}`
                           : `${lakeLabelData.lat.toFixed(4)}°, ${lakeLabelData.lng.toFixed(4)}°`}
                       </span>
+
+                      {/* NEW: Edit Boundary Button */}
+                      {lakeLabelData.canEditBoundary && (
+                        <button
+                          className="top-bar-edit-boundary"
+                          onClick={handleEditBoundary}
+                          title="Edit Boundary"
+                        >
+                          <PolygonIcon size={12} />
+                          <span>Outline</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -1706,7 +1765,7 @@ export function Members() {
               </div>
             )}
 
-            {/* MAIN NAVIGATION ROW - UPDATED LAYOUT */}
+            {/* MAIN NAVIGATION ROW */}
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
                 <button
@@ -1716,7 +1775,6 @@ export function Members() {
                 >
                   <RadarIcon size={22} />
                 </button>
-                {/* MOVED: Camera Button Here */}
                 <button
                   onClick={handleLiveCameraClick}
                   className={`nav-btn nav-btn-icon ${!!activeLake ? "nav-btn-primary" : ""}`}
@@ -1728,13 +1786,12 @@ export function Members() {
 
               <div className="orb-nav-cluster">
                 <div
-                  className="orb-wrapper"
+                  className="nav-center-orb"
                   onClick={() => setShowFavorites((prev) => !prev)}
-                  style={{ cursor: "pointer" }}
                   aria-label="Toggle Favorites"
                 >
-                  <div className="orb-glow-ring" />
-                  <MapOrb size={26} />
+                  <div className="nav-center-orb-core" />
+                  <div className="nav-center-orb-glow" />
                 </div>
               </div>
 
@@ -1876,6 +1933,7 @@ export function Members() {
         </div>
       )}
 
+      {/* REPLACEMENT MODAL */}
       {showReplaceConfirm && (
         <div
           className="modal-overlay"
@@ -1928,96 +1986,6 @@ export function Members() {
                 }}
               >
                 Overwrite
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* OUTLINE PROMPT MODAL */}
-      {showOutlinePrompt && (
-        <div className="modal-overlay">
-          <div
-            className="glass-panel modal-content"
-            style={{
-              maxWidth: 320,
-              padding: 24,
-              textAlign: "center",
-              alignItems: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: "50%",
-                background: "rgba(74, 144, 226, 0.2)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#4A90E2",
-                marginBottom: 16,
-              }}
-            >
-              <CheckIcon size={28} />
-            </div>
-            <h3 style={{ margin: "0 0 8px 0", fontSize: "1.2rem" }}>
-              Location Saved
-            </h3>
-            <p
-              style={{
-                margin: "0 0 24px 0",
-                opacity: 0.7,
-                fontSize: "0.9rem",
-                lineHeight: 1.5,
-              }}
-            >
-              Would you like to outline the boundaries for better accuracy?
-            </p>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 10,
-                width: "100%",
-              }}
-            >
-              <button
-                onClick={() => {
-                  setShowOutlinePrompt(false);
-                  if (recentCustomLakeId && selectedCoords) {
-                    navigate("/lake-builder", {
-                      state: {
-                        lat: selectedCoords.lat,
-                        lng: selectedCoords.lng,
-                        suggestedName: waterName,
-                        city: locationDetails.city,
-                        state: locationDetails.state,
-                        lakeId: recentCustomLakeId,
-                      },
-                    });
-                  }
-                }}
-                className="generate-btn"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-                  padding: "14px",
-                  fontSize: "1rem",
-                }}
-              >
-                Outline Boundary
-              </button>
-              <button
-                onClick={() => setShowOutlinePrompt(false)}
-                className="modal-btn"
-                style={{
-                  background: "transparent",
-                  border: "none",
-                  color: "rgba(255,255,255,0.6)",
-                }}
-              >
-                Keep as Pin Only
               </button>
             </div>
           </div>
@@ -2091,7 +2059,7 @@ export function Members() {
           padding: 16px 20px 45px;
           display: flex;
           justify-content: center;
-          /* UPDATED: Allows clicks to pass through to map */
+          /* Allows clicks to pass through to map */
           pointer-events: none;
         }
         .top-bar-card {
@@ -2102,7 +2070,7 @@ export function Members() {
           min-width: 280px;
           max-width: 400px;
           text-align: center;
-          /* UPDATED: Re-enables clicks for buttons inside */
+          /* Re-enables clicks for buttons inside */
           pointer-events: auto;
         }
         .top-bar-card-empty {
@@ -2142,7 +2110,6 @@ export function Members() {
           align-items: center;
           justify-content: center;
           transition: color 0.2s;
-          /* Ensure clickable */
           pointer-events: auto;
         }
         .top-bar-close:hover {
@@ -2245,11 +2212,28 @@ export function Members() {
         .top-bar-location {
           display: flex;
           align-items: center;
-          gap: 5px;
+          gap: 8px;
           color: rgba(255,255,255,0.6);
           font-size: 0.85rem;
           margin-top: 4px;
           font-weight: 500;
+        }
+        .top-bar-edit-boundary {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 8px;
+          background: rgba(74, 144, 226, 0.15);
+          border: 1px solid rgba(74, 144, 226, 0.3);
+          border-radius: 12px;
+          color: #4A90E2;
+          font-size: 0.7rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .top-bar-edit-boundary:hover {
+          background: rgba(74, 144, 226, 0.25);
         }
         
         /* Lake Name Suggestion */
@@ -2280,10 +2264,6 @@ export function Members() {
           font-weight: 600;
         }
 
-        .orb-marker-map { width: 24px; height: 24px; background: radial-gradient(circle at 30% 30%, #4A90E2, #357ABD); border-radius: 50%; box-shadow: 0 0 16px rgba(74,144,226,0.6), inset 0 -2px 4px rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.8); position: relative; }
-        .orb-marker-map::after { content: ''; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border-radius: 50%; border: 2px solid rgba(74,144,226,0.5); animation: map-orb-pulse 2s infinite ease-out; }
-        @keyframes map-orb-pulse { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
-
         .mapboxgl-ctrl-recenter {
           width: 29px; height: 29px;
           display: flex; align-items: center; justify-content: center;
@@ -2302,7 +2282,7 @@ export function Members() {
           backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); 
           border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
           transition: all 0.3s ease; position: relative; 
-          /* CRITICAL: Overflow visible to allow menus to pop out */
+          /* Overflow visible to allow menus to pop out */
           overflow: visible; 
         }
 
@@ -2434,24 +2414,6 @@ export function Members() {
           color: #fff;
         }
 
-        .favorites-scroll-area { width: 100%; padding: 16px 4px 8px; animation: slide-up 0.3s ease-out; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px; }
-        .fav-title-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; padding-left: 4px; }
-        .fav-title-row span:first-child { font-weight: 700; color: #fff; }
-        .fav-count { font-size: 0.8rem; color: rgba(255,255,255,0.4); }
-
-        .fav-list-horiz { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-        .fav-list-horiz::-webkit-scrollbar { display: none; }
-
-        .fav-card { flex: 0 0 100px; height: 100px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); position: relative; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; }
-        .fav-card.active { border-color: #4A90E2; box-shadow: 0 0 12px rgba(74,144,226,0.3); }
-        .fav-card-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.8)); }
-        .fav-card-content { position: relative; z-index: 2; }
-        .fav-card-name { font-size: 0.8rem; font-weight: 700; color: #fff; line-height: 1.1; max-height: 2.2em; overflow: hidden; }
-        .fav-card-meta { font-size: 0.65rem; color: rgba(255,255,255,0.7); }
-        .fav-card-add { background: rgba(255,255,255,0.03); align-items: center; justify-content: center; border-style: dashed; }
-        .fav-add-icon { color: rgba(255,255,255,0.4); margin-bottom: 4px; }
-        .fav-delete-btn { position: absolute; top: 4px; left: 4px; padding: 4px; background: rgba(0,0,0,0.4); border-radius: 6px; border: none; color: #fff; opacity: 0.7; z-index: 10; }
-
         .nav-cluster { flex: 1; display: flex; gap: 20px; align-items: center; }
         .nav-cluster-left { justify-content: center; }
         .nav-cluster-right { justify-content: center; }
@@ -2469,6 +2431,46 @@ export function Members() {
         .orb-nav-cluster { display: flex; align-items: center; justify-content: center; margin-top: -10px; }
         .orb-wrapper { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; position: relative; }
         .orb-glow-ring { position: absolute; inset: 4px; border-radius: 50%; background: linear-gradient(180deg, rgba(74, 144, 226, 0.6), transparent); opacity: 0.2; z-index: -1; animation: orb-pulse 3s infinite; }
+
+        /* CENTER ORB STYLE - Pure CSS for Bottom Dock */
+        .nav-center-orb {
+          position: relative;
+          width: 56px;
+          height: 56px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+        .nav-center-orb-core {
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #4A90E2;
+          box-shadow: 0 0 12px rgba(74, 144, 226, 0.8);
+          z-index: 2;
+          transition: all 0.3s ease;
+        }
+        .nav-center-orb:hover .nav-center-orb-core {
+          transform: scale(1.1);
+          background: #60a5fa;
+          box-shadow: 0 0 20px rgba(74, 144, 226, 1);
+        }
+        .nav-center-orb-glow {
+          position: absolute;
+          inset: 0;
+          margin: auto;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          animation: nav-orb-pulse 3s infinite ease-in-out;
+          pointer-events: none;
+        }
+        @keyframes nav-orb-pulse {
+          0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(74, 144, 226, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); }
+        }
 
         .modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
