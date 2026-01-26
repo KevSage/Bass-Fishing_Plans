@@ -39,6 +39,9 @@ import {
   type ActiveLake,
 } from "@/components/CatchLog";
 
+// --- IMAGE UTILS ---
+import { compressImage } from "@/lib/image-utils";
+
 // --- LAKE LABEL IMPORTS ---
 import { type LakeLabelData } from "@/components/LakeLabel";
 
@@ -51,20 +54,27 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 // LOCAL ICONS
 // =============================================================================
 
-const BookmarkIcon = ({ size = 20 }: { size?: number }) => (
+const StarIcon = ({
+  size = 24,
+  filled = false,
+}: {
+  size?: number;
+  filled?: boolean;
+}) => (
   <svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
-    fill="none"
+    fill={filled ? "currentColor" : "none"}
     stroke="currentColor"
-    strokeWidth="1.5"
+    strokeWidth={filled ? "0" : "2"}
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
   </svg>
 );
+
 const MinusCircleIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}
@@ -109,41 +119,6 @@ const CameraIcon = ({ size = 20 }: { size?: number }) => (
     <circle cx="12" cy="13" r="4" />
   </svg>
 );
-const BoatIcon = ({ active }: { active: boolean }) => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={active ? "#4A90E2" : "currentColor"}
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M2 17l1.5-4h17L22 17H2z" />
-    <path d="M6 13l2-3h8l2 3" />
-    <path d="M12 3v10" />
-    <path d="M18 6l-1-3H7L6 6" />
-  </svg>
-);
-const BankIcon = ({ active }: { active: boolean }) => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={active ? "#4A90E2" : "currentColor"}
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M19 21v-6" />
-    <path d="M19 15l-3-3" />
-    <path d="M22 15l-3-3" />
-    <circle cx="12" cy="7" r="4" />
-    <path d="M5.5 21a9 9 0 0 1 12.8 0" />
-  </svg>
-);
 const LogIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}
@@ -176,36 +151,6 @@ const CheckIcon = ({ size = 28 }: { size?: number }) => (
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
-const PlusIcon = ({ size = 24 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="12" y1="5" x2="12" y2="19"></line>
-    <line x1="5" y1="12" x2="19" y2="12"></line>
-  </svg>
-);
-const TrashIcon = ({ size = 14 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="3 6 5 6 21 6"></polyline>
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-  </svg>
-);
 const RadarIcon = ({ size = 22 }: { size?: number }) => (
   <svg
     width={size}
@@ -220,21 +165,6 @@ const RadarIcon = ({ size = 22 }: { size?: number }) => (
     <path d="M12 2a10 10 0 1 0 10 10" />
     <path d="M12 12a4 4 0 1 0 4 4" />
     <path d="M12 12v-8" />
-  </svg>
-);
-const SearchIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="11" cy="11" r="8" />
-    <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 );
 const PinIcon = ({ size = 18 }: { size?: number }) => (
@@ -328,14 +258,13 @@ function getMatchRadius(acres?: number): number {
   return 1000;
 }
 
-// Calculate appropriate zoom level based on lake size
 function getZoomForLake(acres?: number): number {
-  if (!acres) return 14; // Unknown size - default medium zoom
-  if (acres > 30000) return 10; // Huge (Lake Lanier, Guntersville) - wide view
-  if (acres > 10000) return 11; // Large reservoir
-  if (acres > 5000) return 12; // Medium-large lake
-  if (acres > 1000) return 13; // Medium lake
-  return 14; // Small lake/pond - tight zoom
+  if (!acres) return 14;
+  if (acres > 30000) return 10;
+  if (acres > 10000) return 11;
+  if (acres > 5000) return 12;
+  if (acres > 1000) return 13;
+  return 14;
 }
 
 function pointInPolygon(
@@ -374,7 +303,6 @@ function findUserLakeByAnchors(
   return null;
 }
 
-// Unified polygon check across ALL sources: custom lakes, favorites, and lakes.json
 type PolygonMatchResult = {
   source: "custom" | "favorite" | "known";
   id: string;
@@ -394,13 +322,11 @@ function findLakeByPolygon(
 ): PolygonMatchResult {
   const p = { lat, lng };
 
-  // 1. Check custom lakes with anchors
   for (const lake of customLakes) {
     const anchors = (lake as any).anchors as
       | { lat: number; lng: number }[]
       | undefined;
     if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
-      // Check if this custom lake is also a favorite
       const isFavorite = favorites.some((f) => f.id === lake.id);
       return {
         source: isFavorite ? "favorite" : "custom",
@@ -415,11 +341,9 @@ function findLakeByPolygon(
     }
   }
 
-  // 2. Check known lakes from lakes.json with anchors
   for (const lake of LAKES_DATA as LakeData[]) {
     const anchors = lake.anchors as { lat: number; lng: number }[] | undefined;
     if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
-      // Check if this known lake is a favorite
       const favorite = favorites.find(
         (f) =>
           f.name.toLowerCase() === lake.name.toLowerCase() ||
@@ -493,8 +417,8 @@ export function Members() {
   const { getToken } = useAuth();
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
-  const location = useLocation(); // 👈 Add this
-  const [dataVersion, setDataVersion] = useState(0); // 👈 Add this (triggers refetch)
+  const location = useLocation();
+  const [dataVersion, setDataVersion] = useState(0);
   const [searchParams] = useSearchParams();
 
   // --- PERSISTENT STATE ---
@@ -536,9 +460,9 @@ export function Members() {
   );
 
   // Strategy/Generate Modals
-  const [showStrategyMenu, setShowStrategyMenu] = useState(false); // Case B
-  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false); // Case C
-  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false); // Case A
+  const [showStrategyMenu, setShowStrategyMenu] = useState(false);
+  const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
   // Outline Prompt Modal
   const [showOutlinePrompt, setShowOutlinePrompt] = useState(false);
@@ -551,7 +475,7 @@ export function Members() {
     message: string;
     secondsRemaining: number;
   } | null>(null);
-  const [showModal, setShowModal] = useState(false); // Scout Modal
+  const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -615,6 +539,7 @@ export function Members() {
   useEffect(() => {
     customLakesRef.current = customLakes;
   }, [customLakes]);
+
   // Handle Return from LakeBuilder
   const processedRefreshRef = useRef<number | null>(null);
   useEffect(() => {
@@ -625,14 +550,13 @@ export function Members() {
     ) {
       console.log("Refreshing data...", location.state.lakeId);
       processedRefreshRef.current = refreshTimestamp;
-      setDataVersion((v) => v + 1); // Triggers the fetches above
+      setDataVersion((v) => v + 1);
 
       // Store lakeId to select after data loads
       if (location.state.lakeId) {
         pendingLakeSelectRef.current = location.state.lakeId;
       }
 
-      // Clear navigation state so it doesn't loop
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -645,10 +569,6 @@ export function Members() {
       if (!token) return;
       try {
         const res = await listFavorites(token);
-        console.log(
-          "listFavorites API response:",
-          res.favorites?.map((f: any) => ({ id: f.lake_id, name: f.name })),
-        );
         if (mounted && res.favorites) {
           const mapped: FavoriteLake[] = res.favorites.map((f: any) => {
             const acres = f.acres || undefined;
@@ -707,13 +627,11 @@ export function Members() {
     const lake = favorites.find((f) => f.id === targetId);
 
     if (lake) {
-      // Select the lake (same pattern as FavoritesCarousel onSelect)
       setWaterName(lake.name);
       setViewingFavoriteId(lake.id);
       setLocationDetails({ city: lake.city, state: lake.state });
       setSelectedCoords({ lat: lake.lat, lng: lake.lng });
 
-      // Fly to it after a short delay to ensure map is ready
       setTimeout(() => {
         if (mapRef.current) {
           mapRef.current.flyTo({
@@ -724,7 +642,6 @@ export function Members() {
         }
       }, 300);
 
-      // Clear pending
       pendingLakeSelectRef.current = null;
     }
   }, [favorites, dataVersion]);
@@ -951,13 +868,10 @@ export function Members() {
       try {
         const { lng, lat } = e.lngLat;
 
-        // Check if click is on water FIRST
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
 
-        // If clicking on land (not water)
         if (!water) {
-          // If there's an unnamed unknown lake selected, clear it
           if (selectedCoords && !waterName && !manualWaterName.trim()) {
             clearActiveLake();
           }
@@ -967,8 +881,8 @@ export function Members() {
         setSelectedCoords({ lat, lng });
         setInputMode("manual");
         setLocationDetails({});
-        setManualWaterName(""); // Clear any previously entered name
-        setViewingFavoriteId(null); // Clear any viewing state
+        setManualWaterName("");
+        setViewingFavoriteId(null);
 
         if (markerRef.current) markerRef.current.remove();
         if (markerElementRef.current) markerElementRef.current.remove();
@@ -980,8 +894,6 @@ export function Members() {
 
         const vectorName: string | undefined = water?.properties?.name;
 
-        // PRIORITY 1: Check polygon boundaries first (most accurate)
-        // This checks custom lakes, favorites, AND lakes.json with anchors
         const polygonMatch = findLakeByPolygon(
           lat,
           lng,
@@ -989,7 +901,6 @@ export function Members() {
           favoritesRef.current,
         );
 
-        // PRIORITY 2: If no polygon match, check for known lake by name from vector tile
         let dbMatch: LakeData | undefined;
         if (!polygonMatch && vectorName) {
           const searchName = vectorName.toLowerCase();
@@ -998,7 +909,6 @@ export function Members() {
           );
         }
 
-        // PRIORITY 3: If no polygon or name match, try radius-based matching
         const nearbyFavorite = !polygonMatch
           ? findNearestFavorite(lat, lng, favoritesRef.current)
           : null;
@@ -1013,7 +923,6 @@ export function Members() {
             ? dbMatch || findNearestLake(lat, lng)
             : null;
 
-        // Set state based on match priority
         if (polygonMatch) {
           setWaterName(polygonMatch.name);
           setLocationDetails({
@@ -1045,7 +954,6 @@ export function Members() {
           setWaterName(vectorName || "Dropped Pin Location");
         }
 
-        // Geocode for city/state if not already known
         if (
           !polygonMatch &&
           !nearbyFavorite &&
@@ -1105,43 +1013,65 @@ export function Members() {
   const handleLiveCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!navigator.geolocation) {
-      alert("GPS required.");
-      return;
+
+    let compressedFile = file;
+    try {
+      compressedFile = await compressImage(file);
+    } catch (err) {
+      console.warn("Compression failed, using original", err);
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        let lakeName = "Unknown Water";
-        const fav = findNearestFavorite(latitude, longitude, favorites);
-        const db = findNearestLake(latitude, longitude);
-        if (fav) lakeName = fav.name;
-        else if (db) lakeName = db.name;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const imageData = ev.target?.result as string;
-          const newDraft = {
-            caughtAt: new Date().toISOString(),
-            lakeName: lakeName,
-            lakeLat: latitude,
-            lakeLng: longitude,
-            imageData: imageData,
-            catchLat: latitude,
-            catchLng: longitude,
-            lure: "",
-            weight: 0,
-            species: "Largemouth Bass",
-          };
-          setDraftEntry(newDraft);
-        };
-        reader.readAsDataURL(file);
-      },
-      (err) => {
-        console.error(err);
-        alert("GPS Error.");
-      },
-      { enableHighAccuracy: true },
-    );
+
+    const getPosition = () => {
+      return new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!navigator.geolocation) return reject("No Geo");
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 10000,
+        });
+      });
+    };
+
+    let latitude = 0;
+    let longitude = 0;
+    let lakeName = "Unknown Water";
+
+    try {
+      const pos = await getPosition();
+      latitude = pos.coords.latitude;
+      longitude = pos.coords.longitude;
+
+      const fav = findNearestFavorite(latitude, longitude, favorites);
+      const db = findNearestLake(latitude, longitude);
+      if (fav) lakeName = fav.name;
+      else if (db) lakeName = db.name;
+    } catch (gpsErr) {
+      console.warn("GPS failed or timed out", gpsErr);
+      if (selectedCoords) {
+        latitude = selectedCoords.lat;
+        longitude = selectedCoords.lng;
+      }
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const imageData = ev.target?.result as string;
+      const newDraft = {
+        caughtAt: new Date().toISOString(),
+        lakeName: lakeName,
+        lakeLat: latitude || 0,
+        lakeLng: longitude || 0,
+        imageData: imageData,
+        catchLat: latitude || 0,
+        catchLng: longitude || 0,
+        lure: "",
+        weight: 0,
+        species: "Largemouth Bass",
+        source: "camera",
+      };
+      setDraftEntry(newDraft);
+    };
+    reader.readAsDataURL(compressedFile);
   };
 
   const handleCloseScoutModal = (e?: React.MouseEvent) => {
@@ -1181,7 +1111,6 @@ export function Members() {
       setSelectedCoords({ lat: location.latitude, lng: location.longitude });
       setInputMode("manual");
       if (mapRef.current) {
-        // Look up lake in database to get acres for zoom calculation
         const dbLake = (LAKES_DATA as LakeData[]).find(
           (l) =>
             l.name.toLowerCase() === location.name.toLowerCase() ||
@@ -1248,7 +1177,6 @@ export function Members() {
     }
   }, [user, selectedCoords, waterName, accessType, currentFavorite, navigate]);
 
-  // --- GENERATE BUTTON LOGIC (STRICT 3-CASE) ---
   const handleStrategyClick = useCallback(
     (e?: React.MouseEvent) => {
       e?.preventDefault();
@@ -1259,16 +1187,11 @@ export function Members() {
       const hasPlan = !!lastPlanUrl;
       const isSameLake = lastPlanLake === targetName;
 
-      // Case B: Plan exists for this same lake
       if (hasPlan && isSameLake) {
         setShowStrategyMenu(true);
-      }
-      // Case C: Plan exists for different lake
-      else if (hasPlan && !isSameLake) {
+      } else if (hasPlan && !isSameLake) {
         setShowReplaceConfirm(true);
-      }
-      // Case A: No plan exists
-      else {
+      } else {
         setShowGenerateConfirm(true);
       }
     },
@@ -1280,10 +1203,8 @@ export function Members() {
     if (lastPlanUrl) navigate(lastPlanUrl);
   }, [lastPlanUrl, navigate]);
 
-  // --- SAVE / REMOVE LOGIC ---
   const handleRemoveSpecificLake = useCallback(
     async (lake: FavoriteLake) => {
-      // Optimistic Update
       setFavorites((prev) => prev.filter((f) => f.id !== lake.id));
       try {
         const token = await getToken();
@@ -1326,20 +1247,16 @@ export function Members() {
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
 
-        // If strict match AND names match, use DB ID.
-        // If user renamed it (waterName !== dbMatch.name), force custom.
         if (dbMatch && dbMatch.id && dbMatch.name === waterName) {
           lakeId = dbMatch.id;
           lakeType = "known";
         } else {
-          // No DB match OR user renamed it -> Custom
           lakeType = "custom";
           shouldCreateCustom = true;
         }
 
         const performCustomCreation = async () => {
           const nameToSave = manualWaterName || waterName;
-          console.log("Creating custom lake with name:", nameToSave);
           const createRes = await createCustomLake(
             {
               name: nameToSave,
@@ -1351,23 +1268,15 @@ export function Members() {
             },
             token,
           );
-          console.log("createCustomLake API response:", createRes);
           if (createRes.success) {
             return (createRes as any).lake_id;
           } else {
-            // Existing lake found - update its name if user provided a different one
             const existingLake = (createRes as any).existing_lake;
             if (
               existingLake &&
               nameToSave &&
               existingLake.name !== nameToSave
             ) {
-              console.log(
-                "Updating existing lake name from",
-                existingLake.name,
-                "to",
-                nameToSave,
-              );
               try {
                 await updateCustomLake(
                   existingLake.id,
@@ -1387,25 +1296,19 @@ export function Members() {
             lakeId = await performCustomCreation();
             if (!lakeId) throw new Error("Failed to get lake ID");
             setRecentCustomLakeId(lakeId);
-            // Only prompt for outline if this is truly a new custom lake
-            // (not a known lake from the database)
             setShowOutlinePrompt(true);
           } else {
-            // This is a KNOWN lake from lakes.json - no outline prompt needed
             try {
               await addFavorite(lakeId, "known", token);
             } catch (knownErr: any) {
-              console.warn("Known lake 404, fallback custom...");
               lakeType = "custom";
               lakeId = await performCustomCreation();
               if (!lakeId) throw new Error("Failed fallback creation");
               await addFavorite(lakeId, "custom", token);
               setRecentCustomLakeId(lakeId);
-              // Only prompt for outline on fallback custom creation
               setShowOutlinePrompt(true);
               return;
             }
-            // Known lake saved successfully - NO outline prompt
           }
           if (lakeType === "custom") await addFavorite(lakeId, "custom", token);
 
@@ -1518,7 +1421,7 @@ export function Members() {
         onChange={handleLiveCapture}
       />
       <div style={{ width: "100%", height: "100%" }}>
-        <style>{`.mapboxgl-ctrl-top-right { top: 20px !important; }`}</style>
+        <style>{`.mapboxgl-ctrl-top-right { top: 180px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
 
@@ -1541,7 +1444,7 @@ export function Members() {
       {!showModal &&
         !catchLog.isOpen &&
         (() => {
-          // Suggestion logic for unknown waters
+          // Suggestion logic
           const suggestedMatch = (() => {
             if (
               !lakeLabelData ||
@@ -1589,91 +1492,85 @@ export function Members() {
             <div className="top-gradient-bar">
               {selectedCoords && lakeLabelData ? (
                 <div className="top-bar-card">
-                  {/* Status Header */}
-                  <div className="top-bar-status">
-                    <div
-                      className={`status-pill ${lakeLabelData.isSaved ? "saved" : "scouting"}`}
-                    >
-                      <div className="status-dot" />
-                      <span>
-                        {lakeLabelData.isSaved ? "SAVED LOCATION" : "SCOUTING"}
-                      </span>
-                    </div>
-                    <button
-                      className="top-bar-close"
-                      onClick={clearActiveLake}
-                      aria-label="Clear selection"
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                      >
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Lake Name Row */}
-                  <div className="top-bar-name-row">
-                    {lakeLabelData.isKnown ? (
-                      <h2 className="top-bar-lake-name">
-                        {lakeLabelData.name}
-                      </h2>
-                    ) : (
-                      <>
-                        <input
-                          type="text"
-                          className="top-bar-name-input"
-                          placeholder="Name this water..."
-                          value={manualWaterName}
-                          onChange={(e) => setManualWaterName(e.target.value)}
-                          autoComplete="off"
-                          spellCheck={false}
-                        />
-                        <button
-                          className="top-bar-save-btn"
-                          onClick={handleSaveLakeName}
-                          disabled={!manualWaterName.trim()}
-                          aria-label="Save lake name"
-                        >
-                          <svg
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="3"
-                          >
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </button>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Location */}
-                  <div className="top-bar-location">
+                  {/* ABSOLUTE CLOSE BUTTON (Top Right) */}
+                  <button
+                    className="top-bar-close"
+                    onClick={clearActiveLake}
+                    aria-label="Clear selection"
+                  >
                     <svg
-                      width="12"
-                      height="12"
+                      width="16"
+                      height="16"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth="2"
+                      strokeWidth="2.5"
                     >
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                      <circle cx="12" cy="10" r="3" />
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                    <span>
-                      {lakeLabelData.city && lakeLabelData.state
-                        ? `${lakeLabelData.city}, ${lakeLabelData.state}`
-                        : `${lakeLabelData.lat.toFixed(4)}°, ${lakeLabelData.lng.toFixed(4)}°`}
-                    </span>
+                  </button>
+
+                  {/* CENTERED CONTENT */}
+                  <div className="top-bar-content-centered">
+                    {/* Name Row with STAR */}
+                    <div className="top-bar-name-row">
+                      <button
+                        className={`top-bar-star-btn ${isCurrentLocationSaved ? "saved" : ""}`}
+                        onClick={toggleFavoriteLake}
+                        aria-label={
+                          isCurrentLocationSaved
+                            ? "Remove Favorite"
+                            : "Save Favorite"
+                        }
+                      >
+                        <StarIcon size={24} filled={isCurrentLocationSaved} />
+                      </button>
+
+                      {lakeLabelData.isKnown ? (
+                        <h2 className="top-bar-lake-name">
+                          {lakeLabelData.name}
+                        </h2>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            className="top-bar-name-input"
+                            placeholder="Name this water..."
+                            value={manualWaterName}
+                            onChange={(e) => setManualWaterName(e.target.value)}
+                            autoComplete="off"
+                            spellCheck={false}
+                          />
+                          <button
+                            className="top-bar-save-btn"
+                            onClick={handleSaveLakeName}
+                            disabled={!manualWaterName.trim()}
+                            aria-label="Save lake name"
+                          >
+                            <svg
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="3"
+                            >
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Location */}
+                    <div className="top-bar-location">
+                      <span>
+                        {lakeLabelData.city && lakeLabelData.state
+                          ? `${lakeLabelData.city}, ${lakeLabelData.state}`
+                          : `${lakeLabelData.lat.toFixed(4)}°, ${lakeLabelData.lng.toFixed(4)}°`}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Lake Name Suggestion */}
@@ -1707,15 +1604,6 @@ export function Members() {
         <div
           className={`members-navigation-container ${showFavorites ? "expanded" : ""}`}
         >
-          {!showFavorites && (
-            <button
-              onClick={handleLiveCameraClick}
-              className="fab-camera"
-              aria-label="Log Catch Live"
-            >
-              <CameraIcon size={26} />
-            </button>
-          )}
           <div className="glass-deck">
             {/* INLINE FAVORITES SECTION */}
             {showFavorites && (
@@ -1817,6 +1705,8 @@ export function Members() {
                 </div>
               </div>
             )}
+
+            {/* MAIN NAVIGATION ROW - UPDATED LAYOUT */}
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
                 <button
@@ -1826,24 +1716,16 @@ export function Members() {
                 >
                   <RadarIcon size={22} />
                 </button>
+                {/* MOVED: Camera Button Here */}
                 <button
-                  onClick={toggleFavoriteLake}
-                  disabled={
-                    !selectedCoords ||
-                    (!lakeLabelData?.isKnown &&
-                      !manualWaterName.trim() &&
-                      !isCurrentLocationSaved)
-                  }
-                  className={`nav-btn nav-btn-icon ${isCurrentLocationSaved ? "nav-btn-danger" : ""}`}
-                  aria-label={isCurrentLocationSaved ? "Remove" : "Save"}
+                  onClick={handleLiveCameraClick}
+                  className={`nav-btn nav-btn-icon ${!!activeLake ? "nav-btn-primary" : ""}`}
+                  aria-label="Live Capture"
                 >
-                  {isCurrentLocationSaved ? (
-                    <MinusCircleIcon size={22} />
-                  ) : (
-                    <BookmarkIcon size={22} />
-                  )}
+                  <CameraIcon size={22} />
                 </button>
               </div>
+
               <div className="orb-nav-cluster">
                 <div
                   className="orb-wrapper"
@@ -1855,16 +1737,18 @@ export function Members() {
                   <MapOrb size={26} />
                 </div>
               </div>
+
               <div className="nav-cluster nav-cluster-right">
                 <div style={{ position: "relative" }}>
                   <button
                     onClick={handleStrategyClick}
-                    className="nav-btn nav-btn-icon nav-btn-primary"
+                    className={`nav-btn nav-btn-icon ${!!activeLake ? "nav-btn-primary" : ""}`}
                     disabled={!activeLake && !manualWaterName}
                     aria-label="Generate Plan"
                   >
                     <LightningIcon size={22} />
                   </button>
+
                   {lastPlanUrl &&
                     (currentFavorite
                       ? lastPlanLake === currentFavorite.name
@@ -1882,6 +1766,7 @@ export function Members() {
                         }}
                       />
                     )}
+
                   {showStrategyMenu && (
                     <>
                       <div
@@ -1925,9 +1810,10 @@ export function Members() {
                     </>
                   )}
                 </div>
+
                 <button
                   onClick={catchLog.open}
-                  className="nav-btn nav-btn-icon"
+                  className={`nav-btn nav-btn-icon ${!!activeLake ? "nav-btn-primary" : ""}`}
                   disabled={!activeLake}
                   aria-label="Catch Log"
                 >
@@ -2190,7 +2076,7 @@ export function Members() {
       {/* STYLES */}
       <style>
         {`
-        /* TOP GRADIENT BAR - Full width gradient with centered content */
+        /* TOP GRADIENT BAR */
         .top-gradient-bar {
           position: fixed;
           top: 64px;
@@ -2205,13 +2091,19 @@ export function Members() {
           padding: 16px 20px 45px;
           display: flex;
           justify-content: center;
+          /* UPDATED: Allows clicks to pass through to map */
+          pointer-events: none;
         }
         .top-bar-card {
           display: flex;
           flex-direction: column;
           align-items: center;
-          min-width: 260px;
-          max-width: 340px;
+          position: relative;
+          min-width: 280px;
+          max-width: 400px;
+          text-align: center;
+          /* UPDATED: Re-enables clicks for buttons inside */
+          pointer-events: auto;
         }
         .top-bar-card-empty {
           text-align: center;
@@ -2235,42 +2127,12 @@ export function Members() {
           font-size: 0.8rem;
           color: rgba(255,255,255,0.5);
         }
-        .top-bar-status {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 8px;
-        }
-        .status-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 3px 8px;
-          background: rgba(255,255,255,0.05);
-          border-radius: 100px;
-          border: 1px solid rgba(255,255,255,0.08);
-        }
-        .status-pill .status-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-        }
-        .status-pill.saved .status-dot {
-          background: #10B981;
-          box-shadow: 0 0 8px rgba(16,185,129,0.6);
-        }
-        .status-pill.saved span { color: #10B981; }
-        .status-pill.scouting .status-dot {
-          background: #4A90E2;
-          box-shadow: 0 0 8px rgba(74,144,226,0.6);
-        }
-        .status-pill.scouting span { color: #4A90E2; }
-        .status-pill span {
-          font-size: 0.55rem;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-        }
+        
+        /* CLOSE BUTTON (Top Right Absolute) */
         .top-bar-close {
+          position: absolute;
+          top: 0;
+          right: 0;
           background: transparent;
           border: none;
           color: rgba(255,255,255,0.4);
@@ -2280,22 +2142,59 @@ export function Members() {
           align-items: center;
           justify-content: center;
           transition: color 0.2s;
+          /* Ensure clickable */
+          pointer-events: auto;
         }
         .top-bar-close:hover {
           color: rgba(255,255,255,0.8);
         }
+        
+        /* Centered Content Area */
+        .top-bar-content-centered {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin-top: 10px; 
+          padding-right: 40px; /* Safe padding for close button */
+          padding-left: 40px;  /* Symmetrical balance */
+        }
+
         .top-bar-name-row {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
+          justify-content: center;
         }
+        
+        /* STAR BUTTON */
+        .top-bar-star-btn {
+          background: transparent;
+          border: none;
+          color: rgba(255,255,255,0.3);
+          cursor: pointer;
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        }
+        .top-bar-star-btn:hover {
+          color: rgba(255,255,255,0.6);
+          transform: scale(1.1);
+        }
+        .top-bar-star-btn.saved {
+          color: #F59E0B; /* Gold */
+          filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
+        }
+
         .top-bar-lake-name {
           margin: 0;
-          font-size: 1.35rem;
-          font-weight: 700;
+          font-size: 1.5rem;
+          font-weight: 800;
           color: #fff;
           letter-spacing: -0.02em;
           line-height: 1.2;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         .top-bar-name-input {
           flex: 1;
@@ -2309,6 +2208,7 @@ export function Members() {
           outline: none;
           letter-spacing: -0.02em;
           min-width: 0;
+          text-align: center;
         }
         .top-bar-name-input:focus {
           border-bottom-color: #4A90E2;
@@ -2346,13 +2246,10 @@ export function Members() {
           display: flex;
           align-items: center;
           gap: 5px;
-          color: rgba(255,255,255,0.5);
-          font-size: 0.75rem;
-          margin-top: 6px;
-        }
-        .top-bar-location svg {
-          opacity: 0.6;
-          flex-shrink: 0;
+          color: rgba(255,255,255,0.6);
+          font-size: 0.85rem;
+          margin-top: 4px;
+          font-weight: 500;
         }
         
         /* Lake Name Suggestion */
@@ -2555,9 +2452,9 @@ export function Members() {
         .fav-add-icon { color: rgba(255,255,255,0.4); margin-bottom: 4px; }
         .fav-delete-btn { position: absolute; top: 4px; left: 4px; padding: 4px; background: rgba(0,0,0,0.4); border-radius: 6px; border: none; color: #fff; opacity: 0.7; z-index: 10; }
 
-        .nav-cluster { display: flex; gap: 8px; align-items: center; }
-        .nav-cluster-left { padding-left: 8px; }
-        .nav-cluster-right { padding-right: 8px; }
+        .nav-cluster { flex: 1; display: flex; gap: 20px; align-items: center; }
+        .nav-cluster-left { justify-content: center; }
+        .nav-cluster-right { justify-content: center; }
         
         .nav-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; border-radius: 12px; transition: all 0.2s; color: rgba(255, 255, 255, 0.5); }
         .nav-btn:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,0.08); }
@@ -2573,13 +2470,10 @@ export function Members() {
         .orb-wrapper { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; position: relative; }
         .orb-glow-ring { position: absolute; inset: 4px; border-radius: 50%; background: linear-gradient(180deg, rgba(74, 144, 226, 0.6), transparent); opacity: 0.2; z-index: -1; animation: orb-pulse 3s infinite; }
 
-        .fab-camera { position: absolute; top: -72px; right: 8px; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: none; color: white; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; z-index: 1002; }
-        .fab-camera:active { transform: scale(0.95); }
-
         .modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
         .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; color: white; }
-        .close-btn { background: rgba(255,255,255,0.05); border: none; border-radius: 10px; width: 36px; height: 36px; color: rgba(255,255,255,0.6); font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .close-btn { background: rgba(255,255,255,0.05); border: none; border-radius: 100%; width: 36px; height: 36px; color: rgba(255,255,255,0.6); font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; color: white; }
         .glass-input { width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 1rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); color: #fff; outline: none; }
         .glass-segment { display: flex; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 4px; gap: 4px; border: 1px solid rgba(255,255,255,0.05); }

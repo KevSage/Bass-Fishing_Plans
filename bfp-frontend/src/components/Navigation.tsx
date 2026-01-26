@@ -23,8 +23,8 @@ export function Navigation() {
   const orbDestination = isMapPage ? "/insights" : "/members";
   const orbTitle = isMapPage ? "View Insights" : "Launch Map";
 
-  // Updated: Switch from 'gold' to 'indigo'
-  const orbVariant = isMapPage ? "indigo" : "default";
+  // Updated: Use 'white' for Insights (on Map page), 'default' (Blue) for Map (elsewhere)
+  const orbVariant = isMapPage ? "white" : "default";
 
   // Scroll Listener for Glass Effect
   useEffect(() => {
@@ -42,13 +42,7 @@ export function Navigation() {
     [],
   );
 
-  const memberLinks = useMemo(
-    () => [
-      { to: "/account", label: "Account" },
-      // REMOVED: Insights is now exclusive to the Orb button
-    ],
-    [],
-  );
+  const memberLinks = useMemo(() => [{ to: "/account", label: "Account" }], []);
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -158,12 +152,11 @@ export function Navigation() {
                 letterSpacing: "0.01em",
                 padding: "12px",
                 borderRadius: 8,
-                // Updated styles for Indigo vs Blue
                 background: isMapPage
-                  ? "rgba(99, 102, 241, 0.1)" // Indigo tint
+                  ? "rgba(255, 255, 255, 0.05)" // Dim white tint
                   : "rgba(59, 130, 246, 0.1)", // Blue tint
                 border: isMapPage
-                  ? "1px solid rgba(99, 102, 241, 0.25)"
+                  ? "1px solid rgba(255, 255, 255, 0.15)"
                   : "1px solid rgba(59, 130, 246, 0.25)",
               }}
             >
@@ -191,7 +184,6 @@ export function Navigation() {
             </button>
           </SignedIn>
 
-          {/* ... (SignedOut logic remains the same) ... */}
           <SignedOut>
             <div style={{ height: 20 }} />
             <Link
@@ -236,7 +228,6 @@ export function Navigation() {
     </div>
   ) : null;
 
-  // --- MAIN HEADER ---
   return (
     <>
       <header
@@ -265,7 +256,6 @@ export function Navigation() {
             paddingRight: "max(24px, env(safe-area-inset-right))",
           }}
         >
-          {/* Logo */}
           <Link
             to="/"
             style={{ textDecoration: "none", color: "inherit", zIndex: 10001 }}
@@ -283,7 +273,6 @@ export function Navigation() {
             </div>
           </Link>
 
-          {/* Desktop Nav */}
           <nav
             className="desktop-nav"
             style={{ display: "none", gap: 32, alignItems: "center" }}
@@ -326,7 +315,6 @@ export function Navigation() {
                 </Link>
               ))}
 
-              {/* Desktop Orb Link */}
               <Link
                 to={orbDestination}
                 title={orbTitle}
@@ -341,7 +329,6 @@ export function Navigation() {
                 <MapOrb size={30} active={true} variant={orbVariant} />
               </Link>
 
-              {/* Minimal User Avatar */}
               <div style={{ position: "relative" }}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -426,7 +413,6 @@ export function Navigation() {
             </SignedOut>
           </nav>
 
-          {/* MOBILE CONTROLS (Right Side) */}
           <div
             className="mobile-controls"
             style={{ display: "flex", alignItems: "center", gap: 16 }}
@@ -450,7 +436,6 @@ export function Navigation() {
               </Link>
             </SignedOut>
 
-            {/* Mobile Orb Link */}
             <SignedIn>
               {!isPlanPage && (
                 <Link
@@ -468,7 +453,6 @@ export function Navigation() {
               )}
             </SignedIn>
 
-            {/* Hamburger */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               style={{
