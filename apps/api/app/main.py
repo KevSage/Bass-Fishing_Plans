@@ -349,6 +349,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     if is_member:
         plan = enrich_member_plan(plan, weather, phase)
     
+    # ✅ POPULATE ALL WEATHER KEYS (INCLUDING NEW ONES)
     plan["conditions"] = {
         "location_name": body.location_name,
         "latitude": latitude,
@@ -357,28 +358,38 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "access_type": access_type,
         "subscriber_email": email if is_member else None,
         "phase": phase,
+        # Core
         "temp_f": weather["temp_f"],
         "temp_high": weather["temp_high"],
         "temp_low": weather["temp_low"],
+        "feels_like_f": weather.get("feels_like_f"), # New
+        # Wind
         "wind_mph": weather["wind_mph"],
+        "wind_speed": weather["wind_mph"],
+        "wind_gust_mph": weather.get("wind_gust_mph"), # New
+        "wind_direction": weather.get("wind_direction"), # New
+        # Sky/Air
         "cloud_cover": weather["cloud_cover"],
+        "sky_condition": weather["sky_condition"], # New
+        "humidity": weather["humidity"],
+        "visibility_miles": weather.get("visibility_miles"), # New
+        "dew_point": weather.get("dew_point"), # New
+        # Pressure
         "pressure_mb": weather["pressure_mb"],
         "pressure_trend": weather["pressure_trend"],
+        # Solar/Moon
         "uv_index": weather["uv_index"],
         "precipitation_1h": weather["precipitation_1h"],
         "has_recent_rain": weather["has_recent_rain"],
         "moon_phase": weather["moon_phase"],
         "moon_illumination": weather["moon_illumination"],
         "is_major_period": weather["is_major_period"],
-        "humidity": weather["humidity"],
-        "wind_speed": weather["wind_mph"],  
-        "sky_condition": weather["cloud_cover"],  
+        # Times
         "sunriseTime": weather.get("sunriseTime", "--:--"),
         "solarNoonTime": weather.get("solarNoonTime", "--:--"),
         "sunsetTime": weather.get("sunsetTime", "--:--"),
     }
     
-    # Store Forecast Rating at top level if available (it comes from LLM plan)
     if "forecast_rating" in plan:
         plan["conditions"]["forecast_rating"] = plan["forecast_rating"]
 

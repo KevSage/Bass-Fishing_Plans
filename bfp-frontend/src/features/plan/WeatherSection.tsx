@@ -33,31 +33,38 @@ export type PlanConditions = {
   location_name: string;
   latitude: number;
   longitude: number;
+  // Core
   temp_f?: number | null;
   temp_low?: number | null;
   temp_high?: number | null;
+  feels_like_f?: number | null; // New
+  // Wind
   wind_mph?: number | null;
   wind_speed?: number | null;
   wind_direction?: string | null;
+  wind_gust_mph?: number | null; // New
+  // Sky/Air
   uv_index?: number | null;
   cloud_cover?: string | null;
   sky_condition?: string | null;
+  humidity?: number | null; // New
+  visibility_miles?: number | null; // New
+  // Pressure
   pressure_mb?: number | null;
   pressure_trend?: string | null;
   phase?: string | null;
+  // Insights & Ratings
   weather_card_insights?: {
     temperature?: string | null;
     wind?: string | null;
     pressure?: string | null;
     sky_uv?: string | null;
   } | null;
-  // Added Forecast Rating
   forecast_rating?: {
     score: number;
     rating: string;
     explanation: string;
   } | null;
-  // Flat keys provided by Python backend
   sunriseTime?: string;
   sunsetTime?: string;
   solarNoonTime?: string;
@@ -206,7 +213,7 @@ export function WeatherSection({
     const fetchLiveWeather = async () => {
       try {
         const res = await fetch(
-          `${API_BASE_URL}/weather/current?lat=${conditions.latitude}&lon=${conditions.longitude}`
+          `${API_BASE_URL}/weather/current?lat=${conditions.latitude}&lon=${conditions.longitude}`,
         );
 
         if (res.ok) {
@@ -216,13 +223,18 @@ export function WeatherSection({
           setLiveConditions((prev) => ({
             ...prev,
             temp_f: liveData.temp_f ?? prev.temp_f,
+            feels_like_f: liveData.feels_like_f ?? prev.feels_like_f,
             wind_speed: liveData.wind_speed ?? prev.wind_speed,
             wind_mph: liveData.wind_mph ?? prev.wind_mph,
             wind_direction: liveData.wind_direction ?? prev.wind_direction,
+            wind_gust_mph: liveData.wind_gust_mph ?? prev.wind_gust_mph,
             pressure_mb: liveData.pressure_mb ?? prev.pressure_mb,
             pressure_trend: liveData.pressure_trend ?? prev.pressure_trend,
             sky_condition: liveData.sky_condition ?? prev.sky_condition,
             uv_index: liveData.uv_index ?? prev.uv_index,
+            humidity: liveData.humidity ?? prev.humidity,
+            visibility_miles:
+              liveData.visibility_miles ?? prev.visibility_miles,
           }));
 
           setIsLive(true);
@@ -247,25 +259,32 @@ export function WeatherSection({
 
     // Temperature Logic
     const tempF = numOrNull(raw.temp_f);
+    const feelsLike = numOrNull(raw.feels_like_f);
     const low = numOrNull(raw.temp_low);
     const high = numOrNull(raw.temp_high);
-    const tempPrimary =
-      tempF != null
-        ? `${Math.round(tempF)}°`
-        : high != null
-        ? `${Math.round(high)}°`
-        : "--";
+
+    const tempPrimary = tempF != null ? `${Math.round(tempF)}°` : "--";
+
+    // Improved Secondary: Show "Feels Like" if available, else High/Low
     const tempSecondary =
-      low != null && high != null
-        ? `L:${Math.round(low)}° H:${Math.round(high)}°`
-        : "Forecast";
+      feelsLike != null
+        ? `Feels ${Math.round(feelsLike)}°`
+        : low != null && high != null
+          ? `L:${Math.round(low)}° H:${Math.round(high)}°`
+          : "Forecast";
 
     // Wind Logic
     const wind = numOrNull(raw.wind_mph) ?? numOrNull(raw.wind_speed);
+    const gust = numOrNull(raw.wind_gust_mph);
     const windPrimary = wind != null ? `${Math.round(wind)}` : "--";
-    const windSecondary = raw.wind_direction
+
+    // Improved Secondary: Show Direction + Gust
+    let windSecondary = raw.wind_direction
       ? `MPH • ${raw.wind_direction}`
       : "MPH";
+    if (gust && gust > (wind || 0)) {
+      windSecondary += ` (G:${Math.round(gust)})`;
+    }
 
     // Pressure Logic
     const pressureMb = numOrNull(raw.pressure_mb);
@@ -316,20 +335,20 @@ export function WeatherSection({
       if (!MAPBOX_TOKEN) return;
       try {
         const res = await fetch(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${conditions.longitude},${conditions.latitude}.json?types=place,region&access_token=${MAPBOX_TOKEN}`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${conditions.longitude},${conditions.latitude}.json?types=place,region&access_token=${MAPBOX_TOKEN}`,
         );
         const data = await res.json();
         if (data.features?.length > 0) {
           const place = data.features.find((f: any) =>
-            f.id.startsWith("place")
+            f.id.startsWith("place"),
           );
           if (place) setLocationCity(place.text || "");
           const region = data.features.find((f: any) =>
-            f.id.startsWith("region")
+            f.id.startsWith("region"),
           );
           if (region)
             setLocationState(
-              region.text || region.short_code?.replace("US-", "") || ""
+              region.text || region.short_code?.replace("US-", "") || "",
             );
           hasGeocodedRef.current = true;
         }
@@ -904,24 +923,10 @@ function CompactHUD({ icon, label, value, subValue, onClick }: any) {
   );
 }
 
-// --- LOGIC: TACTICAL INSIGHTS (LLM-DRIVEN) ---
-// Modal insight is now supplied directly by the backend LLM as `weather_card_insights`.
-// We do NOT keyword-match or generate fallback bullet lists here.
-// Contract: show the main metric data + a single 1–2 sentence insight (no numbers, no tactics).
+// --- INSIGHT LOGIC ---
 function buildExpansion(card: CardId, conditions: PlanConditions) {
-  console.log("===== BUILD EXPANSION CALLED =====");
-  console.log("Card:", card);
-  console.log("Conditions:", conditions);
-
   const raw: any = conditions;
-
-  // Map UI cards to backend insight keys
   const insights = raw.weather_card_insights || {};
-  console.log("Insights object:", insights);
-  console.log("insights.temperature:", insights.temperature);
-  console.log("insights.wind:", insights.wind);
-  console.log("insights.pressure:", insights.pressure);
-  console.log("insights.sky_uv:", insights.sky_uv);
 
   const insightForCard = (c: CardId): string | null => {
     if (c === "temp") return insights.temperature ?? null;
@@ -934,12 +939,9 @@ function buildExpansion(card: CardId, conditions: PlanConditions) {
   const tempF = numOrNull(raw.temp_f);
   const low = numOrNull(raw.temp_low);
   const high = numOrNull(raw.temp_high);
-
   const wind = numOrNull(raw.wind_mph) ?? numOrNull(raw.wind_speed);
-
   const pressureMb = numOrNull(raw.pressure_mb);
   const pressureTrend = (raw.pressure_trend || "").toString();
-
   const cloudRaw = (raw.sky_condition ?? raw.cloud_cover ?? "").toString();
   const uv = numOrNull(raw.uv_index);
 
@@ -952,40 +954,22 @@ function buildExpansion(card: CardId, conditions: PlanConditions) {
     if (tempF != null) numbers.push(`${Math.round(tempF)}°F`);
     if (low != null && high != null)
       numbers.push(`${Math.round(low)}° / ${Math.round(high)}°`);
-    return {
-      title: "Temperature",
-      numbers,
-      insight,
-    };
+    return { title: "Temperature", numbers, insight };
   }
-
   if (card === "wind") {
     if (wind != null) numbers.push(`${Math.round(wind)} mph`);
-    return {
-      title: "Wind",
-      numbers,
-      insight,
-    };
+    return { title: "Wind", numbers, insight };
   }
-
   if (card === "pressure") {
     if (pressureMb != null) numbers.push(`${Math.round(pressureMb)} mb`);
     if (pressureTrend) numbers.push(titleCase(pressureTrend));
-    return {
-      title: "Pressure",
-      numbers,
-      insight,
-    };
+    return { title: "Pressure", numbers, insight };
   }
-
-  // card === "light"
-  if (cloudRaw) numbers.push(titleCase(cloudRaw));
-  if (uv != null) numbers.push(`UV Index: ${Math.round(uv)}`);
-  return {
-    title: "Sky & UV",
-    numbers,
-    insight,
-  };
+  if (card === "light") {
+    if (cloudRaw) numbers.push(titleCase(cloudRaw));
+    if (uv != null) numbers.push(`UV Index: ${Math.round(uv)}`);
+    return { title: "Sky & UV", numbers, insight };
+  }
 }
 
 const LARGE_LAKES = new Set([
