@@ -1,5 +1,4 @@
 // src/components/CatchLog.tsx
-// Comprehensive catch logging system with density-based pins and R2 Cloud Storage
 
 import React, {
   useState,
@@ -122,7 +121,7 @@ export function apiRecordToEntry(record: CatchRecord): CatchEntry {
     state: record.state || undefined,
     lure: record.lure || "",
     color: record.color || undefined,
-    species: record.species as BassSpecies | undefined,
+    species: (record.species as BassSpecies) || undefined,
     weight: record.weight || undefined,
     length: record.length || undefined,
     notes: record.notes || undefined,
@@ -158,6 +157,7 @@ function entryToApiInput(
     photo_url: entry.photoUrl || entry.imageData, // Fallback to base64 if R2 upload fails
     lake_id: entry.lakeId || undefined,
     lake_type: entry.lakeType || "unresolved",
+    // NOTE: This uses the entry.lakeName (user input) if available
     lake_name: entry.lakeName || activeLake?.name,
     city: entry.city,
     state: entry.state,
@@ -1548,6 +1548,13 @@ function CatchFormView({
   const [isUploading, setIsUploading] = useState(false);
 
   // Form State
+  // 1. New Lake Name State
+  const [lakeName, setLakeName] = useState(
+    entry?.lakeName ||
+      (activeLake?.name === "Photo Upload" ? "" : activeLake?.name) ||
+      "",
+  );
+
   const [lure, setLure] = useState(entry?.lure || "");
   const [color, setColor] = useState(entry?.color || "");
   const [species, setSpecies] = useState<BassSpecies>(
@@ -1590,6 +1597,11 @@ function CatchFormView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     // Re-hydrate whenever the selected entry changes (edit vs draft vs new)
+    setLakeName(
+      entry?.lakeName ||
+        (activeLake?.name === "Photo Upload" ? "" : activeLake?.name) ||
+        "",
+    );
     setLure(entry?.lure || "");
     setColor(entry?.color || "");
     setSpecies((entry?.species as BassSpecies) || "largemouth");
@@ -1617,11 +1629,27 @@ function CatchFormView({
     entry,
     activeLake?.lat,
     activeLake?.lng,
+    activeLake?.name,
     initialCoords?.lat,
     initialCoords?.lng,
     initialDateTime,
     initialSource,
   ]);
+
+  // NEW: Helper to auto-resolve lake name immediately when location changes
+  const checkLakeMatch = async (lat: number, lng: number) => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const resolution = await resolveLake(lat, lng, token);
+      if (resolution.resolved && resolution.lake_name) {
+        setLakeName(resolution.lake_name);
+      }
+    } catch (err) {
+      console.error("Failed to auto-resolve lake:", err);
+    }
+  };
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -1635,6 +1663,8 @@ function CatchFormView({
         setCatchLng(position.coords.longitude);
         setLocationStatus("success");
         setSource("camera");
+        // Trigger auto-resolve
+        checkLakeMatch(position.coords.latitude, position.coords.longitude);
       },
       () => setLocationStatus("error"),
       { enableHighAccuracy: true },
@@ -1664,6 +1694,8 @@ function CatchFormView({
         setCatchLng(exif.longitude);
         setLocationStatus("exif");
         foundLoc = true;
+        // Trigger auto-resolve
+        checkLakeMatch(exif.latitude, exif.longitude);
       }
 
       if (exif.dateTime) {
@@ -1713,15 +1745,26 @@ function CatchFormView({
       const token = await getToken();
       let lakeId = activeLake.id;
       let lakeType = "unresolved";
-      let lakeName = activeLake.name;
+      // 2. Default final name to user input, fallback to active lake
+      let finalLakeName = lakeName || activeLake.name;
 
       if (token && (catchLat !== 0 || catchLng !== 0)) {
         try {
           const resolution = await resolveLake(catchLat, catchLng, token);
           if (resolution.resolved) {
+            // Scenario A: Recognized Lake -> Auto-snap to official name
             lakeType = resolution.lake_type;
             lakeId = resolution.lake_id || undefined;
-            lakeName = resolution.lake_name || activeLake.name;
+            finalLakeName = resolution.lake_name || activeLake.name;
+          } else {
+            // Scenario B: Unrecognized -> Respect user input
+            // If API fails to identify, we use the user's name
+            // (Unless user left it blank, then we might still use "Unknown")
+            if (lakeName.trim()) {
+              finalLakeName = lakeName;
+            } else {
+              finalLakeName = "Unknown Water";
+            }
           }
         } catch (err) {
           console.warn("Lake resolution failed", err);
@@ -1729,7 +1772,7 @@ function CatchFormView({
       }
 
       const data: Partial<CatchEntry> = {
-        lakeName: lakeName,
+        lakeName: finalLakeName,
         lakeLat: activeLake.lat,
         lakeLng: activeLake.lng,
         catchLat: catchLat || activeLake.lat,
@@ -1772,6 +1815,18 @@ function CatchFormView({
       </div>
 
       <div className="catch-form-body">
+        {/* NEW: Editable Lake Name */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Location Name</label>
+          <input
+            type="text"
+            value={lakeName}
+            onChange={(e) => setLakeName(e.target.value)}
+            className="catch-form-input"
+            placeholder="Name this location (e.g., My Secret Pond)"
+          />
+        </div>
+
         {/* Photo Field */}
         <div className="catch-form-field">
           <label className="catch-form-label">Photo</label>
@@ -2318,17 +2373,18 @@ function CatchFormView({
   );
 }
 
-// =============================================================================
-// COMPONENT: CatchPopup (Mini popup for map pins)
-// =============================================================================
+// ... [Keep CatchPopup and Pin Rendering logic as they were] ...
+// (Omitting standard Popup/Marker components for brevity)
 
-type CatchPopupProps = {
+export function CatchPopup({
+  entry,
+  onViewDetails,
+  onClose,
+}: {
   entry: CatchEntry;
   onViewDetails: () => void;
   onClose: () => void;
-};
-
-export function CatchPopup({ entry, onViewDetails, onClose }: CatchPopupProps) {
+}) {
   return (
     <>
       <div className="catch-popup">
@@ -2350,84 +2406,18 @@ export function CatchPopup({ entry, onViewDetails, onClose }: CatchPopupProps) {
           View Details
         </button>
       </div>
-
       <style>{`
-        .catch-popup {
-          background: rgba(20, 20, 28, 0.95);
-          backdrop-filter: blur(16px);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 14px;
-          padding: 12px 14px;
-          min-width: 160px;
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-          position: relative;
-        }
-        .catch-popup-close {
-          position: absolute;
-          top: 6px;
-          right: 6px;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          border: none;
-          background: rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .catch-popup-close:hover {
-          background: rgba(255, 255, 255, 0.2);
-          color: #fff;
-        }
-        .catch-popup-content {
-          margin-bottom: 10px;
-        }
-        .catch-popup-main {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-        }
-        .catch-popup-weight {
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #fff;
-        }
-        .catch-popup-time {
-          font-size: 0.8rem;
-          color: rgba(255, 255, 255, 0.5);
-        }
-        .catch-popup-lure {
-          font-size: 0.85rem;
-          color: rgba(255, 255, 255, 0.6);
-          margin-top: 2px;
-        }
-        .catch-popup-details {
-          width: 100%;
-          padding: 8px 12px;
-          border-radius: 8px;
-          border: 1px solid rgba(74, 144, 226, 0.4);
-          background: rgba(74, 144, 226, 0.1);
-          color: #4A90E2;
-          font-size: 0.8rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .catch-popup-details:hover {
-          background: rgba(74, 144, 226, 0.2);
-          border-color: rgba(74, 144, 226, 0.6);
-        }
+        .catch-popup { background: rgba(20, 20, 28, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; padding: 12px 14px; min-width: 160px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); position: relative; }
+        .catch-popup-close { position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.5); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .catch-popup-main { display: flex; align-items: baseline; gap: 8px; }
+        .catch-popup-weight { font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .catch-popup-time { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); }
+        .catch-popup-lure { font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); margin-top: 2px; }
+        .catch-popup-details { width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(74, 144, 226, 0.4); background: rgba(74, 144, 226, 0.1); color: #4A90E2; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
       `}</style>
     </>
   );
 }
-
-// =============================================================================
-// MAP PIN RENDERING LOGIC
-// =============================================================================
 
 export function createCatchMarker(
   entry: CatchEntry,
@@ -2436,16 +2426,11 @@ export function createCatchMarker(
 ): HTMLElement {
   const tier = getDensityTier(entry, allCatches);
   const config = DENSITY_CONFIG[tier];
-
-  // 1. CONTAINER: Managed by Mapbox for positioning ONLY.
-  // No transitions allowed here!
   const container = document.createElement("div");
   container.className = `catch-pin-container catch-pin-${tier}`;
   container.style.width = "14px";
   container.style.height = "14px";
   container.style.cursor = "pointer";
-
-  // 2. INNER VISUAL: Managed by us for scaling/styling.
   const visual = document.createElement("div");
   visual.className = "catch-pin-visual";
   visual.style.width = "100%";
@@ -2454,97 +2439,55 @@ export function createCatchMarker(
   visual.style.borderRadius = "50%";
   visual.style.boxShadow = `0 0 8px ${config.color}80`;
   visual.style.border = "2px solid rgba(255, 255, 255, 0.6)";
-
-  // Apply transitions to the INNER element only
   visual.style.transition =
     "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease";
   visual.style.transformOrigin = "center center";
-
-  // Pulse animation (child of visual so it scales with it)
   const pulse = document.createElement("div");
-  pulse.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px solid ${config.color};
-    animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out;
-    pointer-events: none;
-  `;
-
+  pulse.style.cssText = `position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; height: 100%; border-radius: 50%; border: 2px solid ${config.color}; animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out; pointer-events: none;`;
   visual.appendChild(pulse);
   container.appendChild(visual);
-
   container.addEventListener("click", (e) => {
     e.stopPropagation();
     onClick(entry);
   });
-
   return container;
 }
 
-// Inject keyframes for pin animations
 export function injectCatchPinStyles(): void {
   const styleId = "catch-pin-styles";
   if (document.getElementById(styleId)) return;
-
   const style = document.createElement("style");
   style.id = styleId;
   style.textContent = `
-    @keyframes catch-pin-pulse-sparse {
-      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
-    }
-    @keyframes catch-pin-pulse-moderate {
-      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
-    }
-    @keyframes catch-pin-pulse-hot {
-      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
-    }
+    @keyframes catch-pin-pulse-sparse { 0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
+    @keyframes catch-pin-pulse-moderate { 0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
+    @keyframes catch-pin-pulse-hot { 0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; } 100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; } }
   `;
   document.head.appendChild(style);
 }
 
-// Create all catch markers for a lake
 export function createCatchMarkers(
   map: mapboxgl.Map,
   catches: CatchEntry[],
   onPinClick: (entry: CatchEntry) => void,
 ): mapboxgl.Marker[] {
   injectCatchPinStyles();
-
   const markers = catches.map((entry) => {
     const el = createCatchMarker(entry, catches, onPinClick);
-
-    // Create marker but don't add to map yet
     const marker = new mapboxgl.Marker({ element: el }).setLngLat([
       entry.catchLng,
       entry.catchLat,
     ]);
-
     marker.addTo(map);
     return marker;
   });
-
-  // Initial visibility update
   updateCatchMarkersForZoom(map, markers);
-
-  // Setup zoom listener
   const onZoom = () => updateCatchMarkersForZoom(map, markers);
   map.on("zoom", onZoom);
-
-  // Store cleanup function
   (markers as any)._zoomCleanup = () => map.off("zoom", onZoom);
-
   return markers;
 }
 
-// Update markers based on zoom level
 function updateCatchMarkersForZoom(
   map: mapboxgl.Map,
   markers: mapboxgl.Marker[],
@@ -2552,32 +2495,25 @@ function updateCatchMarkersForZoom(
   const zoom = map.getZoom();
   const MIN_ZOOM = 9;
   const MAX_ZOOM = 14;
-
   if (typeof zoom !== "number") return;
-
   const scale = Math.min(
     1,
     Math.max(0.4, ((zoom - MIN_ZOOM) / (MAX_ZOOM - MIN_ZOOM)) * 0.6 + 0.4),
   );
   const opacity = zoom < MIN_ZOOM ? 0 : 1;
-
   markers.forEach((marker) => {
     const container = marker.getElement();
     if (container) {
-      // Target the visual child, NOT the container itself
       const visual = container.firstElementChild as HTMLElement;
       if (visual) {
         visual.style.transform = `scale(${scale})`;
         visual.style.opacity = String(opacity);
       }
-
-      // Handle pointer events on the container
       container.style.pointerEvents = opacity < 0.1 ? "none" : "auto";
     }
   });
 }
 
-// Cleanup markers
 export function removeCatchMarkers(markers: mapboxgl.Marker[]): void {
   if ((markers as any)._zoomCleanup) {
     (markers as any)._zoomCleanup();

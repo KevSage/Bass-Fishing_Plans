@@ -1,6 +1,4 @@
 // src/components/Navigation.tsx
-// Final Version: "Stealth Luxury" Design
-// Features: Minimalist fonts, no blocky backgrounds, functional Map Orb.
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -19,6 +17,14 @@ export function Navigation() {
   const navigate = useNavigate();
 
   const isPlanPage = location.pathname.startsWith("/plan");
+
+  // --- CONTEXTUAL ORB LOGIC ---
+  const isMapPage = location.pathname === "/members";
+  const orbDestination = isMapPage ? "/insights" : "/members";
+  const orbTitle = isMapPage ? "View Insights" : "Launch Map";
+
+  // Updated: Switch from 'gold' to 'indigo'
+  const orbVariant = isMapPage ? "indigo" : "default";
 
   // Scroll Listener for Glass Effect
   useEffect(() => {
@@ -39,7 +45,7 @@ export function Navigation() {
   const memberLinks = useMemo(
     () => [
       { to: "/account", label: "Account" },
-      { to: "/insights", label: "Insights" },
+      // REMOVED: Insights is now exclusive to the Orb button
     ],
     [],
   );
@@ -58,7 +64,6 @@ export function Navigation() {
     setUserMenuOpen(false);
   }, [location.pathname]);
 
-  // Lock scroll when mobile menu is open
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
@@ -68,23 +73,23 @@ export function Navigation() {
     };
   }, [isOpen]);
 
-  // --- MOBILE MENU OVERLAY (Stealth Luxury) ---
+  // --- MOBILE MENU OVERLAY ---
   const mobileOverlay = isOpen ? (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0, 0, 0, 0.4)", // Subtle dimmer
+        background: "rgba(0, 0, 0, 0.4)",
         backdropFilter: "blur(6px)",
         zIndex: 10000,
-        paddingTop: 68, // Pushes menu below the header
+        paddingTop: 68,
         animation: "fadeIn 0.2s ease-out",
       }}
       onClick={() => setIsOpen(false)}
     >
       <div
         style={{
-          background: "#0a0a0a", // Deep solid black
+          background: "#0a0a0a",
           borderTop: "1px solid rgba(255,255,255,0.08)",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           padding: "20px 24px 32px",
@@ -93,7 +98,6 @@ export function Navigation() {
         onClick={(e) => e.stopPropagation()}
       >
         <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {/* Public Links - Sleek Text Only */}
           {publicLinks.map((link) => (
             <Link
               key={link.to}
@@ -106,7 +110,7 @@ export function Navigation() {
                 fontWeight: isActive(link.to) ? 500 : 400,
                 letterSpacing: "0.02em",
                 padding: "12px 0",
-                borderBottom: "1px solid rgba(255,255,255,0.04)", // Hairline divider
+                borderBottom: "1px solid rgba(255,255,255,0.04)",
                 transition: "color 0.2s",
               }}
             >
@@ -138,9 +142,9 @@ export function Navigation() {
 
             <div style={{ height: 24 }} />
 
-            {/* Mobile Drawer Map Launcher */}
+            {/* Mobile Action Button */}
             <Link
-              to="/members"
+              to={orbDestination}
               onClick={() => setIsOpen(false)}
               style={{
                 display: "flex",
@@ -154,12 +158,17 @@ export function Navigation() {
                 letterSpacing: "0.01em",
                 padding: "12px",
                 borderRadius: 8,
-                background: "rgba(59, 130, 246, 0.1)",
-                border: "1px solid rgba(59, 130, 246, 0.25)",
+                // Updated styles for Indigo vs Blue
+                background: isMapPage
+                  ? "rgba(99, 102, 241, 0.1)" // Indigo tint
+                  : "rgba(59, 130, 246, 0.1)", // Blue tint
+                border: isMapPage
+                  ? "1px solid rgba(99, 102, 241, 0.25)"
+                  : "1px solid rgba(59, 130, 246, 0.25)",
               }}
             >
-              <MapOrb size={18} active={true} />
-              <span>Launch Map</span>
+              <MapOrb size={18} active={true} variant={orbVariant} />
+              <span>{orbTitle}</span>
             </Link>
 
             <button
@@ -182,6 +191,7 @@ export function Navigation() {
             </button>
           </SignedIn>
 
+          {/* ... (SignedOut logic remains the same) ... */}
           <SignedOut>
             <div style={{ height: 20 }} />
             <Link
@@ -235,7 +245,7 @@ export function Navigation() {
           top: 0,
           zIndex: 1000,
           width: "100%",
-          height: 64, // Sleek height
+          height: 64,
           transition: "all 0.3s ease",
           background: scrolled || isOpen ? "rgba(5, 5, 5, 0.9)" : "transparent",
           backdropFilter: scrolled || isOpen ? "blur(16px)" : "none",
@@ -316,10 +326,10 @@ export function Navigation() {
                 </Link>
               ))}
 
-              {/* Desktop Orb */}
+              {/* Desktop Orb Link */}
               <Link
-                to="/members"
-                title="Map"
+                to={orbDestination}
+                title={orbTitle}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -328,7 +338,7 @@ export function Navigation() {
                   textDecoration: "none",
                 }}
               >
-                <MapOrb size={30} active={!isActive("/members")} />
+                <MapOrb size={30} active={true} variant={orbVariant} />
               </Link>
 
               {/* Minimal User Avatar */}
@@ -440,11 +450,11 @@ export function Navigation() {
               </Link>
             </SignedOut>
 
-            {/* Mobile Orb */}
+            {/* Mobile Orb Link */}
             <SignedIn>
               {!isPlanPage && (
                 <Link
-                  to="/members"
+                  to={orbDestination}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -453,7 +463,7 @@ export function Navigation() {
                     textDecoration: "none",
                   }}
                 >
-                  <MapOrb size={30} active={!isActive("/members")} />
+                  <MapOrb size={30} active={true} variant={orbVariant} />
                 </Link>
               )}
             </SignedIn>

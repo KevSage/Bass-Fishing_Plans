@@ -413,6 +413,7 @@ export function Landing() {
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>
           <div
+            className="water-text"
             style={{
               ...eyebrow,
               textAlign: "center",
@@ -423,9 +424,7 @@ export function Landing() {
             Location Clarity
           </div>
 
-          <h2 className="water-text" style={h2Style}>
-            Your Living Record
-          </h2>
+          <h2 style={h2Style}>Your Living Record</h2>
           <p style={leadStyle}>
             Every catch you log is stored with its location, building real
             history over time. As your experience grows, patterns emerge
@@ -584,6 +583,7 @@ export function Landing() {
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>
           <div
+            className="water-text"
             style={{
               ...eyebrow,
               textAlign: "center",
@@ -593,9 +593,7 @@ export function Landing() {
           >
             Data Clarity
           </div>
-          <h2 className="water-text" style={h2Style}>
-            A Disciplined Decision Engine
-          </h2>
+          <h2 style={h2Style}>A Disciplined Decision Engine</h2>
           <p style={leadStyle}>
             Bass Clarity quietly interprets today’s conditions and turns them
             into a focused fishing strategy — without noise, dashboards, or
@@ -753,11 +751,14 @@ export function Landing() {
 
         <div className="container" style={container(1100)}>
           <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-            <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
+            <div
+              className="water-text"
+              style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+            >
               Weather Clarity
             </div>
 
-            <h2 className="water-text" style={h2Style}>
+            <h2 style={h2Style}>
               {/* Not Just Weather
                      <br /> */}
               Your Weather, Simplified
@@ -947,13 +948,14 @@ export function Landing() {
         {/* <div style={{ height: 36 }} /> */}
         <div className="container" style={container(1100)}>
           <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-            <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
+            <div
+              className="water-text"
+              style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+            >
               Technique / Presentation Clarity
             </div>
 
-            <h1 className="water-text" style={h1Style}>
-              Complementary Approaches.
-            </h1>
+            <h1 style={h1Style}>Complementary Approaches.</h1>
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               Fish with Confidence. No Decision Paralysis.
               <br />
@@ -1091,13 +1093,14 @@ export function Landing() {
 
         <div className="container" style={container(1100)}>
           <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-            <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
+            <div
+              className="water-text"
+              style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+            >
               Strategic Clarity
             </div>
 
-            <h2 className="water-text" style={h2Style}>
-              Fish With Intention.
-            </h2>
+            <h2 style={h2Style}>Fish With Intention.</h2>
 
             <p style={{ ...leadStyle, maxWidth: 980 }}>
               Make Every Cast Deliberate. Know exactly what to do, and why
@@ -1253,13 +1256,14 @@ export function Landing() {
 
       <div className="container" style={container(1100)}>
         <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-          <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
+          <div
+            className="water-text"
+            style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+          >
             Strategic Clarity
           </div>
 
-          <h2 className="water-text" style={h2Style}>
-            Full Day Progression.
-          </h2>
+          <h2 style={h2Style}>Full Day Progression.</h2>
 
           <p style={{ ...leadStyle, maxWidth: 980 }}>
             Know where to start, transition and adjust. Clear actionable
@@ -1406,13 +1410,14 @@ export function Landing() {
 
       <div className="container" style={container(1100)}>
         <div style={{ textAlign: "center", position: "relative", zIndex: 1 }}>
-          <div style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}>
+          <div
+            className="water-text"
+            style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+          >
             Insight Clarity
           </div>
 
-          <h2 className="water-text" style={h2Style}>
-            Your Moments. Your Story.
-          </h2>
+          <h2 style={h2Style}>Your Moments. Your Story.</h2>
 
           <p style={{ ...leadStyle, maxWidth: 980 }}>
             Insights brings your catches, locations, and photos together —
@@ -1878,7 +1883,7 @@ export function Landing() {
               #38bdf8, /* Sky 400 */
               #93c5fd  /* Blue 300 */
             );
-            background-size: 300% 300%;
+            background-size: 150% 150%;
             
             /* Clip and Fill */
             -webkit-background-clip: text;

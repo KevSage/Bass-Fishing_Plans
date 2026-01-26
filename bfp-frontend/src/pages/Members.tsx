@@ -1462,7 +1462,7 @@ export function Members() {
   if (statusLoading)
     return (
       <div style={{ padding: 100, textAlign: "center", color: "#fff" }}>
-        Loading Your Map...
+        Checking status...
       </div>
     );
   if (!isActive) {
@@ -1691,7 +1691,7 @@ export function Members() {
                 </div>
               ) : (
                 <div className="top-bar-card top-bar-card-empty">
-                  <span className="top-bar-label">Bass Clarity</span>
+                  <span className="top-bar-label">MEMBERS</span>
                   <h2 className="top-bar-title">Find Your Water</h2>
                   <p className="top-bar-subtitle">
                     Search or tap any body of water

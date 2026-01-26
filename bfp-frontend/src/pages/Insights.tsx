@@ -1,6 +1,6 @@
-// src/pages/Stats.tsx
+// src/pages/Insights.tsx
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import {
@@ -10,7 +10,6 @@ import {
   FishIcon,
   XIcon,
   MapPinIcon,
-  LayersIcon, // Using as generic icon for Lure/Technique if needed
 } from "@/components/UnifiedIcons";
 
 import {
@@ -18,12 +17,14 @@ import {
   CatchEntry,
   LURE_OPTIONS,
   CatchDetailView,
+  CatchLogModal,
   apiRecordToEntry,
 } from "@/components/CatchLog";
 import { listCatches } from "@/lib/catches-api";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
+// ... [Keep useCountUp and UploadImageIcon helpers exactly as they were] ...
 // =============================================================================
 // HELPER: CountUp Animation Hook (3s Duration)
 // =============================================================================
@@ -38,7 +39,6 @@ function useCountUp(end: number, duration: number = 3000) {
       if (!startTime) startTime = currentTime;
       const progress = currentTime - startTime;
 
-      // EaseOutQuart for smooth landing
       const ease = (t: number) => 1 - Math.pow(1 - t, 4);
 
       const percentage = Math.min(progress / duration, 1);
@@ -60,10 +60,24 @@ function useCountUp(end: number, duration: number = 3000) {
   return count;
 }
 
-// =============================================================================
-// TYPES & CALCULATIONS
-// =============================================================================
+const UploadImageIcon = ({ size = 24 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
 
+// ... [Keep calculateStats and Types exactly as they were] ...
 type ViewMode =
   | "total"
   | "lakes"
@@ -81,7 +95,7 @@ type StatCalculation = {
     lng: number;
     topLures: string[];
   }[];
-  pbs: CatchEntry[]; // Array of PB entries
+  pbs: CatchEntry[];
   bestDay: {
     date: string;
     weight: number;
@@ -105,8 +119,6 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
     };
   }
 
-  // 1. Lakes (Grouped & Sorted)
-  // We capture lat/lng from the first occurrence to generate the map image later
   const lakeMap: Record<
     string,
     { count: number; lat: number; lng: number; lures: Record<string, number> }
@@ -133,13 +145,12 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
       lat: data.lat,
       lng: data.lng,
       topLures: Object.entries(data.lures)
-        .sort((a, b) => b[1] - a[1]) // Sort lures by freq
+        .sort((a, b) => b[1] - a[1])
         .slice(0, 3)
         .map((l) => l[0]),
     }))
     .sort((a, b) => b.count - a.count);
 
-  // 2. Best Day
   const dayMap: Record<
     string,
     { weight: number; count: number; lures: Set<string> }
@@ -158,11 +169,10 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
     return dayMap[a].weight > dayMap[b].weight ? a : b;
   });
 
-  // 3. PBs (One per species) - default to largemouth if no species set
   const pbMap: Record<string, CatchEntry> = {};
   entries.forEach((e) => {
-    if (!e.weight) return; // Skip entries without weight
-    const species = e.species || "largemouth"; // Default to largemouth
+    if (!e.weight) return;
+    const species = e.species || "largemouth";
     if (
       !pbMap[species] ||
       Number(e.weight) > Number(pbMap[species].weight || 0)
@@ -174,7 +184,6 @@ function calculateStats(entries: CatchEntry[]): StatCalculation {
     (a, b) => Number(b.weight || 0) - Number(a.weight || 0),
   );
 
-  // 4. Tech & Lures
   const techMap: Record<string, number> = {};
   const lureMap: Record<string, number> = {};
 
@@ -219,6 +228,21 @@ export function Insights() {
   const [entries, setEntries] = useState<CatchEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 1. REMOVE the ref, we don't need it anymore
+  // const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  const virtualActiveLake = useMemo(
+    () => ({
+      id: "upload-session",
+      name: "Photo Upload",
+      lat: 0,
+      lng: 0,
+    }),
+    [],
+  );
+
+  const catchLog = useCatchLog(virtualActiveLake);
+
   useEffect(() => {
     let mounted = true;
     async function fetchData() {
@@ -226,7 +250,6 @@ export function Insights() {
         const token = await getToken();
         if (!token) return;
 
-        // Fetch up to 500 catches for stats
         const response = await listCatches(token, 500, 0);
 
         if (mounted) {
@@ -247,7 +270,6 @@ export function Insights() {
 
   const stats = useMemo(() => calculateStats(entries), [entries]);
 
-  // View State
   const [activeView, setActiveView] = useState<ViewMode>("total");
   const [selectedLake, setSelectedLake] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<{
@@ -256,19 +278,15 @@ export function Insights() {
   } | null>(null);
   const [viewingCatch, setViewingCatch] = useState<CatchEntry | null>(null);
 
-  // Animation State (3 seconds)
   const animatedTotal = useCountUp(stats.totalCount, 3000);
 
-  // Set default lake when switching to lake view
   useMemo(() => {
     if (activeView === "lakes" && !selectedLake && stats.lakes.length > 0) {
       setSelectedLake(stats.lakes[0].name);
     }
   }, [activeView, stats.lakes]);
 
-  // --- FILTER ENGINE ---
   const filteredEntries = useMemo(() => {
-    // If PBs are active, we hide the photo wall entirely (as PBs are shown in hero)
     if (activeView === "pbs") return [];
 
     let data = [...entries];
@@ -296,11 +314,9 @@ export function Insights() {
     );
   }, [entries, activeView, selectedLake, activeFilter, stats]);
 
-  // --- HELPER: Get Mapbox Image URL ---
   const getLakeImage = (lakeName: string) => {
     const lake = stats.lakes.find((l) => l.name === lakeName);
     if (!lake || !MAPBOX_TOKEN) return "";
-    // Using static API with 800x400 size, zoom 13
     return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lake.lng},${lake.lat},13,0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false`;
   };
 
@@ -323,6 +339,29 @@ export function Insights() {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
   };
+
+  // 2. SIMPLIFIED: Just open the form directly
+  const handleUploadClick = () => {
+    catchLog.showForm();
+  };
+
+  // 3. REMOVED: handleFileSelect is no longer needed
+
+  const handleCatchSaved = useCallback(async () => {
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const response = await listCatches(token, 500, 0);
+      const converted = response.catches.map(apiRecordToEntry);
+      setEntries(converted);
+
+      setActiveView("total");
+      setActiveFilter(null);
+    } catch (err) {
+      console.error("Failed to refresh catches after save:", err);
+    }
+  }, [getToken]);
 
   if (isLoading) {
     return (
@@ -375,14 +414,26 @@ export function Insights() {
       <div
         className={`stats-hero ${activeView === "pbs" ? "hero-no-border" : ""}`}
       >
-        {/* TOTAL (Animated Counter) */}
+        {/* TOTAL (Animated Counter with Upload) */}
         {activeView === "total" && (
           <div className="hero-center">
             <div className="hero-big-number">{animatedTotal}</div>
             <div className="hero-label">Total Catches Logged</div>
+
+            {/* Upload Section */}
+            <div className="hero-upload-section">
+              <p className="hero-upload-text">
+                Upload photos from your gallery to log past catches
+              </p>
+              <button className="hero-upload-btn" onClick={handleUploadClick}>
+                <UploadImageIcon size={20} />
+                <span>Upload Photos</span>
+              </button>
+            </div>
           </div>
         )}
 
+        {/* ... [Rest of the Hero Section remains unchanged] ... */}
         {/* LAKES (Split View with Satellite Map) */}
         {activeView === "lakes" && (
           <div className="hero-split">
@@ -402,7 +453,6 @@ export function Insights() {
               ))}
             </div>
             <div className="hero-card">
-              {/* SATELLITE BACKGROUND */}
               {selectedLake && MAPBOX_TOKEN && (
                 <div
                   className="card-map-bg"
@@ -456,7 +506,6 @@ export function Insights() {
                   className="pb-row-card"
                   onClick={() => setViewingCatch(pb)}
                 >
-                  {/* Top Info Section */}
                   <div className="pb-row-info">
                     <div className="pb-row-header">
                       <span className="pb-species-badge">
@@ -486,7 +535,7 @@ export function Insights() {
                     </div>
                   </div>
 
-                  {/* Bottom Image Section */}
+                  {/* Image display fix */}
                   <div className="pb-row-image">
                     {pb.photoUrl || pb.imageData ? (
                       <img src={pb.photoUrl || pb.imageData} alt="PB" />
@@ -638,7 +687,17 @@ export function Insights() {
         </div>
       )}
 
-      {/* MODAL */}
+      {/* 4. REMOVED: Hidden file input */}
+
+      {/* CATCH LOG MODAL FOR UPLOADING */}
+      <CatchLogModal
+        {...catchLog}
+        onDraftDone={() => {
+          handleCatchSaved();
+        }}
+      />
+
+      {/* VIEW CATCH DETAIL MODAL */}
       {viewingCatch && (
         <div
           className="stats-modal-overlay"
@@ -671,23 +730,61 @@ export function Insights() {
         .stats-header { padding: 20px; display: flex; align-items: center; gap: 16px; }
         .stats-header h1 { margin: 0; font-size: 1.2rem; font-weight: 700; }
         .back-icon-btn { background: rgba(255,255,255,0.1); border: none; color: white; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
-        /* PILLS */
+        
+        /* ... [ALL OTHER CSS IS IDENTICAL - Omitted for brevity, but include it in final file] ... */
+        /* You can copy the exact CSS from your previous file as I haven't changed the classes */
         .pills-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 20px 20px; scrollbar-width: none; }
         .pills-scroll::-webkit-scrollbar { display: none; }
         .pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
         .pill.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
 
-        /* HERO COMMON */
         .stats-hero { min-height: 200px; margin: 0 20px 30px; background: rgba(20,20,25,0.5); border-radius: 24px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; position: relative; }
         .hero-no-border { border: none; background: transparent; margin: 0 20px 10px; }
 
-        /* TOTAL VIEW (ANIMATED) */
-        .hero-center { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 40px; text-align: center; }
+        .hero-center { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 40px 36px; text-align: center; }
         .hero-big-number { font-size: 5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
         .hero-label { font-size: 0.9rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px; }
 
-        /* LAKES SPLIT VIEW */
+        .hero-upload-section {
+          margin-top: 24px;
+          padding-top: 20px;
+          border-top: 1px solid rgba(255,255,255,0.08);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 14px;
+          width: 100%;
+        }
+        .hero-upload-text {
+          margin: 0;
+          font-size: 0.85rem;
+          color: rgba(255,255,255,0.5);
+          text-align: center;
+          line-height: 1.4;
+        }
+        .hero-upload-btn {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 24px;
+          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+          border: none;
+          border-radius: 14px;
+          color: #fff;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3);
+        }
+        .hero-upload-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);
+        }
+        .hero-upload-btn:active {
+          transform: translateY(0);
+        }
+
         .hero-split { display: flex; height: 280px; }
         .hero-list { width: 35%; border-right: 1px solid rgba(255,255,255,0.1); overflow-y: auto; display: flex; flex-direction: column; background: rgba(0,0,0,0.2); }
         .hero-list-item { padding: 16px; text-align: left; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
@@ -707,30 +804,22 @@ export function Insights() {
         .lure-chip { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.9); padding: 6px 12px; border-radius: 12px; font-size: 0.75rem; cursor: pointer; backdrop-filter: blur(4px); }
         .lure-chip.active { background: #4A90E2; border-color: #4A90E2; color: #fff; }
 
-        /* PB ROWS (MOBILE FIRST) */
         .hero-pbs-list { display: flex; flex-direction: column; gap: 24px; width: 100%; }
         .pb-row-card { background: rgba(20, 20, 28, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; overflow: hidden; display: flex; flex-direction: column; }
-        
         .pb-row-info { padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .pb-row-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
         .pb-species-badge { background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.8); }
         .pb-weight-large { font-size: 2rem; font-weight: 800; color: #FBBF24; line-height: 1; }
         .pb-weight-large .unit { font-size: 1rem; color: rgba(255,255,255,0.5); font-weight: 500; }
-        
         .pb-row-meta { display: flex; gap: 16px; color: rgba(255,255,255,0.6); font-size: 0.9rem; }
         .pb-meta-item { display: flex; align-items: center; gap: 6px; }
-        
         .pb-row-lure { font-size: 0.95rem; color: #fff; font-weight: 500; }
         .lure-label { color: rgba(255,255,255,0.4); margin-right: 6px; font-weight: 400; }
-        
-        /* UPDATED: Height to 280px */
         .pb-row-image { width: 100%; height: 280px; background: rgba(0,0,0,0.3); position: relative; }
         .pb-row-image img { width: 100%; height: 100%; object-fit: cover; }
         .pb-placeholder { display: flex; flex-direction: column; gap: 8px; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.2); }
-
         .pb-empty { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); width: 100%; }
 
-        /* BEST DAY */
         .hero-single-card { padding: 30px; text-align: center; display: flex; flex-direction: column; align-items: center; }
         .best-day-header { display: flex; align-items: center; gap: 8px; color: #FBBF24; font-weight: 700; font-size: 0.9rem; margin-bottom: 12px; }
         .best-day-date { font-size: 1.8rem; font-weight: 700; margin-bottom: 20px; }
@@ -744,16 +833,14 @@ export function Insights() {
         .lure-text-btn:hover { background: rgba(255,255,255,0.15); }
         .lure-text-btn.active { background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.5); color: #FBBF24; }
 
-        /* CHART */
         .hero-chart-area { padding: 20px; display: flex; flex-direction: column; gap: 12px; max-height: 280px; overflow-y: auto; }
         .chart-bar-row { display: flex; flex-direction: column; gap: 4px; background: transparent; border: none; cursor: pointer; width: 100%; text-transform: capitalize}
-        .bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,255,255,0.8); width: 100%;  textTransform: capitalize; }
+        .bar-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: rgba(255,255,255,0.8); width: 100%; }
         .bar-track { width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; }
         .bar-fill { height: 100%; background: #4A90E2; border-radius: 3px; transition: width 0.5s ease; }
         .chart-bar-row.active .bar-fill { background: #fff; }
         .chart-bar-row.active .bar-label { color: #fff; font-weight: 700; }
 
-        /* PHOTO WALL */
         .photo-wall { padding: 0 20px; }
         .wall-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; min-height: 28px; }
         .wall-count { font-size: 0.9rem; color: rgba(255,255,255,0.5); }
@@ -768,7 +855,6 @@ export function Insights() {
         .wall-empty { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); grid-column: span 3; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .wall-empty-clear { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 
-        /* MODAL */
         .stats-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; }
         .stats-modal-content { width: 100%; max-width: 380px; max-height: 86vh; background: rgba(20,20,25,0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; }
       `}</style>
