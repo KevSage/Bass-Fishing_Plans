@@ -349,7 +349,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     if is_member:
         plan = enrich_member_plan(plan, weather, phase)
     
-    # ✅ POPULATE ALL WEATHER KEYS (INCLUDING NEW ONES)
+    # ✅ POPULATE CONDITIONS - UPDATED TO INCLUDE NEW FIELDS
     plan["conditions"] = {
         "location_name": body.location_name,
         "latitude": latitude,

@@ -17,7 +17,7 @@ from typing import Any, Dict, Tuple
 import httpx
 
 
-# --- HELPER: Degrees to Compass ---
+# --- NEW HELPER: Degrees to Compass ---
 def degrees_to_cardinal(d):
     if d is None:
         return "VAR"
@@ -196,7 +196,7 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
     vis_miles = round(vis_meters / 1609.34, 1) if vis_meters is not None else 10.0
 
     return {
-        # --- Original Keys (Preserved) ---
+        # --- Original Keys (Preserved for Plan Page) ---
         "temp_f": current.get("temp"),
         "temp_high": daily_today.get("temp", {}).get("max"),
         "temp_low": daily_today.get("temp", {}).get("min"),
