@@ -29,6 +29,7 @@ import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 import { MapOrb } from "@/components/MapOrb";
+import { WeatherOverlay } from "@/components/WeatherOverlay";
 
 // --- CATCH LOG IMPORTS ---
 import {
@@ -41,6 +42,9 @@ import {
 
 // --- IMAGE UTILS ---
 import { compressImage } from "@/lib/image-utils";
+
+// --- LAKE LABEL IMPORTS ---
+import { type LakeLabelData } from "@/components/LakeLabel";
 
 // --- DATA IMPORT ---
 import LAKES_DATA from "../data/lakes.json";
@@ -87,21 +91,25 @@ const PolygonIcon = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
-const MinusCircleIcon = ({ size = 20 }: { size?: number }) => (
+const CloudIcon = ({ size = 22 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
     strokeWidth="1.5"
+    stroke="currentColor"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <circle cx="12" cy="12" r="10" />
-    <line x1="8" y1="12" x2="16" y2="12" />
+    <path
+      d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
+
 const LightningIcon = ({ size = 20 }: { size?: number }) => (
   <svg
     width={size}
@@ -212,6 +220,7 @@ type LakeData = {
   anchors?: { lat: number; lng: number }[];
 };
 
+// Defined locally to include UI-specific props like zoom/image
 type FavoriteLake = {
   id: string;
   lake_type: "known" | "custom";
@@ -270,7 +279,6 @@ function getMatchRadius(acres?: number): number {
   return 1000;
 }
 
-// Calculate appropriate zoom level based on lake size
 function getZoomForLake(acres?: number): number {
   if (!acres) return 14;
   if (acres > 30000) return 10;
@@ -316,7 +324,6 @@ function findUserLakeByAnchors(
   return null;
 }
 
-// Unified polygon check
 type PolygonMatchResult = {
   source: "custom" | "favorite" | "known";
   id: string;
@@ -336,7 +343,6 @@ function findLakeByPolygon(
 ): PolygonMatchResult {
   const p = { lat, lng };
 
-  // 1. Check custom lakes with anchors
   for (const lake of customLakes) {
     const anchors = (lake as any).anchors as
       | { lat: number; lng: number }[]
@@ -356,7 +362,6 @@ function findLakeByPolygon(
     }
   }
 
-  // 2. Check known lakes from lakes.json with anchors
   for (const lake of LAKES_DATA as LakeData[]) {
     const anchors = lake.anchors as { lat: number; lng: number }[] | undefined;
     if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
@@ -436,6 +441,9 @@ export function Members() {
   const location = useLocation();
   const [dataVersion, setDataVersion] = useState(0);
   const [searchParams] = useSearchParams();
+
+  // State for new Weather Feature
+  const [showWeather, setShowWeather] = useState(false);
 
   // --- PERSISTENT STATE ---
   const [favorites, setFavorites] = useState<FavoriteLake[]>([]);
@@ -567,7 +575,6 @@ export function Members() {
         pendingLakeSelectRef.current = location.state.lakeId;
       }
 
-      // Clear navigation state so it doesn't loop
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -742,6 +749,7 @@ export function Members() {
       !waterName.startsWith("Dropped Pin");
 
     // Check if Edit Boundary should be shown
+    // Show it if: It IS saved, AND (It's a Custom type OR we don't have a known lake match)
     const canEditBoundary =
       isSaved &&
       (currentFavorite?.lake_type === "custom" ||
@@ -791,7 +799,7 @@ export function Members() {
     let initialZoom = 6;
     const urlLat = searchParams.get("lat");
     const urlLng = searchParams.get("lng");
-    const urlLake = searchParams.get("lake");
+    const urlLake = searchParams.get("lake"); // FIXED: Re-added this declaration
     let startCenter = defaultCenter;
     if (urlLat && urlLng) {
       startCenter = [parseFloat(urlLng), parseFloat(urlLat)];
@@ -902,6 +910,7 @@ export function Members() {
         setLocationDetails({});
         setManualWaterName("");
         setViewingFavoriteId(null);
+        setShowWeather(false); // Close weather when selecting new spot
 
         if (markerRef.current) markerRef.current.remove();
         if (markerElementRef.current) markerElementRef.current.remove();
@@ -1105,6 +1114,7 @@ export function Members() {
     setManualWaterName("");
     setLocationDetails({});
     setViewingFavoriteId(null);
+    setShowWeather(false); // Clear weather on deselect
     if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
@@ -1260,7 +1270,6 @@ export function Members() {
         }
       } else {
         // ADD LOGIC
-        // 1. Try to match name with known database
         const dbMatch = hydrateLakeData(
           manualWaterName || waterName,
           selectedCoords.lat,
@@ -1302,7 +1311,6 @@ export function Members() {
             return (createRes as any).lake_id;
           } else {
             const existingLake = (createRes as any).existing_lake;
-            // Name sync
             if (
               existingLake &&
               nameToSave &&
@@ -1326,7 +1334,7 @@ export function Members() {
           if (shouldCreateCustom) {
             lakeId = await performCustomCreation();
             if (!lakeId) throw new Error("Failed to get lake ID");
-            // NOTE: No prompt. Just save.
+            // FIXED: Removed setRecentCustomLakeId and prompt logic
           } else {
             // Known lake
             try {
@@ -1337,6 +1345,7 @@ export function Members() {
               lakeId = await performCustomCreation();
               if (!lakeId) throw new Error("Failed fallback creation");
               await addFavorite(lakeId, "custom", token);
+              // FIXED: Removed setRecentCustomLakeId
               return;
             }
           }
@@ -1486,6 +1495,16 @@ export function Members() {
           }
         }}
       />
+
+      {/* WEATHER OVERLAY */}
+      {showWeather && selectedCoords && (
+        <WeatherOverlay
+          lat={selectedCoords.lat}
+          lng={selectedCoords.lng}
+          locationName={waterName}
+          onClose={() => setShowWeather(false)}
+        />
+      )}
 
       {/* TOP GRADIENT BAR - Always visible */}
       {!showModal &&
@@ -1765,15 +1784,17 @@ export function Members() {
               </div>
             )}
 
-            {/* MAIN NAVIGATION ROW */}
+            {/* MAIN NAVIGATION ROW - UPDATED LAYOUT */}
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
+                {/* REPLACED: RadarIcon -> CloudIcon (Weather Toggle) */}
                 <button
-                  onClick={handleOpenScoutModal}
-                  className="nav-btn nav-btn-icon"
-                  aria-label="Scout Water"
+                  onClick={() => setShowWeather((prev) => !prev)}
+                  className={`nav-btn nav-btn-icon ${activeLake ? "nav-btn-primary" : ""}`}
+                  disabled={!activeLake}
+                  aria-label="Check Weather"
                 >
-                  <RadarIcon size={22} />
+                  <CloudIcon size={22} />
                 </button>
                 <button
                   onClick={handleLiveCameraClick}
@@ -1991,6 +2012,8 @@ export function Members() {
           </div>
         </div>
       )}
+
+      {/* OUTLINE PROMPT MODAL REMOVED (Frictionless Logic) */}
 
       {/* SCOUT MODAL */}
       {showModal && (
@@ -2212,7 +2235,7 @@ export function Members() {
         .top-bar-location {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 5px;
           color: rgba(255,255,255,0.6);
           font-size: 0.85rem;
           margin-top: 4px;

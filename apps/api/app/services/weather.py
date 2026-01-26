@@ -17,6 +17,15 @@ from typing import Any, Dict, Tuple
 import httpx
 
 
+# --- HELPER: Degrees to Compass ---
+def degrees_to_cardinal(d):
+    if d is None:
+        return "VAR"
+    dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+    ix = round(d / (360. / 16))
+    return dirs[ix % 16]
+
+
 def _cloud_cover_from_pct(pct: float) -> str:
     """Convert cloud percentage to descriptive string"""
     if pct is None:
@@ -178,7 +187,16 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
     pressure_mb = current.get("pressure")
     pressure_trend = "stable" # Placeholder for complex trend logic
 
+    # --- NEW: Process Wind Direction & Visibility ---
+    wind_deg = current.get("wind_deg")
+    wind_dir_str = degrees_to_cardinal(wind_deg)
+    
+    # Visibility comes in meters, convert to miles
+    vis_meters = current.get("visibility")
+    vis_miles = round(vis_meters / 1609.34, 1) if vis_meters is not None else 10.0
+
     return {
+        # --- Original Keys (Preserved) ---
         "temp_f": current.get("temp"),
         "temp_high": daily_today.get("temp", {}).get("max"),
         "temp_low": daily_today.get("temp", {}).get("min"),
@@ -193,11 +211,19 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
         "moon_illumination": daily_today.get("moon_illumination"),
         "is_major_period": False, 
         "humidity": current.get("humidity"),
-        
-        # ✅ TIMEZONE FIXED SOLAR DATA
         "sunriseTime": format_local_time(sunrise_unix, tz_offset),
         "solarNoonTime": format_local_time(solar_noon_unix, tz_offset),
         "sunsetTime": format_local_time(sunset_unix, tz_offset),
+
+        # --- New Additive Keys (For Live Dashboard) ---
+        "feels_like_f": current.get("feels_like"),
+        "wind_gust_mph": current.get("wind_gust", 0),
+        "wind_direction": wind_dir_str,
+        "wind_degrees": wind_deg,
+        "sky_condition": current.get("weather", [{}])[0].get("main", "Clear"),
+        "visibility_miles": vis_miles,
+        "dew_point": current.get("dew_point"),
+        "timezone_offset": tz_offset,
     }
 
 def format_weather_time(unix_timestamp: int, tz_offset: int = 0) -> str:
