@@ -249,8 +249,8 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
                 price = stripe.Price.retrieve(price_id)
                 recurring = price.get("recurring", {})
                 response["plan_interval"] = recurring.get("interval", "month") if recurring else "month"
-                unit_amount = price.get("unit_amount", 1500)
-                response["plan_amount"] = unit_amount / 100 if unit_amount else 15.0
+                unit_amount = price.get("unit_amount", 1000) 
+                response["plan_amount"] = unit_amount / 100 if unit_amount else 10.0
         except Exception as e:
             print(f"Failed to fetch Stripe subscription data for {email}: {str(e)}")
             import traceback

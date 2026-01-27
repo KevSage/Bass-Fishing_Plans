@@ -33,7 +33,7 @@ type WeatherOverlayProps = {
 };
 
 type CurrentWeather = {
-  temp: number | null; // Changed to allow null
+  temp: number | null;
   feelsLike: number | null;
   condition: string;
   pressure: number | null;
@@ -88,9 +88,16 @@ export function WeatherOverlay({
         setLoading(true);
         setError(false);
 
+        // FIX: Round coordinates to 4 decimal places (~11m precision).
+        // This prevents cache misses and API errors caused by raw 15-digit GPS coords
+        // common with custom pins/user location.
+        const cleanLat = Number(lat).toFixed(4);
+        const cleanLng = Number(lng).toFixed(4);
+
         const res = await fetch(
-          `${API_BASE_URL}/weather/current?lat=${lat}&lon=${lng}`,
+          `${API_BASE_URL}/weather/current?lat=${cleanLat}&lon=${cleanLng}`,
         );
+
         if (!res.ok) throw new Error("Weather fetch failed");
 
         const json = await res.json();
@@ -123,7 +130,14 @@ export function WeatherOverlay({
       }
     }
 
-    fetchWeather();
+    // Only fetch if we have valid coordinates
+    if (lat && lng) {
+      fetchWeather();
+    } else {
+      setLoading(false);
+      setError(true);
+    }
+
     return () => {
       mounted = false;
     };
@@ -138,7 +152,7 @@ export function WeatherOverlay({
     // If null or undefined, show placeholder
     if (val === null || val === undefined) return "--";
 
-    // Sanity check: Pressure of 0 MB is physically impossible (vacuum space), so treat as missing
+    // Sanity check: Pressure of 0 MB is physically impossible, so treat as missing
     if (unit === "MB" && val < 800) return "--";
 
     return Math.round(val);
@@ -220,7 +234,15 @@ export function WeatherOverlay({
                     {data.windGust !== null &&
                       data.windSpeed !== null &&
                       data.windGust > data.windSpeed && (
-                        <span className="grid-detail warning">
+                        <span
+                          className={`grid-detail ${
+                            data.windGust >= 20
+                              ? "danger" // Red: 20+ is dangerous for kayaks
+                              : data.windGust >= 12
+                                ? "warning" // Yellow: 12-19 is "Whitecap/Drift" territory
+                                : ""
+                          }`}
+                        >
                           Gust {Math.round(data.windGust)}
                         </span>
                       )}
