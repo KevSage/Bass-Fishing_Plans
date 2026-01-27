@@ -10,7 +10,6 @@ import React, {
 import mapboxgl from "mapbox-gl";
 import {
   FishIcon,
-  PlusIcon,
   BackIcon,
   EditIcon,
   TrashIcon,
@@ -27,11 +26,10 @@ import {
   createCatch,
   listCatches,
   deleteCatch as deleteCatchApi,
-  updateCatch as updateCatchApi, // <--- ADDED: Import Update Function
+  updateCatch as updateCatchApi,
   resolveLake,
   type CatchRecord,
   type CreateCatchInput,
-  type LakeType,
 } from "@/lib/catches-api";
 import {
   extractExifData,
@@ -201,7 +199,6 @@ function entryToApiInput(
 // =============================================================================
 // CONSTANTS (Lure & Density Configs)
 // =============================================================================
-// [Keeping all constant arrays collapsed to save space - they remain unchanged]
 export const LURE_OPTIONS = [
   {
     category: "Horizontal Reaction",
@@ -422,6 +419,13 @@ function getSpeciesLabel(species?: BassSpecies): string {
 }
 
 // =============================================================================
+// GLOBAL CACHE (The Fix for Stale/Slow Data)
+// =============================================================================
+// This holds the API response so switching tabs is instant
+let globalEntriesCache: CatchEntry[] | null = null;
+const API_CACHE_KEY = "bc_api_catches_cache";
+
+// =============================================================================
 // CUSTOM HOOK: useCatchLog
 // =============================================================================
 
@@ -429,19 +433,50 @@ export function useCatchLog(
   activeLake: ActiveLake,
   options?: { disableListView?: boolean },
 ) {
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
   const OFFLINE_KEY = "offline_catches";
 
-  const [state, setState] = useState<CatchLogState>({
-    isOpen: false,
-    view: "list",
-    entries: [],
-    selectedEntry: null,
-    isEditing: false,
-    visibleCount: ENTRIES_PER_PAGE,
+  // INITIALIZATION LOGIC (Stale-While-Revalidate)
+  const [state, setState] = useState<CatchLogState>(() => {
+    // 1. Try Global Memory Cache first (Fastest)
+    if (globalEntriesCache) {
+      return {
+        isOpen: false,
+        view: "list",
+        entries: globalEntriesCache,
+        selectedEntry: null,
+        isEditing: false,
+        visibleCount: ENTRIES_PER_PAGE,
+      };
+    }
+
+    // 2. Try Local Storage Cache (Fast on Reload)
+    const cached = localStorage.getItem(API_CACHE_KEY);
+    const offline = localStorage.getItem(OFFLINE_KEY);
+
+    const initialEntries = [
+      ...(offline ? JSON.parse(offline) : []),
+      ...(cached ? JSON.parse(cached) : []),
+    ];
+
+    if (initialEntries.length > 0) {
+      // Hydrate global cache so other components benefit immediately
+      globalEntriesCache = initialEntries;
+    }
+
+    return {
+      isOpen: false,
+      view: "list",
+      entries: initialEntries,
+      selectedEntry: null,
+      isEditing: false,
+      visibleCount: ENTRIES_PER_PAGE,
+    };
   });
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Loading is FALSE if we have *any* data to show (even if stale)
+  // This solves the "20s spinner" issue.
+  const [isLoading, setIsLoading] = useState(state.entries.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   const getOfflineCatches = useCallback((): CatchEntry[] => {
@@ -455,33 +490,45 @@ export function useCatchLog(
   }, []);
 
   const fetchCatches = useCallback(async () => {
-    // Note: We always fetch to ensure we have data for the map pins (Members page),
-    // even if the list view is disabled (Insights page).
+    // If we have cached data, we don't want to show a spinner.
+    // We just want to fetch in the background.
+    if (state.entries.length === 0) setIsLoading(true);
+
+    setError(null);
+
     try {
-      setIsLoading(true);
-      setError(null);
       const offline = getOfflineCatches();
       let apiEntries: CatchEntry[] = [];
       const token = await getToken();
+
       if (token) {
         try {
           const response = await listCatches(token, 500, 0);
           apiEntries = response.catches.map(apiRecordToEntry);
+
+          // UPDATE CACHES
+          globalEntriesCache = [...offline, ...apiEntries];
+          localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
         } catch (apiErr) {
-          console.warn(apiErr);
+          console.warn("Background fetch failed:", apiErr);
         }
       }
+
+      // Update State with fresh data
       setState((s) => ({ ...s, entries: [...offline, ...apiEntries] }));
     } catch (err) {
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, getOfflineCatches]);
+  }, [getToken, getOfflineCatches, state.entries.length]);
 
+  // Initial Fetch
   useEffect(() => {
-    fetchCatches();
-  }, [fetchCatches]);
+    if (isSignedIn) {
+      fetchCatches();
+    }
+  }, [fetchCatches, isSignedIn]);
 
   const syncOfflineCatches = useCallback(async () => {
     const offline = getOfflineCatches();
@@ -612,22 +659,20 @@ export function useCatchLog(
         const response = await createCatch(input, token);
         const savedEntry = { ...newEntry, id: response.catch_id };
 
-        if (options?.disableListView) {
-          setState((s) => ({
-            ...s,
-            isOpen: false,
-            selectedEntry: null,
-            isEditing: false,
-          }));
-        } else {
-          setState((s) => ({
-            ...s,
-            entries: [savedEntry, ...s.entries],
-            view: "list",
-            selectedEntry: null,
-            isEditing: false,
-          }));
-        }
+        // Update Global & Local Cache immediately
+        const newEntries = [savedEntry, ...state.entries];
+        globalEntriesCache = newEntries;
+        // We only persist the "API part" to local storage usually, but here strict update is fine
+        // Ideally we re-fetch to keep clean, but for speed we update local.
+
+        setState((s) => ({
+          ...s,
+          entries: newEntries,
+          view: "list",
+          selectedEntry: null,
+          isEditing: false,
+          isOpen: options?.disableListView ? false : s.isOpen,
+        }));
         return savedEntry;
       } catch (err) {
         const offlineEntry = { ...newEntry, isOffline: true };
@@ -637,22 +682,17 @@ export function useCatchLog(
             OFFLINE_KEY,
             JSON.stringify([offlineEntry, ...currentOffline]),
           );
-          if (options?.disableListView) {
-            setState((s) => ({
-              ...s,
-              isOpen: false,
-              selectedEntry: null,
-              isEditing: false,
-            }));
-          } else {
-            setState((s) => ({
-              ...s,
-              entries: [offlineEntry, ...s.entries],
-              view: "list",
-              selectedEntry: null,
-              isEditing: false,
-            }));
-          }
+
+          // Update State
+          const newEntries = [offlineEntry, ...state.entries];
+          setState((s) => ({
+            ...s,
+            entries: newEntries,
+            view: "list",
+            selectedEntry: null,
+            isEditing: false,
+            isOpen: options?.disableListView ? false : s.isOpen,
+          }));
           return offlineEntry;
         } catch (storageErr) {
           setError("Storage full. Cannot save catch.");
@@ -662,69 +702,76 @@ export function useCatchLog(
         setIsLoading(false);
       }
     },
-    [activeLake, getToken, getOfflineCatches, options?.disableListView],
+    [
+      activeLake,
+      getToken,
+      getOfflineCatches,
+      options?.disableListView,
+      state.entries,
+    ],
   );
 
-  // --- UPDATED: UPDATE CATCH (Now with API Persistence) ---
+  // --- UPDATE CATCH (With Persistence) ---
   const updateCatch = useCallback(
     async (id: string, updates: Partial<CatchEntry>) => {
-      // 1. Optimistic Update (Update UI immediately so user sees change)
-      setState((s) => {
-        const updated = s.entries.map((c) =>
-          c.id === id ? { ...c, ...updates } : c,
-        );
-        return {
-          ...s,
-          entries: updated,
-          selectedEntry: updated.find((c) => c.id === id) || null,
-          view: "detail",
-          isEditing: false,
-        };
-      });
+      // 1. Optimistic Update
+      const updatedEntries = state.entries.map((c) =>
+        c.id === id ? { ...c, ...updates } : c,
+      );
 
-      // 2. API Call (Persist to Backend)
+      // Update Cache immediately
+      globalEntriesCache = updatedEntries;
+      setState((s) => ({
+        ...s,
+        entries: updatedEntries,
+        selectedEntry: updatedEntries.find((c) => c.id === id) || null,
+        view: "detail",
+        isEditing: false,
+      }));
+
+      // 2. API Call
       try {
         const token = await getToken();
         if (token) {
-          // Find current entry to merge with updates
           const currentEntry = state.entries.find((e) => e.id === id);
           if (currentEntry) {
             const merged = { ...currentEntry, ...updates };
-            // Convert back to API format
             const apiInput = entryToApiInput(merged, activeLake);
-
-            // Send to Server
             await updateCatchApi(id, apiInput, token);
-
-            // 3. Refresh Data (Crucial for Map Pins to move)
-            // We fetch silently to ensure the map (Members.tsx) gets the new Lat/Lng
+            // Background re-fetch to ensure sync
             fetchCatches();
           }
         }
       } catch (err) {
         console.error("Failed to update catch:", err);
         alert("Failed to save changes. Please check your connection.");
-        // Revert changes by re-fetching
-        fetchCatches();
+        fetchCatches(); // Revert
       }
     },
-    [getToken, activeLake, state.entries, fetchCatches], // Added dependencies
+    [getToken, activeLake, state.entries, fetchCatches],
   );
 
   const deleteCatch = useCallback(
     async (id: string) => {
+      // Optimistic Delete
+      const remaining = state.entries.filter((c) => c.id !== id);
+      globalEntriesCache = remaining;
+      setState((s) => ({
+        ...s,
+        entries: remaining,
+        view: "list",
+        selectedEntry: null,
+        isEditing: false,
+      }));
+
       try {
-        setIsLoading(true);
         const token = await getToken();
-        if (!token) throw new Error("Auth");
-        await deleteCatchApi(id, token);
-        setState((s) => ({
-          ...s,
-          entries: s.entries.filter((c) => c.id !== id),
-          view: "list",
-          selectedEntry: null,
-          isEditing: false,
-        }));
+        if (token) {
+          await deleteCatchApi(id, token);
+          // Update cache storage silently
+          const apiOnly = remaining.filter((c) => !c.isOffline);
+          localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnly));
+        }
       } catch (err) {
         if (id.startsWith("offline-")) {
           const offline = getOfflineCatches();
@@ -732,19 +779,14 @@ export function useCatchLog(
             OFFLINE_KEY,
             JSON.stringify(offline.filter((c) => c.id !== id)),
           );
-          setState((s) => ({
-            ...s,
-            entries: s.entries.filter((c) => c.id !== id),
-            view: "list",
-            selectedEntry: null,
-            isEditing: false,
-          }));
+        } else {
+          console.error("Delete failed", err);
+          // Revert? For now let's just re-fetch
+          fetchCatches();
         }
-      } finally {
-        setIsLoading(false);
       }
     },
-    [getToken, getOfflineCatches],
+    [getToken, getOfflineCatches, state.entries, fetchCatches],
   );
 
   return {
@@ -754,11 +796,10 @@ export function useCatchLog(
     isEditing: state.isEditing,
     entries: state.entries,
     lakeCatches,
-    // THE FIX: visibleCatches now uses todayCatches!
     visibleCatches: todayCatches.slice(0, state.visibleCount),
     hasMore: todayCatches.length > state.visibleCount,
     activeLake,
-    isLoading,
+    isLoading, // Only true if NO data exists at all
     error,
     open,
     close,
