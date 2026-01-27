@@ -284,41 +284,69 @@ export function Landing() {
           }}
         />
 
-        {/* Dark overlay */}
         <div
           style={{
             position: "absolute",
             inset: 0,
+            // Start lighter (0.3) to let the image shine,
+            // fade to dark (0.8) at the bottom to make text pop.
             background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.85) 100%)",
+              "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.8) 100%)",
+            zIndex: 1, // Ensure this sits between image and text
           }}
         />
-
         <div
           className="container"
           style={{
             position: "relative",
-            zIndex: 1,
+            zIndex: 2, // Ensure this sits ON TOP of the overlay (z-index 1)
             textAlign: "center",
             maxWidth: 980,
             padding: `0 ${sectionPadX}`,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
-          <h1 style={h1Style}>Clarity on the Water.</h1>
-          <div style={{ height: 46 }} />
+          {/* 1. H1 with Drop Shadow for max readability */}
+          <h1
+            style={{
+              ...h1Style, // Assuming your base font styles
+              color: "#ffffff",
+              textShadow: "0 4px 24px rgba(0,0,0,0.6)", // <--- The Secret Sauce
+              marginBottom: 48, // Cleaner than a spacer div
+            }}
+          >
+            Clarity on the Water.
+          </h1>
 
+          {/* 2. CTA with tactile depth */}
           <Link
             className="btn primary"
             to="/subscribe"
             style={{
               fontSize: "1.1rem",
               padding: "18px 52px",
-              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              // Lighter top, darker bottom gradient makes it look 3D/clickable
+              background: "linear-gradient(180deg, #4A90E2 0%, #357ABD 100%)",
               borderRadius: 16,
-              fontWeight: 600,
+              fontWeight: 700,
+              color: "#fff",
               display: "inline-block",
-              boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
-              transition: "all 0.3s ease",
+              // Strong shadow to lift it off the dark water background
+              boxShadow:
+                "0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255,255,255,0.2)",
+              transition: "transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+              border: "1px solid rgba(255,255,255,0.1)", // Subtle highlight
+            }}
+            // Simple inline hover effect logic (if not using CSS class)
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px) scale(1.02)";
+              e.currentTarget.style.filter = "brightness(1.1)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0) scale(1)";
+              e.currentTarget.style.filter = "brightness(1)";
             }}
           >
             Start Your Free Trial
