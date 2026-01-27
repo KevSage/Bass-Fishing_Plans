@@ -28,7 +28,7 @@ import {
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
-import { MapOrb } from "@/components/MapOrb";
+// Note: MapOrb component import removed if unused, but we use the CSS class below
 import { WeatherOverlay } from "@/components/WeatherOverlay";
 
 // --- CATCH LOG IMPORTS ---
@@ -42,9 +42,6 @@ import {
 
 // --- IMAGE UTILS ---
 import { compressImage } from "@/lib/image-utils";
-
-// --- LAKE LABEL IMPORTS ---
-import { type LakeLabelData } from "@/components/LakeLabel";
 
 // --- DATA IMPORT ---
 import LAKES_DATA from "../data/lakes.json";
@@ -157,20 +154,6 @@ const LogIcon = ({ size = 20 }: { size?: number }) => (
     <line x1="8" y1="15" x2="12" y2="15" />
   </svg>
 );
-const CheckIcon = ({ size = 28 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="3"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
 const RadarIcon = ({ size = 22 }: { size?: number }) => (
   <svg
     width={size}
@@ -185,21 +168,6 @@ const RadarIcon = ({ size = 22 }: { size?: number }) => (
     <path d="M12 2a10 10 0 1 0 10 10" />
     <path d="M12 12a4 4 0 1 0 4 4" />
     <path d="M12 12v-8" />
-  </svg>
-);
-const PinIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-    <circle cx="12" cy="10" r="3" />
   </svg>
 );
 
@@ -220,7 +188,6 @@ type LakeData = {
   anchors?: { lat: number; lng: number }[];
 };
 
-// Defined locally to include UI-specific props like zoom/image
 type FavoriteLake = {
   id: string;
   lake_type: "known" | "custom";
@@ -244,11 +211,10 @@ function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
   return f.source === "composite" && f.sourceLayer === "water";
 }
 
+// NOTE: Ensure .orb-marker-map is defined in CSS below!
 const createOrbMarker = () => {
   const el = document.createElement("div");
   el.className = "orb-marker-map";
-  el.style.width = "24px";
-  el.style.height = "24px";
   return el;
 };
 
@@ -391,7 +357,7 @@ function findNearestLake(lat: number, lng: number): LakeData | null {
   const bboxMatch = (LAKES_DATA as LakeData[]).find((l) => {
     if (!l.bbox) return false;
     const [minLng, minLat, maxLng, maxLat] = l.bbox;
-    return lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+    return lat >= minLng && lat <= maxLng && lng >= minLng && lng <= maxLng;
   });
   if (bboxMatch) return bboxMatch;
   let nearest: LakeData | null = null;
@@ -566,7 +532,6 @@ export function Members() {
       location.state?.refresh &&
       refreshTimestamp !== processedRefreshRef.current
     ) {
-      console.log("Refreshing data...", location.state.lakeId);
       processedRefreshRef.current = refreshTimestamp;
       setDataVersion((v) => v + 1);
 
@@ -748,8 +713,6 @@ export function Members() {
       !waterName.startsWith("Water near") &&
       !waterName.startsWith("Dropped Pin");
 
-    // Check if Edit Boundary should be shown
-    // Show it if: It IS saved, AND (It's a Custom type OR we don't have a known lake match)
     const canEditBoundary =
       isSaved &&
       (currentFavorite?.lake_type === "custom" ||
@@ -799,7 +762,7 @@ export function Members() {
     let initialZoom = 6;
     const urlLat = searchParams.get("lat");
     const urlLng = searchParams.get("lng");
-    const urlLake = searchParams.get("lake"); // FIXED: Re-added this declaration
+    const urlLake = searchParams.get("lake");
     let startCenter = defaultCenter;
     if (urlLat && urlLng) {
       startCenter = [parseFloat(urlLng), parseFloat(urlLat)];
@@ -882,13 +845,18 @@ export function Members() {
       if (
         isCatchLogOpenRef.current ||
         showModalRef.current ||
-        showFavoritesRef.current ||
-        viewingFavoriteIdRef.current
+        showFavoritesRef.current
       ) {
         if (showFavoritesRef.current) setShowFavorites(false);
-        if (viewingFavoriteIdRef.current) setViewingFavoriteId(null);
         return;
       }
+
+      // CRITICAL FIX: If viewing a favorite, deselect it but CONTINUE
+      // Do NOT return here, or the click is consumed and pin never moves.
+      if (viewingFavoriteIdRef.current) {
+        setViewingFavoriteId(null);
+      }
+
       if (abortControllerRef.current) abortControllerRef.current.abort();
       abortControllerRef.current = new AbortController();
 
@@ -898,6 +866,7 @@ export function Members() {
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
 
+        // Strict Water Check
         if (!water) {
           if (selectedCoords && !waterName && !manualWaterName.trim()) {
             clearActiveLake();
@@ -910,7 +879,7 @@ export function Members() {
         setLocationDetails({});
         setManualWaterName("");
         setViewingFavoriteId(null);
-        setShowWeather(false); // Close weather when selecting new spot
+        setShowWeather(false);
 
         if (markerRef.current) markerRef.current.remove();
         if (markerElementRef.current) markerElementRef.current.remove();
@@ -1248,7 +1217,6 @@ export function Members() {
     [getToken],
   );
 
-  // --- UPDATED FRICTIONLESS SAVE LOGIC ---
   const toggleFavoriteLake = useCallback(
     async (e?: React.MouseEvent) => {
       e?.preventDefault();
@@ -1258,7 +1226,6 @@ export function Members() {
       if (!token) return;
 
       if (isCurrentLocationSaved) {
-        // REMOVE LOGIC
         const fav = favorites.find(
           (f) =>
             f.name === waterName ||
@@ -1269,7 +1236,6 @@ export function Members() {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
       } else {
-        // ADD LOGIC
         const dbMatch = hydrateLakeData(
           manualWaterName || waterName,
           selectedCoords.lat,
@@ -1280,7 +1246,6 @@ export function Members() {
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
 
-        // If matched by name, treat as known
         if (
           dbMatch &&
           dbMatch.id &&
@@ -1289,7 +1254,6 @@ export function Members() {
           lakeId = dbMatch.id;
           lakeType = "known";
         } else {
-          // Otherwise, it's custom
           lakeType = "custom";
           shouldCreateCustom = true;
         }
@@ -1334,18 +1298,14 @@ export function Members() {
           if (shouldCreateCustom) {
             lakeId = await performCustomCreation();
             if (!lakeId) throw new Error("Failed to get lake ID");
-            // FIXED: Removed setRecentCustomLakeId and prompt logic
           } else {
-            // Known lake
             try {
               await addFavorite(lakeId, "known", token);
             } catch (knownErr: any) {
-              // Fallback
               lakeType = "custom";
               lakeId = await performCustomCreation();
               if (!lakeId) throw new Error("Failed fallback creation");
               await addFavorite(lakeId, "custom", token);
-              // FIXED: Removed setRecentCustomLakeId
               return;
             }
           }
@@ -1476,7 +1436,6 @@ export function Members() {
         onChange={handleLiveCapture}
       />
       <div style={{ width: "100%", height: "100%" }}>
-        {/* Moves Mapbox controls down below the gradient header */}
         <style>{`.mapboxgl-ctrl-top-right { top: 180px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
@@ -1510,7 +1469,6 @@ export function Members() {
       {!showModal &&
         !catchLog.isOpen &&
         (() => {
-          // Suggestion logic
           const suggestedMatch = (() => {
             if (
               !lakeLabelData ||
@@ -1558,7 +1516,6 @@ export function Members() {
             <div className="top-gradient-bar">
               {selectedCoords && lakeLabelData ? (
                 <div className="top-bar-card">
-                  {/* ABSOLUTE CLOSE BUTTON (Top Right) */}
                   <button
                     className="top-bar-close"
                     onClick={clearActiveLake}
@@ -1577,9 +1534,7 @@ export function Members() {
                     </svg>
                   </button>
 
-                  {/* CENTERED CONTENT */}
                   <div className="top-bar-content-centered">
-                    {/* Name Row with STAR */}
                     <div className="top-bar-name-row">
                       <button
                         className={`top-bar-star-btn ${isCurrentLocationSaved ? "saved" : ""}`}
@@ -1629,7 +1584,6 @@ export function Members() {
                       )}
                     </div>
 
-                    {/* Location + Optional Edit Button */}
                     <div className="top-bar-location">
                       <span>
                         {lakeLabelData.city && lakeLabelData.state
@@ -1637,7 +1591,6 @@ export function Members() {
                           : `${lakeLabelData.lat.toFixed(4)}°, ${lakeLabelData.lng.toFixed(4)}°`}
                       </span>
 
-                      {/* NEW: Edit Boundary Button */}
                       {lakeLabelData.canEditBoundary && (
                         <button
                           className="top-bar-edit-boundary"
@@ -1651,7 +1604,6 @@ export function Members() {
                     </div>
                   </div>
 
-                  {/* Lake Name Suggestion */}
                   {suggestedMatch && (
                     <button
                       className="top-bar-suggestion"
@@ -1677,13 +1629,11 @@ export function Members() {
           );
         })()}
 
-      {/* NAV PANEL */}
       {!catchLog.isOpen && (
         <div
           className={`members-navigation-container ${showFavorites ? "expanded" : ""}`}
         >
           <div className="glass-deck">
-            {/* INLINE FAVORITES SECTION */}
             {showFavorites && (
               <div className="nav-favorites-section">
                 <div className="nav-favorites-header">
@@ -1695,7 +1645,6 @@ export function Members() {
                   </div>
                 </div>
                 <div className="nav-favorites-scroll">
-                  {/* Add New Card */}
                   <div
                     className="nav-fav-card nav-fav-card-add"
                     onClick={() => {
@@ -1718,7 +1667,6 @@ export function Members() {
                     </div>
                     <span>Scout New</span>
                   </div>
-                  {/* Favorite Cards */}
                   {favorites.map((lake) => {
                     const isActive = lake.id === viewingFavoriteId;
                     return (
@@ -1784,10 +1732,8 @@ export function Members() {
               </div>
             )}
 
-            {/* MAIN NAVIGATION ROW - UPDATED LAYOUT */}
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
-                {/* REPLACED: RadarIcon -> CloudIcon (Weather Toggle) */}
                 <button
                   onClick={() => setShowWeather((prev) => !prev)}
                   className={`nav-btn nav-btn-icon ${activeLake ? "nav-btn-primary" : ""}`}
@@ -1903,7 +1849,6 @@ export function Members() {
         </div>
       )}
 
-      {/* CONFIRM MODALS (Cases A & C) */}
       {showGenerateConfirm && (
         <div
           className="modal-overlay"
@@ -1954,7 +1899,6 @@ export function Members() {
         </div>
       )}
 
-      {/* REPLACEMENT MODAL */}
       {showReplaceConfirm && (
         <div
           className="modal-overlay"
@@ -2013,9 +1957,6 @@ export function Members() {
         </div>
       )}
 
-      {/* OUTLINE PROMPT MODAL REMOVED (Frictionless Logic) */}
-
-      {/* SCOUT MODAL */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseScoutModal}>
           <div
@@ -2064,10 +2005,16 @@ export function Members() {
         </div>
       )}
 
-      {/* STYLES */}
       <style>
         {`
-        /* TOP GRADIENT BAR */
+        .orb-marker-map {
+          background-color: #4A90E2;
+          border-radius: 50%;
+          box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8);
+          cursor: pointer;
+          width: 24px;
+          height: 24px;
+        }
         .top-gradient-bar {
           position: fixed;
           top: 64px;
@@ -2082,7 +2029,6 @@ export function Members() {
           padding: 16px 20px 45px;
           display: flex;
           justify-content: center;
-          /* Allows clicks to pass through to map */
           pointer-events: none;
         }
         .top-bar-card {
@@ -2093,7 +2039,6 @@ export function Members() {
           min-width: 280px;
           max-width: 400px;
           text-align: center;
-          /* Re-enables clicks for buttons inside */
           pointer-events: auto;
         }
         .top-bar-card-empty {
@@ -2119,7 +2064,6 @@ export function Members() {
           color: rgba(255,255,255,0.5);
         }
         
-        /* CLOSE BUTTON (Top Right Absolute) */
         .top-bar-close {
           position: absolute;
           top: 0;
@@ -2139,14 +2083,13 @@ export function Members() {
           color: rgba(255,255,255,0.8);
         }
         
-        /* Centered Content Area */
         .top-bar-content-centered {
           display: flex;
           flex-direction: column;
           align-items: center;
           margin-top: 10px; 
-          padding-right: 40px; /* Safe padding for close button */
-          padding-left: 40px;  /* Symmetrical balance */
+          padding-right: 40px; 
+          padding-left: 40px; 
         }
 
         .top-bar-name-row {
@@ -2156,7 +2099,6 @@ export function Members() {
           justify-content: center;
         }
         
-        /* STAR BUTTON */
         .top-bar-star-btn {
           background: transparent;
           border: none;
@@ -2173,7 +2115,7 @@ export function Members() {
           transform: scale(1.1);
         }
         .top-bar-star-btn.saved {
-          color: #F59E0B; /* Gold */
+          color: #F59E0B; 
           filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
         }
 
@@ -2259,7 +2201,6 @@ export function Members() {
           background: rgba(74, 144, 226, 0.25);
         }
         
-        /* Lake Name Suggestion */
         .top-bar-suggestion {
           display: flex;
           align-items: center;
@@ -2305,13 +2246,11 @@ export function Members() {
           backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); 
           border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
           transition: all 0.3s ease; position: relative; 
-          /* Overflow visible to allow menus to pop out */
           overflow: visible; 
         }
 
         .nav-icons-row { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
         
-        /* INLINE FAVORITES SECTION */
         .nav-favorites-section {
           padding: 12px 8px 8px;
           border-bottom: 1px solid rgba(255,255,255,0.08);
@@ -2516,7 +2455,7 @@ export function Members() {
         .menu-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 2px 0; }
 
         @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-      `}
+        `}
       </style>
     </div>
   );
