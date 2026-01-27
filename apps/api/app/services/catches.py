@@ -333,6 +333,67 @@ class CatchStore:
                 conn.commit()
                 return cursor.rowcount > 0
 
+    def update(
+        self,
+        catch_id: str,
+        email: str,
+        **kwargs
+    ) -> Optional[Catch]:
+        """Update an existing catch."""
+        email_norm = email.lower().strip()
+        
+        # Filter out None values to only update what's passed (optional)
+        # or assuming full replacement if PUT. 
+        # For simplicity, we update fields that match our columns.
+        allowed_fields = {
+            "date", "time", "species", "weight", "length", "lure", "color",
+            "notes", "photo_url", "lat", "lng", "lake_id", "lake_type", 
+            "lake_name", "city", "state", "source"
+        }
+        updates = {k: v for k, v in kwargs.items() if k in allowed_fields}
+        
+        if not updates:
+            return self.get(catch_id, email)
+
+        # Build SQL dynamically
+        set_clause = ", ".join([f"{k} = %s" for k in updates.keys()])
+        values = list(updates.values())
+        values.append(catch_id)
+        values.append(email_norm)
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                # RETURNING * to get the updated record back
+                row = conn.execute(
+                    f"""
+                    UPDATE catches 
+                    SET {set_clause}
+                    WHERE id = %s AND email = %s
+                    RETURNING *
+                    """,
+                    values
+                ).fetchone()
+                conn.commit()
+                if row:
+                    return self._row_to_catch(dict(row))
+        else:
+            # SQLite version
+            set_clause_lite = ", ".join([f"{k} = ?" for k in updates.keys()])
+            with self._sqlite_conn() as conn:
+                conn.execute(
+                    f"""
+                    UPDATE catches 
+                    SET {set_clause_lite}
+                    WHERE id = ? AND email = ?
+                    """,
+                    values
+                )
+                conn.commit()
+                # SQLite update doesn't return data, fetch it again
+                return self.get(catch_id, email)
+        
+        return None
+   
     def list_by_lake(
         self,
         email: str,

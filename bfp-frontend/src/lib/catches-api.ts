@@ -177,6 +177,22 @@ export async function listCatchesByLake(
   );
 }
 
+// Fix: Use apiRequest to ensure API_BASE and Authorization headers are attached
+export async function updateCatch(
+  catchId: string,
+  data: CreateCatchInput,
+  token: string,
+): Promise<CatchRecord> {
+  return apiRequest(
+    `/catches/${catchId}`, // Prepend slash to ensure correct path
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+    token,
+  );
+}
+
 // =============================================================================
 // CUSTOM LAKES API
 // =============================================================================

@@ -438,6 +438,23 @@ export function Members() {
     return out;
   }, [customLakes]);
 
+  // --- ONBOARDING STATE ---
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen the tutorial
+    const hasSeen = localStorage.getItem("bc_has_seen_onboarding");
+    if (!hasSeen) {
+      // Small delay so the map loads first behind the glass
+      setTimeout(() => setShowTutorial(true), 1000);
+    }
+  }, []);
+
+  const dismissTutorial = () => {
+    localStorage.setItem("bc_has_seen_onboarding", "true");
+    setShowTutorial(false);
+  };
+
   // Favorites Panel State
   const [showFavorites, setShowFavorites] = useState(false);
 
@@ -2004,6 +2021,127 @@ export function Members() {
           </div>
         </div>
       )}
+      {/* --- ONBOARDING OVERLAY (The Burnout Special) --- */}
+      {showTutorial && (
+        <div
+          onClick={dismissTutorial}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.85)", // Dark smoked glass
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            textAlign: "center",
+            color: "#fff",
+            padding: 20,
+          }}
+        >
+          {/* Main Instruction */}
+          <div style={{ marginBottom: 60 }}>
+            <div
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                border: "2px solid rgba(255,255,255,0.3)",
+                background: "rgba(74, 144, 226, 0.2)",
+                margin: "0 auto 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {/* Hand Icon (Simple SVG) */}
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+              >
+                <path d="M12 2a10 10 0 1 0 10 10" />
+                <path d="M12 12v-4" />
+                <path d="M12 12h-4" />
+              </svg>
+            </div>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: 800, margin: 0 }}>
+              Scout Your Water
+            </h2>
+            <p
+              style={{
+                fontSize: "1rem",
+                opacity: 0.8,
+                maxWidth: 300,
+                marginTop: 10,
+                lineHeight: 1.5,
+              }}
+            >
+              Tap anywhere on the water to drop a pin.
+              <br />
+              <span style={{ color: "#4A90E2", fontWeight: 700 }}>
+                This unlocks weather & tools.
+              </span>
+            </p>
+          </div>
+
+          {/* Orb Pointer (Absolute position to match Orb) */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 120, // Approx height of dock + padding
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <p
+              style={{
+                fontSize: "0.9rem",
+                fontWeight: 600,
+                marginBottom: 8,
+                color: "rgba(255,255,255,0.9)",
+              }}
+            >
+              Save Locations Here
+            </p>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              style={{ opacity: 0.5 }}
+            >
+              <path d="M12 5v14" />
+              <path d="M19 12l-7 7-7-7" />
+            </svg>
+          </div>
+
+          {/* Dismiss Button */}
+          <button
+            style={{
+              marginTop: 40,
+              background: "#fff",
+              color: "#000",
+              border: "none",
+              padding: "14px 40px",
+              borderRadius: 30,
+              fontWeight: 700,
+              fontSize: "1rem",
+              boxShadow: "0 4px 20px rgba(255,255,255,0.2)",
+            }}
+          >
+            Got it
+          </button>
+        </div>
+      )}
 
       <style>
         {`
@@ -2293,7 +2431,6 @@ export function Members() {
           flex: 0 0 110px;
           height: 90px;
           border-radius: 14px;
-          border: 1px solid rgba(255,255,255,0.1);
           background: rgba(30, 30, 40, 0.6);
           position: relative;
           overflow: hidden;

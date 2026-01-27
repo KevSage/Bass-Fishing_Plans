@@ -195,6 +195,73 @@ async def get_catch(
     }
 
 
+@router.put("/catches/{catch_id}")
+async def update_catch(
+    catch_id: str,
+    request: CreateCatchRequest, # We reuse the creation model for updates
+    authorization: Optional[str] = Header(None),
+) -> Dict:
+    """
+    Update an existing catch.
+    """
+    email = await verify_clerk_session(authorization)
+    
+    # Check if catch exists and belongs to user
+    existing = catch_store.get(catch_id, email)
+    if not existing:
+        raise HTTPException(status_code=404, detail="Catch not found")
+
+    # Perform update
+    updated_catch = catch_store.update(
+        catch_id=catch_id,
+        email=email,
+        date=request.date,
+        time=request.time,
+        species=request.species,
+        weight=request.weight,
+        length=request.length,
+        lure=request.lure,
+        color=request.color,
+        notes=request.notes,
+        photo_url=request.photo_url,
+        lat=request.lat,
+        lng=request.lng,
+        lake_id=request.lake_id,
+        lake_type=request.lake_type,
+        lake_name=request.lake_name,
+        city=request.city,
+        state=request.state,
+        source=request.source,
+    )
+    
+    if not updated_catch:
+        raise HTTPException(status_code=500, detail="Failed to update catch")
+
+    return {
+        "success": True,
+        "catch": CatchResponse(
+            id=updated_catch.id,
+            date=updated_catch.date,
+            time=updated_catch.time,
+            species=updated_catch.species,
+            weight=updated_catch.weight,
+            length=updated_catch.length,
+            lure=updated_catch.lure,
+            color=updated_catch.color,
+            notes=updated_catch.notes,
+            photo_url=updated_catch.photo_url,
+            lat=updated_catch.lat,
+            lng=updated_catch.lng,
+            lake_id=updated_catch.lake_id,
+            lake_type=updated_catch.lake_type,
+            lake_name=updated_catch.lake_name,
+            city=updated_catch.city,
+            state=updated_catch.state,
+            source=updated_catch.source,
+            created_at=updated_catch.created_at,
+        ).model_dump()
+    }
+
 @router.delete("/catches/{catch_id}")
 async def delete_catch(
     catch_id: str,
