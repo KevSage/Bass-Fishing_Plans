@@ -1635,7 +1635,7 @@ export function Members() {
                 </div>
               ) : (
                 <div className="top-bar-card top-bar-card-empty">
-                  <span className="top-bar-label">MEMBERS</span>
+                  <span className="top-bar-label">Bass Clarity Pro</span>
                   <h2 className="top-bar-title">Find Your Water</h2>
                   <p className="top-bar-subtitle">
                     Search or tap any body of water
@@ -2459,7 +2459,7 @@ export function Members() {
         }
         .nav-fav-card-name {
           font-size: 0.8rem;
-          font-weight: 700;
+          font-weight: 600;
           color: #fff;
           line-height: 1.15;
           max-height: 2.3em;

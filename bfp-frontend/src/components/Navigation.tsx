@@ -2,17 +2,28 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useUser, useClerk, SignedIn, SignedOut } from "@clerk/clerk-react";
+import {
+  useUser,
+  useClerk,
+  useAuth,
+  SignedIn,
+  SignedOut,
+} from "@clerk/clerk-react"; // Added useAuth
 import { createPortal } from "react-dom";
 import { MapOrb } from "./MapOrb";
+
+// Define API Base for status check
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isPro, setIsPro] = useState(false); // New State for Badge
 
   const location = useLocation();
   const { user } = useUser();
+  const { getToken, isSignedIn } = useAuth(); // Get token capability
   const { signOut } = useClerk();
   const navigate = useNavigate();
 
@@ -33,6 +44,29 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // --- NEW: Check Pro Status on Mount ---
+  useEffect(() => {
+    if (isSignedIn) {
+      const checkStatus = async () => {
+        try {
+          const token = await getToken();
+          const res = await fetch(`${API_BASE}/members/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setIsPro(data.is_member);
+          }
+        } catch (e) {
+          console.error("Nav status check failed", e);
+        }
+      };
+      checkStatus();
+    } else {
+      setIsPro(false);
+    }
+  }, [isSignedIn, getToken]);
+
   const publicLinks = useMemo(
     () => [
       { to: "/", label: "Home" },
@@ -50,6 +84,7 @@ export function Navigation() {
     await signOut();
     setUserMenuOpen(false);
     setIsOpen(false);
+    setIsPro(false); // Reset badge
     navigate("/");
   };
 
@@ -256,21 +291,57 @@ export function Navigation() {
             paddingRight: "max(24px, env(safe-area-inset-right))",
           }}
         >
+          {/* LOGO SECTION */}
           <Link
             to="/"
-            style={{ textDecoration: "none", color: "inherit", zIndex: 10001 }}
+            style={{
+              textDecoration: "none",
+              color: "inherit",
+              zIndex: 10001,
+              display: "flex",
+              alignItems: "center",
+            }}
           >
             <div
               style={{
-                fontSize: "1.1rem",
+                fontSize: "1rem",
                 fontWeight: 700,
-                letterSpacing: "0.04em",
+                letterSpacing: "0.03em",
                 color: "#fff",
                 textTransform: "uppercase",
               }}
             >
               Bass Clarity
             </div>
+
+            {/* --- PRO BADGE --- */}
+            {isPro && (
+              <div
+                style={{
+                  marginLeft: 6,
+                  padding: "2px 2px",
+                  borderRadius: 4,
+                  background: "rgba(74, 144, 226, 0.15)", // Subtle blue background
+                  border: "1px solid rgba(74, 144, 226, 0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  // justifyContent: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 800,
+                    color: "#4A90E2", // Electric Blue
+                    letterSpacing: "0.05em",
+                    lineHeight: 1,
+                  }}
+                >
+                  PRO
+                </span>
+              </div>
+            )}
+            {/* ---------------- */}
           </Link>
 
           <nav
