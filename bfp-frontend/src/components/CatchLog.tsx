@@ -1131,9 +1131,7 @@ export type CatchDetailViewProps = {
 
 // ... existing imports ...
 
-// src/components/CatchLog.tsx (Final Polish)
-
-// ... existing imports ...
+// ...
 
 export function CatchDetailView({
   entry,
@@ -1146,50 +1144,88 @@ export function CatchDetailView({
   onLocationClick,
 }: CatchDetailViewProps) {
   const isPB = isPersonalBest(entry, allEntries);
+  const [showMenu, setShowMenu] = React.useState(false); // Local state for the menu
 
   return (
     <div className="catch-detail-container">
-      {/* 1. IMMERSIVE HERO IMAGE */}
+      {/* 1. COMPACT HERO IMAGE (340px) */}
       <div className="catch-hero">
         {entry.photoUrl || entry.imageData ? (
           <img src={entry.photoUrl || entry.imageData} alt="Catch" />
         ) : (
           <div className="catch-hero-placeholder">
-            <FishIcon size={64} style={{ opacity: 0.5 }} />
+            <FishIcon size={56} style={{ opacity: 0.5 }} />
           </div>
         )}
 
-        {/* Gradient Overlay - keeping the less aggressive one you liked */}
+        {/* Seamless Gradient Fade */}
         <div className="catch-hero-gradient" />
 
-        {/* Overlay Actions (Top Row) */}
+        {/* Overlay Actions */}
         <div className="catch-hero-overlay-top">
           <button onClick={onBack} className="catch-icon-btn glass">
             {readOnly ? <CloseIcon size={20} /> : <BackIcon size={20} />}
           </button>
 
-          <div className="catch-actions-group">
-            {!readOnly && onEdit && (
-              <button onClick={onEdit} className="catch-icon-btn glass">
-                <EditIcon size={20} />
-              </button>
-            )}
-            {!readOnly && onDelete && (
+          {/* MENU TOGGLE: Replaces the big buttons */}
+          {!readOnly && (onEdit || onDelete) && (
+            <div style={{ position: "relative" }}>
               <button
-                onClick={onDelete}
-                className="catch-icon-btn glass danger-hover"
-                title="Delete Catch"
+                onClick={() => setShowMenu(!showMenu)}
+                className="catch-icon-btn glass"
               >
-                <TrashIcon size={20} />
+                {/* Visual "..." using 3 dots or an icon */}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="1" />
+                  <circle cx="19" cy="12" r="1" />
+                  <circle cx="5" cy="12" r="1" />
+                </svg>
               </button>
-            )}
-          </div>
+
+              {/* The Dropdown Menu */}
+              {showMenu && (
+                <div className="catch-menu-dropdown">
+                  {onEdit && (
+                    <button
+                      onClick={() => {
+                        onEdit();
+                        setShowMenu(false);
+                      }}
+                      className="catch-menu-item"
+                    >
+                      <EditIcon size={16} /> Edit Details
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      onClick={() => {
+                        onDelete();
+                        setShowMenu(false);
+                      }}
+                      className="catch-menu-item danger"
+                    >
+                      <TrashIcon size={16} /> Delete Catch
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 2. CONTENT BODY */}
+      {/* 2. CONTENT BODY - Pulled up tighter */}
       <div className="catch-body">
-        {/* Primary Info Header */}
+        {/* Header Grid */}
         <div className="catch-primary-header">
           {/* LEFT: Title & Date */}
           <div className="catch-title-block">
@@ -1204,10 +1240,9 @@ export function CatchDetailView({
           {/* RIGHT: Stat Stack (PB + Weight) */}
           {entry.weight && (
             <div className="catch-stat-stack">
-              {/* PB Badge centered above weight */}
               {isPB && (
                 <div className="catch-pb-badge-mini">
-                  <TrophyIcon size={12} /> <span>PB</span>
+                  <TrophyIcon size={10} /> <span>PB</span>
                 </div>
               )}
 
@@ -1242,7 +1277,7 @@ export function CatchDetailView({
         <div className="catch-section">
           <div className="catch-location-card">
             <div className="catch-loc-icon-wrapper">
-              <LocationIcon size={20} />
+              <LocationIcon size={18} />
             </div>
             <div className="catch-loc-details">
               <div className="catch-loc-name">{entry.lakeName}</div>
@@ -1276,26 +1311,27 @@ export function CatchDetailView({
         )}
       </div>
 
+      {/* 3. STYLES (Updated Heights) */}
       <style>{`
         .catch-detail-container {
           display: flex; flex-direction: column; height: 100%;
           background: #121218; overflow-y: auto;
         }
 
-        /* HERO */
+        /* COMPACT HERO: 400px */
         .catch-hero {
-          position: relative; width: 100%; height: 450px;
+          position: relative; width: 100%; height: 400px;
           flex-shrink: 0; background: #000; overflow: hidden;
         }
         .catch-hero img { width: 100%; height: 100%; object-fit: cover; }
         
+        /* SOLID BLEND BOTTOM */
         .catch-hero-gradient {
           position: absolute; inset: 0;
           background: linear-gradient(
             to bottom,
             rgba(0,0,0,0.3) 0%,     
             transparent 40%,        
-            rgba(18,18,24,0.5) 90%, 
             #121218 100%
           );
           z-index: 1;
@@ -1308,85 +1344,93 @@ export function CatchDetailView({
 
         /* ACTIONS */
         .catch-hero-overlay-top {
-          position: absolute; top: 0; left: 0; right: 0; padding: 20px;
-          display: flex; justify-content: space-between; z-index: 10;
+          position: absolute; top: 0; left: 0; right: 0; padding: 16px;
+          display: flex; justify-content: space-between; z-index: 20;
         }
-        .catch-actions-group { display: flex; gap: 12px; }
         .catch-icon-btn {
-          width: 44px; height: 44px; border-radius: 50%; border: none;
+          width: 40px; height: 40px; border-radius: 50%; border: none;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer; color: #fff; transition: all 0.2s;
         }
         .catch-icon-btn.glass {
-          background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px);
+          background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px);
           border: 1px solid rgba(255,255,255,0.15);
         }
-        .catch-icon-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
-        .catch-icon-btn.danger-hover:hover {
-          background: rgba(220, 38, 38, 0.3); color: #fca5a5; border-color: rgba(220, 38, 38, 0.5);
-        }
+        .catch-icon-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
 
-        /* BODY */
+        /* MENU DROPDOWN */
+        .catch-menu-dropdown {
+          position: absolute; top: 100%; right: 0; margin-top: 8px;
+          background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px; padding: 4px; min-width: 140px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+          display: flex; flex-direction: column; gap: 2px;
+          animation: fadeIn 0.1s ease-out;
+        }
+        .catch-menu-item {
+          display: flex; align-items: center; gap: 8px;
+          width: 100%; padding: 10px 12px;
+          background: transparent; border: none;
+          color: #fff; font-size: 0.9rem; font-weight: 500;
+          text-align: left; border-radius: 8px; cursor: pointer;
+        }
+        .catch-menu-item:hover { background: rgba(255,255,255,0.1); }
+        .catch-menu-item.danger { color: #f87171; }
+        .catch-menu-item.danger:hover { background: rgba(220, 38, 38, 0.15); }
+
+        /* BODY - Pulled up to -40px */
         .catch-body {
-          padding: 0 28px 40px; position: relative; top: -40px; z-index: 2;
+          padding: 0 24px 40px; position: relative; top: -40px; z-index: 2;
         }
 
         .catch-primary-header {
           display: flex; justify-content: space-between; align-items: flex-end;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
-        .catch-title-block { flex: 1; padding-right: 16px; }
+        .catch-title-block { flex: 1; padding-right: 12px; }
         
         .catch-lure-title {
-          font-size: 2.2rem; font-weight: 800; color: #fff;
-          margin: 0 0 8px 0; line-height: 1.1; letter-spacing: -0.02em;
+          font-size: 2rem; font-weight: 800; color: #fff;
+          margin: 0 0 6px 0; line-height: 1.1; letter-spacing: -0.02em;
           text-shadow: 0 4px 20px rgba(0,0,0,0.8);
         }
         .catch-subtitle {
-          font-size: 0.95rem; color: rgba(255,255,255,0.8); font-weight: 500;
+          font-size: 0.9rem; color: rgba(255,255,255,0.8); font-weight: 500;
           display: flex; align-items: center; gap: 8px;
           text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
         .separator { opacity: 0.5; }
 
-        /* RIGHT SIDE STAT STACK */
+        /* STAT STACK - Clean & Tight */
         .catch-stat-stack {
-          display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-          min-width: 80px;
+          display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end;
+          min-width: 70px;
         }
-
         .catch-pb-badge-mini {
           background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-          color: #fff;
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-weight: 800;
-          font-size: 0.65rem;
-          letter-spacing: 0.05em;
+          color: #fff; padding: 3px 8px; border-radius: 8px;
+          font-weight: 800; font-size: 0.6rem; letter-spacing: 0.05em;
           display: flex; align-items: center; gap: 4px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-          margin-bottom: 8px; /* Spacing between badge and weight */
-          border: 1px solid rgba(255,255,255,0.2);
+          margin-bottom: 4px; 
+          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-
-        .catch-stat-block { text-align: center; }
         .catch-stat-value {
-          display: block; font-size: 3rem; font-weight: 900; color: #fff;
+          display: block; font-size: 2.5rem; font-weight: 900; color: #fff;
           line-height: 1; letter-spacing: -0.03em;
           text-shadow: 0 4px 20px rgba(0,0,0,0.8);
         }
         .catch-stat-unit {
-          font-size: 0.85rem; color: #60A5FA; font-weight: 800;
+          font-size: 0.75rem; color: #60A5FA; font-weight: 800;
           letter-spacing: 0.1em; text-transform: uppercase;
           text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
 
         /* TAGS */
-        .catch-tags-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+        .catch-tags-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
         .catch-chip {
-          padding: 8px 16px; border-radius: 30px;
+          padding: 6px 14px; border-radius: 20px;
           background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.8); font-size: 0.85rem; font-weight: 600;
+          color: rgba(255,255,255,0.8); font-size: 0.8rem; font-weight: 600;
         }
         .catch-chip.species {
           background: rgba(52, 211, 153, 0.15); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.3);
@@ -1395,41 +1439,43 @@ export function CatchDetailView({
           background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3);
         }
 
-        .catch-divider { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 28px; }
+        .catch-divider { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 24px; }
 
         /* LOCATION CARD */
         .catch-location-card {
-          display: flex; align-items: center; padding: 16px;
+          display: flex; align-items: center; padding: 14px;
           background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 16px;
+          border-radius: 14px;
         }
         .catch-loc-icon-wrapper {
-          color: #4A90E2; padding: 10px; background: rgba(74, 144, 226, 0.1);
-          border-radius: 12px; margin-right: 16px;
+          color: #4A90E2; padding: 8px; background: rgba(74, 144, 226, 0.1);
+          border-radius: 10px; margin-right: 12px;
         }
         .catch-loc-details { flex: 1; }
-        .catch-loc-name { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
-        .catch-loc-coords { font-size: 0.85rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+        .catch-loc-name { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
+        .catch-loc-coords { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-family: monospace; }
         .catch-map-btn {
-          padding: 8px 16px; background: transparent; border: 1px solid rgba(255,255,255,0.2);
-          border-radius: 8px; color: #fff; font-size: 0.85rem; font-weight: 600;
+          padding: 6px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 8px; color: #fff; font-size: 0.8rem; font-weight: 600;
           cursor: pointer; transition: all 0.2s;
         }
         .catch-map-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
 
         /* NOTES */
         .catch-section-label {
-          font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em;
-          color: rgba(255,255,255,0.4); margin-bottom: 12px; font-weight: 700;
+          font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em;
+          color: rgba(255,255,255,0.4); margin-bottom: 10px; font-weight: 700;
         }
         .catch-notes-box {
-          background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px;
+          background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px;
           border: 1px solid rgba(255,255,255,0.04);
         }
         .catch-notes-text {
-          font-size: 0.95rem; line-height: 1.7; color: rgba(255,255,255,0.8);
+          font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.8);
           white-space: pre-wrap; margin: 0;
         }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );
