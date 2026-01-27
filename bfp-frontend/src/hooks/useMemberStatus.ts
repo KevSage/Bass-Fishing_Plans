@@ -1,3 +1,5 @@
+// src/hooks/useMemberStatus.ts
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 
@@ -11,20 +13,34 @@ export interface MemberStatus {
   stripe_subscription_id: string | null;
 }
 
+// 1. GLOBAL CACHE (Exists outside the hook)
+// This persists as long as the browser tab is open
+let globalCache: MemberStatus | null = null;
+
 export function useMemberStatus() {
   const { getToken, isSignedIn } = useAuth();
-  const [status, setStatus] = useState<MemberStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // 2. Initialize State with Cache (Instant Load)
+  const [status, setStatus] = useState<MemberStatus | null>(globalCache);
+
+  // 3. Smart Loading State:
+  // Only show "loading" if we are signed in AND have no cached data.
+  // If we have cache, we load instantly (loading = false).
+  const [loading, setLoading] = useState(!globalCache && !!isSignedIn);
+
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = async () => {
     if (!isSignedIn) {
       setLoading(false);
+      globalCache = null; // Clear cache on logout
+      setStatus(null);
       return;
     }
 
     try {
-      setLoading(true);
+      // Only block UI if we have no data
+      if (!globalCache) setLoading(true);
       setError(null);
 
       const token = await getToken();
@@ -34,7 +50,7 @@ export function useMemberStatus() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -42,8 +58,12 @@ export function useMemberStatus() {
       }
 
       const data = await response.json();
+
+      // 4. Update Cache & State
+      globalCache = data;
       setStatus(data);
     } catch (err) {
+      console.error("Member status check failed:", err);
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setLoading(false);

@@ -2472,7 +2472,6 @@ export function Members() {
         }
         .nav-fav-card-add {
           background: rgba(255,255,255,0.03);
-          border-style: dashed;
           align-items: center;
           justify-content: center;
           flex-direction: column;
