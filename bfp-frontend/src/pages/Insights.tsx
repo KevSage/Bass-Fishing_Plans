@@ -21,9 +21,10 @@ import {
   CatchLogModal,
   apiRecordToEntry,
   type ActiveLake,
-  CatchFormView, // Import Form for Editing
+  CatchFormView,
 } from "@/components/CatchLog";
-import { listCatches, deleteCatch as deleteCatchApi } from "@/lib/catches-api";
+// NOTE: We removed listCatches/deleteCatch import because the hook handles it now.
+// const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN; // Kept if needed for map images below
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -106,7 +107,7 @@ type StatCalculation = {
     lng: number;
     topLures: string[];
   }[];
-  pbs: Record<string, CatchEntry | null>; // Changed to map for easy lookup
+  pbs: Record<string, CatchEntry | null>;
   bestDay: {
     date: string;
     weight: number;
@@ -445,9 +446,8 @@ const FullPBCard = ({
 
 export function Insights() {
   const navigate = useNavigate();
-  const { getToken } = useAuth();
-  const [entries, setEntries] = useState<CatchEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Removed local useAuth(), entries state, and isLoading state
+  // We now rely entirely on the catchLog hook for data.
 
   // VIEWING STATE
   const [activeView, setActiveView] = useState<ViewMode>("total");
@@ -467,26 +467,18 @@ export function Insights() {
     [],
   );
 
-  // DISABLE LIST VIEW for main log hook
+  // Use the hook to fetch data.
+  // It handles getToken, loading state, and syncing internally.
   const catchLog = useCatchLog(virtualActiveLake, { disableListView: true });
 
-  const loadData = useCallback(async () => {
-    try {
-      const token = await getToken();
-      if (!token) return;
-      const response = await listCatches(token, 500, 0);
-      const converted = response.catches.map(apiRecordToEntry);
-      setEntries(converted);
-      setIsLoading(false);
-    } catch (err) {
-      console.error("Failed to load insights:", err);
-      setIsLoading(false);
-    }
-  }, [getToken]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Destructure what we need
+  const {
+    entries,
+    isLoading,
+    updateCatch: hookUpdateCatch,
+    deleteCatch: hookDeleteCatch,
+    refresh: refreshData,
+  } = catchLog;
 
   const stats = useMemo(() => calculateStats(entries), [entries]);
   const animatedTotal = useCountUp(stats.totalCount, 2500, 600);
@@ -500,26 +492,21 @@ export function Insights() {
       )
     )
       return;
-    try {
-      const token = await getToken();
-      if (!token) throw new Error("Offline");
 
-      await deleteCatchApi(id, token);
+    // Use the hook's delete function. It handles API + State update.
+    await hookDeleteCatch(id);
 
-      // Update local state immediately
-      setEntries((prev) => prev.filter((e) => e.id !== id));
-      setViewingCatch(null);
-      setIsEditing(false);
-    } catch (err) {
-      console.error("Delete failed", err);
-      alert("Failed to delete catch.");
-    }
+    setViewingCatch(null);
+    setIsEditing(false);
   };
 
   const handleUpdateCatch = async (data: Partial<CatchEntry>) => {
-    setViewingCatch(null);
-    setIsEditing(false);
-    loadData(); // Reload to get updates
+    if (viewingCatch?.id) {
+      // Use the hook's update function.
+      await hookUpdateCatch(viewingCatch.id, data);
+      setViewingCatch(null);
+      setIsEditing(false);
+    }
   };
 
   // --- FILTER LOGIC ---
@@ -872,7 +859,7 @@ export function Insights() {
         disableListView={true}
         onDraftDone={() => {
           catchLog.close();
-          loadData();
+          // NO NEED TO RELOAD - Hook handles it
         }}
       />
 
