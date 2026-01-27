@@ -42,10 +42,7 @@ from app.services.email_service import (
     send_welcome_email,
     add_to_audience,
 )
-from app.services.pdf_generator import (
-    generate_mobile_dark_html,
-    generate_a4_printable_html,
-)
+
 from app.services.stripe_billing import (
     create_checkout_session,
     create_portal_session,
@@ -55,8 +52,6 @@ from app.services.stripe_billing import (
 from app.routes.catches import router as catches_router
 from app.routes.lakes import router as lakes_router
 from app.routes.uploads import router as uploads_router
-# ... existing imports ...
-
 
 # ----------------------------------------
 # 1. INITIALIZE STORES FIRST
@@ -74,6 +69,8 @@ app = FastAPI(title="Bass Clarity API")
 app.include_router(catches_router, tags=["catches"])
 app.include_router(lakes_router, tags=["lakes"])
 app.include_router(uploads_router, tags=["uploads"])
+
+# [DELETED] The premature app.include_router(billing.router) was here. GONE.
 
 # ✅ PRODUCTION CORS CONFIGURATION
 origins = [
@@ -311,7 +308,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     from datetime import date as _date
     from app.utils.season_selector import get_season as _get_season
 
-# ✅ NEW: Pass 'weather' so the overrides can trigger
+    # ✅ NEW: Pass 'weather' so the overrides can trigger
     raw_season = _get_season(_date.today(), latitude, longitude, weather=weather)
     
     # Optional: Debug Print to confirm it worked in the logs
@@ -553,6 +550,8 @@ def root():
 # ========================================
 # Import routes AFTER stores are initialized to prevent circular import 500s
 from app.routes import clerk_webhooks, members
+from app.routes import billing  # Cleaned up duplicate imports
 
 app.include_router(clerk_webhooks.router, tags=["clerk"])
 app.include_router(members.router, tags=["members"])
+app.include_router(billing.router, tags=["billing"]) # Added tag for clarity
