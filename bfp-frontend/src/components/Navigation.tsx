@@ -330,8 +330,8 @@ export function Navigation() {
               >
                 <span
                   style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 800,
+                    fontSize: "0.65rem",
+                    fontWeight: 700,
                     color: "#4A90E2", // Electric Blue
                     letterSpacing: "0.05em",
                     lineHeight: 1,
