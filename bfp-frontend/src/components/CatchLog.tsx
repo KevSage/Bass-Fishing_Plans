@@ -441,7 +441,7 @@ export function useCatchLog(
     visibleCount: ENTRIES_PER_PAGE,
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const getOfflineCatches = useCallback((): CatchEntry[] => {
