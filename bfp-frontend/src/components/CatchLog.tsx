@@ -1126,6 +1126,15 @@ export type CatchDetailViewProps = {
   readOnly?: boolean;
   onLocationClick?: () => void;
 };
+
+// src/components/CatchLog.tsx (Refined Detail View)
+
+// ... existing imports ...
+
+// src/components/CatchLog.tsx (Final Polish)
+
+// ... existing imports ...
+
 export function CatchDetailView({
   entry,
   allEntries = [],
@@ -1137,127 +1146,292 @@ export function CatchDetailView({
   onLocationClick,
 }: CatchDetailViewProps) {
   const isPB = isPersonalBest(entry, allEntries);
+
   return (
-    <>
-      {" "}
-      {isPB && (
-        <div className="catch-pb-banner-compact">
-          {" "}
-          <TrophyIcon size={14} />{" "}
-          <span>Personal Best {getSpeciesLabel(entry.species)}</span>{" "}
-        </div>
-      )}{" "}
-      <div className="catch-detail-header-compact">
-        {" "}
-        <button onClick={onBack} className="catch-back-btn-compact">
-          {" "}
-          {readOnly ? <CloseIcon size={16} /> : <BackIcon size={16} />}{" "}
-          <span>{readOnly ? "Close" : "Back"}</span>{" "}
-        </button>{" "}
-        {!readOnly && onEdit && (
-          <button onClick={onEdit} className="catch-edit-btn-compact">
-            {" "}
-            <EditIcon size={16} />{" "}
+    <div className="catch-detail-container">
+      {/* 1. IMMERSIVE HERO IMAGE */}
+      <div className="catch-hero">
+        {entry.photoUrl || entry.imageData ? (
+          <img src={entry.photoUrl || entry.imageData} alt="Catch" />
+        ) : (
+          <div className="catch-hero-placeholder">
+            <FishIcon size={64} style={{ opacity: 0.5 }} />
+          </div>
+        )}
+
+        {/* Gradient Overlay - keeping the less aggressive one you liked */}
+        <div className="catch-hero-gradient" />
+
+        {/* Overlay Actions (Top Row) */}
+        <div className="catch-hero-overlay-top">
+          <button onClick={onBack} className="catch-icon-btn glass">
+            {readOnly ? <CloseIcon size={20} /> : <BackIcon size={20} />}
           </button>
-        )}{" "}
-      </div>{" "}
-      <div className="catch-detail-body-compact">
-        {" "}
-        <div className="catch-detail-image-compact">
-          {" "}
-          {entry.photoUrl || entry.imageData ? (
-            <img src={entry.photoUrl || entry.imageData} alt="Catch" />
-          ) : (
-            <div className="catch-detail-placeholder-compact">
-              {" "}
-              <FishIcon size={32} />{" "}
-            </div>
-          )}{" "}
-        </div>{" "}
-        <div className="catch-detail-content-compact">
-          {" "}
-          <div className="catch-detail-title-row">
-            {" "}
-            <span className="catch-detail-lure-compact">
-              {" "}
-              {formatLureName(entry.lure)}{" "}
-            </span>{" "}
-            {entry.weight && (
-              <span className="catch-detail-weight-compact">
-                {" "}
-                <strong>{entry.weight}</strong> lbs{" "}
-              </span>
-            )}{" "}
-          </div>{" "}
-          <div className="catch-detail-tags-compact">
-            {" "}
-            {entry.species && (
-              <span className="catch-tag-compact">
-                {" "}
-                {getSpeciesLabel(entry.species)}{" "}
-              </span>
-            )}{" "}
-            {entry.color && (
-              <span className="catch-tag-compact">
-                {" "}
-                {formatLureName(entry.color)}{" "}
-              </span>
-            )}{" "}
-            {entry.length && (
-              <span className="catch-tag-compact">{entry.length}"</span>
-            )}{" "}
-          </div>{" "}
-          <div className="catch-detail-meta-compact">
-            {" "}
-            <div className="catch-meta-item-compact">
-              {" "}
-              <span className="catch-meta-val-compact">
-                {" "}
-                {formatCatchDateTime(entry.caughtAt)}{" "}
-              </span>{" "}
-            </div>{" "}
-            <div className="catch-meta-item-compact">
-              {" "}
-              <span className="catch-meta-val-compact">
-                {entry.lakeName}
-              </span>{" "}
-              {(onLocationClick || onFlyToLocation) && (
-                <button
-                  className="catch-coords-btn-compact"
-                  onClick={() =>
-                    onLocationClick
-                      ? onLocationClick()
-                      : onFlyToLocation?.(entry.catchLat, entry.catchLng)
-                  }
-                  title="View on Map"
-                >
-                  {" "}
-                  <MapPinIcon size={12} />{" "}
-                </button>
-              )}{" "}
-            </div>{" "}
-          </div>{" "}
-          {entry.notes && (
-            <div className="catch-notes-compact">
-              {" "}
-              <span className="catch-notes-text-compact">
-                {entry.notes}
-              </span>{" "}
-            </div>
-          )}{" "}
-        </div>{" "}
-      </div>{" "}
-      {!readOnly && onDelete && (
-        <div className="catch-detail-footer-compact">
-          {" "}
-          <button onClick={onDelete} className="catch-delete-btn-compact">
-            {" "}
-            <TrashIcon size={14} /> <span>Delete</span>{" "}
-          </button>{" "}
+
+          <div className="catch-actions-group">
+            {!readOnly && onEdit && (
+              <button onClick={onEdit} className="catch-icon-btn glass">
+                <EditIcon size={20} />
+              </button>
+            )}
+            {!readOnly && onDelete && (
+              <button
+                onClick={onDelete}
+                className="catch-icon-btn glass danger-hover"
+                title="Delete Catch"
+              >
+                <TrashIcon size={20} />
+              </button>
+            )}
+          </div>
         </div>
-      )}{" "}
-      <style>{` .catch-pb-banner-compact { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.2) 100%); border-bottom: 1px solid rgba(251, 191, 36, 0.3); color: #FBBF24; font-weight: 600; font-size: 0.75rem; } .catch-detail-header-compact { padding: 10px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; } .catch-back-btn-compact { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; border: none; background: transparent; color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; } .catch-back-btn-compact:hover { background: rgba(255, 255, 255, 0.05); color: #fff; } .catch-edit-btn-compact { width: 32px; height: 32px; border-radius: 8px; border: none; background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; } .catch-edit-btn-compact:hover { background: rgba(74, 144, 226, 0.15); color: #4A90E2; } .catch-detail-body-compact { display: flex; flex-direction: column; } .catch-detail-image-compact { width: 100%; height: 380px; background: rgba(0, 0, 0, 0.3); overflow: hidden; } .catch-detail-image-compact img { width: 100%; height: 100%; object-fit: contain; } .catch-detail-placeholder-compact { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.15); } .catch-detail-content-compact { padding: 12px 16px; } .catch-detail-title-row { display: flex; justify-content: space-between; align-items: baseline; } .catch-detail-lure-compact { font-size: 1.1rem; font-weight: 700; color: #fff; } .catch-detail-weight-compact { font-size: 0.9rem; color: rgba(255, 255, 255, 0.7); } .catch-detail-weight-compact strong { font-size: 1.1rem; color: #4A90E2; } .catch-detail-tags-compact { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; } .catch-tag-compact { padding: 3px 8px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); font-size: 0.7rem; font-weight: 500; } .catch-detail-meta-compact { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06); display: flex; flex-direction: column; gap: 6px; } .catch-meta-item-compact { display: flex; align-items: center; justify-content: space-between; } .catch-meta-val-compact { font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); } .catch-coords-btn-compact { padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(74, 144, 226, 0.3); background: rgba(74, 144, 226, 0.1); color: #4A90E2; cursor: pointer; display: flex; align-items: center; transition: all 0.2s; } .catch-coords-btn-compact:hover { background: rgba(74, 144, 226, 0.2); } .catch-notes-compact { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.06); } .catch-notes-text-compact { font-size: 0.75rem; color: rgba(255, 255, 255, 0.5); font-style: italic; } .catch-detail-footer-compact { padding: 10px 16px 14px; border-top: 1px solid rgba(255, 255, 255, 0.06); } .catch-delete-btn-compact { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255, 107, 107, 0.3); background: rgba(255, 107, 107, 0.1); color: #ff6b6b; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; } .catch-delete-btn-compact:hover { background: rgba(255, 107, 107, 0.2); border-color: rgba(255, 107, 107, 0.5); } `}</style>{" "}
-    </>
+      </div>
+
+      {/* 2. CONTENT BODY */}
+      <div className="catch-body">
+        {/* Primary Info Header */}
+        <div className="catch-primary-header">
+          {/* LEFT: Title & Date */}
+          <div className="catch-title-block">
+            <h2 className="catch-lure-title">{formatLureName(entry.lure)}</h2>
+            <div className="catch-subtitle">
+              {formatCatchDate(entry.caughtAt)}
+              <span className="separator">•</span>
+              {formatCatchTime(entry.caughtAt)}
+            </div>
+          </div>
+
+          {/* RIGHT: Stat Stack (PB + Weight) */}
+          {entry.weight && (
+            <div className="catch-stat-stack">
+              {/* PB Badge centered above weight */}
+              {isPB && (
+                <div className="catch-pb-badge-mini">
+                  <TrophyIcon size={12} /> <span>PB</span>
+                </div>
+              )}
+
+              <div className="catch-stat-block">
+                <span className="catch-stat-value">{entry.weight}</span>
+                <span className="catch-stat-unit">LBS</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Tags / Chips */}
+        <div className="catch-tags-row">
+          {entry.species && (
+            <span className="catch-chip species">
+              {getSpeciesLabel(entry.species)}
+            </span>
+          )}
+          {entry.length && (
+            <span className="catch-chip stat">{entry.length}" Length</span>
+          )}
+          {entry.color && (
+            <span className="catch-chip color">
+              {formatLureName(entry.color)}
+            </span>
+          )}
+        </div>
+
+        <div className="catch-divider" />
+
+        {/* Location Card */}
+        <div className="catch-section">
+          <div className="catch-location-card">
+            <div className="catch-loc-icon-wrapper">
+              <LocationIcon size={20} />
+            </div>
+            <div className="catch-loc-details">
+              <div className="catch-loc-name">{entry.lakeName}</div>
+              <div className="catch-loc-coords">
+                {formatCoord(entry.catchLat, entry.catchLng)}
+              </div>
+            </div>
+            {(onLocationClick || onFlyToLocation) && (
+              <button
+                className="catch-map-btn"
+                onClick={() =>
+                  onLocationClick
+                    ? onLocationClick()
+                    : onFlyToLocation?.(entry.catchLat, entry.catchLng)
+                }
+              >
+                View
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Notes */}
+        {entry.notes && (
+          <div className="catch-section">
+            <h4 className="catch-section-label">Notes</h4>
+            <div className="catch-notes-box">
+              <p className="catch-notes-text">{entry.notes}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        .catch-detail-container {
+          display: flex; flex-direction: column; height: 100%;
+          background: #121218; overflow-y: auto;
+        }
+
+        /* HERO */
+        .catch-hero {
+          position: relative; width: 100%; height: 450px;
+          flex-shrink: 0; background: #000; overflow: hidden;
+        }
+        .catch-hero img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .catch-hero-gradient {
+          position: absolute; inset: 0;
+          background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.3) 0%,     
+            transparent 40%,        
+            rgba(18,18,24,0.5) 90%, 
+            #121218 100%
+          );
+          z-index: 1;
+        }
+        .catch-hero-placeholder {
+          width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+          background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%);
+          color: rgba(255,255,255,0.15);
+        }
+
+        /* ACTIONS */
+        .catch-hero-overlay-top {
+          position: absolute; top: 0; left: 0; right: 0; padding: 20px;
+          display: flex; justify-content: space-between; z-index: 10;
+        }
+        .catch-actions-group { display: flex; gap: 12px; }
+        .catch-icon-btn {
+          width: 44px; height: 44px; border-radius: 50%; border: none;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer; color: #fff; transition: all 0.2s;
+        }
+        .catch-icon-btn.glass {
+          background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px);
+          border: 1px solid rgba(255,255,255,0.15);
+        }
+        .catch-icon-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
+        .catch-icon-btn.danger-hover:hover {
+          background: rgba(220, 38, 38, 0.3); color: #fca5a5; border-color: rgba(220, 38, 38, 0.5);
+        }
+
+        /* BODY */
+        .catch-body {
+          padding: 0 28px 40px; position: relative; top: -40px; z-index: 2;
+        }
+
+        .catch-primary-header {
+          display: flex; justify-content: space-between; align-items: flex-end;
+          margin-bottom: 24px;
+        }
+        .catch-title-block { flex: 1; padding-right: 16px; }
+        
+        .catch-lure-title {
+          font-size: 2.2rem; font-weight: 800; color: #fff;
+          margin: 0 0 8px 0; line-height: 1.1; letter-spacing: -0.02em;
+          text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        .catch-subtitle {
+          font-size: 0.95rem; color: rgba(255,255,255,0.8); font-weight: 500;
+          display: flex; align-items: center; gap: 8px;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .separator { opacity: 0.5; }
+
+        /* RIGHT SIDE STAT STACK */
+        .catch-stat-stack {
+          display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+          min-width: 80px;
+        }
+
+        .catch-pb-badge-mini {
+          background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+          color: #fff;
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-weight: 800;
+          font-size: 0.65rem;
+          letter-spacing: 0.05em;
+          display: flex; align-items: center; gap: 4px;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+          margin-bottom: 8px; /* Spacing between badge and weight */
+          border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .catch-stat-block { text-align: center; }
+        .catch-stat-value {
+          display: block; font-size: 3rem; font-weight: 900; color: #fff;
+          line-height: 1; letter-spacing: -0.03em;
+          text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+        .catch-stat-unit {
+          font-size: 0.85rem; color: #60A5FA; font-weight: 800;
+          letter-spacing: 0.1em; text-transform: uppercase;
+          text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* TAGS */
+        .catch-tags-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 28px; }
+        .catch-chip {
+          padding: 8px 16px; border-radius: 30px;
+          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.8); font-size: 0.85rem; font-weight: 600;
+        }
+        .catch-chip.species {
+          background: rgba(52, 211, 153, 0.15); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.3);
+        }
+        .catch-chip.stat {
+          background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3);
+        }
+
+        .catch-divider { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 28px; }
+
+        /* LOCATION CARD */
+        .catch-location-card {
+          display: flex; align-items: center; padding: 16px;
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 16px;
+        }
+        .catch-loc-icon-wrapper {
+          color: #4A90E2; padding: 10px; background: rgba(74, 144, 226, 0.1);
+          border-radius: 12px; margin-right: 16px;
+        }
+        .catch-loc-details { flex: 1; }
+        .catch-loc-name { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+        .catch-loc-coords { font-size: 0.85rem; color: rgba(255,255,255,0.5); font-family: monospace; }
+        .catch-map-btn {
+          padding: 8px 16px; background: transparent; border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 8px; color: #fff; font-size: 0.85rem; font-weight: 600;
+          cursor: pointer; transition: all 0.2s;
+        }
+        .catch-map-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+
+        /* NOTES */
+        .catch-section-label {
+          font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em;
+          color: rgba(255,255,255,0.4); margin-bottom: 12px; font-weight: 700;
+        }
+        .catch-notes-box {
+          background: rgba(255,255,255,0.02); padding: 16px; border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.04);
+        }
+        .catch-notes-text {
+          font-size: 0.95rem; line-height: 1.7; color: rgba(255,255,255,0.8);
+          white-space: pre-wrap; margin: 0;
+        }
+      `}</style>
+    </div>
   );
 }
 
