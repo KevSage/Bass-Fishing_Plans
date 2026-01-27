@@ -33,15 +33,15 @@ type WeatherOverlayProps = {
 };
 
 type CurrentWeather = {
-  temp: number;
-  feelsLike: number;
+  temp: number | null; // Changed to allow null
+  feelsLike: number | null;
   condition: string;
-  pressure: number;
-  windSpeed: number;
-  windGust: number;
+  pressure: number | null;
+  windSpeed: number | null;
+  windGust: number | null;
   windDir: string;
-  humidity: number;
-  visibility: number;
+  humidity: number | null;
+  visibility: number | null;
   localTime: string;
   date: string;
 };
@@ -84,6 +84,10 @@ export function WeatherOverlay({
       }
 
       try {
+        // Reset state on new coordinates to trigger loading spinner
+        setLoading(true);
+        setError(false);
+
         const res = await fetch(
           `${API_BASE_URL}/weather/current?lat=${lat}&lon=${lng}`,
         );
@@ -95,15 +99,16 @@ export function WeatherOverlay({
           const local = formatLocalTime(json.timezone_offset || 0);
 
           setData({
-            temp: json.temp_f ?? 0,
-            feelsLike: json.feels_like_f ?? json.temp_f ?? 0,
+            // Use NULL instead of 0 for missing data so UI can handle it gracefully
+            temp: json.temp_f ?? null,
+            feelsLike: json.feels_like_f ?? json.temp_f ?? null,
             condition: json.sky_condition ?? "Unknown",
-            pressure: json.pressure_mb ?? 0,
-            windSpeed: json.wind_mph ?? 0,
-            windGust: json.wind_gust_mph ?? 0,
+            pressure: json.pressure_mb ?? null,
+            windSpeed: json.wind_mph ?? null,
+            windGust: json.wind_gust_mph ?? null,
             windDir: json.wind_direction ?? "Var",
-            humidity: json.humidity ?? 0,
-            visibility: json.visibility_miles ?? 10,
+            humidity: json.humidity ?? null,
+            visibility: json.visibility_miles ?? null,
             localTime: local.time,
             date: local.date,
           });
@@ -126,6 +131,17 @@ export function WeatherOverlay({
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
+  };
+
+  // Helper to render value or placeholder
+  const renderValue = (val: number | null, unit: string) => {
+    // If null or undefined, show placeholder
+    if (val === null || val === undefined) return "--";
+
+    // Sanity check: Pressure of 0 MB is physically impossible (vacuum space), so treat as missing
+    if (unit === "MB" && val < 800) return "--";
+
+    return Math.round(val);
   };
 
   return (
@@ -170,11 +186,11 @@ export function WeatherOverlay({
           <div className="weather-content">
             {/* Hero Temp */}
             <div className="weather-hero">
-              <span className="hero-temp">{Math.round(data.temp)}°</span>
+              <span className="hero-temp">{renderValue(data.temp, "°")}°</span>
               <div className="hero-meta">
                 <span className="condition-pill">{data.condition}</span>
                 <span className="feels-like">
-                  Feels {Math.round(data.feelsLike)}°
+                  Feels {renderValue(data.feelsLike, "°")}°
                 </span>
               </div>
             </div>
@@ -192,7 +208,7 @@ export function WeatherOverlay({
                 <div className="grid-body">
                   <div className="value-row">
                     <span className="grid-value">
-                      {Math.round(data.windSpeed)}
+                      {renderValue(data.windSpeed, "MPH")}
                     </span>
                     <span className="grid-unit">MPH</span>
                   </div>
@@ -200,11 +216,14 @@ export function WeatherOverlay({
                     <span className="grid-detail highlight">
                       {data.windDir}
                     </span>
-                    {data.windGust > data.windSpeed && (
-                      <span className="grid-detail warning">
-                        Gust {Math.round(data.windGust)}
-                      </span>
-                    )}
+                    {/* Only show gust if we have valid speed data AND gust is higher */}
+                    {data.windGust !== null &&
+                      data.windSpeed !== null &&
+                      data.windGust > data.windSpeed && (
+                        <span className="grid-detail warning">
+                          Gust {Math.round(data.windGust)}
+                        </span>
+                      )}
                   </div>
                 </div>
               </div>
@@ -218,13 +237,17 @@ export function WeatherOverlay({
                 <div className="grid-body">
                   <div className="value-row">
                     <span className="grid-value">
-                      {Math.round(data.pressure)}
+                      {renderValue(data.pressure, "MB")}
                     </span>
                     <span className="grid-unit">MB</span>
                   </div>
                   <div className="sub-row">
-                    <span className="grid-detail">Vis {data.visibility}mi</span>
-                    <span className="grid-detail">Hum {data.humidity}%</span>
+                    <span className="grid-detail">
+                      Vis {renderValue(data.visibility, "mi")}mi
+                    </span>
+                    <span className="grid-detail">
+                      Hum {renderValue(data.humidity, "%")}%
+                    </span>
                   </div>
                 </div>
               </div>
