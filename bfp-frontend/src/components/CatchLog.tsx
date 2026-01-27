@@ -27,6 +27,7 @@ import {
   createCatch,
   listCatches,
   deleteCatch as deleteCatchApi,
+  updateCatch as updateCatchApi, // <--- ADDED: Import Update Function
   resolveLake,
   type CatchRecord,
   type CreateCatchInput,
@@ -198,8 +199,9 @@ function entryToApiInput(
 }
 
 // =============================================================================
-// CONSTANTS
+// CONSTANTS (Lure & Density Configs)
 // =============================================================================
+// [Keeping all constant arrays collapsed to save space - they remain unchanged]
 export const LURE_OPTIONS = [
   {
     category: "Horizontal Reaction",
@@ -663,8 +665,10 @@ export function useCatchLog(
     [activeLake, getToken, getOfflineCatches, options?.disableListView],
   );
 
+  // --- UPDATED: UPDATE CATCH (Now with API Persistence) ---
   const updateCatch = useCallback(
     async (id: string, updates: Partial<CatchEntry>) => {
+      // 1. Optimistic Update (Update UI immediately so user sees change)
       setState((s) => {
         const updated = s.entries.map((c) =>
           c.id === id ? { ...c, ...updates } : c,
@@ -677,8 +681,34 @@ export function useCatchLog(
           isEditing: false,
         };
       });
+
+      // 2. API Call (Persist to Backend)
+      try {
+        const token = await getToken();
+        if (token) {
+          // Find current entry to merge with updates
+          const currentEntry = state.entries.find((e) => e.id === id);
+          if (currentEntry) {
+            const merged = { ...currentEntry, ...updates };
+            // Convert back to API format
+            const apiInput = entryToApiInput(merged, activeLake);
+
+            // Send to Server
+            await updateCatchApi(id, apiInput, token);
+
+            // 3. Refresh Data (Crucial for Map Pins to move)
+            // We fetch silently to ensure the map (Members.tsx) gets the new Lat/Lng
+            fetchCatches();
+          }
+        }
+      } catch (err) {
+        console.error("Failed to update catch:", err);
+        alert("Failed to save changes. Please check your connection.");
+        // Revert changes by re-fetching
+        fetchCatches();
+      }
     },
-    [],
+    [getToken, activeLake, state.entries, fetchCatches], // Added dependencies
   );
 
   const deleteCatch = useCallback(
