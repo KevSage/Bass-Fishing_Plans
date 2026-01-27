@@ -1,8 +1,7 @@
 // src/pages/Insights.tsx
 
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
 import {
   ArrowLeftIcon,
   TrophyIcon,
@@ -23,8 +22,9 @@ import {
   type ActiveLake,
   CatchFormView,
 } from "@/components/CatchLog";
-// NOTE: We removed listCatches/deleteCatch import because the hook handles it now.
-// const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN; // Kept if needed for map images below
+
+// NOTE: We do not need to import listCatches/deleteCatch directly anymore
+// The hook handles all data fetching and mutation.
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -446,8 +446,6 @@ const FullPBCard = ({
 
 export function Insights() {
   const navigate = useNavigate();
-  // Removed local useAuth(), entries state, and isLoading state
-  // We now rely entirely on the catchLog hook for data.
 
   // VIEWING STATE
   const [activeView, setActiveView] = useState<ViewMode>("total");
@@ -467,17 +465,14 @@ export function Insights() {
     [],
   );
 
-  // Use the hook to fetch data.
-  // It handles getToken, loading state, and syncing internally.
+  // Use the hook for ALL data fetching.
   const catchLog = useCatchLog(virtualActiveLake, { disableListView: true });
 
-  // Destructure what we need
   const {
     entries,
     isLoading,
     updateCatch: hookUpdateCatch,
     deleteCatch: hookDeleteCatch,
-    refresh: refreshData,
   } = catchLog;
 
   const stats = useMemo(() => calculateStats(entries), [entries]);
@@ -493,7 +488,6 @@ export function Insights() {
     )
       return;
 
-    // Use the hook's delete function. It handles API + State update.
     await hookDeleteCatch(id);
 
     setViewingCatch(null);
@@ -502,11 +496,14 @@ export function Insights() {
 
   const handleUpdateCatch = async (data: Partial<CatchEntry>) => {
     if (viewingCatch?.id) {
-      // Use the hook's update function.
       await hookUpdateCatch(viewingCatch.id, data);
       setViewingCatch(null);
       setIsEditing(false);
     }
+  };
+
+  const handleUploadClick = () => {
+    catchLog.showForm();
   };
 
   // --- FILTER LOGIC ---
@@ -549,10 +546,6 @@ export function Insights() {
     const lake = stats.lakes.find((l) => l.name === lakeName);
     if (!lake || !MAPBOX_TOKEN) return "";
     return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lake.lng},${lake.lat},13,0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false`;
-  };
-
-  const handleUploadClick = () => {
-    catchLog.showForm();
   };
 
   if (isLoading) {
