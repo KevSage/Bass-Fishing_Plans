@@ -1,5 +1,3 @@
-// src/components/Navigation.tsx
-
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -8,7 +6,7 @@ import {
   useAuth,
   SignedIn,
   SignedOut,
-} from "@clerk/clerk-react"; // Added useAuth
+} from "@clerk/clerk-react";
 import { createPortal } from "react-dom";
 import { MapOrb } from "./MapOrb";
 
@@ -19,23 +17,26 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [isPro, setIsPro] = useState(false); // New State for Badge
+  const [isPro, setIsPro] = useState(false);
 
   const location = useLocation();
   const { user } = useUser();
-  const { getToken, isSignedIn } = useAuth(); // Get token capability
+  const { getToken, isSignedIn } = useAuth();
   const { signOut } = useClerk();
   const navigate = useNavigate();
 
-  const isPlanPage = location.pathname.startsWith("/plan");
-
   // --- CONTEXTUAL ORB LOGIC ---
+  const isPlanPage = location.pathname.startsWith("/plan");
   const isMapPage = location.pathname === "/members";
-  const orbDestination = isMapPage ? "/insights" : "/members";
-  const orbTitle = isMapPage ? "View Insights" : "Launch Map";
 
-  // Updated: Use 'white' for Insights (on Map page), 'default' (Blue) for Map (elsewhere)
-  const orbVariant = isMapPage ? "white" : "default";
+  // LOGIC UPDATE: Show "White Insights Orb" on both Map AND Plan pages
+  const showInsightsOrb = isMapPage || isPlanPage;
+
+  const orbDestination = showInsightsOrb ? "/insights" : "/members";
+  const orbTitle = showInsightsOrb ? "View Insights" : "Launch Map";
+
+  // Use 'white' for Insights (Map/Plan), 'default' (Blue) for elsewhere
+  const orbVariant = showInsightsOrb ? "white" : "default";
 
   // Scroll Listener for Glass Effect
   useEffect(() => {
@@ -44,7 +45,7 @@ export function Navigation() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // --- NEW: Check Pro Status on Mount ---
+  // Check Pro Status on Mount
   useEffect(() => {
     if (isSignedIn) {
       const checkStatus = async () => {
@@ -84,7 +85,7 @@ export function Navigation() {
     await signOut();
     setUserMenuOpen(false);
     setIsOpen(false);
-    setIsPro(false); // Reset badge
+    setIsPro(false);
     navigate("/");
   };
 
@@ -171,7 +172,7 @@ export function Navigation() {
 
             <div style={{ height: 24 }} />
 
-            {/* Mobile Action Button */}
+            {/* Mobile Menu Action Button */}
             <Link
               to={orbDestination}
               onClick={() => setIsOpen(false)}
@@ -187,10 +188,11 @@ export function Navigation() {
                 letterSpacing: "0.01em",
                 padding: "12px",
                 borderRadius: 8,
-                background: isMapPage
+                // Updated Logic: Use 'showInsightsOrb' to style white/glass
+                background: showInsightsOrb
                   ? "rgba(255, 255, 255, 0.05)" // Dim white tint
                   : "rgba(59, 130, 246, 0.1)", // Blue tint
-                border: isMapPage
+                border: showInsightsOrb
                   ? "1px solid rgba(255, 255, 255, 0.15)"
                   : "1px solid rgba(59, 130, 246, 0.25)",
               }}
@@ -321,18 +323,17 @@ export function Navigation() {
                   marginLeft: 6,
                   padding: "2px 2px",
                   borderRadius: 4,
-                  background: "rgba(74, 144, 226, 0.15)", // Subtle blue background
+                  background: "rgba(74, 144, 226, 0.15)",
                   border: "1px solid rgba(74, 144, 226, 0.3)",
                   display: "flex",
                   alignItems: "center",
-                  // justifyContent: "center",
                 }}
               >
                 <span
                   style={{
                     fontSize: "0.65rem",
                     fontWeight: 700,
-                    color: "#4A90E2", // Electric Blue
+                    color: "#4A90E2",
                     letterSpacing: "0.05em",
                     lineHeight: 1,
                   }}
@@ -341,9 +342,9 @@ export function Navigation() {
                 </span>
               </div>
             )}
-            {/* ---------------- */}
           </Link>
 
+          {/* DESKTOP NAV */}
           <nav
             className="desktop-nav"
             style={{ display: "none", gap: 32, alignItems: "center" }}
@@ -484,6 +485,7 @@ export function Navigation() {
             </SignedOut>
           </nav>
 
+          {/* MOBILE CONTROLS */}
           <div
             className="mobile-controls"
             style={{ display: "flex", alignItems: "center", gap: 16 }}
@@ -508,20 +510,19 @@ export function Navigation() {
             </SignedOut>
 
             <SignedIn>
-              {!isPlanPage && (
-                <Link
-                  to={orbDestination}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#fff",
-                    textDecoration: "none",
-                  }}
-                >
-                  <MapOrb size={30} active={true} variant={orbVariant} />
-                </Link>
-              )}
+              {/* UPDATED: Removed the !isPlanPage check so orb appears on plan page too */}
+              <Link
+                to={orbDestination}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  textDecoration: "none",
+                }}
+              >
+                <MapOrb size={30} active={true} variant={orbVariant} />
+              </Link>
             </SignedIn>
 
             <button

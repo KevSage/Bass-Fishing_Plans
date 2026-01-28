@@ -382,6 +382,7 @@ export function WeatherOverlay({
         .grid-detail { font-size: 0.75rem; font-weight: 600; color: rgba(255,255,255,0.7); }
         .grid-detail.highlight { color: #fff; font-weight: 700; }
         .grid-detail.warning { color: #F59E0B; }
+        .grid-detail.danger { color: #F32013; }
 
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scale-up { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }

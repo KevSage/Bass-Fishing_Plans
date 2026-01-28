@@ -488,7 +488,7 @@ export function Landing() {
             <div
               style={{
                 position: "absolute",
-                top: "3.8%",
+                top: "4.8%",
                 left: "1.1%",
                 width: "97%",
                 height: "92.4%",
@@ -499,7 +499,7 @@ export function Landing() {
               }}
             >
               <video
-                src="/video/HardLabor.mp4"
+                src="/video/MapFinal3.MOV"
                 autoPlay
                 muted
                 loop
@@ -658,7 +658,7 @@ export function Landing() {
             <div
               style={{
                 position: "absolute",
-                top: "3.8%",
+                top: "5%",
                 left: "1.1%",
                 width: "97%",
                 height: "92.4%",
@@ -669,7 +669,7 @@ export function Landing() {
               }}
             >
               <video
-                src="/video/bass-clarity-loading.mov"
+                src="/video/mapvid.mov"
                 autoPlay
                 muted
                 loop
