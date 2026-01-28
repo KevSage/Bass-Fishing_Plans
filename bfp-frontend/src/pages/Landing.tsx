@@ -412,20 +412,23 @@ export function Landing() {
               <div
                 style={{
                   position: "absolute",
-                  top: "3.8%",
-                  left: "4.5%",
-                  width: "92.6%",
+                  top: "5%",
+                  width: "101%",
                   height: "92.4%",
-                  borderRadius: "42px",
+                  borderRadius: "70px",
                   overflow: "hidden",
                   zIndex: 1,
                 }}
               >
-                <img
-                  src="/images/ProductionScreenshots/Insights.png"
+                <video
+                  src="/video/intro.mov"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
                   style={{
                     width: "100%",
-                    height: "100%",
+                    height: "97.5%",
                     objectFit: "contain",
                   }}
                 />
@@ -488,11 +491,11 @@ export function Landing() {
             <div
               style={{
                 position: "absolute",
-                top: "4.8%",
+                top: "5%",
                 left: "1.1%",
                 width: "97%",
                 height: "92.4%",
-                borderRadius: "80px",
+                borderRadius: "90px",
                 overflow: "hidden",
                 zIndex: 1,
                 background: "rgba(0,0,0,0.25)",
