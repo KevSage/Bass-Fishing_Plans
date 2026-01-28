@@ -499,7 +499,7 @@ export function Landing() {
               }}
             >
               <video
-                src="/video/MapFinal3.MOV"
+                src="/video/maovid.mov"
                 autoPlay
                 muted
                 loop
@@ -669,7 +669,7 @@ export function Landing() {
               }}
             >
               <video
-                src="/video/mapvid.mov"
+                src="/video/bass-clarity-loading3.mov"
                 autoPlay
                 muted
                 loop
