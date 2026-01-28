@@ -499,7 +499,7 @@ export function Landing() {
               }}
             >
               <video
-                src="/video/maovid.mov"
+                src="/video/mapvid.mov"
                 autoPlay
                 muted
                 loop
