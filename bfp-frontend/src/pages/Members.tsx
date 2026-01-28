@@ -11,7 +11,7 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-
+import { MapLoadingScreen } from "@/components/MapLoadingScreen";
 // API Imports
 import { generateMemberPlan, RateLimitError } from "@/lib/api";
 import {
@@ -1393,13 +1393,17 @@ export function Members() {
   };
 
   if (loading)
-    return <PlanGenerationLoader lakeName={waterName || "Selected Water"} />;
-  if (statusLoading)
     return (
-      <div style={{ padding: 100, textAlign: "center", color: "#fff" }}>
-        Checking status...
-      </div>
+      <PlanGenerationLoader
+        lakeName={waterName || "Selected Water"}
+        onComplete={() => setLoading(false)}
+      />
     );
+
+  // 3. The Render Block
+  if (statusLoading) {
+    return <MapLoadingScreen />;
+  }
   if (!isActive) {
     return (
       <div

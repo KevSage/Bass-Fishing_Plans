@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { InsightsLoadingScreen } from "@/components/InsightsLoadingScreen";
 import {
   ArrowLeftIcon,
   TrophyIcon,
@@ -548,25 +549,45 @@ export function Insights() {
     return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lake.lng},${lake.lat},13,0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false`;
   };
 
+  // ... inside your Insights component ...
+
+  // 1. "Analyst-Grade" messages focused on Data & Patterns
+  const INSIGHT_MESSAGES = [
+    "Querying Historical Database...",
+    "Correlating Weather Variables...",
+    "Detecting Seasonal Trends...",
+    "Compiling Performance Metrics...",
+    "Analyzing Lure Effectiveness...",
+    "Synthesizing Catch Patterns...",
+  ];
+
+  // 2. Cycle the text
+  const [loadingMsg, setLoadingMsg] = React.useState(INSIGHT_MESSAGES[0]);
+
+  React.useEffect(() => {
+    if (!isLoading) return;
+
+    let index = Math.floor(Math.random() * INSIGHT_MESSAGES.length);
+    setLoadingMsg(INSIGHT_MESSAGES[index]);
+
+    const interval = setInterval(() => {
+      index = (index + 1) % INSIGHT_MESSAGES.length;
+      setLoadingMsg(INSIGHT_MESSAGES[index]);
+    }, 1800); // Slightly faster cycle for "data processing" feel
+
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  // 3. The "Data Wave" Render
   if (isLoading) {
-    return (
-      <div
-        style={{
-          padding: 60,
-          textAlign: "center",
-          color: "rgba(255,255,255,0.5)",
-        }}
-      >
-        Loading...
-      </div>
-    );
+    return <InsightsLoadingScreen />;
   }
 
   return (
     <div className="insights-container" style={{ paddingBottom: "80px" }}>
       <div className="stats-header">
         <button onClick={() => navigate("/members")} className="back-icon-btn">
-          <ArrowLeftIcon size={24} />
+          <ArrowLeftIcon size={16} />
         </button>
         <h1>Back to Map</h1>
       </div>
@@ -900,8 +921,8 @@ export function Insights() {
       <style>{`
         .stats-page { background: #0a0a0a; min-height: 100vh; color: white; padding-bottom: 40px; }
         .insights-container { padding: 20px; max-width: 600px; margin: 0 auto; }
-        .stats-header { padding: 20px; display: flex; align-items: center; gap: 16px; }
-        .stats-header h1 { margin: 0; font-size: 1.2rem; font-weight: 700; }
+        .stats-header { padding: 12px; display: flex; align-items: center; gap: 16px; }
+        .stats-header h1 { margin: 0; font-size: 1rem; font-weight: 600; }
         .back-icon-btn { background: rgba(255,255,255,0.1); border: none; color: white; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         
         .pills-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 0 20px 20px; scrollbar-width: none; }
