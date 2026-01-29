@@ -59,7 +59,7 @@ const STEPS_CONFIG = [
   },
   {
     label: "Generating Tactical Plan",
-    duration: 700,
+    duration: 4000, // Increased slightly to give the "finishing" feel more weight
     logs: [
       "Synthesizing pattern confidence levels...",
       "Compiling gear specifications...",
@@ -67,6 +67,15 @@ const STEPS_CONFIG = [
       "Finalizing strategic output...",
     ],
   },
+];
+
+// Logs to cycle if the LLM is taking longer than the animation (e.g. retries)
+const OVERTIME_LOGS = [
+  "Optimizing route calculations...",
+  "Verifying lake topology data...",
+  "Refining final output...",
+  "Processing extended inference...",
+  "Finalizing tactical report...",
 ];
 
 const TOTAL_DURATION = STEPS_CONFIG.reduce(
@@ -84,8 +93,10 @@ export function PlanGenerationLoader({
 
   useEffect(() => {
     let logTimer: NodeJS.Timeout;
+    let overtimeTimer: NodeJS.Timeout;
+    let overtimeInterval: NodeJS.Timeout;
 
-    // 1. Manage Steps
+    // 1. Manage Standard Steps
     let cumulativeTime = 0;
     STEPS_CONFIG.forEach((step, index) => {
       setTimeout(() => {
@@ -108,23 +119,38 @@ export function PlanGenerationLoader({
       cumulativeTime += step.duration;
     });
 
-    // 2. Global Progress
+    // 2. Global Progress Bar
     const progressInterval = setInterval(() => {
+      // We cap the progress at 98% until the parent actually unmounts us
+      // This prevents the "done but stuck" feeling
       setElapsedTime((prev) => Math.min(prev + 100, TOTAL_DURATION));
     }, 100);
 
-    const completeTimer = setTimeout(() => {
-      if (onComplete) onComplete();
-    }, TOTAL_DURATION + 1000);
+    // 3. Handle "Overtime" (If LLM takes longer than animation)
+    // Instead of calling onComplete, we switch to overtime logs loop
+    overtimeTimer = setTimeout(() => {
+      let otIndex = 0;
+      overtimeInterval = setInterval(() => {
+        setLogLine(OVERTIME_LOGS[otIndex % OVERTIME_LOGS.length]);
+        otIndex++;
+      }, 2000);
+    }, TOTAL_DURATION);
+
+    // REMOVED: The automatic onComplete timeout.
+    // The Loader now waits for the Parent component to unmount it/redirect.
 
     return () => {
       clearInterval(progressInterval);
-      clearTimeout(completeTimer);
       clearInterval(logTimer);
+      clearTimeout(overtimeTimer);
+      clearInterval(overtimeInterval);
     };
   }, [onComplete]);
 
-  const progressPercent = Math.min(100, (elapsedTime / TOTAL_DURATION) * 100);
+  // Calculate progress but keep it visually active near 100%
+  const rawPercent = (elapsedTime / TOTAL_DURATION) * 100;
+  const progressPercent = Math.min(99, rawPercent); // Never hit 100% until redirect
+
   const activeStep =
     STEPS_CONFIG[currentStepIndex] || STEPS_CONFIG[STEPS_CONFIG.length - 1];
 
