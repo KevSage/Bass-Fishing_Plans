@@ -1041,3 +1041,145 @@ export const MapOrb = ({
     `}</style>
   </div>
 );
+// src/components/UnifiedIcons.tsx
+
+// ... [Existing Weather Icons: SunIcon, CloudIcon, etc. remain unchanged] ...
+// ... [Existing Map Icons: MapPinIcon, LocationIcon, etc. remain unchanged] ...
+
+// --- NEW ICONS FOR ACCOUNT PAGE ---
+
+export function CrownIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <path
+        d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ShieldCheckIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <path
+        d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function HelpCircleIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path
+        d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line
+        x1="12"
+        y1="17"
+        x2="12.01"
+        y2="17"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function LogOutIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <path
+        d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="16 17 21 12 16 7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line
+        x1="21"
+        y1="12"
+        x2="9"
+        y2="12"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ArrowRightIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <line
+        x1="5"
+        y1="12"
+        x2="19"
+        y2="12"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="12 5 19 12 12 19"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

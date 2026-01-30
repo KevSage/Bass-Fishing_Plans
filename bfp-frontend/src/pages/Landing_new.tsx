@@ -452,7 +452,7 @@ export function Landing() {
               transition: "all 0.3s ease",
             }}
           >
-            Start Your Free Trial
+            Create Your Catchlog
           </Link>
         </div>
       </section>
@@ -1214,7 +1214,7 @@ export function Landing() {
 
                 {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                          <Link to="/subscribe" style={primaryCta}>
-                           Start Your Free Trial
+                           Create Your Catchlog
                          </Link>
                          <Link to="/how-it-works" style={smallCta}>
                            See how it works
@@ -2167,7 +2167,7 @@ export function Landing() {
               margin: "0 auto 14px",
             }}
           >
-            5-Day Free Trial
+            Create Your Catchlog
           </p>
 
           <p
@@ -2196,7 +2196,7 @@ export function Landing() {
               boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
-            Start Your Free Trial
+            Create Your Catchlog
           </Link>
         </div>
       </section>

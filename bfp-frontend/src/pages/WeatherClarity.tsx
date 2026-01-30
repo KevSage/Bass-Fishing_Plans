@@ -26,7 +26,7 @@ export function WeatherClarityPage() {
       maxWidth,
       margin: "0 auto",
       width: "100%",
-    } as const);
+    }) as const;
 
   const eyebrow = {
     fontSize: "0.82rem",
@@ -351,7 +351,7 @@ export function WeatherClarityPage() {
 
                 {/* <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                   <Link to="/subscribe" style={primaryCta}>
-                    Start Your Free Trial
+                    Create Your Catchlog
                   </Link>
                   <Link to="/how-it-works" style={smallCta}>
                     See how it works
@@ -534,7 +534,7 @@ export function WeatherClarityPage() {
             }}
           >
             <Link to="/subscribe" style={primaryCta}>
-              Start Your Free Trial
+              Create Your Catchlog
             </Link>
             <Link to="/" style={smallCta}>
               Back to Landing

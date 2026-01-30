@@ -13,6 +13,8 @@ import {
   ClockIcon,
 } from "@/components/UnifiedIcons";
 
+import { useMemberStatus } from "@/hooks/useMemberStatus";
+
 import {
   useCatchLog,
   CatchEntry,
@@ -24,10 +26,157 @@ import {
   CatchFormView,
 } from "@/components/CatchLog";
 
-// NOTE: We do not need to import listCatches/deleteCatch directly anymore
-// The hook handles all data fetching and mutation.
-
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
+// =============================================================================
+// ICONS & MODALS
+// =============================================================================
+
+// FIXED: Added 'style' to props type and passed it to the svg
+const LockIcon = ({
+  size = 12,
+  className = "",
+  style = {},
+}: {
+  size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    style={style}
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  </svg>
+);
+
+const UploadImageIcon = ({ size = 24 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
+function UpgradeModal({
+  isOpen,
+  onClose,
+  message,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  message: string;
+}) {
+  const navigate = useNavigate();
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="stats-modal-overlay"
+      onClick={onClose}
+      style={{ zIndex: 9999 }}
+    >
+      <div
+        className="stats-modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: 320,
+          padding: 32,
+          textAlign: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 60,
+            height: 60,
+            borderRadius: "50%",
+            background: "rgba(74, 144, 226, 0.15)",
+            color: "#4A90E2",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 20,
+          }}
+        >
+          <LockIcon size={30} />
+        </div>
+
+        <h3
+          style={{
+            margin: "0 0 10px 0",
+            fontSize: "1.25rem",
+            fontWeight: 700,
+            color: "#fff",
+          }}
+        >
+          Pro Feature
+        </h3>
+        <p
+          style={{
+            margin: "0 0 24px 0",
+            opacity: 0.7,
+            lineHeight: 1.5,
+            fontSize: "0.95rem",
+            color: "#fff",
+          }}
+        >
+          {message}
+        </p>
+
+        <button
+          onClick={() => navigate("/account")}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+            border: "none",
+            borderRadius: 16,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: "1rem",
+            cursor: "pointer",
+            boxShadow: "0 8px 20px rgba(74, 144, 226, 0.3)",
+          }}
+        >
+          Upgrade to Unlock
+        </button>
+
+        <button
+          onClick={onClose}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "rgba(255,255,255,0.4)",
+            marginTop: 16,
+            fontSize: "0.9rem",
+            cursor: "pointer",
+          }}
+        >
+          Not Now
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // =============================================================================
 // HELPER: CountUp Animation Hook
@@ -70,23 +219,6 @@ function useCountUp(end: number, duration: number = 2500, delay: number = 600) {
 
   return count;
 }
-
-const UploadImageIcon = ({ size = 24 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-    <circle cx="8.5" cy="8.5" r="1.5" />
-    <polyline points="21 15 16 10 5 21" />
-  </svg>
-);
 
 // =============================================================================
 // STATS CALCULATOR
@@ -307,7 +439,7 @@ const FullPBCard = ({
         )}
       </div>
 
-      {/* Gradient Overlay - Left to Right Fade */}
+      {/* Gradient Overlay */}
       <div className="pb-gradient-overlay" />
 
       {/* Content Layer */}
@@ -345,7 +477,7 @@ const FullPBCard = ({
       <style>{`
         .pb-card-full {
           position: relative;
-          height: 360px; /* UPDATED to 360px as requested */
+          height: 360px;
           border-radius: 20px;
           overflow: hidden;
           border: 1px solid rgba(255,255,255,0.1);
@@ -367,7 +499,6 @@ const FullPBCard = ({
           width: 100%;
           height: 100%;
           object-fit: cover;
-          /* Ensure the image aligns to the right so the fish is visible */
           object-position: center right; 
         }
         .pb-no-image-bg {
@@ -377,7 +508,6 @@ const FullPBCard = ({
           color: rgba(255,255,255,0.1);
         }
 
-        /* The Magic Gradient: Solid Dark on Left, Fade to Transparent on Right */
         .pb-gradient-overlay {
           position: absolute;
           inset: 0;
@@ -398,7 +528,7 @@ const FullPBCard = ({
           flex-direction: column;
           padding: 20px;
           justify-content: space-between;
-          max-width: 65%; /* Constrain text to the dark side */
+          max-width: 65%;
         }
 
         .pb-header { display: flex; gap: 8px; }
@@ -447,6 +577,7 @@ const FullPBCard = ({
 
 export function Insights() {
   const navigate = useNavigate();
+  const { isActive } = useMemberStatus(); // PRO CHECK
 
   // VIEWING STATE
   const [activeView, setActiveView] = useState<ViewMode>("total");
@@ -459,6 +590,15 @@ export function Insights() {
   // MODAL STATES
   const [viewingCatch, setViewingCatch] = useState<CatchEntry | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+
+  // UPGRADE MODAL
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState("");
+
+  const triggerUpgrade = (msg: string) => {
+    setUpgradeMessage(msg);
+    setShowUpgradeModal(true);
+  };
 
   // Virtual Lake for Uploads
   const virtualActiveLake = useMemo<ActiveLake>(
@@ -507,6 +647,19 @@ export function Insights() {
     catchLog.showForm();
   };
 
+  const handleTabClick = (view: ViewMode, label: string) => {
+    // GATE: Only "Total" is free
+    if (!isActive && view !== "total") {
+      triggerUpgrade(
+        `Analyze your ${label} and unlock pattern intelligence with Pro.`,
+      );
+      return;
+    }
+
+    setActiveView(view);
+    setActiveFilter(null);
+  };
+
   // --- FILTER LOGIC ---
 
   useMemo(() => {
@@ -549,8 +702,6 @@ export function Insights() {
     return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lake.lng},${lake.lat},13,0/800x400@2x?access_token=${MAPBOX_TOKEN}&attribution=false&logo=false`;
   };
 
-  // ... inside your Insights component ...
-
   // 1. "Analyst-Grade" messages focused on Data & Patterns
   const INSIGHT_MESSAGES = [
     "Querying Historical Database...",
@@ -573,12 +724,11 @@ export function Insights() {
     const interval = setInterval(() => {
       index = (index + 1) % INSIGHT_MESSAGES.length;
       setLoadingMsg(INSIGHT_MESSAGES[index]);
-    }, 1800); // Slightly faster cycle for "data processing" feel
+    }, 1800);
 
     return () => clearInterval(interval);
   }, [isLoading]);
 
-  // 3. The "Data Wave" Render
   if (isLoading) {
     return <InsightsLoadingScreen />;
   }
@@ -592,6 +742,13 @@ export function Insights() {
         <h1>Back to Map</h1>
       </div>
 
+      {/* UPGRADE MODAL */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        message={upgradeMessage}
+      />
+
       {/* PILLS */}
       <div className="pills-scroll">
         {[
@@ -601,18 +758,20 @@ export function Insights() {
           { id: "pbs", label: "Personal Bests" },
           { id: "confidence", label: "Confidence" },
           { id: "techniques", label: "Techniques" },
-        ].map((pill) => (
-          <button
-            key={pill.id}
-            onClick={() => {
-              setActiveView(pill.id as ViewMode);
-              setActiveFilter(null);
-            }}
-            className={`pill ${activeView === pill.id ? "active" : ""}`}
-          >
-            {pill.label}
-          </button>
-        ))}
+        ].map((pill) => {
+          const isLocked = !isActive && pill.id !== "total";
+          return (
+            <button
+              key={pill.id}
+              onClick={() => handleTabClick(pill.id as ViewMode, pill.label)}
+              className={`pill ${activeView === pill.id ? "active" : ""}`}
+              style={{ display: "flex", alignItems: "center", gap: 6 }}
+            >
+              {pill.label}
+              {isLocked && <LockIcon size={10} style={{ opacity: 0.7 }} />}
+            </button>
+          );
+        })}
       </div>
 
       {/* HERO SECTION */}

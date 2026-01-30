@@ -28,7 +28,6 @@ import {
 import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
-// Note: MapOrb component import removed if unused, but we use the CSS class below
 import { WeatherOverlay } from "@/components/WeatherOverlay";
 
 // --- CATCH LOG IMPORTS ---
@@ -49,8 +48,31 @@ import LAKES_DATA from "../data/lakes.json";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 // =============================================================================
-// LOCAL ICONS
+// ICONS & UI COMPONENTS
 // =============================================================================
+
+const LockIcon = ({
+  size = 12,
+  className = "",
+}: {
+  size?: number;
+  className?: string;
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  </svg>
+);
 
 const StarIcon = ({
   size = 24,
@@ -171,6 +193,130 @@ const RadarIcon = ({ size = 22 }: { size?: number }) => (
   </svg>
 );
 
+// --- UPGRADE MODAL COMPONENT ---
+function UpgradeModal({
+  isOpen,
+  onClose,
+  message,
+  sampleUrl = "/plan?token=FSt4LZJLD62XHHTmYOL1ZoWua6V34U9c9TGVbKt1vEU", // Default to your best sample
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  message: string;
+  sampleUrl?: string;
+}) {
+  const navigate = useNavigate();
+  if (!isOpen) return null;
+
+  // Inside your component
+  const handleViewSample = () => {
+    // Define your IDs or URLs
+    const DEV_SAMPLE_URL =
+      "/plan?token=FSt4LZJLD62XHHTmYOL1ZoWua6V34U9c9TGVbKt1vEU";
+    const PROD_SAMPLE_URL =
+      "/plan?token=ByW0Xj_COI5ek3gimQnLQ6rsyrhkvGO9X7R8Aw6Rhus";
+
+    // Vite automatically sets this boolean
+    const targetUrl = import.meta.env.PROD ? PROD_SAMPLE_URL : DEV_SAMPLE_URL;
+
+    navigate(targetUrl);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+      <div
+        className="glass-panel modal-content"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: 320,
+          padding: 32,
+          textAlign: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 60,
+            height: 60,
+            borderRadius: "50%",
+            background: "rgba(74, 144, 226, 0.15)",
+            color: "#4A90E2",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 20,
+          }}
+        >
+          <LockIcon size={30} />
+        </div>
+
+        <h3
+          style={{ margin: "0 0 10px 0", fontSize: "1.25rem", fontWeight: 700 }}
+        >
+          Pro Feature
+        </h3>
+        <p
+          style={{
+            margin: "0 0 24px 0",
+            opacity: 0.7,
+            lineHeight: 1.5,
+            fontSize: "0.95rem",
+          }}
+        >
+          {message}
+        </p>
+
+        <button
+          onClick={() => navigate("/account")}
+          style={{
+            width: "100%",
+            padding: "14px",
+            background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+            border: "none",
+            borderRadius: 16,
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: "1rem",
+            cursor: "pointer",
+            boxShadow: "0 8px 20px rgba(74, 144, 226, 0.3)",
+          }}
+        >
+          Upgrade to Unlock
+        </button>
+        <button
+          onClick={handleViewSample}
+          style={{
+            width: "100%",
+            padding: "12px",
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 12,
+            color: "#fff",
+            fontWeight: 600,
+            marginTop: 12,
+            cursor: "pointer",
+          }}
+        >
+          View Sample Pro Plan
+        </button>
+        <button
+          onClick={onClose}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "rgba(255,255,255,0.4)",
+            marginTop: 16,
+            fontSize: "0.9rem",
+            cursor: "pointer",
+          }}
+        >
+          Not Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // =============================================================================
 // TYPES
 // =============================================================================
@@ -211,7 +357,6 @@ function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
   return f.source === "composite" && f.sourceLayer === "water";
 }
 
-// NOTE: Ensure .orb-marker-map is defined in CSS below!
 const createOrbMarker = () => {
   const el = document.createElement("div");
   el.className = "orb-marker-map";
@@ -402,6 +547,7 @@ function findNearestFavorite(
 export function Members() {
   const { user } = useUser();
   const { getToken } = useAuth();
+  // isActive = PRO Status
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
   const location = useLocation();
@@ -416,6 +562,15 @@ export function Members() {
   const [customLakes, setCustomLakes] = useState<
     Array<CustomLake & { anchors?: { lat: number; lng: number }[] }>
   >([]);
+
+  // NEW: Upgrade Modal State
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState<string>("");
+
+  const triggerUpgrade = (msg: string) => {
+    setUpgradeMessage(msg);
+    setShowUpgradeModal(true);
+  };
 
   // Derived suggestion data
   const lakeSuggestionsData = useMemo(() => {
@@ -442,10 +597,8 @@ export function Members() {
   const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
-    // Check if user has seen the tutorial
     const hasSeen = localStorage.getItem("bc_has_seen_onboarding");
     if (!hasSeen) {
-      // Small delay so the map loads first behind the glass
       setTimeout(() => setShowTutorial(true), 1000);
     }
   }, []);
@@ -552,7 +705,6 @@ export function Members() {
       processedRefreshRef.current = refreshTimestamp;
       setDataVersion((v) => v + 1);
 
-      // Store lakeId to select after data loads
       if (location.state.lakeId) {
         pendingLakeSelectRef.current = location.state.lakeId;
       }
@@ -755,6 +907,7 @@ export function Members() {
     catchMarkersRef.current = createCatchMarkers(
       map,
       catchLog.lakeCatches,
+      // NOTE: Clicking a pin opens detail view - this is ALLOWED for Free users
       (entry) => catchLog.showDetail(entry),
     );
     return () => {
@@ -765,13 +918,7 @@ export function Members() {
   // --- MAP INIT ---
   useEffect(() => {
     isMountedRef.current = true;
-    if (
-      initialized.current ||
-      !mapContainer.current ||
-      !MAPBOX_TOKEN ||
-      !isActive
-    )
-      return;
+    if (initialized.current || !mapContainer.current || !MAPBOX_TOKEN) return;
     initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
 
@@ -868,8 +1015,6 @@ export function Members() {
         return;
       }
 
-      // CRITICAL FIX: If viewing a favorite, deselect it but CONTINUE
-      // Do NOT return here, or the click is consumed and pin never moves.
       if (viewingFavoriteIdRef.current) {
         setViewingFavoriteId(null);
       }
@@ -883,7 +1028,6 @@ export function Members() {
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
 
-        // Strict Water Check
         if (!water) {
           if (selectedCoords && !waterName && !manualWaterName.trim()) {
             clearActiveLake();
@@ -1016,14 +1160,24 @@ export function Members() {
       isMountedRef.current = false;
       m.remove();
     };
-  }, [isActive]);
+  }, [isActive]); // Re-init if status changes
+
+  // --- FEATURE GATING LOGIC ---
 
   const handleLiveCameraClick = () => {
+    // GATE: Camera is for Live Session (Pro only)
+    if (!isActive) {
+      triggerUpgrade(
+        "Live session logging is a Pro feature. Upload catches later via Insights.",
+      );
+      return;
+    }
     if (liveCameraInputRef.current) {
       liveCameraInputRef.current.value = "";
       liveCameraInputRef.current.click();
     }
   };
+
   const handleLiveCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1100,7 +1254,7 @@ export function Members() {
     setManualWaterName("");
     setLocationDetails({});
     setViewingFavoriteId(null);
-    setShowWeather(false); // Clear weather on deselect
+    setShowWeather(false);
     if (markerRef.current) {
       markerRef.current.remove();
       markerRef.current = null;
@@ -1196,6 +1350,16 @@ export function Members() {
     (e?: React.MouseEvent) => {
       e?.preventDefault();
       e?.stopPropagation();
+
+      // STRICT GATE: Plans are PRO ONLY (Hard Lock)
+      // This prevents the confirmation modal from opening for Free users.
+      if (!isActive) {
+        triggerUpgrade(
+          "Generate AI fishing plans based on real-time conditions with Pro.",
+        );
+        return;
+      }
+
       const targetName = currentFavorite ? currentFavorite.name : waterName;
       if (!targetName && !activeLake) return;
 
@@ -1210,8 +1374,31 @@ export function Members() {
         setShowGenerateConfirm(true);
       }
     },
-    [activeLake, waterName, currentFavorite, lastPlanUrl, lastPlanLake],
+    [
+      isActive,
+      favorites,
+      activeLake,
+      waterName,
+      currentFavorite,
+      lastPlanUrl,
+      lastPlanLake,
+    ],
   );
+
+  const handleWeatherClick = useCallback(() => {
+    // GATE: Weather is Conditional (Home Lake Allowed)
+    const isHomeLake =
+      isActive || (favorites.length > 0 && activeLake?.id === favorites[0].id);
+
+    if (!isActive && !isHomeLake) {
+      triggerUpgrade(
+        "Unlock real-time weather and intelligent planning for unlimited lakes. Free users get access to 1 Home Lake.",
+      );
+      return;
+    }
+
+    setShowWeather((prev) => !prev);
+  }, [isActive, favorites, activeLake]);
 
   const handleResumePlan = useCallback(() => {
     setShowStrategyMenu(false);
@@ -1253,6 +1440,14 @@ export function Members() {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
       } else {
+        // GATE: Favorites limit
+        if (!isActive && favorites.length >= 1) {
+          triggerUpgrade(
+            "Free users can track 1 Home Lake. Upgrade to track unlimited waters.",
+          );
+          return;
+        }
+
         const dbMatch = hydrateLakeData(
           manualWaterName || waterName,
           selectedCoords.lat,
@@ -1352,6 +1547,7 @@ export function Members() {
       }
     },
     [
+      isActive, // Needed for gate check
       waterName,
       manualWaterName,
       selectedCoords,
@@ -1378,6 +1574,11 @@ export function Members() {
   };
 
   const handleEditBoundary = () => {
+    // GATE: Lake Builder
+    if (!isActive) {
+      triggerUpgrade("Custom mapping tools are available in Pro.");
+      return;
+    }
     if (currentFavorite && selectedCoords) {
       navigate("/lake-builder", {
         state: {
@@ -1392,6 +1593,17 @@ export function Members() {
     }
   };
 
+  const handleCatchLogClick = () => {
+    // GATE: CatchLog List (Session View)
+    if (!isActive) {
+      triggerUpgrade(
+        "Catchlog tracks catches for your current trip. Historical catches remain available via Map pins and Insights.",
+      );
+      return;
+    }
+    catchLog.open();
+  };
+
   if (loading)
     return (
       <PlanGenerationLoader
@@ -1400,49 +1612,11 @@ export function Members() {
       />
     );
 
-  // 3. The Render Block
   if (statusLoading) {
     return <MapLoadingScreen />;
   }
-  if (!isActive) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#0a0a0a",
-          color: "#fff",
-          padding: 24,
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ fontSize: "1.5rem", marginBottom: 16 }}>
-          Subscription Required
-        </h1>
-        <p style={{ opacity: 0.7, marginBottom: 24 }}>
-          Subscribe to access the full Bass Clarity experience.
-        </p>
-        <button
-          onClick={() => navigate("/account")}
-          style={{
-            background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-            color: "#fff",
-            border: "none",
-            borderRadius: 12,
-            fontWeight: 700,
-            padding: "14px 32px",
-            cursor: "pointer",
-            fontSize: "1rem",
-          }}
-        >
-          Go to Account
-        </button>
-      </div>
-    );
-  }
+
+  // NOTE: Removed "Subscription Required" blocking render. Map is now UNLOCKED.
 
   return (
     <div
@@ -1474,6 +1648,13 @@ export function Members() {
             });
           }
         }}
+      />
+
+      {/* UPGRADE MODAL */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        message={upgradeMessage}
       />
 
       {/* WEATHER OVERLAY */}
@@ -1620,6 +1801,8 @@ export function Members() {
                         >
                           <PolygonIcon size={12} />
                           <span>Outline</span>
+                          {/* VISUAL LOCK: If locked, show small lock icon */}
+                          {!isActive && <LockIcon size={10} className="ml-1" />}
                         </button>
                       )}
                     </div>
@@ -1689,11 +1872,11 @@ export function Members() {
                     <span>Scout New</span>
                   </div>
                   {favorites.map((lake) => {
-                    const isActive = lake.id === viewingFavoriteId;
+                    const isActiveFav = lake.id === viewingFavoriteId;
                     return (
                       <div
                         key={`${lake.lake_type}:${lake.id}`}
-                        className={`nav-fav-card ${isActive ? "active" : ""}`}
+                        className={`nav-fav-card ${isActiveFav ? "active" : ""}`}
                         onClick={() => {
                           setWaterName(lake.name);
                           setViewingFavoriteId(lake.id);
@@ -1756,7 +1939,7 @@ export function Members() {
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
                 <button
-                  onClick={() => setShowWeather((prev) => !prev)}
+                  onClick={handleWeatherClick}
                   className={`nav-btn nav-btn-icon ${activeLake ? "nav-btn-primary" : ""}`}
                   disabled={!activeLake}
                   aria-label="Check Weather"
@@ -1857,7 +2040,7 @@ export function Members() {
                 </div>
 
                 <button
-                  onClick={catchLog.open}
+                  onClick={handleCatchLogClick}
                   className={`nav-btn nav-btn-icon ${!!activeLake ? "nav-btn-primary" : ""}`}
                   disabled={!activeLake}
                   aria-label="Catch Log"
@@ -2025,7 +2208,7 @@ export function Members() {
           </div>
         </div>
       )}
-      {/* --- ONBOARDING OVERLAY (The Burnout Special) --- */}
+      {/* --- ONBOARDING OVERLAY --- */}
       {showTutorial && (
         <div
           onClick={dismissTutorial}

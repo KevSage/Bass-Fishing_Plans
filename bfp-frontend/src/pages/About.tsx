@@ -33,8 +33,7 @@ export function About() {
             lineHeight: 1.1,
           }}
         >
-          Your Water. Your History.
-          Clear Decisions.
+          Your Water. Your History. Clear Decisions.
         </h1>
 
         <p
@@ -46,7 +45,9 @@ export function About() {
             margin: "0 auto",
           }}
         >
-          Bass Clarity is an intelligent fishing app built to help anglers understand their water, preserve their fishing history, and make clear decisions when it matters.
+          Bass Clarity is an intelligent fishing app built to help anglers
+          understand their water, preserve their fishing history, and make clear
+          decisions when it matters.
         </p>
       </section>
 
@@ -77,7 +78,9 @@ export function About() {
               marginBottom: 20,
             }}
           >
-            You choose your water, fish, and log catches naturally — often starting with a photo. Over time, your map fills with real locations, real results, and lived history.
+            You choose your water, fish, and log catches naturally — often
+            starting with a photo. Over time, your map fills with real
+            locations, real results, and lived history.
           </p>
 
           <p
@@ -87,7 +90,9 @@ export function About() {
               color: "rgba(255,255,255,0.7)",
             }}
           >
-            Bass Clarity is designed to preserve what you’ve earned on the water and make it accessible — without dashboards, charts, or information overload.
+            Bass Clarity is designed to preserve what you’ve earned on the water
+            and make it accessible — without dashboards, charts, or information
+            overload.
           </p>
         </div>
       </section>
@@ -136,7 +141,9 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              Every catch is stored with its location, time, and context. As your history grows, productive areas and patterns emerge naturally through repetition and density — not guesses.
+              Every catch is stored with its location, time, and context. As
+              your history grows, productive areas and patterns emerge naturally
+              through repetition and density — not guesses.
             </p>
           </div>
 
@@ -157,7 +164,9 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              Insights turn your catches, photos, and waters into a clear record — highlighting best days, productive lakes, and what’s actually worked over time.
+              Insights turn your catches, photos, and waters into a clear record
+              — highlighting best days, productive lakes, and what’s actually
+              worked over time.
             </p>
           </div>
 
@@ -178,7 +187,10 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              When it’s time to fish, Bass Clarity evaluates the same core environmental signals used by leading apps — and translates them into focused strategy: technique, targets, and execution, with simple reasoning.
+              When it’s time to fish, Bass Clarity evaluates the same core
+              environmental signals used by leading apps — and translates them
+              into focused strategy: technique, targets, and execution, with
+              simple reasoning.
             </p>
           </div>
 
@@ -199,7 +211,9 @@ export function About() {
                 color: "rgba(255,255,255,0.55)",
               }}
             >
-              The app is intentionally restrained. You get fewer, better decisions — and you always stay in control of how closely you follow the plan.
+              The app is intentionally restrained. You get fewer, better
+              decisions — and you always stay in control of how closely you
+              follow the plan.
             </p>
           </div>
         </div>
@@ -229,7 +243,9 @@ export function About() {
             margin: "0 auto",
           }}
         >
-          Bass Clarity is for anglers who want clarity without noise — whether fishing from the bank, a kayak, or a boat. It’s built to support real fishing and real learning over time.
+          Bass Clarity is for anglers who want clarity without noise — whether
+          fishing from the bank, a kayak, or a boat. It’s built to support real
+          fishing and real learning over time.
         </p>
       </section>
 
@@ -260,7 +276,10 @@ export function About() {
             lineHeight: 1.6,
           }}
         >
-          Upload past catch photos to bring your history in from day one, or start fresh and let it build naturally. Bass Clarity doesn’t replace intuition — it preserves experience and sharpens decisions when it matters.
+          Upload past catch photos to bring your history in from day one, or
+          start fresh and let it build naturally. Bass Clarity doesn’t replace
+          intuition — it preserves experience and sharpens decisions when it
+          matters.
         </p>
 
         <Link
@@ -278,7 +297,7 @@ export function About() {
             boxShadow: "0 10px 40px rgba(37, 99, 235, 0.3)",
           }}
         >
-          Start Your Free Trial
+          Create Your Catchlog
         </Link>
 
         <div style={{ marginTop: 24 }}>
