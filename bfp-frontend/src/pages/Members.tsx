@@ -2190,7 +2190,7 @@ export function Members() {
                   <style>{`.location-search-dropdown { position: absolute !important; top: 100% !important; z-index: 9999 !important; background: rgba(20, 20, 30, 0.98) !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: 10px !important; }`}</style>
                   <LocationSearch
                     onSelect={handleSearchSelect}
-                    placeholder="Search 1,000+ Lakes..."
+                    placeholder="Search Lake Database..."
                   />
                 </div>
               </div>

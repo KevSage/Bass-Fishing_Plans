@@ -368,11 +368,11 @@ export function Landing() {
                 to="/members"
                 style={{
                   width: "auto",
-                  padding: "18px 42px",
-                  fontSize: "1.1rem",
+                  padding: "12px 22px",
+                  fontSize: ".9em",
                 }}
               >
-                Join Today
+                Join Today - Free
               </Link>
 
               <Link
@@ -380,12 +380,12 @@ export function Landing() {
                 className="plan-btn secondary"
                 style={{
                   width: "auto",
-                  padding: "18px 42px",
-                  fontSize: "1.1rem",
+                  padding: "12px 22px",
+                  fontSize: "1rem",
                   backdropFilter: "blur(10px)",
                 }}
               >
-                Go Pro
+                Go Pro - $10/mo
               </Link>
             </div>
           </Reveal>
