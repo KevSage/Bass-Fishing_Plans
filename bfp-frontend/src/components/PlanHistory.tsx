@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import { MapPinIcon } from "@/components/UnifiedIcons";
+import {
+  MapPinIcon,
+  CalendarIcon,
+  ArrowRightIcon,
+} from "@/components/UnifiedIcons";
 
 interface Plan {
   id: string;
@@ -47,13 +51,13 @@ export function PlanHistory() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(
-          `Failed to fetch plan history: ${response.status} - ${errorText}`
+          `Failed to fetch plan history: ${response.status} - ${errorText}`,
         );
       }
 
@@ -69,7 +73,7 @@ export function PlanHistory() {
     } catch (err) {
       console.error("Failed to fetch plan history:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load plan history"
+        err instanceof Error ? err.message : "Failed to load plan history",
       );
     } finally {
       setLoading(false);
@@ -77,60 +81,68 @@ export function PlanHistory() {
   };
 
   const copyPlanLink = (plan: Plan) => {
-    // Use the backend's plan_url directly - it's already in correct format
     navigator.clipboard.writeText(plan.plan_url);
-
     const toast = document.createElement("div");
-    toast.textContent = "Link copied to clipboard!";
+    toast.textContent = "Link copied";
     toast.style.cssText =
-      "position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 9999;";
+      "position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #10B981; color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3);";
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 2000);
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return (
-      date.toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      }) +
-      " at " +
-      date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-      })
-    );
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // --- STYLES ---
+  const containerStyle: React.CSSProperties = {
+    background: "rgba(255, 255, 255, 0.02)",
+    border: "1px solid rgba(255, 255, 255, 0.06)",
+    borderRadius: "20px",
+    padding: "28px",
+    marginBottom: "24px",
+  };
+
+  const headerStyle: React.CSSProperties = {
+    fontSize: "1.1rem",
+    fontWeight: 700,
+    color: "#fff",
+    marginBottom: "4px",
+  };
+
+  const subHeaderStyle: React.CSSProperties = {
+    fontSize: "0.85rem",
+    color: "rgba(255,255,255,0.4)",
+    marginBottom: "24px",
+  };
+
+  const itemStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    padding: "20px",
+    background: "rgba(255, 255, 255, 0.03)",
+    borderRadius: "16px",
+    border: "1px solid rgba(255, 255, 255, 0.08)",
+    transition: "background 0.2s",
   };
 
   if (loading && offset === 0) {
     return (
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
-          border: "1px solid rgba(74, 144, 226, 0.2)",
-          borderRadius: 16,
-          padding: 32,
-          marginBottom: 24,
-        }}
-      >
-        <h2
+      <div style={containerStyle}>
+        <h2 style={headerStyle}>Plan History</h2>
+        <div
           style={{
-            fontSize: "1.25rem",
-            fontWeight: 600,
-            color: "#4A90E2",
-            marginBottom: 16,
+            padding: "20px 0",
+            color: "rgba(255,255,255,0.4)",
+            fontSize: "0.9rem",
           }}
         >
-          Plan History
-        </h2>
-        <div style={{ textAlign: "center", padding: "32px 0" }}>
-          <div className="spinner"></div>
-          <p style={{ color: "rgba(255,255,255,0.6)", marginTop: 16 }}>
-            Loading your plans...
-          </p>
+          Loading history...
         </div>
       </div>
     );
@@ -138,35 +150,12 @@ export function PlanHistory() {
 
   if (error) {
     return (
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
-          border: "1px solid rgba(74, 144, 226, 0.2)",
-          borderRadius: 16,
-          padding: 32,
-          marginBottom: 24,
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: 600,
-            color: "#4A90E2",
-            marginBottom: 16,
-          }}
-        >
-          Plan History
-        </h2>
+      <div style={containerStyle}>
+        <h2 style={headerStyle}>Plan History</h2>
         <div
-          style={{
-            background: "rgba(239, 68, 68, 0.1)",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            borderRadius: 12,
-            padding: 16,
-          }}
+          style={{ color: "#ef4444", fontSize: "0.9rem", padding: "20px 0" }}
         >
-          <p style={{ color: "#ef4444" }}>{error}</p>
+          {error}
         </div>
       </div>
     );
@@ -174,32 +163,35 @@ export function PlanHistory() {
 
   if (plans.length === 0) {
     return (
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
-          border: "1px solid rgba(74, 144, 226, 0.2)",
-          borderRadius: 16,
-          padding: 32,
-          marginBottom: 24,
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: 600,
-            color: "#4A90E2",
-            marginBottom: 16,
-          }}
-        >
-          Plan History
-        </h2>
-        <div style={{ textAlign: "center", padding: "48px 0" }}>
-          <p style={{ color: "rgba(255,255,255,0.6)", marginBottom: 24 }}>
-            You haven't generated any plans yet
+      <div style={containerStyle}>
+        <h2 style={headerStyle}>Plan History</h2>
+        <div style={{ textAlign: "center", padding: "32px 0" }}>
+          <p
+            style={{
+              color: "rgba(255,255,255,0.4)",
+              fontSize: "0.9rem",
+              marginBottom: "20px",
+            }}
+          >
+            No plans generated in the last 30 days.
           </p>
-          <a href="/members" className="btn primary">
-            Generate Your First Plan
+          <a
+            href="/members"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 20px",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "100px",
+              color: "#fff",
+              textDecoration: "none",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+            }}
+          >
+            Generate New Plan
           </a>
         </div>
       </div>
@@ -207,185 +199,189 @@ export function PlanHistory() {
   }
 
   return (
-    <div
-      style={{
-        background:
-          "linear-gradient(135deg, rgba(74, 144, 226, 0.08) 0%, rgba(10, 10, 10, 0.4) 100%)",
-        border: "1px solid rgba(74, 144, 226, 0.2)",
-        borderRadius: 16,
-        padding: 32,
-        marginBottom: 24,
-      }}
-    >
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#4A90E2" }}>
-          Plan History
-        </h2>
-        <p
-          style={{
-            fontSize: "0.875rem",
-            color: "rgba(255,255,255,0.6)",
-            marginTop: 4,
-          }}
-        >
-          Your plans from the last 30 days
-        </p>
+    <div style={containerStyle}>
+      <div>
+        <h2 style={headerStyle}>Plan History</h2>
+        <p style={subHeaderStyle}>Recent intelligence (30-day retention)</p>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         {(showAll ? plans : plans.slice(0, 3)).map((plan) => (
-          <div
-            key={plan.id}
-            style={{
-              padding: 20,
-              background: "rgba(255, 255, 255, 0.03)",
-              borderRadius: 12,
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-            }}
-          >
-            {/* Header */}
+          <div key={plan.id} style={itemStyle}>
+            {/* Top Row: Icon + Name + Badge */}
             <div
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "flex-start",
-                marginBottom: 8,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <div style={{ color: "#4A90E2" }}>
-                  <MapPinIcon size={18} />
-                </div>
-                <h3
-                  style={{ color: "#fff", fontWeight: 500, fontSize: "1.1rem" }}
+              <div style={{ display: "flex", gap: "12px" }}>
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    background: "rgba(74, 144, 226, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#4A90E2",
+                  }}
                 >
-                  {plan.lake_name}
-                </h3>
+                  <MapPinIcon size={16} />
+                </div>
+                <div>
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: "0.95rem",
+                      fontWeight: 600,
+                      color: "#fff",
+                    }}
+                  >
+                    {plan.lake_name}
+                  </h3>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      marginTop: "4px",
+                    }}
+                  >
+                    <CalendarIcon size={12} color="rgba(255,255,255,0.4)" />
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "rgba(255,255,255,0.4)",
+                      }}
+                    >
+                      {formatDate(plan.generation_date)}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <span
+
+              {/* Badge */}
+              {/* <span
                 style={{
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  fontSize: "0.75rem",
-                  fontWeight: 500,
-                  ...(plan.plan_type === "member"
-                    ? {
-                        background: "rgba(59, 130, 246, 0.2)",
-                        color: "#60a5fa",
-                        border: "1px solid rgba(59, 130, 246, 0.3)",
-                      }
-                    : {
-                        background: "rgba(156, 163, 175, 0.2)",
-                        color: "#9ca3af",
-                        border: "1px solid rgba(156, 163, 175, 0.3)",
-                      }),
+                  fontSize: "0.65rem",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  fontWeight: 700,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  background:
+                    plan.plan_type === "member"
+                      ? "rgba(34, 197, 94, 0.1)"
+                      : "rgba(255,255,255,0.05)",
+                  color:
+                    plan.plan_type === "member"
+                      ? "#4ade80"
+                      : "rgba(255,255,255,0.4)",
+                  border:
+                    plan.plan_type === "member"
+                      ? "1px solid rgba(34, 197, 94, 0.2)"
+                      : "1px solid rgba(255,255,255,0.1)",
                 }}
               >
-                {plan.plan_type === "member" ? "Member" : "Preview"}
-              </span>
+                {plan.plan_type}
+              </span> */}
             </div>
 
-            {/* Date */}
+            {/* Action Buttons */}
             <div
               style={{
-                fontSize: "0.875rem",
-                color: "rgba(255,255,255,0.6)",
-                marginBottom: 16,
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "10px",
+                marginTop: "4px",
               }}
             >
-              {formatDate(plan.generation_date)}
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <a
                 href={plan.plan_url}
-                className="btn primary"
                 style={{
-                  textDecoration: "none",
-                  fontSize: "0.875rem",
-                  padding: "10px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  padding: "10px",
                   background:
                     "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-                  borderRadius: 8,
-                  fontWeight: 600,
-                  border: "none",
+                  borderRadius: "10px",
                   color: "#fff",
+                  textDecoration: "none",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  boxShadow: "0 4px 12px rgba(74, 144, 226, 0.2)",
                 }}
               >
-                View Plan
+                Open Plan <ArrowRightIcon size={14} />
               </a>
               <button
                 onClick={() => copyPlanLink(plan)}
                 style={{
-                  fontSize: "0.875rem",
-                  padding: "10px 20px",
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  borderRadius: 8,
-                  color: "#fff",
-                  cursor: "pointer",
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: "10px",
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: "0.85rem",
                   fontWeight: 500,
+                  cursor: "pointer",
                 }}
-                title="Copy link"
               >
-                📋 Copy Link
+                Copy Link
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Show All / Show Less Toggle */}
-      {plans.length > 3 && (
-        <div style={{ marginTop: 20, textAlign: "center" }}>
+      {/* Toggles / Load More */}
+      <div
+        style={{
+          marginTop: "24px",
+          display: "flex",
+          justifyContent: "center",
+          gap: "12px",
+        }}
+      >
+        {plans.length > 3 && (
           <button
             onClick={() => setShowAll(!showAll)}
             style={{
-              padding: "12px 24px",
-              background: "rgba(74, 144, 226, 0.1)",
-              border: "1px solid rgba(74, 144, 226, 0.3)",
-              borderRadius: 8,
-              color: "#4A90E2",
-              cursor: "pointer",
+              background: "none",
+              border: "none",
+              color: "rgba(255,255,255,0.5)",
+              fontSize: "0.8rem",
               fontWeight: 500,
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(74, 144, 226, 0.15)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(74, 144, 226, 0.1)";
+              cursor: "pointer",
+              padding: "8px 16px",
             }}
           >
-            {showAll ? `Show Less ▲` : `Show All ${plans.length} Plans ▼`}
+            {showAll ? "Show Less" : `View All (${plans.length})`}
           </button>
-        </div>
-      )}
+        )}
 
-      {/* Load More (only when showing all AND there's more to load) */}
-      {showAll && hasMore && (
-        <div style={{ marginTop: 16, textAlign: "center" }}>
+        {showAll && hasMore && (
           <button
             onClick={() => setOffset(offset + 10)}
             disabled={loading}
             style={{
-              padding: "12px 24px",
-              background: loading
-                ? "rgba(255, 255, 255, 0.03)"
-                : "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: 8,
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.1)",
               color: "#fff",
-              cursor: loading ? "not-allowed" : "pointer",
-              fontWeight: 500,
-              opacity: loading ? 0.5 : 1,
+              padding: "8px 16px",
+              borderRadius: "100px",
+              fontSize: "0.8rem",
+              cursor: loading ? "wait" : "pointer",
             }}
           >
-            {loading ? "Loading..." : "Load More Plans"}
+            {loading ? "Loading..." : "Load Older Plans"}
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

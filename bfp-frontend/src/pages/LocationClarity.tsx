@@ -19,7 +19,7 @@ export function LocationClarityPage() {
       maxWidth,
       margin: "0 auto",
       width: "100%",
-    } as const);
+    }) as const;
 
   const eyebrow = {
     fontSize: "0.82rem",
@@ -557,7 +557,7 @@ export function LocationClarityPage() {
               margin: "0 auto 14px",
             }}
           >
-            5-Day Free Trial
+            5-Day Create Your Catchlog
           </p>
 
           <p
@@ -586,7 +586,7 @@ export function LocationClarityPage() {
               boxShadow: "0 8px 24px rgba(74, 144, 226, 0.3)",
             }}
           >
-            Start Your Free Trial
+            Create Your Catchlog
           </Link>
         </div>
       </section>
@@ -660,7 +660,7 @@ export function LocationClarityPage() {
             }}
           >
             <Link to="/subscribe" style={primaryCta}>
-              Start Your Free Trial
+              Create Your Catchlog
             </Link>
             <Link to="/" style={smallCta}>
               Back to Landing

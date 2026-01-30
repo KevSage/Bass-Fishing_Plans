@@ -242,7 +242,7 @@ export function FAQ() {
             boxShadow: "0 10px 30px rgba(37, 99, 235, 0.25)",
           }}
         >
-          Start Your Free Trial
+          Create Your Catchlog
         </Link>
       </section>
     </div>

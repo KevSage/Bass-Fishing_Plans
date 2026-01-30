@@ -239,7 +239,7 @@ export function Navigation() {
                 letterSpacing: "-0.01em",
               }}
             >
-              Start Free Trial
+              Start Create Your Catchlog
             </Link>
             <Link
               to="/sign-in"
@@ -480,7 +480,7 @@ export function Navigation() {
                   fontWeight: 600,
                 }}
               >
-                Start Free Trial
+                Start Create Your Catchlog
               </Link>
             </SignedOut>
           </nav>
