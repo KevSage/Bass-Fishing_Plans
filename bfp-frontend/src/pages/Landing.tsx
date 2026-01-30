@@ -186,7 +186,7 @@ function ComparisonTable() {
         </div>
 
         <Link to="/members" className="plan-btn secondary">
-          Start Catchlog
+          Sign Up - Free
         </Link>
       </div>
 
