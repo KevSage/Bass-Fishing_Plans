@@ -12,7 +12,7 @@ import existingLakesRaw from "@/data/lakes.json";
 // --- CONFIG ---
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const ADMIN_PASSWORD = "bass2025";
-const PROXIMITY_ALERT_MILES = 10;
+const PROXIMITY_ALERT_MILES = 50; // Increased to catch large lakes
 
 // --- TYPES ---
 interface Coordinate {
@@ -35,7 +35,8 @@ interface InternalLakeEntry {
 
   // Logic flags
   _isUpdate?: boolean;
-  distance?: number; // <--- Added to fix TS Error
+  distance?: number;
+  nameMatch?: boolean;
 }
 
 // Final Export Interface (Matches your lakes.json)
@@ -480,13 +481,29 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
       ...batchQueue.map((b) => ({ ...b, id: b.id })),
     ];
 
+    // FIX: Normalize search name for matching
+    const searchNameLower = manualName?.toLowerCase().trim();
+
     const matches = allLakes
-      .map((lake) => ({
-        ...lake,
-        distance: getDistanceMiles(lat, lng, lake.latitude, lake.longitude),
-      }))
-      .filter((l) => l.distance! < PROXIMITY_ALERT_MILES)
-      .sort((a, b) => a.distance! - b.distance!);
+      .map((lake) => {
+        const dist = getDistanceMiles(lat, lng, lake.latitude, lake.longitude);
+        const nameMatch =
+          !!searchNameLower &&
+          lake.name.toLowerCase().includes(searchNameLower);
+        return {
+          ...lake,
+          distance: dist,
+          nameMatch,
+        };
+      })
+      // FIX: Proximity check expanded + Name match override
+      .filter((l) => l.nameMatch || l.distance! < PROXIMITY_ALERT_MILES)
+      .sort((a, b) => {
+        // Prioritize Name Match, then Distance
+        if (a.nameMatch && !b.nameMatch) return -1;
+        if (!a.nameMatch && b.nameMatch) return 1;
+        return a.distance! - b.distance!;
+      });
 
     setCurrentLake({
       name: manualName || "",
@@ -585,29 +602,42 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
   };
 
   const handleDownloadJson = () => {
-    const lakeMap = new Map<string, InternalLakeEntry>();
-    INITIAL_LAKES.forEach((l) => lakeMap.set(l.id, l));
+    // 1. STAGE 1: Merge by ID (Handles renames/updates within current session)
+    // Keys are random temp_ids assigned at load. This ensures that if I update "Lake A",
+    // the original "Lake A" entry is overwritten.
+    const idMap = new Map<string, InternalLakeEntry>();
+    INITIAL_LAKES.forEach((l) => idMap.set(l.id, l));
     batchQueue.forEach((item) => {
-      lakeMap.set(item.id, item);
+      idMap.set(item.id, item);
     });
 
-    const finalArray: ExportLakeEntry[] = Array.from(lakeMap.values()).map(
-      (l) => {
-        const entry: ExportLakeEntry = {
-          name: l.name,
-          state: l.state,
-          latitude: l.latitude,
-          longitude: l.longitude,
-          tier: l.tier,
-        };
-        // Only include optional fields if they have values
-        if (l.city) entry.city = l.city;
-        if (l.acres) entry.acres = l.acres;
-        if (l.bbox) entry.bbox = l.bbox;
-        if (l.anchors && l.anchors.length > 0) entry.anchors = l.anchors;
-        return entry;
-      },
-    );
+    // 2. STAGE 2: Merge by Name+State (Collapses duplicates in the file)
+    // This cleans up your file. If "Lake Okeechobee" appears 3 times, they will collide here
+    // and only the last one (or the one from batch) will survive.
+    const uniqueMap = new Map<string, ExportLakeEntry>();
+
+    Array.from(idMap.values()).forEach((l) => {
+      const key = `${l.name.trim().toLowerCase()}|${l.state
+        .trim()
+        .toLowerCase()}`;
+
+      const entry: ExportLakeEntry = {
+        name: l.name,
+        state: l.state,
+        latitude: l.latitude,
+        longitude: l.longitude,
+        tier: l.tier,
+      };
+      if (l.city) entry.city = l.city;
+      if (l.acres) entry.acres = l.acres;
+      if (l.bbox) entry.bbox = l.bbox;
+      if (l.anchors && l.anchors.length > 0) entry.anchors = l.anchors;
+
+      // Overwrite: This effectively deletes duplicates
+      uniqueMap.set(key, entry);
+    });
+
+    const finalArray = Array.from(uniqueMap.values());
 
     const dataStr = JSON.stringify(finalArray, null, 2);
     const blob = new Blob([dataStr], { type: "application/json" });
@@ -621,7 +651,9 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    alert(`Downloaded 'lakes.json' with ${finalArray.length} entries.`);
+    alert(
+      `Cleaned & Exported: Collapsed ${idMap.size} raw entries into ${finalArray.length} unique lakes.`,
+    );
   };
 
   // ==========================================
@@ -935,6 +967,9 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
                       padding: "12px",
                       textAlign: "left",
                       width: "100%",
+                      border: lake.nameMatch
+                        ? "1px solid #4A90E2"
+                        : "1px solid rgba(255,255,255,0.1)",
                     }}
                   >
                     <div>

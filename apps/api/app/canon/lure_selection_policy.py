@@ -64,87 +64,100 @@ Pick exactly ONE lean. This is the day's personality:
 5) CONTROL (Neutral Lean — default)
 
 Use these deterministic cues (no random):
-- POWER SEARCH if wind is clearly the headline (strong or gusty), especially with clouds/precip.
-- REACTION if low light/overcast is dominant OR conditions suggest a trigger window (clouds + moderate wind).
-- FINESSE if pressure trend is rising AND light is bright/clear AND wind is low-to-moderate.
-- FRONT/INSTABILITY if pressure is falling OR precip/front is present/approaching OR temps are swinging rapidly.
-- CONTROL otherwise.
 
-*NOTE ON PIVOTS: If your calculated Lean forces a "Forbidden" lure, you may downgrade confidence to the Secondary Lean (e.g. Power Search -> Reaction) to find a valid tool.*
+1. POWER SEARCH:
+   - IF wind is strong (>12mph) OR gusty (>20mph).
+   - IF 'past_wind' was strong (>15mph) and current is moderate (Lag Effect).
+   
+2. REACTION:
+   - IF low light/overcast is dominant (Cloud Cover > 60%).
+   - IF pressure is "Falling Fast" (Storm Front) -> Fish become aggressive even in cold.
+   - IF "Snow/Rain" is present -> Active feeding window.
+   
+3. FINESSE:
+   - IF pressure trend is "Rising" or "High/Stable".
+   - AND Sky is Clear/Bright.
+   - AND Wind is Light (<8mph).
+   
+4. FRONT / INSTABILITY:
+   - IF pressure is "Falling" but wind is not dominant.
+   - IF rapid temperature drop (Cold Front) -> forces defensive posture.
+   
+5. CONTROL:
+   - Default if no extreme conditions exist.
+   - Winter baseline (unless warming trend exists).
 
 ═══════════════════════════════════════════════════════════════════════════════
 D) LEAN → PREFERRED PRESENTATION FAMILIES + LURE FAMILIES
 ═══════════════════════════════════════════════════════════════════════════════
-When multiple options are valid, the lean decides which correct answer to LEAN INTO. Do NOT default to a generalist lure.
+When multiple options are valid, the lean decides which correct answer to LEAN INTO.
 
-TACTICAL VARIETY RULE (Bladed vs. Non-Bladed):
-- If user history contains a Bladed Bait (Chatterbait/Spinnerbait) and conditions are similar:
-- PRIORITIZE a Non-Bladed Reaction bait (Crankbait/Swim Jig) to ensure true tactical variety.
-- Switching from Chatterbait to Spinnerbait is often too similar; look for a profile change (visual vs vibration).
+🚨 COLD WATER VARIETY RULE (Below 55°F):
+- Do NOT auto-default to Jerkbait for every Reaction read.
+- Do NOT auto-default to Dropshot for every Finesse read.
+- USE THE FULL MENU below to match specific conditions (Wind/Stain/Depth).
 
 POWER SEARCH (Wind Lean):
-- Prefer Horizontal Reaction or fast coverage tools.
-- Lure families: spinnerbait, chatterbait, swim jig, crankbait (if applicable).
-- Stained water OR recent rain: Prioritize bladed baits (chatterbait, spinnerbait) for vibration advantage.
-- Clear water: Profile baits (swim jig, paddle tail) work equally well.
-- Bottom contact is allowed only if targets demand it OR season strongly indicates tight positioning; otherwise keep primary moving.
+- Cold Water Options: 
+  • Lipless Crankbait (Yo-Yo/Lift-Drop) -> Best for grass/flats.
+  • Medium/Deep Crankbait (Tight Wobble) -> Best for rock/channel swings.
+  • Spinnerbait (Slow Roll) -> Best for wind-blown wood/stumps.
+  • Underspin -> Best for suspended fish in wind.
+- Warm Water Options: Chatterbait, Squarebill, Swim Jig, Topwater.
 
 REACTION (Low Light / Trigger Lean):
-- Prefer reaction tools that create commitment (change of direction, pause/trigger).
-- Lure families: jerkbait (season-permitting), crankbait, spinnerbait, chatterbait.
-- Falling pressure: Prioritize bladed baits for vibration trigger (chatterbait, spinnerbait).
-- If very cold/neutral, reaction should be more controlled (jerkbait pauses, slower crank cadence).
+- Cold Water Options:
+  • Jerkbait -> Visual trigger, clear water, suspending fish.
+  • Flat-Sided Crankbait -> Thumping trigger, stained water, rock.
+  • Blade Bait (Silver Buddy) -> Vertical reaction, deep water.
+  • Underspin -> Subtle flash, finesse reaction.
+- Warm Water Options: Chatterbait, Spinnerbait, Topwater.
 
 FINESSE (High Pressure / Calm / Bright Lean):
-- Prefer subtle, smaller profile, slower pace.
-- Lure families: ned rig, shaky head, dropshot, neko rig, wacky rig.
-- Texas rig can appear as a control alternative, but do NOT auto-default to jig/texas when true finesse lures are viable.
-- Avoid vibration - bass are pressured.
+- Cold Water Options:
+  • Ned Rig -> Deadsticking on bottom (better than dropshot for pinning to floor).
+  • Neko Rig -> Deep structure precision.
+  • Dropshot -> Suspended fish or vertical brush.
+  • Hair Jig -> Coldest water, absolute subtle presentation.
+- Warm Water Options: Wacky Rig, Shaky Head, Weightless Senko.
 
 FRONT / INSTABILITY Lean:
-- Prefer trigger baits that can convert short windows (reaction + pause/deflection) OR controlled bottom contact as pivot.
-- Lure families: jerkbait, crankbait, chatterbait, spinnerbait.
-- Falling pressure = aggressive feeding: Prioritize vibration baits (chatterbait, spinnerbait).
-- If conditions are post-front bright/high pressure, shift toward finesse as the secondary pivot.
+- Cold Water Options:
+  • Jerkbait -> The pause triggers hesitant fish.
+  • Football Jig -> Dragging deep structure (defensive but big meal).
+  • Lipless Crankbait -> Reaction strike from defensive fish.
 
 CONTROL (Neutral Lean):
-- Prefer versatile, high-control presentations.
-- Lure families: casting jig, football jig, texas rig, shaky head.
-- STILL avoid "jig every day": choose the lure that best matches season + forage profile + targets (not a default).
+- Cold Water Options:
+  • Football Jig -> Deep rock/ledges (The "Winter Standard").
+  • Casting Jig -> Wood/Docks.
+  • Texas Rig (Creature) -> Penetrating heavy cover.
+  • Shaky Head -> Rock transitions.
 
 ═══════════════════════════════════════════════════════════════════════════════
 E) PRIMARY + SECONDARY SELECTION RULES (TO CREATE EARNED VARIETY)
 ═══════════════════════════════════════════════════════════════════════════════
 PRIMARY:
-- MUST express the Day Lean first (within season plausibility).
-- If multiple lures fit: choose the lure that best matches forage profile:
-  • baitfish-style → spinnerbait/jerkbait/crank style options
-  • bottom-protein → jig/texas/drag/hop options
-  • micro → ned/dropshot/shaky style options
-  • compact → smaller, tighter-profile options within the lean
-- Do NOT pick jig/texas as a reflex if a lean-appropriate moving or finesse lure is clearly viable.
+- MUST express the Day Lean first.
+- If multiple lures fit, choose based on Water Clarity & Cover:
+  • Clear + Open -> Jerkbait, Underspin, Dropshot.
+  • Stained + Rock -> Crankbait, Football Jig.
+  • Stained + Wood -> Spinnerbait, Casting Jig.
 
-SECONDARY (PIVOT):
-- MUST be a different presentation family per the existing validation rules.
-- Selection is ALWAYS driven by your condition analysis and Day Lean determination.
-- MUST represent a plausible "counter-lean" for today:
-  • Power Search primary → Reaction or Finesse pivot (depending on pressure/light)
-  • Reaction primary → Control pivot OR Power Search pivot if wind is building
-  • Finesse primary → Reaction pivot if clouds/wind may open a window OR Control pivot for structure/cover
-  • Control primary → Reaction or Power Search pivot if wind/light supports it
-  • Front/Instability primary → Control or Finesse pivot depending on whether conditions stabilize bright
-- Secondary is not a backup; it is a different interpretation of the same day.
+SECONDARY (PIVOT) - BREAK THE "DEFAULT PAIRS":
+- **ANTI-BOREDOM RULE:** If Primary is Jerkbait, Secondary should NOT be Dropshot unless conditions are extreme (slick calm/high pressure).
+- TRY THESE PIVOTS INSTEAD:
+  • Jerkbait (Suspended) → Football Jig (Bottom Pinned) [Depth Pivot]
+  • Jerkbait (Visual) → Crankbait (Vibration) [Speed Pivot]
+  • Lipless Crankbait (Speed) → Ned Rig (Deadstick) [Tempo Pivot]
+  • Football Jig (Slow) → Blade Bait (Reaction) [Trigger Pivot]
 
-SEARCH AND PICK APART (CONDITIONAL STRATEGY — NOT DEFAULT):
-IF your condition analysis led to a fast-moving search primary (Horizontal Reaction, Topwater - Horizontal),
-AND conditions also suggest fish may be hesitant to commit (high pressure, clear water, post-frontal, neutral lean):
-- Consider slower, bottom-oriented secondary (Bottom Contact, Hovering/Mid-Column Finesse)
-- This provides methodical followup: locate with speed, then slow down to catch
-- Common pairs: chatterbait → texas rig, spinnerbait → jig, lipless crankbait → dropshot, buzzbait → ned rig
-- DO NOT force this pattern if conditions suggest otherwise:
-  • Full reaction lean across conditions → keep secondary moving (e.g., chatterbait → jerkbait)
-  • Low pressure + stained water → both patterns can be aggressive (e.g., chatterbait → lipless crank)
-- This is ONE valid outcome when conditions align, not a dominant strategy
+- MUST be a different presentation family.
+- MUST represent a plausible "counter-lean" for today.
+
+SEARCH AND PICK APART (CONDITIONAL STRATEGY):
+- If Primary is Fast (Crankbait/Lipless), Secondary can be Slow (Jig/Ned).
+- This is the classic 1-2 punch.
 
 ═══════════════════════════════════════════════════════════════════════════════
 F) SPECIALIZED LONG-LINE RIGS (GENERAL RULE — NO ESSAYS)
@@ -380,6 +393,24 @@ Fall Transition (cooling, 65-55°F):
   • Prioritize: offshore points, wind-blown banks, transitions, channel swings, grass edges
   • Deprioritize: heavy cover (fish less defensive)
 
+STEP 2.5: APPLY WEATHER & LIGHT VETO (CRITICAL)
+You must REMOVE targets that are physically impossible or poor choices due to current weather.
+**Use ONLY targets from the accessible_targets list provided.**
+
+A) IF OVERCAST / RAIN / SNOW (No Sun):
+   • REMOVE: "shaded banks". (Shade does not exist without sun).
+   • SUBSTITUTE: "offshore points", "flats", "grass edges", "transitions".
+
+B) IF HIGH WIND (>15mph):
+   • REMOVE: "deep offshore structure" (hard to maintain boat position), "isolated cover" (hard to hit).
+   • PRIORITIZE: "wind-blown banks", "current breaks", "offshore points".
+
+C) IF FREEZING / SNOWSTORM:
+   • REMOVE: "flats", "grass edges" (likely too shallow/cold).
+   • PRIORITIZE: "deep offshore structure", "creek channels", "depth breaks", "channel swings".  
+
+
+
 STEP 3: CHECK LURE COMPATIBILITY
 Ensure your selected lure can effectively fish the target:
 
@@ -442,7 +473,7 @@ FINAL VALIDATION:
   • All 3 align with Day Lean preferences ✓
   • All 3 compatible with chosen lures ✓
   • All 3 represent different tactical approaches ✓
-
+  • NO targets violate the Weather Veto (e.g. no shade in snow)
 ═══════════════════════════════════════════════════════════════════════════════
 J) DAY LEAN → FISHING STYLE CONNECTION
 ═══════════════════════════════════════════════════════════════════════════════
