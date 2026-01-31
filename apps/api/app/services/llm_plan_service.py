@@ -1333,6 +1333,10 @@ async def call_openai_plan(
         "instructions": "",
     }
 
+    user_input["forbidden_combinations"] = []           
+    # Build context-aware regeneration note
+# 1. NEW: Inject Structured Constraint (The LLM respects data keys highly)
+    user_input["forbidden_combinations"] = []
 
     # Build context-aware regeneration note
     regeneration_note = ""
@@ -1340,25 +1344,38 @@ async def call_openai_plan(
     current_temperature = 0.6
     
     if recent_primary_lures or recent_secondary_lures:
-        # Bump temperature for variety
         current_temperature = 0.75
         
-        # Default context if not provided
         if not regen_context:
-            regen_context = {
-                "last_lake_name": None,
-                "minutes_since_last_gen": None,
-                "last_combination": None
-            }
+            regen_context = { "last_lake_name": None, "minutes_since_last_gen": None, "last_combination": None }
         
         last_lake = regen_context.get("last_lake_name")
         minutes_ago = regen_context.get("minutes_since_last_gen")
         last_combo = regen_context.get("last_combination")
         
-        # Determine user intent based on context
+        # ADD TO STRUCTURED INPUT
+        if last_combo:
+             user_input["forbidden_combinations"].append(list(last_combo))
+
         same_location = (last_lake == current_lake_name) if last_lake and current_lake_name else False
         
-        regeneration_note = "\n🔄 REGENERATION CONTEXT:\n"
+        # 2. UPGRADED: "Burned" Framing (Stronger than Forbidden)
+        regeneration_note = "\n\n🚨 FINAL SYSTEM OVERRIDE - VARIETY ENFORCEMENT 🚨\n"
+        
+        if last_combo:
+            p_lure = str(last_combo[0]).upper()
+            s_lure = str(last_combo[1]).upper()
+            regeneration_note += f"1. THE PAIR [{p_lure} + {s_lure}] IS BURNED (UNAVAILABLE).\n"
+            regeneration_note += f"   - This specific combination was just used. It is physically unavailable.\n"
+            regeneration_note += f"   - You MUST calculate the 2nd Best Optimal Strategy.\n"
+        
+        if minutes_ago is not None and minutes_ago < 60 and same_location:
+             regeneration_note += "2. RAPID REGENERATION DETECTED:\n"
+             regeneration_note += f"   - The user is asking for OPTIONS.\n"
+             regeneration_note += f"   - AVOID these recent lures if possible: {recent_primary_lures + recent_secondary_lures}\n"
+             regeneration_note += "   - Dig deeper into the tackle box.\n"
+
+        regeneration_note += "\n"
         
         # Show recent lures
         if recent_primary_lures:
@@ -1490,7 +1507,20 @@ Good boat plans demonstrate:
 Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access provides offshore options
 """
         user_input["instructions"] += boat_instructions
-
+    # We use += to append this to the Trend/Boat instructions we just added above.
+    user_input["instructions"] += (
+        "\n" +
+        seasonal_note +
+        target_lock_note +
+        "\nACCESSIBLE TARGETS (based on " + access_type + " access):\n" +
+        "- These are the targets the angler can realistically reach from " + access_type + "\n" +
+        "- Accessible targets: " + str(accessible_targets) + "\n" +
+        "- For work_it_cards definitions, use target_definitions[target_name]\n" +
+        "\n" +
+        LURE_SELECTION_POLICY_PROMPT + 
+        "\n" + 
+        regeneration_note  # <--- PLACED AT THE VERY END (The Final Word)
+    )
     system_prompt = build_system_prompt(include_pattern_2=True)
     max_tokens = 1700
 
