@@ -834,8 +834,13 @@ WEATHER CARD INSIGHTS (UI) (LOCKED):
 
 FORECAST SCORING RULES (Mental Model):
 Assign a score (1-10) and rating based on these strict tier definitions:
+🚨 SEASONAL CEILING RULE:
+- If Season is WINTER or COLD WATER:
+  - MAX SCORE is 6 (OPPORTUNISTIC).
+  - EXCEPTION: If 'warm_trend' is present, you may score up to 8.
+  - DO NOT rate a snowstorm or freezing front as "ACTIVE" (7+). It is "DEFENSIVE" or "SELECTIVE" (1-4) despite falling pressure.
 
-1-2: DEFENSIVE
+  1-2: DEFENSIVE
    • Conditions: Severe cold front, bluebird skies, rapid temperature drop, high rising pressure (>1025mb).
    • Mood: Bass are buried in cover, non-active.
    
@@ -913,17 +918,30 @@ WHY THIS WORKS:
    - Add ONE sentence about soft plastic/trailer color choice if applicable.
    - Length: Max 28-32 words total (lure choice + color explanation + optional trailer color)
 
-DAY PROGRESSION (EXTENDED FORMAT):
-   - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
-   - Length: Max 28-32 words PER time block (not just 1 sentence)
-   - Each time block MUST start with "Morning:", "Midday:", or "Evening:" (or "Late:")
-   - NO colors in day progression (no parentheses, no "in green pumpkin")
-   
-   Each time block should cover:
-   - Where + Why: Location/target type and bass behavior at this time
-   - How: Tactical adjustment specific to this time period
-   - Key insight: What to expect or prioritize. Reference which technique to use and when. Suggest when to switch from one presentation to another based on weather forecast and conditions. 
 
+DAY PROGRESSION (EXTENDED FORMAT) - TACTICAL & WEATHER AWARE:
+   - Exactly 3 time blocks: Morning / Midday / Evening (or Late)
+   - Length: Max 28-32 words PER time block.
+   - NO colors in day progression.
+
+   🚨 WEATHER CONTEXT RULES (MUST FOLLOW):
+   1. IF OVERCAST / RAIN / SNOW:
+      - YOU ARE FORBIDDEN from using the words "shade", "shadows", "sun", or "retreat from light".
+      - Instead, focus on "roaming", "active lanes", or "low-light advantage".
+   2. IF COLD / WINTER / SNOWSTORM:
+      - Bass are seeking STABILITY and WARMTH, not "avoiding sun".
+      - Midday focus should be on "peak warmth window" or "solar gain" (if sun breaks through), NOT "seeking shade".
+      - If snowing/storming: Focus on "tight to cover" and "easy meals". Bass will NOT be "active/chasing" in freezing turbulence.
+
+   CONTENT REQUIREMENTS (Do not list these bullets, just follow them):
+   - Where + Why: Location/target type and bass behavior at this time.
+   - How: Tactical adjustment specific to this time period.
+   - Key insight: What to expect or prioritize. Reference which technique to use and when. Suggest when to switch from one presentation to another based on weather forecast and conditions.
+
+   Format:
+   Morning: [Text]
+   Midday: [Text]
+   Evening: [Text]
 
 TERMINAL TACKLE:
 - If base_lure is terminal tackle (texas rig, carolina rig, dropshot, ned rig, shakey head, wacky rig, neko rig), you MUST set soft_plastic and soft_plastic_why.
@@ -1260,6 +1278,7 @@ async def call_openai_plan(
         temp_window_f = None
 
 
+    # ✅ SURGICAL UPDATE: Enhanced user_input with Trend Data
     user_input = {
         "location": location,
         "phase": phase,
@@ -1278,9 +1297,11 @@ async def call_openai_plan(
 
             # Wind & Sky
             "wind_mph": weather.get("wind_mph") or weather.get("wind_speed"),
+            "wind_gust_mph": weather.get("wind_gust_mph"),  # <-- NEW
+            "wind_direction": weather.get("wind_direction"), # <-- NEW
             "cloud_cover": weather.get("cloud_cover") or weather.get("sky_condition"),
             
-            # Barometric Pressure (CRITICAL for bass activity)
+            # Barometric Pressure
             "pressure_mb": weather.get("pressure_mb"),
             "pressure_trend": weather.get("pressure_trend"),
             
@@ -1297,6 +1318,12 @@ async def call_openai_plan(
             # Other
             "humidity": weather.get("humidity"),
             "clarity_estimate": weather.get("clarity_estimate"),
+
+            # ✅ NEW: Forecast & Trends (The "Time Machine" Data)
+            "forecast_narrative": weather.get("forecast_narrative", ""),
+            "past_wind_mph": weather.get("past_wind_mph"),
+            "future_wind_mph": weather.get("future_wind_mph"),
+            "forecast_wind_max": weather.get("forecast_wind_max"),
         },
         "accessible_targets": accessible_targets,
         "primary_targets": None,
@@ -1305,7 +1332,8 @@ async def call_openai_plan(
         "target_definitions": accessible_target_defs,
         "instructions": "",
     }
-    
+
+
     # Build context-aware regeneration note
     regeneration_note = ""
     # DYNAMIC TEMPERATURE: Increase temp if regeneration context exists to encourage variety
@@ -1418,17 +1446,27 @@ async def call_openai_plan(
         target_lock_note += f"- primary_targets: {primary_targets}\n"
         target_lock_note += f"- secondary_targets: {secondary_targets}\n\n"
 
-    user_input["instructions"] = (
-        regeneration_note +
-        seasonal_note +
-        target_lock_note +
-        "ACCESSIBLE TARGETS (based on " + access_type + " access):\n" +
-        "- These are the targets the angler can realistically reach from " + access_type + "\n" +
-        "- Accessible targets: " + str(accessible_targets) + "\n" +
-        "- For work_it_cards definitions, use target_definitions[target_name]\n" +
-        "\n" +
-        LURE_SELECTION_POLICY_PROMPT
-    )
+    # ... existing regeneration_note code ...
+
+    # ✅ SURGICAL INSERT: Trend Analysis Directive
+    trend_instructions = """
+    
+    🔍 WEATHER TREND ANALYSIS (CRITICAL):
+    You have access to 'forecast_narrative', 'past_wind_mph', and 'future_wind_mph'. USE THEM.
+    1. ANALYZE THE TREND, NOT JUST THE SNAPSHOT.
+    - If wind is building (future > current): Plan for reaction bites peaking later in the day.
+    - If wind is dying (past > current): The "Lag Effect" applies—mudlines and chop may still favor reaction baits even if current wind is low.
+    - If pressure is falling fast: This is an aggressive feeding window; prioritize power fishing.
+    - If pressure is rising fast (post-front): Fish are tightening to cover; downsize and slow down.
+
+    2. MATCH DAY PROGRESSION TO FORECAST:
+    - Your 'day_progression' logic MUST match the wind/weather forecast. 
+    - Example: If wind spikes to 20mph in the afternoon, your "Evening" block should switch to wind-blown tactics.
+    """
+    
+    # Append to existing instructions
+    user_input["instructions"] += trend_instructions
+
     
     # Add boat advantage strategic requirements
     if access_type == "boat":
