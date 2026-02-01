@@ -311,7 +311,7 @@ export function Landing() {
           style={{
             position: "absolute",
             inset: 0,
-            backgroundImage: "url(/images/hero_bass.png)",
+            backgroundImage: "url(/images/hero_bass.jpg)",
             backgroundSize: "cover",
             backgroundPosition: "65% 45%",
             opacity: 1,

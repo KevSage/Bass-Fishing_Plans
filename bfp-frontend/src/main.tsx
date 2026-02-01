@@ -1,11 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
+// import { BrowserRouter } from "react-router-dom";
 import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./complete-styles.css";
-
+import { HashRouter } from "react-router-dom";
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!clerkPubKey) {
@@ -14,8 +14,8 @@ if (!clerkPubKey) {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ClerkProvider publishableKey={clerkPubKey}>
-    <BrowserRouter>
+    <HashRouter>
       <App />
-    </BrowserRouter>
-  </ClerkProvider>
+    </HashRouter>
+  </ClerkProvider>,
 );

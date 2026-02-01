@@ -21,7 +21,7 @@ export function Navigation() {
 
   const location = useLocation();
   const { user } = useUser();
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken, isSignedIn, isLoaded } = useAuth(); // Add isLoaded
   const { signOut } = useClerk();
   const navigate = useNavigate();
 
@@ -188,10 +188,9 @@ export function Navigation() {
                 letterSpacing: "0.01em",
                 padding: "12px",
                 borderRadius: 8,
-                // Updated Logic: Use 'showInsightsOrb' to style white/glass
                 background: showInsightsOrb
-                  ? "rgba(255, 255, 255, 0.05)" // Dim white tint
-                  : "rgba(59, 130, 246, 0.1)", // Blue tint
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "rgba(59, 130, 246, 0.1)",
                 border: showInsightsOrb
                   ? "1px solid rgba(255, 255, 255, 0.15)"
                   : "1px solid rgba(59, 130, 246, 0.25)",
@@ -224,7 +223,7 @@ export function Navigation() {
           <SignedOut>
             <div style={{ height: 20 }} />
             <Link
-              to="/subscribe"
+              to="/sign-up"
               onClick={() => setIsOpen(false)}
               style={{
                 display: "flex",
@@ -254,7 +253,8 @@ export function Navigation() {
                 border: "1px solid rgba(255,255,255,0.15)",
                 color: "#fff",
                 fontSize: "0.9rem",
-                fontWeight: 500,
+                fontWeight: 600,
+                letterSpacing: "-0.01em",
               }}
             >
               Sign In
@@ -271,69 +271,57 @@ export function Navigation() {
         style={{
           position: "sticky",
           top: 0,
-          zIndex: 1000,
-          width: "100%",
-          height: 64,
-          transition: "all 0.3s ease",
-          background: scrolled || isOpen ? "rgba(5, 5, 5, 0.9)" : "transparent",
-          backdropFilter: scrolled || isOpen ? "blur(16px)" : "none",
+          zIndex: 9999,
+          background: scrolled
+            ? "rgba(10, 10, 10, 0.85)"
+            : "rgba(10, 10, 10, 0.5)",
+          backdropFilter: "blur(12px)",
           borderBottom: scrolled
-            ? "1px solid rgba(255, 255, 255, 0.06)"
+            ? "1px solid rgba(255,255,255,0.08)"
             : "1px solid transparent",
+          transition: "all 0.3s ease",
         }}
       >
         <div
-          className="container"
           style={{
+            maxWidth: 1200,
+            margin: "0 auto",
+            padding: "16px 24px",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            height: "100%",
-            paddingLeft: "max(24px, env(safe-area-inset-left))",
-            paddingRight: "max(24px, env(safe-area-inset-right))",
           }}
         >
-          {/* LOGO SECTION */}
           <Link
             to="/"
             style={{
+              fontSize: "1rem",
+              fontWeight: 700,
+              color: "#fff",
               textDecoration: "none",
-              color: "inherit",
-              zIndex: 10001,
+              letterSpacing: "0.05em",
               display: "flex",
               alignItems: "center",
+              gap: 12,
             }}
           >
-            <div
-              style={{
-                fontSize: "1rem",
-                fontWeight: 700,
-                letterSpacing: "0.03em",
-                color: "#fff",
-                textTransform: "uppercase",
-              }}
-            >
-              Bass Clarity
-            </div>
-
-            {/* --- PRO BADGE --- */}
+            Bass Clarity
             {isPro && (
               <div
                 style={{
-                  marginLeft: 6,
-                  padding: "2px 2px",
-                  borderRadius: 4,
-                  background: "rgba(74, 144, 226, 0.15)",
-                  border: "1px solid rgba(74, 144, 226, 0.3)",
                   display: "flex",
                   alignItems: "center",
+                  gap: 6,
                 }}
               >
                 <span
                   style={{
+                    background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                    padding: "2px 8px",
+                    borderRadius: 4,
                     fontSize: "0.65rem",
                     fontWeight: 700,
-                    color: "#4A90E2",
+                    color: "#fff",
                     letterSpacing: "0.05em",
                     lineHeight: 1,
                   }}
@@ -456,33 +444,36 @@ export function Navigation() {
               </div>
             </SignedIn>
 
-            <SignedOut>
-              <Link
-                to="/sign-in"
-                style={{
-                  textDecoration: "none",
-                  color: "#fff",
-                  fontSize: "0.9rem",
-                  fontWeight: 500,
-                }}
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/subscribe"
-                style={{
-                  textDecoration: "none",
-                  background: "#fff",
-                  color: "#000",
-                  padding: "8px 18px",
-                  borderRadius: 100,
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                }}
-              >
-                Sign Up
-              </Link>
-            </SignedOut>
+            {/* Show auth buttons if not loaded OR if signed out */}
+            {(!isLoaded || !isSignedIn) && (
+              <>
+                <Link
+                  to="/sign-in"
+                  style={{
+                    textDecoration: "none",
+                    color: "#fff",
+                    fontSize: "0.9rem",
+                    fontWeight: 500,
+                  }}
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/sign-up"
+                  style={{
+                    textDecoration: "none",
+                    background: "#fff",
+                    color: "#000",
+                    padding: "8px 18px",
+                    borderRadius: 100,
+                    fontSize: "0.85rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </nav>
 
           {/* MOBILE CONTROLS */}
@@ -490,7 +481,8 @@ export function Navigation() {
             className="mobile-controls"
             style={{ display: "flex", alignItems: "center", gap: 16 }}
           >
-            <SignedOut>
+            {/* Show Sign In button if not loaded OR if signed out */}
+            {(!isLoaded || !isSignedIn) && (
               <Link
                 to="/sign-in"
                 style={{
@@ -507,10 +499,9 @@ export function Navigation() {
               >
                 Sign In
               </Link>
-            </SignedOut>
+            )}
 
             <SignedIn>
-              {/* UPDATED: Removed the !isPlanPage check so orb appears on plan page too */}
               <Link
                 to={orbDestination}
                 style={{
