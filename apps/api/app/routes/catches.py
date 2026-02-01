@@ -39,6 +39,11 @@ class CreateCatchRequest(BaseModel):
     city: Optional[str] = None
     state: Optional[str] = None
     source: str = "manual"  # 'camera', 'library', 'manual'
+    temp: Optional[float] = None
+    wind_speed: Optional[float] = None
+    wind_direction: Optional[str] = None
+    pressure: Optional[float] = None
+    sky_condition: Optional[str] = None
 
 
 class CatchResponse(BaseModel):
@@ -61,6 +66,11 @@ class CatchResponse(BaseModel):
     state: Optional[str]
     source: str
     created_at: str
+    temp: Optional[float] = None
+    wind_speed: Optional[float] = None
+    wind_direction: Optional[str] = None
+    pressure: Optional[float] = None
+    sky_condition: Optional[str] = None
 
 
 # =============================================================================
@@ -97,6 +107,11 @@ async def create_catch(
         city=request.city,
         state=request.state,
         source=request.source,
+        temp=request.temp,
+        wind_speed=request.wind_speed,
+        wind_direction=request.wind_direction,
+        pressure=request.pressure,
+        sky_condition=request.sky_condition,
     )
     
     # If this is a custom lake, increment catch count
@@ -147,6 +162,11 @@ async def list_catches(
                 state=c.state,
                 source=c.source,
                 created_at=c.created_at,
+                temp=c.temp,
+                wind_speed=c.wind_speed,
+                wind_direction=c.wind_direction,
+                pressure=c.pressure,
+                sky_condition=c.sky_condition,
             ).model_dump()
             for c in catches
         ],
@@ -191,6 +211,12 @@ async def get_catch(
             state=catch.state,
             source=catch.source,
             created_at=catch.created_at,
+            # ✅ FIX: Changed 'c' to 'catch' here
+            temp=catch.temp,
+            wind_speed=catch.wind_speed,
+            wind_direction=catch.wind_direction,
+            pressure=catch.pressure,
+            sky_condition=catch.sky_condition,
         ).model_dump()
     }
 
@@ -232,6 +258,11 @@ async def update_catch(
         city=request.city,
         state=request.state,
         source=request.source,
+        temp=request.temp,
+        wind_speed=request.wind_speed,
+        wind_direction=request.wind_direction,
+        pressure=request.pressure,
+        sky_condition=request.sky_condition,
     )
     
     if not updated_catch:
@@ -259,6 +290,12 @@ async def update_catch(
             state=updated_catch.state,
             source=updated_catch.source,
             created_at=updated_catch.created_at,
+            # ✅ FIX: Added missing weather fields to update response
+            temp=updated_catch.temp,
+            wind_speed=updated_catch.wind_speed,
+            wind_direction=updated_catch.wind_direction,
+            pressure=updated_catch.pressure,
+            sky_condition=updated_catch.sky_condition,
         ).model_dump()
     }
 
@@ -332,6 +369,11 @@ async def list_catches_by_lake(
                 state=c.state,
                 source=c.source,
                 created_at=c.created_at,
+                temp=c.temp,
+                wind_speed=c.wind_speed,
+                wind_direction=c.wind_direction,
+                pressure=c.pressure,
+                sky_condition=c.sky_condition,
             ).model_dump()
             for c in catches
         ],

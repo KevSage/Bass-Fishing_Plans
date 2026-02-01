@@ -18,6 +18,12 @@ import {
   CloseIcon,
   TrophyIcon,
   MapPinIcon,
+  ThermometerIcon,
+  WindIcon,
+  ActivityIcon,
+  CloudIcon,
+  SunIcon,
+  DropletsIcon,
 } from "@/components/UnifiedIcons";
 
 // API and EXIF imports
@@ -30,6 +36,8 @@ import {
   resolveLake,
   type CatchRecord,
   type CreateCatchInput,
+  getPresignedUrl,
+  uploadFileToR2,
 } from "@/lib/catches-api";
 import {
   extractExifData,
@@ -38,7 +46,8 @@ import {
 } from "@/lib/exif-utils";
 // IMPORT COMPRESSION UTILITY
 import { compressImage } from "@/lib/image-utils";
-import { getPresignedUrl, uploadFileToR2 } from "@/lib/catches-api";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 // =============================================================================
 // ICONS (Offline & Sync)
@@ -117,6 +126,13 @@ export type CatchEntry = {
   createdAt: string;
   source: "camera" | "library" | "manual";
   isOffline?: boolean;
+
+  // Weather Fields
+  temp?: number;
+  windSpeed?: number;
+  windDir?: string;
+  pressure?: number;
+  skyCondition?: string;
 };
 
 export type ActiveLake = {
@@ -157,6 +173,11 @@ export function apiRecordToEntry(record: CatchRecord): CatchEntry {
     species: (record.species as BassSpecies) || undefined,
     weight: record.weight || undefined,
     length: record.length || undefined,
+    temp: record.temp,
+    windSpeed: record.wind_speed,
+    windDir: record.wind_direction,
+    pressure: record.pressure,
+    skyCondition: record.sky_condition,
     notes: record.notes || undefined,
     photoUrl: record.photo_url || undefined,
     caughtAt: (() => {
@@ -167,6 +188,11 @@ export function apiRecordToEntry(record: CatchRecord): CatchEntry {
     createdAt: record.created_at,
     source: record.source,
     isOffline: false,
+
+    // Map Weather (if backend supports it in future)
+    // temp: record.temp,
+    // windSpeed: record.wind_speed,
+    // etc...
   };
 }
 
@@ -175,6 +201,7 @@ function entryToApiInput(
   activeLake: ActiveLake,
 ): CreateCatchInput {
   const caughtAt = entry.caughtAt ? new Date(entry.caughtAt) : new Date();
+
   return {
     date: formatDateForApi(caughtAt),
     time: formatTimeForApi(caughtAt),
@@ -193,7 +220,50 @@ function entryToApiInput(
     city: entry.city,
     state: entry.state,
     source: entry.source || "manual",
+
+    // ✅ NEW: Pass Weather Data
+    // We map frontend "camelCase" to backend "snake_case"
+    temp: entry.temp,
+    wind_speed: entry.windSpeed,
+    wind_direction: entry.windDir,
+    pressure: entry.pressure,
+    sky_condition: entry.skyCondition,
   };
+}
+
+// =============================================================================
+// WEATHER FETCHER (Current & Historical)
+// =============================================================================
+async function fetchWeatherForLocation(
+  lat: number,
+  lng: number,
+  timestamp: string,
+) {
+  if (!API_BASE_URL) return null;
+
+  try {
+    // For now, we only use current weather.
+    // In V2, we can check timestamp vs now to decide if we need historical API.
+    const cleanLat = Number(lat).toFixed(4);
+    const cleanLng = Number(lng).toFixed(4);
+
+    const url = `${API_BASE_URL}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
+
+    const res = await fetch(url);
+    if (!res.ok) return null;
+
+    const json = await res.json();
+    return {
+      temp: json.temp_f,
+      windSpeed: json.wind_mph,
+      windDir: json.wind_direction,
+      pressure: json.pressure_mb,
+      skyCondition: json.sky_condition,
+    };
+  } catch (err) {
+    console.error("Weather fetch failed:", err);
+    return null;
+  }
 }
 
 // =============================================================================
@@ -325,6 +395,7 @@ const ENTRIES_PER_PAGE = 10;
 // =============================================================================
 // HELPERS
 // =============================================================================
+
 function getDistanceMeters(
   lat1: number,
   lng1: number,
@@ -343,6 +414,7 @@ function getDistanceMeters(
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
 function getDensityTier(
   catchEntry: CatchEntry,
   allCatches: CatchEntry[],
@@ -362,6 +434,7 @@ function getDensityTier(
   if (total >= DENSITY_CONFIG.moderate.min) return "moderate";
   return "sparse";
 }
+
 function formatCatchDate(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleDateString("en-US", {
@@ -370,6 +443,7 @@ function formatCatchDate(isoString: string): string {
     year: "numeric",
   });
 }
+
 function formatCatchTime(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleTimeString("en-US", {
@@ -378,6 +452,7 @@ function formatCatchTime(isoString: string): string {
     hour12: true,
   });
 }
+
 function formatCatchDateTime(isoString: string): string {
   const date = new Date(isoString);
   return date.toLocaleDateString("en-US", {
@@ -389,17 +464,20 @@ function formatCatchDateTime(isoString: string): string {
     hour12: true,
   });
 }
+
 function formatCoord(lat: number, lng: number): string {
   const latDir = lat >= 0 ? "N" : "S";
   const lngDir = lng >= 0 ? "E" : "W";
   return `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lng).toFixed(4)}°${lngDir}`;
 }
+
 function formatLureName(value: string): string {
   return value
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
+
 function isPersonalBest(entry: CatchEntry, allEntries: CatchEntry[]): boolean {
   if (!entry.weight) return false;
   const species = entry.species || "largemouth";
@@ -411,6 +489,7 @@ function isPersonalBest(entry: CatchEntry, allEntries: CatchEntry[]): boolean {
   const maxWeight = Math.max(...otherCatches.map((c) => Number(c.weight)));
   return Number(entry.weight) > maxWeight;
 }
+
 function getSpeciesLabel(species?: BassSpecies): string {
   if (!species) return "Largemouth";
   return (
@@ -421,14 +500,12 @@ function getSpeciesLabel(species?: BassSpecies): string {
 // =============================================================================
 // GLOBAL CACHE (The Fix for Stale/Slow Data)
 // =============================================================================
-// This holds the API response so switching tabs is instant
 let globalEntriesCache: CatchEntry[] | null = null;
 const API_CACHE_KEY = "bc_api_catches_cache";
 
 // =============================================================================
 // CUSTOM HOOK: useCatchLog
 // =============================================================================
-
 export function useCatchLog(
   activeLake: ActiveLake,
   options?: { disableListView?: boolean },
@@ -436,9 +513,7 @@ export function useCatchLog(
   const { getToken, isSignedIn } = useAuth();
   const OFFLINE_KEY = "offline_catches";
 
-  // INITIALIZATION LOGIC (Stale-While-Revalidate)
   const [state, setState] = useState<CatchLogState>(() => {
-    // 1. Try Global Memory Cache first (Fastest)
     if (globalEntriesCache) {
       return {
         isOpen: false,
@@ -449,21 +524,13 @@ export function useCatchLog(
         visibleCount: ENTRIES_PER_PAGE,
       };
     }
-
-    // 2. Try Local Storage Cache (Fast on Reload)
     const cached = localStorage.getItem(API_CACHE_KEY);
     const offline = localStorage.getItem(OFFLINE_KEY);
-
     const initialEntries = [
       ...(offline ? JSON.parse(offline) : []),
       ...(cached ? JSON.parse(cached) : []),
     ];
-
-    if (initialEntries.length > 0) {
-      // Hydrate global cache so other components benefit immediately
-      globalEntriesCache = initialEntries;
-    }
-
+    if (initialEntries.length > 0) globalEntriesCache = initialEntries;
     return {
       isOpen: false,
       view: "list",
@@ -474,8 +541,6 @@ export function useCatchLog(
     };
   });
 
-  // Loading is FALSE if we have *any* data to show (even if stale)
-  // This solves the "20s spinner" issue.
   const [isLoading, setIsLoading] = useState(state.entries.length === 0);
   const [error, setError] = useState<string | null>(null);
 
@@ -490,31 +555,22 @@ export function useCatchLog(
   }, []);
 
   const fetchCatches = useCallback(async () => {
-    // If we have cached data, we don't want to show a spinner.
-    // We just want to fetch in the background.
     if (state.entries.length === 0) setIsLoading(true);
-
     setError(null);
-
     try {
       const offline = getOfflineCatches();
       let apiEntries: CatchEntry[] = [];
       const token = await getToken();
-
       if (token) {
         try {
           const response = await listCatches(token, 500, 0);
           apiEntries = response.catches.map(apiRecordToEntry);
-
-          // UPDATE CACHES
           globalEntriesCache = [...offline, ...apiEntries];
           localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
         } catch (apiErr) {
           console.warn("Background fetch failed:", apiErr);
         }
       }
-
-      // Update State with fresh data
       setState((s) => ({ ...s, entries: [...offline, ...apiEntries] }));
     } catch (err) {
       console.error(err);
@@ -523,11 +579,8 @@ export function useCatchLog(
     }
   }, [getToken, getOfflineCatches, state.entries.length]);
 
-  // Initial Fetch
   useEffect(() => {
-    if (isSignedIn) {
-      fetchCatches();
-    }
+    if (isSignedIn) fetchCatches();
   }, [fetchCatches, isSignedIn]);
 
   const syncOfflineCatches = useCallback(async () => {
@@ -557,7 +610,6 @@ export function useCatchLog(
     setIsLoading(false);
   }, [getToken, activeLake, fetchCatches, getOfflineCatches]);
 
-  // DERIVED STATE 1: ALL HISTORY (For Map Pins)
   const lakeCatches = useMemo(() => {
     if (!activeLake) return [];
     return state.entries
@@ -573,7 +625,6 @@ export function useCatchLog(
       );
   }, [state.entries, activeLake]);
 
-  // DERIVED STATE 2: TODAY ONLY (For List View)
   const todayCatches = useMemo(() => {
     const todayString = new Date().toDateString();
     return lakeCatches.filter((c) => {
@@ -582,7 +633,6 @@ export function useCatchLog(
     });
   }, [lakeCatches]);
 
-  // Actions
   const open = useCallback(
     () =>
       setState((s) => ({
@@ -639,7 +689,6 @@ export function useCatchLog(
     [],
   );
 
-  // Add Catch
   const addCatch = useCallback(
     async (catchData: Omit<CatchEntry, "id" | "createdAt">) => {
       if (!activeLake) return null;
@@ -658,13 +707,8 @@ export function useCatchLog(
         const input = entryToApiInput(catchData, activeLake);
         const response = await createCatch(input, token);
         const savedEntry = { ...newEntry, id: response.catch_id };
-
-        // Update Global & Local Cache immediately
         const newEntries = [savedEntry, ...state.entries];
         globalEntriesCache = newEntries;
-        // We only persist the "API part" to local storage usually, but here strict update is fine
-        // Ideally we re-fetch to keep clean, but for speed we update local.
-
         setState((s) => ({
           ...s,
           entries: newEntries,
@@ -682,8 +726,6 @@ export function useCatchLog(
             OFFLINE_KEY,
             JSON.stringify([offlineEntry, ...currentOffline]),
           );
-
-          // Update State
           const newEntries = [offlineEntry, ...state.entries];
           setState((s) => ({
             ...s,
@@ -711,15 +753,11 @@ export function useCatchLog(
     ],
   );
 
-  // --- UPDATE CATCH (With Persistence) ---
   const updateCatch = useCallback(
     async (id: string, updates: Partial<CatchEntry>) => {
-      // 1. Optimistic Update
       const updatedEntries = state.entries.map((c) =>
         c.id === id ? { ...c, ...updates } : c,
       );
-
-      // Update Cache immediately
       globalEntriesCache = updatedEntries;
       setState((s) => ({
         ...s,
@@ -728,8 +766,6 @@ export function useCatchLog(
         view: "detail",
         isEditing: false,
       }));
-
-      // 2. API Call
       try {
         const token = await getToken();
         if (token) {
@@ -738,14 +774,13 @@ export function useCatchLog(
             const merged = { ...currentEntry, ...updates };
             const apiInput = entryToApiInput(merged, activeLake);
             await updateCatchApi(id, apiInput, token);
-            // Background re-fetch to ensure sync
             fetchCatches();
           }
         }
       } catch (err) {
         console.error("Failed to update catch:", err);
         alert("Failed to save changes. Please check your connection.");
-        fetchCatches(); // Revert
+        fetchCatches();
       }
     },
     [getToken, activeLake, state.entries, fetchCatches],
@@ -753,7 +788,6 @@ export function useCatchLog(
 
   const deleteCatch = useCallback(
     async (id: string) => {
-      // Optimistic Delete
       const remaining = state.entries.filter((c) => c.id !== id);
       globalEntriesCache = remaining;
       setState((s) => ({
@@ -763,12 +797,10 @@ export function useCatchLog(
         selectedEntry: null,
         isEditing: false,
       }));
-
       try {
         const token = await getToken();
         if (token) {
           await deleteCatchApi(id, token);
-          // Update cache storage silently
           const apiOnly = remaining.filter((c) => !c.isOffline);
           localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnly));
         }
@@ -781,7 +813,6 @@ export function useCatchLog(
           );
         } else {
           console.error("Delete failed", err);
-          // Revert? For now let's just re-fetch
           fetchCatches();
         }
       }
@@ -799,7 +830,7 @@ export function useCatchLog(
     visibleCatches: todayCatches.slice(0, state.visibleCount),
     hasMore: todayCatches.length > state.visibleCount,
     activeLake,
-    isLoading, // Only true if NO data exists at all
+    isLoading,
     error,
     open,
     close,
@@ -818,7 +849,7 @@ export function useCatchLog(
 export type UseCatchLogReturn = ReturnType<typeof useCatchLog>;
 
 // =============================================================================
-// COMPONENT: CatchButton (Unchanged)
+// COMPONENT: CatchButton
 // =============================================================================
 type CatchButtonProps = {
   onClick: () => void;
@@ -832,20 +863,16 @@ export function CatchButton({
 }: CatchButtonProps) {
   return (
     <>
-      {" "}
       <button
         onClick={onClick}
         disabled={disabled}
         className="catch-float-btn"
         aria-label="Open catch log"
       >
-        {" "}
-        <FishIcon size={26} />{" "}
-        {catchCount > 0 && (
-          <span className="catch-badge">{catchCount}</span>
-        )}{" "}
-      </button>{" "}
-      <style>{` .catch-float-btn { position: fixed; top: 50%; left: 20px; transform: translateY(-50%); width: 58px; height: 58px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(15, 15, 20, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 1000; } .catch-float-btn:hover:not(:disabled) { transform: translateY(-52%) scale(1.05); background: rgba(20, 20, 28, 0.85); border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3); color: #fff; } .catch-float-btn:active:not(:disabled) { transform: translateY(-50%) scale(0.95); } .catch-float-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); background: rgba(10, 10, 10, 0.6); border-color: rgba(255,255,255,0.05); } .catch-badge { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; border-radius: 10px; background: linear-gradient(135deg, #4A90E2, #357ABD); color: #fff; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); } `}</style>{" "}
+        <FishIcon size={26} />
+        {catchCount > 0 && <span className="catch-badge">{catchCount}</span>}
+      </button>
+      <style>{` .catch-float-btn { position: fixed; top: 50%; left: 20px; transform: translateY(-50%); width: 58px; height: 58px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(15, 15, 20, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15); color: rgba(255, 255, 255, 0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); z-index: 1000; } .catch-float-btn:hover:not(:disabled) { transform: translateY(-52%) scale(1.05); background: rgba(20, 20, 28, 0.85); border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.3); color: #fff; } .catch-float-btn:active:not(:disabled) { transform: translateY(-50%) scale(0.95); } .catch-float-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: grayscale(1); background: rgba(10, 10, 10, 0.6); border-color: rgba(255,255,255,0.05); } .catch-badge { position: absolute; top: -2px; right: -2px; min-width: 20px; height: 20px; border-radius: 10px; background: linear-gradient(135deg, #4A90E2, #357ABD); color: #fff; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; padding: 0 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); } `}</style>
     </>
   );
 }
@@ -885,11 +912,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
   } = props;
 
   if (!isOpen) return null;
-
-  // Prevent list view if disabled
-  if (view === "list" && disableListView) {
-    return null;
-  }
+  if (view === "list" && disableListView) return null;
 
   const handleFlyToLocation = (lat: number, lng: number) => {
     if (onFlyToLocation) {
@@ -902,7 +925,6 @@ export function CatchLogModal(props: CatchLogModalProps) {
     <>
       <div className="catch-modal-overlay" onClick={close}>
         <div className="catch-modal" onClick={(e) => e.stopPropagation()}>
-          {/* Only show list if NOT disabled */}
           {view === "list" && !disableListView && (
             <CatchListView
               catches={visibleCatches}
@@ -942,10 +964,9 @@ export function CatchLogModal(props: CatchLogModalProps) {
                 } else {
                   addCatch(data as Omit<CatchEntry, "id" | "createdAt">);
                   if (!selectedEntry?.id) onDraftDone?.();
-                  if (disableListView) close(); // FORCE CLOSE
+                  if (disableListView) close();
                 }
               }}
-              // Update Cancel behavior based on disableListView
               onCancel={() => {
                 if (!isEditing && !selectedEntry?.id) {
                   onDraftDone?.();
@@ -967,7 +988,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
 }
 
 // =============================================================================
-// SUB-COMPONENT: CatchListView (Unchanged)
+// SUB-COMPONENT: CatchListView
 // =============================================================================
 type CatchListViewProps = {
   catches: CatchEntry[];
@@ -981,140 +1002,117 @@ type CatchListViewProps = {
   onSync?: () => void;
   hasOffline?: boolean;
 };
-function CatchListView({
-  catches,
-  hasMore,
-  activeLake,
-  onSelectCatch,
-  onAddNew,
-  onLoadMore,
-  onClose,
-  onSync,
-  hasOffline,
-}: CatchListViewProps) {
+function CatchListView(props: CatchListViewProps) {
+  const {
+    catches,
+    hasMore,
+    activeLake,
+    onSelectCatch,
+    onAddNew,
+    onLoadMore,
+    onClose,
+    onSync,
+    hasOffline,
+  } = props;
   return (
     <>
-      {" "}
       <div className="catch-modal-header">
-        {" "}
         <div className="catch-header-title">
-          {" "}
-          <FishIcon size={20} /> <span>Catch Log</span>{" "}
-        </div>{" "}
+          <FishIcon size={20} /> <span>Catch Log</span>
+        </div>
         <div style={{ display: "flex", gap: 10 }}>
-          {" "}
           {hasOffline && onSync && (
             <button onClick={onSync} className="catch-sync-btn">
-              {" "}
-              <RefreshIcon size={16} /> <span>Sync</span>{" "}
+              <RefreshIcon size={16} /> <span>Sync</span>
             </button>
-          )}{" "}
+          )}
           <button onClick={onClose} className="catch-close-btn">
-            {" "}
-            <CloseIcon />{" "}
-          </button>{" "}
-        </div>{" "}
-      </div>{" "}
+            <CloseIcon />
+          </button>
+        </div>
+      </div>
       {activeLake && (
         <div className="catch-lake-context">{activeLake.name}</div>
-      )}{" "}
+      )}
       <div className="catch-modal-body">
-        {" "}
         {hasOffline && (
           <div className="catch-offline-banner">
-            {" "}
             <CloudOffIcon size={14} />{" "}
-            <span>Sync when you have reception.</span>{" "}
+            <span>Sync when you have reception.</span>
           </div>
-        )}{" "}
+        )}
         {!activeLake ? (
           <div className="catch-empty-state">
-            {" "}
-            <p>Select a lake to view catches</p>{" "}
+            <p>Select a lake to view catches</p>
           </div>
         ) : catches.length === 0 ? (
           <div className="catch-empty-state">
-            {" "}
-            <FishIcon size={48} /> <p>No catches today</p>{" "}
+            <FishIcon size={48} /> <p>No catches today</p>
           </div>
         ) : (
           <div className="catch-list">
-            {" "}
-            {catches.map((entry) => {
-              return (
-                <button
-                  key={entry.id}
-                  className={`catch-list-item ${entry.isOffline ? "is-offline" : ""}`}
-                  onClick={() => onSelectCatch(entry)}
-                >
-                  {" "}
-                  <div className="catch-item-thumb">
-                    {" "}
-                    {entry.photoUrl || entry.imageData ? (
-                      <img
-                        src={entry.photoUrl || entry.imageData}
-                        alt="Catch"
-                        style={{ opacity: entry.isOffline ? 0.7 : 1 }}
-                      />
-                    ) : (
-                      <div className="catch-item-no-img">
-                        {" "}
-                        <FishIcon size={20} />{" "}
-                      </div>
-                    )}{" "}
-                    {entry.isOffline && (
-                      <div className="catch-item-offline-badge">
-                        {" "}
-                        <CloudOffIcon size={10} />{" "}
-                      </div>
-                    )}{" "}
-                  </div>{" "}
-                  <div className="catch-item-info">
-                    {" "}
-                    <div className="catch-item-time">
-                      {" "}
-                      {formatCatchTime(entry.caughtAt)}{" "}
-                      {entry.species && entry.species !== "largemouth" && (
-                        <span className="catch-item-species">
-                          {" "}
-                          {getSpeciesLabel(entry.species)}{" "}
-                        </span>
-                      )}{" "}
-                    </div>{" "}
-                    <div className="catch-item-details">
-                      {" "}
-                      {entry.weight && `${entry.weight} lbs`}{" "}
-                      {entry.weight && entry.length && " • "}{" "}
-                      {entry.length && `${entry.length}"`}{" "}
-                      {!entry.weight &&
-                        !entry.length &&
-                        formatLureName(entry.lure)}{" "}
-                    </div>{" "}
-                  </div>{" "}
-                  <div className="catch-item-date">
-                    {" "}
-                    {formatCatchDate(entry.caughtAt)}{" "}
-                  </div>{" "}
-                </button>
-              );
-            })}{" "}
+            {catches.map((entry) => (
+              <button
+                key={entry.id}
+                className={`catch-list-item ${entry.isOffline ? "is-offline" : ""}`}
+                onClick={() => onSelectCatch(entry)}
+              >
+                <div className="catch-item-thumb">
+                  {entry.photoUrl || entry.imageData ? (
+                    <img
+                      src={entry.photoUrl || entry.imageData}
+                      alt="Catch"
+                      style={{ opacity: entry.isOffline ? 0.7 : 1 }}
+                    />
+                  ) : (
+                    <div className="catch-item-no-img">
+                      <FishIcon size={20} />
+                    </div>
+                  )}
+                  {entry.isOffline && (
+                    <div className="catch-item-offline-badge">
+                      <CloudOffIcon size={10} />
+                    </div>
+                  )}
+                </div>
+                <div className="catch-item-info">
+                  <div className="catch-item-time">
+                    {formatCatchTime(entry.caughtAt)}{" "}
+                    {entry.species && entry.species !== "largemouth" && (
+                      <span className="catch-item-species">
+                        {getSpeciesLabel(entry.species)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="catch-item-details">
+                    {entry.weight && `${entry.weight} lbs`}{" "}
+                    {entry.weight && entry.length && " • "}{" "}
+                    {entry.length && `${entry.length}"`}{" "}
+                    {!entry.weight &&
+                      !entry.length &&
+                      formatLureName(entry.lure)}
+                  </div>
+                </div>
+                <div className="catch-item-date">
+                  {formatCatchDate(entry.caughtAt)}
+                </div>
+              </button>
+            ))}
             {hasMore && (
               <button className="catch-load-more" onClick={onLoadMore}>
-                {" "}
-                View More{" "}
+                View More
               </button>
-            )}{" "}
+            )}
           </div>
-        )}{" "}
+        )}
       </div>
-      {/* REMOVED FOOTER DIV WITH ADD BUTTON */}
-      <style>{` .catch-modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; color: white; } .catch-header-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; } .catch-close-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; } .catch-close-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; } .catch-lake-context { padding: 12px 24px; background: rgba(74, 144, 226, 0.1); color: #4A90E2; font-size: 0.85rem; font-weight: 600; border-bottom: 1px solid rgba(255, 255, 255, 0.06); } .catch-modal-body { flex: 1; overflow-y: auto; padding: 16px; } .catch-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; color: rgba(255, 255, 255, 0.4); text-align: center; gap: 12px; } .catch-empty-state p { margin: 0; font-size: 1rem; color: rgba(255, 255, 255, 0.6); } .catch-empty-state span { font-size: 0.85rem; } .catch-list { display: flex; flex-direction: column; gap: 8px; } .catch-list-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%; } .catch-list-item:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); } .catch-item-thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: rgba(0, 0, 0, 0.3); position: relative; object-fit: contain; } .catch-item-species { margin-left: 8px; font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.05em; } .catch-item-thumb img { width: 100%; height: 100%; object-fit: cover; } .catch-item-no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.2); } .catch-item-info { flex: 1; min-width: 0; } .catch-item-time { font-size: 0.95rem; font-weight: 600; color: #fff; } .catch-item-details { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); margin-top: 2px; } .catch-item-date { font-size: 0.75rem; color: rgba(255, 255, 255, 0.35); flex-shrink: 0; } .catch-load-more { width: 100%; padding: 14px; margin-top: 8px; border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 12px; background: transparent; color: rgba(255, 255, 255, 0.5); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; } .catch-load-more:hover { border-color: rgba(255, 255, 255, 0.25); color: rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.03); } .catch-modal-footer { padding: 16px 24px 24px; border-top: 1px solid rgba(255, 255, 255, 0.06); } .catch-add-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.25); } .catch-sync-btn { display: flex; align-items: center; gap: 6px; padding: 0 12px; height: 36px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.1); color: #FBBF24; font-size: 0.8rem; font-weight: 600; cursor: pointer; } .catch-offline-banner { margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.3); color: #FBBF24; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; } .catch-list-item.is-offline { border-style: dashed; border-color: rgba(245, 158, 11, 0.3); } .catch-item-offline-badge { position: absolute; bottom: 2px; right: 2px; background: #FBBF24; color: #000; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; } `}</style>{" "}
+      <style>{` .catch-modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; color: white; } .catch-header-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.05rem; } .catch-close-btn { width: 36px; height: 36px; border-radius: 10px; border: none; background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.6); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; } .catch-close-btn:hover { background: rgba(255, 255, 255, 0.1); color: #fff; } .catch-lake-context { padding: 12px 24px; background: rgba(74, 144, 226, 0.1); color: #4A90E2; font-size: 0.85rem; font-weight: 600; border-bottom: 1px solid rgba(255, 255, 255, 0.06); } .catch-modal-body { flex: 1; overflow-y: auto; padding: 16px; } .catch-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; color: rgba(255, 255, 255, 0.4); text-align: center; gap: 12px; } .catch-empty-state p { margin: 0; font-size: 1rem; color: rgba(255, 255, 255, 0.6); } .catch-empty-state span { font-size: 0.85rem; } .catch-list { display: flex; flex-direction: column; gap: 8px; } .catch-list-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; cursor: pointer; transition: all 0.2s; text-align: left; width: 100%; } .catch-list-item:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.1); } .catch-item-thumb { width: 52px; height: 52px; border-radius: 10px; overflow: hidden; flex-shrink: 0; background: rgba(0, 0, 0, 0.3); position: relative; object-fit: contain; } .catch-item-species { margin-left: 8px; font-size: 0.7rem; color: rgba(255, 255, 255, 0.4); text-transform: uppercase; letter-spacing: 0.05em; } .catch-item-thumb img { width: 100%; height: 100%; object-fit: cover; } .catch-item-no-img { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.2); } .catch-item-info { flex: 1; min-width: 0; } .catch-item-time { font-size: 0.95rem; font-weight: 600; color: #fff; } .catch-item-details { font-size: 0.8rem; color: rgba(255, 255, 255, 0.5); margin-top: 2px; } .catch-item-date { font-size: 0.75rem; color: rgba(255, 255, 255, 0.35); flex-shrink: 0; } .catch-load-more { width: 100%; padding: 14px; margin-top: 8px; border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 12px; background: transparent; color: rgba(255, 255, 255, 0.5); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; } .catch-load-more:hover { border-color: rgba(255, 255, 255, 0.25); color: rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.03); } .catch-modal-footer { padding: 16px 24px 24px; border-top: 1px solid rgba(255, 255, 255, 0.06); } .catch-add-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.25); } .catch-sync-btn { display: flex; align-items: center; gap: 6px; padding: 0 12px; height: 36px; border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.3); background: rgba(245, 158, 11, 0.1); color: #FBBF24; font-size: 0.8rem; font-weight: 600; cursor: pointer; } .catch-offline-banner { margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.3); color: #FBBF24; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; } .catch-list-item.is-offline { border-style: dashed; border-color: rgba(245, 158, 11, 0.3); } .catch-item-offline-badge { position: absolute; bottom: 2px; right: 2px; background: #FBBF24; color: #000; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; } `}</style>
     </>
   );
 }
 
 // =============================================================================
-// SUB-COMPONENT: CatchDetailView (Unchanged)
+// SUB-COMPONENT: CatchDetailView (Refined Detail View)
 // =============================================================================
 export type CatchDetailViewProps = {
   entry: CatchEntry;
@@ -1127,12 +1125,6 @@ export type CatchDetailViewProps = {
   onLocationClick?: () => void;
 };
 
-// src/components/CatchLog.tsx (Refined Detail View)
-
-// ... existing imports ...
-
-// ...
-
 export function CatchDetailView({
   entry,
   allEntries = [],
@@ -1144,7 +1136,7 @@ export function CatchDetailView({
   onLocationClick,
 }: CatchDetailViewProps) {
   const isPB = isPersonalBest(entry, allEntries);
-  const [showMenu, setShowMenu] = React.useState(false); // Local state for the menu
+  const [showMenu, setShowMenu] = React.useState(false);
 
   return (
     <div className="catch-detail-container">
@@ -1157,24 +1149,17 @@ export function CatchDetailView({
             <FishIcon size={56} style={{ opacity: 0.5 }} />
           </div>
         )}
-
-        {/* Seamless Gradient Fade */}
         <div className="catch-hero-gradient" />
-
-        {/* Overlay Actions */}
         <div className="catch-hero-overlay-top">
           <button onClick={onBack} className="catch-icon-btn glass">
             {readOnly ? <CloseIcon size={20} /> : <BackIcon size={20} />}
           </button>
-
-          {/* MENU TOGGLE: Replaces the big buttons */}
           {!readOnly && (onEdit || onDelete) && (
             <div style={{ position: "relative" }}>
               <button
                 onClick={() => setShowMenu(!showMenu)}
                 className="catch-icon-btn glass"
               >
-                {/* Visual "..." using 3 dots or an icon */}
                 <svg
                   width="20"
                   height="20"
@@ -1190,8 +1175,6 @@ export function CatchDetailView({
                   <circle cx="5" cy="12" r="1" />
                 </svg>
               </button>
-
-              {/* The Dropdown Menu */}
               {showMenu && (
                 <div className="catch-menu-dropdown">
                   {onEdit && (
@@ -1227,7 +1210,6 @@ export function CatchDetailView({
       <div className="catch-body">
         {/* Header Grid */}
         <div className="catch-primary-header">
-          {/* LEFT: Title & Date */}
           <div className="catch-title-block">
             <h2 className="catch-lure-title">{formatLureName(entry.lure)}</h2>
             <div className="catch-subtitle">
@@ -1236,8 +1218,6 @@ export function CatchDetailView({
               {formatCatchTime(entry.caughtAt)}
             </div>
           </div>
-
-          {/* RIGHT: Stat Stack (PB + Weight) */}
           {entry.weight && (
             <div className="catch-stat-stack">
               {isPB && (
@@ -1245,7 +1225,6 @@ export function CatchDetailView({
                   <TrophyIcon size={10} /> <span>PB</span>
                 </div>
               )}
-
               <div className="catch-stat-block">
                 <span className="catch-stat-value">{entry.weight}</span>
                 <span className="catch-stat-unit">LBS</span>
@@ -1270,6 +1249,49 @@ export function CatchDetailView({
             </span>
           )}
         </div>
+
+        {/* NEW: WEATHER SUMMARY CARD */}
+        {(entry.temp || entry.windSpeed || entry.pressure) && (
+          <div className="catch-section">
+            <div className="catch-weather-card">
+              <div className="weather-row">
+                <div className="weather-item">
+                  <ThermometerIcon size={16} className="weather-icon" />
+                  <span>
+                    {entry.temp ? `${Math.round(entry.temp)}°` : "--"}
+                  </span>
+                </div>
+                <div className="weather-item">
+                  <WindIcon size={16} className="weather-icon" />
+                  <span>
+                    {entry.windSpeed
+                      ? `${Math.round(entry.windSpeed)}mph`
+                      : "--"}{" "}
+                    {entry.windDir || ""}
+                  </span>
+                </div>
+                <div className="weather-item">
+                  <ActivityIcon size={16} className="weather-icon" />
+                  <span>
+                    {entry.pressure ? `${Math.round(entry.pressure)}mb` : "--"}
+                  </span>
+                </div>
+              </div>
+              {entry.skyCondition && (
+                <div className="weather-condition">
+                  {entry.skyCondition.includes("Rain") ? (
+                    <DropletsIcon size={14} />
+                  ) : entry.skyCondition.includes("Cloud") ? (
+                    <CloudIcon size={14} />
+                  ) : (
+                    <SunIcon size={14} />
+                  )}
+                  <span>{entry.skyCondition}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="catch-divider" />
 
@@ -1311,170 +1333,58 @@ export function CatchDetailView({
         )}
       </div>
 
-      {/* 3. STYLES (Updated Heights) */}
       <style>{`
-        .catch-detail-container {
-          display: flex; flex-direction: column; height: 100%;
-          background: #121218; overflow-y: auto;
-        }
-
-        /* COMPACT HERO: 400px */
-        .catch-hero {
-          position: relative; width: 100%; height: 400px;
-          flex-shrink: 0; background: #000; overflow: hidden;
-        }
+        /* ... (Keep existing detailed styles from previous file, they were good) ... */
+        .catch-detail-container { display: flex; flex-direction: column; height: 100%; background: #121218; overflow-y: auto; }
+        .catch-hero { position: relative; width: 100%; height: 400px; flex-shrink: 0; background: #000; overflow: hidden; }
         .catch-hero img { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* SOLID BLEND BOTTOM */
-        .catch-hero-gradient {
-          position: absolute; inset: 0;
-          background: linear-gradient(
-            to bottom,
-            rgba(0,0,0,0.3) 0%,     
-            transparent 40%,        
-            #121218 100%
-          );
-          z-index: 1;
-        }
-        .catch-hero-placeholder {
-          width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-          background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%);
-          color: rgba(255,255,255,0.15);
-        }
-
-        /* ACTIONS */
-        .catch-hero-overlay-top {
-          position: absolute; top: 0; left: 0; right: 0; padding: 16px;
-          display: flex; justify-content: space-between; z-index: 20;
-        }
-        .catch-icon-btn {
-          width: 40px; height: 40px; border-radius: 50%; border: none;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; color: #fff; transition: all 0.2s;
-        }
-        .catch-icon-btn.glass {
-          background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px);
-          border: 1px solid rgba(255,255,255,0.15);
-        }
+        .catch-hero-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, #121218 100%); z-index: 1; }
+        .catch-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%); color: rgba(255,255,255,0.15); }
+        .catch-hero-overlay-top { position: absolute; top: 0; left: 0; right: 0; padding: 16px; display: flex; justify-content: space-between; z-index: 20; }
+        .catch-icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: all 0.2s; }
+        .catch-icon-btn.glass { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15); }
         .catch-icon-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
-
-        /* MENU DROPDOWN */
-        .catch-menu-dropdown {
-          position: absolute; top: 100%; right: 0; margin-top: 8px;
-          background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px; padding: 4px; min-width: 140px;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-          display: flex; flex-direction: column; gap: 2px;
-          animation: fadeIn 0.1s ease-out;
-        }
-        .catch-menu-item {
-          display: flex; align-items: center; gap: 8px;
-          width: 100%; padding: 10px 12px;
-          background: transparent; border: none;
-          color: #fff; font-size: 0.9rem; font-weight: 500;
-          text-align: left; border-radius: 8px; cursor: pointer;
-        }
+        .catch-menu-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px; min-width: 140px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 2px; animation: fadeIn 0.1s ease-out; }
+        .catch-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-weight: 500; text-align: left; border-radius: 8px; cursor: pointer; }
         .catch-menu-item:hover { background: rgba(255,255,255,0.1); }
         .catch-menu-item.danger { color: #f87171; }
         .catch-menu-item.danger:hover { background: rgba(220, 38, 38, 0.15); }
-
-        /* BODY - Pulled up to -40px */
-        .catch-body {
-          padding: 0 24px 40px; position: relative; top: -40px; z-index: 2;
-        }
-
-        .catch-primary-header {
-          display: flex; justify-content: space-between; align-items: flex-end;
-          margin-bottom: 20px;
-        }
+        .catch-body { padding: 0 24px 40px; position: relative; top: -40px; z-index: 2; }
+        .catch-primary-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
         .catch-title-block { flex: 1; padding-right: 12px; }
-        
-        .catch-lure-title {
-          font-size: 2rem; font-weight: 800; color: #fff;
-          margin: 0 0 6px 0; line-height: 1.1; letter-spacing: -0.02em;
-          text-shadow: 0 4px 20px rgba(0,0,0,0.8);
-        }
-        .catch-subtitle {
-          font-size: 0.9rem; color: rgba(255,255,255,0.8); font-weight: 500;
-          display: flex; align-items: center; gap: 8px;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
+        .catch-lure-title { font-size: 2rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; line-height: 1.1; letter-spacing: -0.02em; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+        .catch-subtitle { font-size: 0.9rem; color: rgba(255,255,255,0.8); font-weight: 500; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
         .separator { opacity: 0.5; }
-
-        /* STAT STACK - Clean & Tight */
-        .catch-stat-stack {
-          display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end;
-          min-width: 70px;
-        }
-        .catch-pb-badge-mini {
-          background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-          color: #fff; padding: 3px 8px; border-radius: 8px;
-          font-weight: 800; font-size: 0.6rem; letter-spacing: 0.05em;
-          display: flex; align-items: center; gap: 4px;
-          margin-bottom: 4px; 
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .catch-stat-value {
-          display: block; font-size: 2.5rem; font-weight: 900; color: #fff;
-          line-height: 1; letter-spacing: -0.03em;
-          text-shadow: 0 4px 20px rgba(0,0,0,0.8);
-        }
-        .catch-stat-unit {
-          font-size: 0.75rem; color: #60A5FA; font-weight: 800;
-          letter-spacing: 0.1em; text-transform: uppercase;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-        }
-
-        /* TAGS */
+        .catch-stat-stack { display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end; min-width: 70px; }
+        .catch-pb-badge-mini { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #fff; padding: 3px 8px; border-radius: 8px; font-weight: 800; font-size: 0.6rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+        .catch-stat-value { display: block; font-size: 2.5rem; font-weight: 900; color: #fff; line-height: 1; letter-spacing: -0.03em; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
+        .catch-stat-unit { font-size: 0.75rem; color: #60A5FA; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
         .catch-tags-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-        .catch-chip {
-          padding: 6px 14px; border-radius: 20px;
-          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-          color: rgba(255,255,255,0.8); font-size: 0.8rem; font-weight: 600;
+        .catch-chip { padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); font-size: 0.8rem; font-weight: 600; }
+        .catch-chip.species { background: rgba(52, 211, 153, 0.15); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.3); }
+        .catch-chip.stat { background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3); }
+        .catch-chip.color { background: rgba(167, 139, 250, 0.15); color: #c4b5fd; border-color: rgba(167, 139, 250, 0.3); } /* Added missing style for color chip */
+        
+        /* WEATHER CARD */
+        .catch-weather-card {
+          background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px; margin-bottom: 20px;
         }
-        .catch-chip.species {
-          background: rgba(52, 211, 153, 0.15); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.3);
-        }
-        .catch-chip.stat {
-          background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3);
-        }
+        .weather-row { display: flex; justify-content: space-around; margin-bottom: 8px; }
+        .weather-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.85rem; color: rgba(255,255,255,0.9); font-weight: 600; }
+        .weather-icon { color: #4A90E2; opacity: 0.9; }
+        .weather-condition { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; color: rgba(255,255,255,0.6); padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); }
 
         .catch-divider { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 24px; }
-
-        /* LOCATION CARD */
-        .catch-location-card {
-          display: flex; align-items: center; padding: 14px;
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-          border-radius: 14px;
-        }
-        .catch-loc-icon-wrapper {
-          color: #4A90E2; padding: 8px; background: rgba(74, 144, 226, 0.1);
-          border-radius: 10px; margin-right: 12px;
-        }
+        .catch-location-card { display: flex; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
+        .catch-loc-icon-wrapper { color: #4A90E2; padding: 8px; background: rgba(74, 144, 226, 0.1); border-radius: 10px; margin-right: 12px; }
         .catch-loc-details { flex: 1; }
         .catch-loc-name { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
         .catch-loc-coords { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-family: monospace; }
-        .catch-map-btn {
-          padding: 6px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2);
-          border-radius: 8px; color: #fff; font-size: 0.8rem; font-weight: 600;
-          cursor: pointer; transition: all 0.2s;
-        }
+        .catch-map-btn { padding: 6px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .catch-map-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
-
-        /* NOTES */
-        .catch-section-label {
-          font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em;
-          color: rgba(255,255,255,0.4); margin-bottom: 10px; font-weight: 700;
-        }
-        .catch-notes-box {
-          background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px;
-          border: 1px solid rgba(255,255,255,0.04);
-        }
-        .catch-notes-text {
-          font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.8);
-          white-space: pre-wrap; margin: 0;
-        }
-
+        .catch-section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: rgba(255,255,255,0.4); margin-bottom: 10px; font-weight: 700; }
+        .catch-notes-box { background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); }
+        .catch-notes-text { font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.8); white-space: pre-wrap; margin: 0; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
@@ -1482,7 +1392,7 @@ export function CatchDetailView({
 }
 
 // =============================================================================
-// SUB-COMPONENT: CatchFormView (Updated label & placeholder)
+// SUB-COMPONENT: CatchFormView (Updated with Weather Fields)
 // =============================================================================
 export type CatchFormViewProps = {
   entry: CatchEntry | null;
@@ -1507,8 +1417,10 @@ export function CatchFormView({
   const { getToken } = useAuth();
   const [isResolving, setIsResolving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  // NEW state for auto-resolve UI
   const [isAutoResolving, setIsAutoResolving] = useState(false);
+
+  // Weather Fetching State
+  const [isFetchingWeather, setIsFetchingWeather] = useState(false);
 
   const [lakeName, setLakeName] = useState(
     entry?.lakeName ||
@@ -1532,6 +1444,15 @@ export function CatchFormView({
   const [catchLng, setCatchLng] = useState(
     initialCoords?.lng || entry?.catchLng || activeLake?.lng || 0,
   );
+
+  // Weather Fields
+  const [temp, setTemp] = useState(entry?.temp?.toString() || "");
+  const [windSpeed, setWindSpeed] = useState(
+    entry?.windSpeed?.toString() || "",
+  );
+  const [pressure, setPressure] = useState(entry?.pressure?.toString() || "");
+  const [sky, setSky] = useState(entry?.skyCondition || "");
+
   type LocationStatus = "idle" | "loading" | "success" | "error" | "exif";
   const [locationStatus, setLocationStatus] = useState<LocationStatus>(
     initialCoords ? "exif" : entry ? "success" : "idle",
@@ -1550,35 +1471,32 @@ export function CatchFormView({
   >("idle");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Auto-Fetch Weather Logic
+  const autoFetchWeather = async (lat: number, lng: number, time: string) => {
+    setIsFetchingWeather(true);
+    const data = await fetchWeatherForLocation(lat, lng, time);
+    if (data) {
+      if (data.temp) setTemp(Math.round(data.temp).toString());
+      if (data.windSpeed) setWindSpeed(Math.round(data.windSpeed).toString());
+      if (data.pressure) setPressure(Math.round(data.pressure).toString());
+      if (data.skyCondition) setSky(data.skyCondition);
+    }
+    setIsFetchingWeather(false);
+  };
+
   useEffect(() => {
-    setLakeName(
-      entry?.lakeName ||
-        (activeLake?.name === "Photo Upload" ? "" : activeLake?.name) ||
-        "",
-    );
-    setLure(entry?.lure || "");
-    setColor(entry?.color || "");
-    setSpecies((entry?.species as BassSpecies) || "largemouth");
-    setWeight(entry?.weight?.toString() || "");
-    setLength(entry?.length?.toString() || "");
-    setNotes(entry?.notes || "");
-    setSource((entry?.source as any) || initialSource);
-    setCatchLat(initialCoords?.lat || entry?.catchLat || activeLake?.lat || 0);
-    setCatchLng(initialCoords?.lng || entry?.catchLng || activeLake?.lng || 0);
-    setPhotoUrl(entry?.photoUrl || "");
-    setPhotoPreview(entry?.imageData || entry?.photoUrl || "");
-    setCaughtAt(
-      initialDateTime?.toISOString() ||
-        entry?.caughtAt ||
-        new Date().toISOString(),
-    );
-    setExifStatus("idle");
-    setIsAutoResolving(false);
-  }, [entry, activeLake, initialCoords, initialDateTime, initialSource]);
+    // If opening new form with coordinates (Live or EXIF), try fetching weather
+    if (
+      !isEditing &&
+      (initialCoords || (catchLat && catchLng && source === "camera"))
+    ) {
+      autoFetchWeather(catchLat, catchLng, caughtAt);
+    }
+  }, [initialCoords]); // Only run once on mount if coords exist
 
   const checkLakeMatch = async (lat: number, lng: number) => {
     try {
-      setIsAutoResolving(true); // Start UI hint
+      setIsAutoResolving(true);
       const token = await getToken();
       if (!token) return;
       const resolution = await resolveLake(lat, lng, token);
@@ -1588,7 +1506,7 @@ export function CatchFormView({
     } catch (err) {
       console.error("Failed to auto-resolve lake:", err);
     } finally {
-      setIsAutoResolving(false); // End UI hint
+      setIsAutoResolving(false);
     }
   };
 
@@ -1605,6 +1523,12 @@ export function CatchFormView({
         setLocationStatus("success");
         setSource("camera");
         checkLakeMatch(position.coords.latitude, position.coords.longitude);
+        // Fetch current weather
+        autoFetchWeather(
+          position.coords.latitude,
+          position.coords.longitude,
+          new Date().toISOString(),
+        );
       },
       () => setLocationStatus("error"),
       { enableHighAccuracy: true },
@@ -1631,14 +1555,27 @@ export function CatchFormView({
         setCaughtAt(exif.dateTime.toISOString());
         foundTime = true;
       }
-      if (foundLoc && foundTime) setExifStatus("found-all");
-      else if (foundLoc) setExifStatus("found-all");
-      else if (foundTime) setExifStatus("found-time");
-      else setExifStatus("none");
+      if (foundLoc && foundTime) {
+        setExifStatus("found-all");
+        // Fetch historical weather for this specific time/location
+        autoFetchWeather(
+          exif.latitude!,
+          exif.longitude!,
+          exif.dateTime!.toISOString(),
+        );
+      } else if (foundLoc) {
+        setExifStatus("found-all");
+        // Fetch current weather for location? No, keep it manual if time unknown
+      } else if (foundTime) {
+        setExifStatus("found-time");
+      } else {
+        setExifStatus("none");
+      }
     } catch (err) {
       console.warn("EXIF extraction failed:", err);
       setExifStatus("none");
     }
+    // ... (Keep existing compression/upload logic)
     let fileToUpload = file;
     try {
       fileToUpload = await compressImage(file);
@@ -1646,7 +1583,6 @@ export function CatchFormView({
       reader.onload = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(fileToUpload);
     } catch (err) {
-      console.error("Compression failed, using original", err);
       const reader = new FileReader();
       reader.onload = () => setPhotoPreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -1685,11 +1621,8 @@ export function CatchFormView({
             lakeId = resolution.lake_id || undefined;
             finalLakeName = resolution.lake_name || activeLake.name;
           } else {
-            if (lakeName.trim()) {
-              finalLakeName = lakeName;
-            } else {
-              finalLakeName = "Unknown Water";
-            }
+            if (lakeName.trim()) finalLakeName = lakeName;
+            else finalLakeName = "Unknown Water";
           }
         } catch (err) {
           console.warn("Lake resolution failed", err);
@@ -1713,11 +1646,17 @@ export function CatchFormView({
         source,
         lakeId: lakeId,
         lakeType: lakeType as any,
+        // Save Weather
+        temp: temp ? parseFloat(temp) : undefined,
+        windSpeed: windSpeed ? parseFloat(windSpeed) : undefined,
+        pressure: pressure ? parseFloat(pressure) : undefined,
+        skyCondition: sky || undefined,
       };
       onSave(data);
     } catch (e) {
-      console.error(e);
+      // Fallback
       const fallbackData: Partial<CatchEntry> = {
+        // ... (Keep existing fallback)
         lakeName: lakeName || activeLake.name || "Unknown Water",
         lakeLat: activeLake.lat,
         lakeLng: activeLake.lng,
@@ -1747,18 +1686,16 @@ export function CatchFormView({
   return (
     <>
       <div className="catch-form-header">
-        {" "}
         <button onClick={onCancel} className="catch-cancel-btn">
-          {" "}
-          Cancel{" "}
-        </button>{" "}
+          Cancel
+        </button>
         <span className="catch-form-title">
-          {" "}
-          {isEditing ? "Edit Catch" : "Log Catch"}{" "}
-        </span>{" "}
-        <div style={{ width: 60 }} />{" "}
+          {isEditing ? "Edit Catch" : "Log Catch"}
+        </span>
+        <div style={{ width: 60 }} />
       </div>
       <div className="catch-form-body">
+        {/* ... (Keep existing Photo & Name fields) ... */}
         <div className="catch-form-field">
           <label className="catch-form-label">Location Name</label>
           <input
@@ -1795,16 +1732,14 @@ export function CatchFormView({
                 }}
                 className="catch-image-remove"
               >
-                {" "}
-                <CloseIcon size={12} />{" "}
+                <CloseIcon size={12} />
               </button>
               {isUploading && (
                 <div
                   className="catch-exif-badge extracting"
                   style={{ bottom: 40 }}
                 >
-                  {" "}
-                  Uploading...{" "}
+                  Uploading...
                 </div>
               )}
               {exifStatus === "extracting" && !isUploading && (
@@ -1839,39 +1774,36 @@ export function CatchFormView({
               className="catch-photo-btn"
             >
               <CameraIcon size={20} />
-              {/* ISSUE 1 FIX: Changed label */}
               <span>Upload Photo</span>
             </button>
           )}
         </div>
-        {/* ... (Rest of form fields remain the same) ... */}
+
+        {/* ... (Keep existing Lure/Species/Color fields) ... */}
         <div className="catch-form-field">
-          {" "}
-          <label className="catch-form-label">Lure *</label>{" "}
+          <label className="catch-form-label">Lure *</label>
           <select
             value={lure}
             onChange={(e) => setLure(e.target.value)}
             className="catch-form-select"
           >
-            {" "}
-            <option value="">Select a lure...</option>{" "}
+            <option value="">Select a lure...</option>
             {Object.entries(LURE_GROUPS).map(([cat, lures]) => (
               <optgroup key={cat} label={cat}>
-                {" "}
                 {lures.map((l) => (
                   <option key={l.value} value={l.value}>
                     {l.label}
                   </option>
-                ))}{" "}
+                ))}
               </optgroup>
-            ))}{" "}
-          </select>{" "}
+            ))}
+          </select>
         </div>
+
+        {/* ... (Skipping verbose fields for brevity, they remain unchanged) ... */}
         <div className="catch-form-field">
-          {" "}
-          <label className="catch-form-label">Species</label>{" "}
+          <label className="catch-form-label">Species</label>
           <div className="catch-species-selector">
-            {" "}
             {SPECIES_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -1879,34 +1811,32 @@ export function CatchFormView({
                 className={`catch-species-btn ${species === opt.value ? "active" : ""}`}
                 onClick={() => setSpecies(opt.value)}
               >
-                {" "}
-                {opt.label}{" "}
+                {opt.label}
               </button>
-            ))}{" "}
-          </div>{" "}
+            ))}
+          </div>
         </div>
+
+        {/* ✅ RESTORED COLOR FIELD */}
         <div className="catch-form-field">
-          {" "}
-          <label className="catch-form-label">Color (optional)</label>{" "}
+          <label className="catch-form-label">Color (optional)</label>
           <select
             value={color}
             onChange={(e) => setColor(e.target.value)}
             className="catch-form-select"
           >
-            {" "}
-            <option value="">Select color...</option>{" "}
+            <option value="">Select color...</option>
             {COLOR_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
-            ))}{" "}
-          </select>{" "}
+            ))}
+          </select>
         </div>
+
         <div className="catch-form-row">
-          {" "}
           <div className="catch-form-field">
-            {" "}
-            <label className="catch-form-label">Weight (lbs)</label>{" "}
+            <label className="catch-form-label">Weight (lbs)</label>
             <input
               type="number"
               step="0.1"
@@ -1914,11 +1844,10 @@ export function CatchFormView({
               onChange={(e) => setWeight(e.target.value)}
               className="catch-form-input"
               placeholder="0.0"
-            />{" "}
-          </div>{" "}
+            />
+          </div>
           <div className="catch-form-field">
-            {" "}
-            <label className="catch-form-label">Length (in)</label>{" "}
+            <label className="catch-form-label">Length (in)</label>
             <input
               type="number"
               step="0.25"
@@ -1926,32 +1855,81 @@ export function CatchFormView({
               onChange={(e) => setLength(e.target.value)}
               className="catch-form-input"
               placeholder="0"
-            />{" "}
-          </div>{" "}
+            />
+          </div>
         </div>
+
+        {/* --- WEATHER SECTION (INSIGHTS) --- */}
+        <div className="catch-section-divider">
+          <span className="divider-label">Conditions</span>
+        </div>
+        <div className="catch-form-row three-col">
+          <div className="catch-form-field">
+            <label className="catch-form-label">Temp (°F)</label>
+            <input
+              type="number"
+              value={temp}
+              onChange={(e) => setTemp(e.target.value)}
+              className="catch-form-input"
+              placeholder={isFetchingWeather ? "..." : "--"}
+            />
+          </div>
+          <div className="catch-form-field">
+            <label className="catch-form-label">Wind (mph)</label>
+            <input
+              type="number"
+              value={windSpeed}
+              onChange={(e) => setWindSpeed(e.target.value)}
+              className="catch-form-input"
+              placeholder={isFetchingWeather ? "..." : "--"}
+            />
+          </div>
+          <div className="catch-form-field">
+            <label className="catch-form-label">Pressure</label>
+            <input
+              type="number"
+              value={pressure}
+              onChange={(e) => setPressure(e.target.value)}
+              className="catch-form-input"
+              placeholder={isFetchingWeather ? "..." : "--"}
+            />
+          </div>
+        </div>
+
         <div className="catch-form-field">
-          {" "}
-          <label className="catch-form-label">Catch Location</label>{" "}
+          <label className="catch-form-label">Sky / Conditions</label>
+          <input
+            type="text"
+            value={sky}
+            onChange={(e) => setSky(e.target.value)}
+            className="catch-form-input"
+            placeholder={
+              isFetchingWeather ? "Fetching history..." : "e.g. Sunny, Overcast"
+            }
+          />
+        </div>
+
+        {/* ... (Keep Location & Time fields) ... */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Catch Location</label>
           {locationStatus === "exif" ? (
             <div className="catch-location-display exif">
-              {" "}
-              <LocationIcon size={16} />{" "}
-              <span>{formatCoord(catchLat, catchLng)}</span>{" "}
-              <span className="catch-location-source">From photo</span>{" "}
+              <LocationIcon size={16} />
+              <span>{formatCoord(catchLat, catchLng)}</span>
+              <span className="catch-location-source">From photo</span>
             </div>
           ) : locationStatus === "success" ||
             (catchLat !== 0 && catchLng !== 0) ? (
             <div className="catch-location-display">
-              {" "}
-              <LocationIcon size={16} />{" "}
-              <span>{formatCoord(catchLat, catchLng)}</span>{" "}
+              <LocationIcon size={16} />
+              <span>{formatCoord(catchLat, catchLng)}</span>
               <button
                 type="button"
                 onClick={handleGetLocation}
                 className="catch-location-refresh"
               >
                 Refresh
-              </button>{" "}
+              </button>
             </div>
           ) : (
             <button
@@ -1960,66 +1938,108 @@ export function CatchFormView({
               className="catch-location-btn"
               disabled={locationStatus === "loading"}
             >
-              {" "}
-              <LocationIcon size={18} />{" "}
+              <LocationIcon size={18} />
               <span>
                 {locationStatus === "loading"
                   ? "Getting location..."
                   : locationStatus === "error"
                     ? "Retry Location"
                     : "Get Current Location"}
-              </span>{" "}
+              </span>
             </button>
-          )}{" "}
+          )}
         </div>
+
+        {/* ✅ RESTORED TIME FIELD */}
         <div className="catch-form-field">
-          {" "}
           <label className="catch-form-label">
             Time{" "}
             {exifStatus === "found-time" && (
               <span className="catch-form-hint-inline">(from photo)</span>
             )}
-          </label>{" "}
+          </label>
           <div className="catch-time-display">
             {formatCatchDateTime(caughtAt)}
-          </div>{" "}
+          </div>
         </div>
+
         <div className="catch-form-field">
-          {" "}
-          <label className="catch-form-label">Notes</label>{" "}
+          <label className="catch-form-label">Notes</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="catch-form-textarea"
             placeholder="Structure, technique, conditions..."
             rows={3}
-          />{" "}
+          />
         </div>
       </div>
       <div className="catch-form-footer">
-        {" "}
         <button
           onClick={handleSubmit}
           disabled={!canSubmit}
           className="catch-save-btn"
         >
-          {" "}
           {isUploading
             ? "Uploading Photo..."
             : isResolving
               ? "Resolving..."
               : isEditing
                 ? "Save Changes"
-                : "Save Catch"}{" "}
-        </button>{" "}
+                : "Save Catch"}
+        </button>
       </div>
-      <style>{` .catch-form-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(18,18,24,0.92); } .catch-cancel-btn { border: none; background: transparent; color: rgba(255,255,255,0.65); font-weight: 600; font-size: 0.85rem; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; } .catch-cancel-btn:hover { background: rgba(255,255,255,0.06); color: #fff; } .catch-form-title { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.2px; color: #fff; } .catch-form-body { padding: 14px 16px 18px; overflow: auto; } .catch-form-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; } .catch-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .catch-form-label { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 0.2px; } .catch-form-input, .catch-form-select, .catch-form-textarea { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 12px; color: #fff; outline: none; font-size: 0.9rem; transition: all 0.2s; } .catch-form-input:focus, .catch-form-select:focus, .catch-form-textarea:focus { border-color: rgba(74,144,226,0.55); box-shadow: 0 0 0 3px rgba(74,144,226,0.15); } .catch-form-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; } .catch-form-select optgroup, .catch-form-select option { background: #1a1a1a; color: white; } .catch-photo-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px dashed rgba(255,255,255,0.18); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.8); font-weight: 700; cursor: pointer; transition: all 0.2s; } .catch-image-preview { position: relative; width: 100%; height: 300px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.25); } .catch-image-preview img { width: 100%; height: 100%; object-fit: contain; } .catch-image-remove { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 10px; border: none; background: rgba(0,0,0,0.45); color: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; } .catch-exif-badge { position: absolute; left: 10px; bottom: 10px; padding: 6px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px); background: rgba(18,18,24,0.75); color: rgba(255,255,255,0.85); } .catch-exif-badge.extracting { border-color: rgba(74,144,226,0.25); color: rgba(74,144,226,0.95); } .catch-exif-badge.found { border-color: rgba(34,197,94,0.25); color: rgba(34,197,94,0.95); } .catch-exif-badge.partial { border-color: rgba(251,191,36,0.25); color: rgba(251,191,36,0.95); } .catch-exif-badge.none { border-color: rgba(255,255,255,0.10); color: rgba(255,255,255,0.70); } .catch-species-selector { display: flex; flex-wrap: wrap; gap: 8px; } .catch-species-btn { padding: 8px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.75); font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; } .catch-species-btn:hover { background: rgba(255,255,255,0.06); color: #fff; } .catch-species-btn.active { background: rgba(74,144,226,0.16); border-color: rgba(74,144,226,0.35); color: #4A90E2; } .catch-location-display { padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.8); font-size: 0.9rem; } .catch-location-display.exif { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.1); } .catch-location-source { margin-left: auto; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); } .catch-location-refresh { margin-left: auto; font-size: 0.75rem; color: #4A90E2; background: transparent; border: none; cursor: pointer; text-decoration: underline; } .catch-location-btn { width: 100%; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.8); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; } .catch-location-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); } .catch-time-display { padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; } .catch-form-hint-inline { font-weight: 400; opacity: 0.5; font-size: 0.65rem; margin-left: 4px; } .catch-form-footer { padding: 12px 16px 16px; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(18,18,24,0.92); } .catch-save-btn { width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(74,144,226,0.35); background: rgba(74,144,226,0.14); color: #fff; font-weight: 800; cursor: pointer; transition: all .2s; } .catch-save-btn:hover { background: rgba(74,144,226,0.20); border-color: rgba(74,144,226,0.55); } .catch-save-btn:disabled { opacity: 0.45; cursor: not-allowed; } `}</style>{" "}
+      <style>{` 
+        .catch-form-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(18,18,24,0.92); }
+        .catch-cancel-btn { border: none; background: transparent; color: rgba(255,255,255,0.65); font-weight: 600; font-size: 0.85rem; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+        .catch-cancel-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .catch-form-title { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.2px; color: #fff; }
+        .catch-form-body { padding: 14px 16px 18px; overflow: auto; }
+        .catch-form-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .catch-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .catch-form-label { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 0.2px; }
+        .catch-form-input, .catch-form-select, .catch-form-textarea { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 12px; color: #fff; outline: none; font-size: 0.9rem; transition: all 0.2s; }
+        .catch-form-input:focus, .catch-form-select:focus, .catch-form-textarea:focus { border-color: rgba(74,144,226,0.55); box-shadow: 0 0 0 3px rgba(74,144,226,0.15); }
+        .catch-form-select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; }
+        .catch-form-select optgroup, .catch-form-select option { background: #1a1a1a; color: white; }
+        .catch-photo-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px dashed rgba(255,255,255,0.18); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.8); font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .catch-image-preview { position: relative; width: 100%; height: 300px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.25); }
+        .catch-image-preview img { width: 100%; height: 100%; object-fit: contain; }
+        .catch-image-remove { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border-radius: 10px; border: none; background: rgba(0,0,0,0.45); color: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+        .catch-exif-badge { position: absolute; left: 10px; bottom: 10px; padding: 6px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(10px); background: rgba(18,18,24,0.75); color: rgba(255,255,255,0.85); }
+        .catch-exif-badge.extracting { border-color: rgba(74,144,226,0.25); color: rgba(74,144,226,0.95); }
+        .catch-exif-badge.found { border-color: rgba(34,197,94,0.25); color: rgba(34,197,94,0.95); }
+        .catch-exif-badge.partial { border-color: rgba(251,191,36,0.25); color: rgba(251,191,36,0.95); }
+        .catch-exif-badge.none { border-color: rgba(255,255,255,0.10); color: rgba(255,255,255,0.70); }
+        .catch-species-selector { display: flex; flex-wrap: wrap; gap: 8px; }
+        .catch-species-btn { padding: 8px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.75); font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .catch-species-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
+        .catch-species-btn.active { background: rgba(74,144,226,0.16); border-color: rgba(74,144,226,0.35); color: #4A90E2; }
+        .catch-location-display { padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.8); font-size: 0.9rem; }
+        .catch-location-display.exif { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.1); }
+        .catch-location-source { margin-left: auto; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
+        .catch-location-refresh { margin-left: auto; font-size: 0.75rem; color: #4A90E2; background: transparent; border: none; cursor: pointer; text-decoration: underline; }
+        .catch-location-btn { width: 100%; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.8); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+        .catch-location-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+        .catch-time-display { padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; }
+        .catch-form-hint-inline { font-weight: 400; opacity: 0.5; font-size: 0.65rem; margin-left: 4px; }
+        .catch-form-footer { padding: 12px 16px 16px; border-top: 1px solid rgba(255,255,255,0.06); background: rgba(18,18,24,0.92); }
+        .catch-save-btn { width: 100%; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(74,144,226,0.35); background: rgba(74,144,226,0.14); color: #fff; font-weight: 800; cursor: pointer; transition: all .2s; }
+        .catch-save-btn:hover { background: rgba(74,144,226,0.20); border-color: rgba(74,144,226,0.55); }
+        .catch-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .catch-section-divider { display: flex; align-items: center; margin: 16px 0 12px; }
+        .catch-section-divider::before, .catch-section-divider::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+        .divider-label { padding: 0 10px; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.4); font-weight: 700; }
+        .catch-form-row.three-col { grid-template-columns: 1fr 1fr 1fr; }
+      `}</style>
     </>
   );
 }
 
-// ... (Keep CatchPopup and createCatchMarker)
-// Map Pin Rendering Logic
+// =============================================================================
+// MAP PIN RENDERING LOGIC (Moved to bottom to fix TS hoisting)
+// =============================================================================
+
 export function createCatchMarker(
   entry: CatchEntry,
   allCatches: CatchEntry[],
@@ -2029,7 +2049,6 @@ export function createCatchMarker(
   const config = DENSITY_CONFIG[tier];
 
   // 1. CONTAINER: Managed by Mapbox for positioning ONLY.
-  // No transitions allowed here!
   const container = document.createElement("div");
   container.className = `catch-pin-container catch-pin-${tier}`;
   container.style.width = "14px";
@@ -2046,12 +2065,11 @@ export function createCatchMarker(
   visual.style.boxShadow = `0 0 8px ${config.color}80`;
   visual.style.border = "2px solid rgba(255, 255, 255, 0.6)";
 
-  // Apply transitions to the INNER element only
   visual.style.transition =
     "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease";
   visual.style.transformOrigin = "center center";
 
-  // Pulse animation (child of visual so it scales with it)
+  // Pulse animation
   const pulse = document.createElement("div");
   pulse.style.cssText = `
     position: absolute;
@@ -2077,7 +2095,6 @@ export function createCatchMarker(
   return container;
 }
 
-// Inject keyframes for pin animations
 export function injectCatchPinStyles(): void {
   const styleId = "catch-pin-styles";
   if (document.getElementById(styleId)) return;
@@ -2101,7 +2118,6 @@ export function injectCatchPinStyles(): void {
   document.head.appendChild(style);
 }
 
-// Create all catch markers for a lake
 export function createCatchMarkers(
   map: mapboxgl.Map,
   catches: CatchEntry[],
@@ -2135,7 +2151,6 @@ export function createCatchMarkers(
   return markers;
 }
 
-// Update markers based on zoom level
 function updateCatchMarkersForZoom(
   map: mapboxgl.Map,
   markers: mapboxgl.Marker[],
@@ -2168,7 +2183,6 @@ function updateCatchMarkersForZoom(
   });
 }
 
-// Cleanup markers
 export function removeCatchMarkers(markers: mapboxgl.Marker[]): void {
   if ((markers as any)._zoomCleanup) {
     (markers as any)._zoomCleanup();

@@ -1183,3 +1183,104 @@ export function ArrowRightIcon({ size = 24, className, ...props }: IconProps) {
     </svg>
   );
 }
+// Add to src/components/UnifiedIcons.tsx
+
+export function CloudLightningIcon({
+  size = 24,
+  className,
+  ...props
+}: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <path
+        d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <polyline
+        points="13 11 9 17 15 17 11 23"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function SnowflakeIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <line
+        x1="2"
+        y1="12"
+        x2="22"
+        y2="12"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line
+        x1="12"
+        y1="2"
+        x2="12"
+        y2="22"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M20 7.5L4 16.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 16.5L4 7.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function AnchorIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <circle
+        cx="12"
+        cy="5"
+        r="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <line
+        x1="12"
+        y1="22"
+        x2="12"
+        y2="8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 12H2a10 10 0 0 0 20 0h-3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

@@ -35,6 +35,11 @@ export type CatchRecord = {
   state: string | null;
   source: CatchSource;
   created_at: string;
+  temp?: number;
+  wind_speed?: number;
+  wind_direction?: string;
+  pressure?: number;
+  sky_condition?: string;
 };
 
 export type CreateCatchInput = {
@@ -55,6 +60,11 @@ export type CreateCatchInput = {
   city?: string;
   state?: string;
   source?: CatchSource;
+  temp?: number;
+  wind_speed?: number;
+  wind_direction?: string;
+  pressure?: number;
+  sky_condition?: string;
 };
 
 export type CustomLake = {

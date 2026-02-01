@@ -29,6 +29,7 @@ import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 import { WeatherOverlay } from "@/components/WeatherOverlay";
+import { MapTargetCard } from "@/features/map/map_target_card";
 
 // --- CATCH LOG IMPORTS ---
 import {
@@ -198,7 +199,7 @@ function UpgradeModal({
   isOpen,
   onClose,
   message,
-  sampleUrl = "/plan?token=FSt4LZJLD62XHHTmYOL1ZoWua6V34U9c9TGVbKt1vEU", // Default to your best sample
+  sampleUrl = "/plan?token=FSt4LZJLD62XHHTmYOL1ZoWua6V34U9c9TGVbKt1vEU",
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -208,17 +209,12 @@ function UpgradeModal({
   const navigate = useNavigate();
   if (!isOpen) return null;
 
-  // Inside your component
   const handleViewSample = () => {
-    // Define your IDs or URLs
     const DEV_SAMPLE_URL =
       "/plan?token=FSt4LZJLD62XHHTmYOL1ZoWua6V34U9c9TGVbKt1vEU";
     const PROD_SAMPLE_URL =
       "/plan?token=ByW0Xj_COI5ek3gimQnLQ6rsyrhkvGO9X7R8Aw6Rhus";
-
-    // Vite automatically sets this boolean
     const targetUrl = import.meta.env.PROD ? PROD_SAMPLE_URL : DEV_SAMPLE_URL;
-
     navigate(targetUrl);
   };
 
@@ -249,7 +245,6 @@ function UpgradeModal({
         >
           <LockIcon size={30} />
         </div>
-
         <h3
           style={{ margin: "0 0 10px 0", fontSize: "1.25rem", fontWeight: 700 }}
         >
@@ -265,7 +260,6 @@ function UpgradeModal({
         >
           {message}
         </p>
-
         <button
           onClick={() => navigate("/account")}
           style={{
@@ -318,7 +312,7 @@ function UpgradeModal({
 }
 
 // =============================================================================
-// TYPES
+// TYPES & HELPERS
 // =============================================================================
 
 type LakeData = {
@@ -348,10 +342,6 @@ type FavoriteLake = {
   tier?: number;
   anchors?: { lat: number; lng: number }[];
 };
-
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
 
 function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
   return f.source === "composite" && f.sourceLayer === "water";
@@ -453,7 +443,6 @@ function findLakeByPolygon(
   favorites: FavoriteLake[],
 ): PolygonMatchResult {
   const p = { lat, lng };
-
   for (const lake of customLakes) {
     const anchors = (lake as any).anchors as
       | { lat: number; lng: number }[]
@@ -472,7 +461,6 @@ function findLakeByPolygon(
       };
     }
   }
-
   for (const lake of LAKES_DATA as LakeData[]) {
     const anchors = lake.anchors as { lat: number; lng: number }[] | undefined;
     if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
@@ -494,7 +482,6 @@ function findLakeByPolygon(
       };
     }
   }
-
   return null;
 }
 
@@ -547,15 +534,34 @@ function findNearestFavorite(
 export function Members() {
   const { user } = useUser();
   const { getToken } = useAuth();
-  // isActive = PRO Status
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
   const location = useLocation();
   const [dataVersion, setDataVersion] = useState(0);
   const [searchParams] = useSearchParams();
 
-  // State for new Weather Feature
+  // --- WEATHER STATE & CACHING ---
   const [showWeather, setShowWeather] = useState(false);
+  const [weatherData, setWeatherData] = useState<any>(null);
+  const [tipReady, setTipReady] = useState(false);
+  const [tipSeen, setTipSeen] = useState(false);
+
+  // 🧠 CACHE: Persists weather data for 30 minutes
+  const weatherCache = useRef<
+    Record<
+      string,
+      {
+        data: any;
+        timestamp: number;
+        tipReady: boolean;
+        tipSeen: boolean;
+      }
+    >
+  >({});
+
+  const CACHE_DURATION = 30 * 60 * 1000; // 30 Minutes
+  const getGeoKey = (lat: number, lng: number) =>
+    `${lat.toFixed(4)},${lng.toFixed(4)}`;
 
   // --- PERSISTENT STATE ---
   const [favorites, setFavorites] = useState<FavoriteLake[]>([]);
@@ -595,14 +601,12 @@ export function Members() {
 
   // --- ONBOARDING STATE ---
   const [showTutorial, setShowTutorial] = useState(false);
-
   useEffect(() => {
     const hasSeen = localStorage.getItem("bc_has_seen_onboarding");
     if (!hasSeen) {
       setTimeout(() => setShowTutorial(true), 1000);
     }
   }, []);
-
   const dismissTutorial = () => {
     localStorage.setItem("bc_has_seen_onboarding", "true");
     setShowTutorial(false);
@@ -704,11 +708,9 @@ export function Members() {
     ) {
       processedRefreshRef.current = refreshTimestamp;
       setDataVersion((v) => v + 1);
-
       if (location.state.lakeId) {
         pendingLakeSelectRef.current = location.state.lakeId;
       }
-
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -774,16 +776,13 @@ export function Members() {
   useEffect(() => {
     if (!pendingLakeSelectRef.current) return;
     if (favorites.length === 0) return;
-
     const targetId = pendingLakeSelectRef.current;
     const lake = favorites.find((f) => f.id === targetId);
-
     if (lake) {
       setWaterName(lake.name);
       setViewingFavoriteId(lake.id);
       setLocationDetails({ city: lake.city, state: lake.state });
       setSelectedCoords({ lat: lake.lat, lng: lake.lng });
-
       setTimeout(() => {
         if (mapRef.current) {
           mapRef.current.flyTo({
@@ -793,7 +792,6 @@ export function Members() {
           });
         }
       }, 300);
-
       pendingLakeSelectRef.current = null;
     }
   }, [favorites, dataVersion]);
@@ -809,9 +807,10 @@ export function Members() {
     );
   }, [favorites, selectedCoords, waterName]);
 
-  const currentFavorite = useMemo(() => {
-    return favorites.find((f) => f.id === viewingFavoriteId) || null;
-  }, [favorites, viewingFavoriteId]);
+  const currentFavorite = useMemo(
+    () => favorites.find((f) => f.id === viewingFavoriteId) || null,
+    [favorites, viewingFavoriteId],
+  );
 
   const hydrateLakeData = (
     name: string,
@@ -881,12 +880,10 @@ export function Members() {
       waterName !== "" &&
       !waterName.startsWith("Water near") &&
       !waterName.startsWith("Dropped Pin");
-
     const canEditBoundary =
       isSaved &&
       (currentFavorite?.lake_type === "custom" ||
         !hydrateLakeData(waterName, selectedCoords.lat, selectedCoords.lng));
-
     return {
       name: waterName,
       city: locationDetails.city,
@@ -907,13 +904,91 @@ export function Members() {
     catchMarkersRef.current = createCatchMarkers(
       map,
       catchLog.lakeCatches,
-      // NOTE: Clicking a pin opens detail view - this is ALLOWED for Free users
       (entry) => catchLog.showDetail(entry),
     );
     return () => {
       removeCatchMarkers(catchMarkersRef.current);
     };
   }, [catchLog.lakeCatches, mapRef.current]);
+
+  // --- WEATHER EFFECTS & CACHING ---
+
+  // 1. COORDINATE CHANGE HANDLER (Immediate Cache Check)
+  useEffect(() => {
+    if (!selectedCoords) {
+      setWeatherData(null);
+      setTipReady(false);
+      setTipSeen(false);
+      return;
+    }
+
+    const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
+    const now = Date.now();
+    const cached = weatherCache.current[key];
+    if (cached && now - cached.timestamp < CACHE_DURATION) {
+      console.log("🌦️ Cache HIT - Restoring state for:", key);
+      setWeatherData(cached.data);
+      setTipReady(cached.tipReady);
+      setTipSeen(cached.tipSeen);
+    } else {
+      console.log("🌦️ Cache MISS - Resetting state for:", key);
+      setWeatherData(null);
+      setTipReady(false);
+      setTipSeen(false);
+    }
+  }, [selectedCoords?.lat, selectedCoords?.lng]);
+
+  // 2. FETCH LOGIC
+  useEffect(() => {
+    if (showWeather && selectedCoords && !weatherData) {
+      const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      fetch(
+        `${baseUrl}/weather/current?lat=${selectedCoords.lat}&lon=${selectedCoords.lng}`,
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          setWeatherData(data);
+          weatherCache.current[key] = {
+            data,
+            timestamp: Date.now(),
+            tipReady: false,
+            tipSeen: false,
+          };
+        })
+        .catch((err) => console.error("Weather fetch failed:", err));
+    }
+  }, [showWeather, selectedCoords, weatherData]);
+
+  // 3. BACKGROUND TIMER LOGIC
+  useEffect(() => {
+    if (!showWeather && weatherData && !tipReady && selectedCoords) {
+      const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
+      console.log("⏳ Weather closed. Starting 10s analysis timer for:", key);
+      const timer = setTimeout(() => {
+        console.log("✅ Analysis complete. Tip Ready.");
+        const currentKey = getGeoKey(selectedCoords.lat, selectedCoords.lng);
+        if (currentKey === key) {
+          setTipReady(true);
+        }
+        if (weatherCache.current[key]) {
+          weatherCache.current[key].tipReady = true;
+        }
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showWeather, weatherData, tipReady, selectedCoords]);
+
+  // 4. MARK SEEN LOGIC
+  useEffect(() => {
+    if (showWeather && tipReady && selectedCoords) {
+      setTipSeen(true);
+      const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
+      if (weatherCache.current[key]) {
+        weatherCache.current[key].tipSeen = true;
+      }
+    }
+  }, [showWeather, tipReady, selectedCoords]);
 
   // --- MAP INIT ---
   useEffect(() => {
@@ -1014,17 +1089,14 @@ export function Members() {
         if (showFavoritesRef.current) setShowFavorites(false);
         return;
       }
-
       if (viewingFavoriteIdRef.current) {
         setViewingFavoriteId(null);
       }
-
       if (abortControllerRef.current) abortControllerRef.current.abort();
       abortControllerRef.current = new AbortController();
 
       try {
         const { lng, lat } = e.lngLat;
-
         const features = mapRef.current.queryRenderedFeatures(e.point);
         const water = features.find(isWaterFeature);
 
@@ -1051,14 +1123,12 @@ export function Members() {
           .addTo(mapRef.current);
 
         const vectorName: string | undefined = water?.properties?.name;
-
         const polygonMatch = findLakeByPolygon(
           lat,
           lng,
           customLakesRef.current as any,
           favoritesRef.current,
         );
-
         let dbMatch: LakeData | undefined;
         if (!polygonMatch && vectorName) {
           const searchName = vectorName.toLowerCase();
@@ -1066,16 +1136,13 @@ export function Members() {
             l.name.toLowerCase().includes(searchName),
           );
         }
-
         const nearbyFavorite = !polygonMatch
           ? findNearestFavorite(lat, lng, favoritesRef.current)
           : null;
-
         const nearbyUserLake =
           !polygonMatch && !nearbyFavorite
             ? findUserLakeByAnchors(lat, lng, customLakesRef.current as any)
             : null;
-
         const nearbyLake =
           !polygonMatch && !nearbyFavorite && !nearbyUserLake
             ? dbMatch || findNearestLake(lat, lng)
@@ -1160,12 +1227,10 @@ export function Members() {
       isMountedRef.current = false;
       m.remove();
     };
-  }, [isActive]); // Re-init if status changes
+  }, [isActive]);
 
-  // --- FEATURE GATING LOGIC ---
-
+  // --- HANDLERS ---
   const handleLiveCameraClick = () => {
-    // GATE: Camera is for Live Session (Pro only)
     if (!isActive) {
       triggerUpgrade(
         "Live session logging is a Pro feature. Upload catches later via Insights.",
@@ -1181,14 +1246,12 @@ export function Members() {
   const handleLiveCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     let compressedFile = file;
     try {
       compressedFile = await compressImage(file);
     } catch (err) {
       console.warn("Compression failed, using original", err);
     }
-
     const getPosition = () => {
       return new Promise<GeolocationPosition>((resolve, reject) => {
         if (!navigator.geolocation) return reject("No Geo");
@@ -1199,16 +1262,13 @@ export function Members() {
         });
       });
     };
-
     let latitude = 0;
     let longitude = 0;
     let lakeName = "Unknown Water";
-
     try {
       const pos = await getPosition();
       latitude = pos.coords.latitude;
       longitude = pos.coords.longitude;
-
       const fav = findNearestFavorite(latitude, longitude, favorites);
       const db = findNearestLake(latitude, longitude);
       if (fav) lakeName = fav.name;
@@ -1220,7 +1280,6 @@ export function Members() {
         longitude = selectedCoords.lng;
       }
     }
-
     const reader = new FileReader();
     reader.onload = (ev) => {
       const imageData = ev.target?.result as string;
@@ -1288,7 +1347,6 @@ export function Members() {
         );
         const acres = location.acres || dbLake?.acres;
         const zoom = getZoomForLake(acres);
-
         mapRef.current.flyTo({
           center: [location.longitude, location.latitude],
           zoom,
@@ -1350,22 +1408,16 @@ export function Members() {
     (e?: React.MouseEvent) => {
       e?.preventDefault();
       e?.stopPropagation();
-
-      // STRICT GATE: Plans are PRO ONLY (Hard Lock)
-      // This prevents the confirmation modal from opening for Free users.
       if (!isActive) {
         triggerUpgrade(
           "Generate AI fishing plans based on real-time conditions with Pro.",
         );
         return;
       }
-
       const targetName = currentFavorite ? currentFavorite.name : waterName;
       if (!targetName && !activeLake) return;
-
       const hasPlan = !!lastPlanUrl;
       const isSameLake = lastPlanLake === targetName;
-
       if (hasPlan && isSameLake) {
         setShowStrategyMenu(true);
       } else if (hasPlan && !isSameLake) {
@@ -1386,17 +1438,14 @@ export function Members() {
   );
 
   const handleWeatherClick = useCallback(() => {
-    // GATE: Weather is Conditional (Home Lake Allowed)
     const isHomeLake =
       isActive || (favorites.length > 0 && activeLake?.id === favorites[0].id);
-
     if (!isActive && !isHomeLake) {
       triggerUpgrade(
         "Unlock real-time weather and intelligent planning for unlimited lakes. Free users get access to 1 Home Lake.",
       );
       return;
     }
-
     setShowWeather((prev) => !prev);
   }, [isActive, favorites, activeLake]);
 
@@ -1428,7 +1477,6 @@ export function Members() {
       if (!waterName || !selectedCoords) return;
       const token = await getToken();
       if (!token) return;
-
       if (isCurrentLocationSaved) {
         const fav = favorites.find(
           (f) =>
@@ -1440,24 +1488,20 @@ export function Members() {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
       } else {
-        // GATE: Favorites limit
         if (!isActive && favorites.length >= 1) {
           triggerUpgrade(
             "Free users can track 1 Home Lake. Upgrade to track unlimited waters.",
           );
           return;
         }
-
         const dbMatch = hydrateLakeData(
           manualWaterName || waterName,
           selectedCoords.lat,
           selectedCoords.lng,
         );
-
         let lakeId = "";
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
-
         if (
           dbMatch &&
           dbMatch.id &&
@@ -1469,7 +1513,6 @@ export function Members() {
           lakeType = "custom";
           shouldCreateCustom = true;
         }
-
         const performCustomCreation = async () => {
           const nameToSave = manualWaterName || waterName;
           const createRes = await createCustomLake(
@@ -1505,7 +1548,6 @@ export function Members() {
             return existingLake?.id;
           }
         };
-
         try {
           if (shouldCreateCustom) {
             lakeId = await performCustomCreation();
@@ -1522,7 +1564,6 @@ export function Members() {
             }
           }
           if (lakeType === "custom") await addFavorite(lakeId, "custom", token);
-
           const zoom = mapRef.current?.getZoom() || 10;
           const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${selectedCoords.lng},${selectedCoords.lat},${Math.min(zoom, 13)},0/600x400?access_token=${MAPBOX_TOKEN}`;
           const newLake: FavoriteLake = {
@@ -1547,7 +1588,7 @@ export function Members() {
       }
     },
     [
-      isActive, // Needed for gate check
+      isActive,
       waterName,
       manualWaterName,
       selectedCoords,
@@ -1564,7 +1605,6 @@ export function Members() {
     e.stopPropagation();
     if (lastPlanUrl) navigate(lastPlanUrl);
   };
-
   const handleOpenScoutModal = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1572,9 +1612,7 @@ export function Members() {
     else setInputMode("search");
     setShowModal(true);
   };
-
   const handleEditBoundary = () => {
-    // GATE: Lake Builder
     if (!isActive) {
       triggerUpgrade("Custom mapping tools are available in Pro.");
       return;
@@ -1592,9 +1630,7 @@ export function Members() {
       });
     }
   };
-
   const handleCatchLogClick = () => {
-    // GATE: CatchLog List (Session View)
     if (!isActive) {
       triggerUpgrade(
         "Catchlog tracks catches for your current trip. Historical catches remain available via Map pins and Insights.",
@@ -1611,12 +1647,7 @@ export function Members() {
         onComplete={() => setLoading(false)}
       />
     );
-
-  if (statusLoading) {
-    return <MapLoadingScreen />;
-  }
-
-  // NOTE: Removed "Subscription Required" blocking render. Map is now UNLOCKED.
+  if (statusLoading) return <MapLoadingScreen />;
 
   return (
     <div
@@ -1649,8 +1680,6 @@ export function Members() {
           }
         }}
       />
-
-      {/* UPGRADE MODAL */}
       <UpgradeModal
         isOpen={showUpgradeModal}
         onClose={() => setShowUpgradeModal(false)}
@@ -1660,14 +1689,21 @@ export function Members() {
       {/* WEATHER OVERLAY */}
       {showWeather && selectedCoords && (
         <WeatherOverlay
-          lat={selectedCoords.lat}
-          lng={selectedCoords.lng}
           locationName={waterName}
           onClose={() => setShowWeather(false)}
+          weatherData={weatherData}
+          showTip={tipReady}
         />
       )}
 
-      {/* TOP GRADIENT BAR - Always visible */}
+      {/* TACTICAL TARGET CARD - Hidden if weather closed or data missing */}
+      {showWeather && weatherData && (
+        <div className="absolute top-24 left-4 z-50">
+          <MapTargetCard weather={weatherData} />
+        </div>
+      )}
+
+      {/* TOP GRADIENT BAR */}
       {!showModal &&
         !catchLog.isOpen &&
         (() => {
@@ -1693,7 +1729,6 @@ export function Members() {
             }
             return null;
           })();
-
           const handleAcceptSuggestion = () => {
             if (suggestedMatch) {
               setWaterName(suggestedMatch.name);
@@ -1706,7 +1741,6 @@ export function Members() {
               }
             }
           };
-
           const handleSaveLakeName = () => {
             if (manualWaterName.trim()) {
               setWaterName(manualWaterName.trim());
@@ -1735,7 +1769,6 @@ export function Members() {
                       <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
                   </button>
-
                   <div className="top-bar-content-centered">
                     <div className="top-bar-name-row">
                       <button
@@ -1749,7 +1782,6 @@ export function Members() {
                       >
                         <StarIcon size={24} filled={isCurrentLocationSaved} />
                       </button>
-
                       {lakeLabelData.isKnown ? (
                         <h2 className="top-bar-lake-name">
                           {lakeLabelData.name}
@@ -1785,14 +1817,12 @@ export function Members() {
                         </>
                       )}
                     </div>
-
                     <div className="top-bar-location">
                       <span>
                         {lakeLabelData.city && lakeLabelData.state
                           ? `${lakeLabelData.city}, ${lakeLabelData.state}`
                           : `${lakeLabelData.lat.toFixed(4)}°, ${lakeLabelData.lng.toFixed(4)}°`}
                       </span>
-
                       {lakeLabelData.canEditBoundary && (
                         <button
                           className="top-bar-edit-boundary"
@@ -1801,13 +1831,11 @@ export function Members() {
                         >
                           <PolygonIcon size={12} />
                           <span>Outline</span>
-                          {/* VISUAL LOCK: If locked, show small lock icon */}
                           {!isActive && <LockIcon size={10} className="ml-1" />}
                         </button>
                       )}
                     </div>
                   </div>
-
                   {suggestedMatch && (
                     <button
                       className="top-bar-suggestion"
@@ -1938,14 +1966,33 @@ export function Members() {
 
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
-                <button
-                  onClick={handleWeatherClick}
-                  className={`nav-btn nav-btn-icon ${activeLake ? "nav-btn-primary" : ""}`}
-                  disabled={!activeLake}
-                  aria-label="Check Weather"
-                >
-                  <CloudIcon size={22} />
-                </button>
+                <div style={{ position: "relative" }}>
+                  <button
+                    onClick={handleWeatherClick}
+                    className={`nav-btn nav-btn-icon ${activeLake ? "nav-btn-primary" : ""}`}
+                    disabled={!activeLake}
+                    aria-label="Check Weather"
+                  >
+                    <CloudIcon size={22} />
+                  </button>
+                  {tipReady && !tipSeen && !showWeather && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        background: "#F59E0B",
+                        border: "1.5px solid rgba(30,30,40,1)",
+                        boxShadow: "0 0 6px rgba(245, 158, 11, 0.6)",
+                        animation: "pulse-dot 2s infinite",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  )}
+                </div>
                 <button
                   onClick={handleLiveCameraClick}
                   className={`nav-btn nav-btn-icon ${!!activeLake ? "nav-btn-primary" : ""}`}
@@ -1954,7 +2001,6 @@ export function Members() {
                   <CameraIcon size={22} />
                 </button>
               </div>
-
               <div className="orb-nav-cluster">
                 <div
                   className="nav-center-orb"
@@ -1965,7 +2011,6 @@ export function Members() {
                   <div className="nav-center-orb-glow" />
                 </div>
               </div>
-
               <div className="nav-cluster nav-cluster-right">
                 <div style={{ position: "relative" }}>
                   <button
@@ -1976,7 +2021,6 @@ export function Members() {
                   >
                     <LightningIcon size={22} />
                   </button>
-
                   {lastPlanUrl &&
                     (currentFavorite
                       ? lastPlanLake === currentFavorite.name
@@ -1994,7 +2038,6 @@ export function Members() {
                         }}
                       />
                     )}
-
                   {showStrategyMenu && (
                     <>
                       <div
@@ -2038,7 +2081,6 @@ export function Members() {
                     </>
                   )}
                 </div>
-
                 <button
                   onClick={handleCatchLogClick}
                   className={`nav-btn nav-btn-icon ${!!activeLake ? "nav-btn-primary" : ""}`}
@@ -2208,7 +2250,7 @@ export function Members() {
           </div>
         </div>
       )}
-      {/* --- ONBOARDING OVERLAY --- */}
+
       {showTutorial && (
         <div
           onClick={dismissTutorial}
@@ -2216,7 +2258,7 @@ export function Members() {
             position: "fixed",
             inset: 0,
             zIndex: 9999,
-            background: "rgba(0,0,0,0.85)", // Dark smoked glass
+            background: "rgba(0,0,0,0.85)",
             backdropFilter: "blur(4px)",
             display: "flex",
             flexDirection: "column",
@@ -2228,7 +2270,6 @@ export function Members() {
             padding: 20,
           }}
         >
-          {/* Main Instruction */}
           <div style={{ marginBottom: 60 }}>
             <div
               style={{
@@ -2243,7 +2284,6 @@ export function Members() {
                 justifyContent: "center",
               }}
             >
-              {/* Hand Icon (Simple SVG) */}
               <svg
                 width="32"
                 height="32"
@@ -2276,12 +2316,10 @@ export function Members() {
               </span>
             </p>
           </div>
-
-          {/* Orb Pointer (Absolute position to match Orb) */}
           <div
             style={{
               position: "absolute",
-              bottom: 120, // Approx height of dock + padding
+              bottom: 120,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -2310,8 +2348,6 @@ export function Members() {
               <path d="M19 12l-7 7-7-7" />
             </svg>
           </div>
-
-          {/* Dismiss Button */}
           <button
             style={{
               marginTop: 40,
@@ -2330,433 +2366,82 @@ export function Members() {
         </div>
       )}
 
-      <style>
-        {`
-        .orb-marker-map {
-          background-color: #4A90E2;
-          border-radius: 50%;
-          box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8);
-          cursor: pointer;
-          width: 24px;
-          height: 24px;
-        }
-        .top-gradient-bar {
-          position: fixed;
-          top: 64px;
-          left: 0;
-          right: 0;
-          z-index: 800;
-          background: linear-gradient(to bottom, 
-            rgba(0,0,0,0.92) 0%, 
-            rgba(0,0,0,0.8) 50%, 
-            rgba(0,0,0,0.4) 80%,
-            transparent 100%);
-          padding: 16px 20px 45px;
-          display: flex;
-          justify-content: center;
-          pointer-events: none;
-        }
-        .top-bar-card {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          position: relative;
-          min-width: 280px;
-          max-width: 400px;
-          text-align: center;
-          pointer-events: auto;
-        }
-        .top-bar-card-empty {
-          text-align: center;
-        }
-        .top-bar-label {
-          font-size: 0.65rem;
-          font-weight: 700;
-          letter-spacing: 0.15em;
-          color: #4A90E2;
-          margin-bottom: 4px;
-        }
-        .top-bar-title {
-          margin: 0;
-          font-size: 1.5rem;
-          font-weight: 700;
-          color: #fff;
-          letter-spacing: -0.02em;
-        }
-        .top-bar-subtitle {
-          margin: 4px 0 0 0;
-          font-size: 0.8rem;
-          color: rgba(255,255,255,0.5);
-        }
-        
-        .top-bar-close {
-          position: absolute;
-          top: 0;
-          right: 0;
-          background: transparent;
-          border: none;
-          color: rgba(255,255,255,0.4);
-          cursor: pointer;
-          padding: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: color 0.2s;
-          pointer-events: auto;
-        }
-        .top-bar-close:hover {
-          color: rgba(255,255,255,0.8);
-        }
-        
-        .top-bar-content-centered {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          margin-top: 10px; 
-          padding-right: 40px; 
-          padding-left: 40px; 
-        }
-
-        .top-bar-name-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          justify-content: center;
-        }
-        
-        .top-bar-star-btn {
-          background: transparent;
-          border: none;
-          color: rgba(255,255,255,0.3);
-          cursor: pointer;
-          padding: 4px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s;
-        }
-        .top-bar-star-btn:hover {
-          color: rgba(255,255,255,0.6);
-          transform: scale(1.1);
-        }
-        .top-bar-star-btn.saved {
-          color: #F59E0B; 
-          filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4));
-        }
-
-        .top-bar-lake-name {
-          margin: 0;
-          font-size: 1.5rem;
-          font-weight: 800;
-          color: #fff;
-          letter-spacing: -0.02em;
-          line-height: 1.2;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-        .top-bar-name-input {
-          flex: 1;
-          background: transparent;
-          border: none;
-          border-bottom: 1px dashed rgba(255,255,255,0.3);
-          color: #fff;
-          font-size: 1.25rem;
-          font-weight: 700;
-          padding: 4px 0;
-          outline: none;
-          letter-spacing: -0.02em;
-          min-width: 0;
-          text-align: center;
-        }
-        .top-bar-name-input:focus {
-          border-bottom-color: #4A90E2;
-        }
-        .top-bar-name-input::placeholder {
-          color: rgba(255,255,255,0.35);
-          font-style: italic;
-          font-weight: 500;
-        }
-        .top-bar-save-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-          border: none;
-          color: #fff;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          transition: all 0.2s;
-          box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
-        }
-        .top-bar-save-btn:hover:not(:disabled) {
-          transform: scale(1.05);
-          box-shadow: 0 6px 16px rgba(74, 144, 226, 0.5);
-        }
-        .top-bar-save-btn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-          box-shadow: none;
-        }
-        .top-bar-location {
-          display: flex;
-          align-items: center;
-          gap: 5px;
-          color: rgba(255,255,255,0.6);
-          font-size: 0.85rem;
-          margin-top: 4px;
-          font-weight: 500;
-        }
-        .top-bar-edit-boundary {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          padding: 2px 8px;
-          background: rgba(74, 144, 226, 0.15);
-          border: 1px solid rgba(74, 144, 226, 0.3);
-          border-radius: 12px;
-          color: #4A90E2;
-          font-size: 0.7rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .top-bar-edit-boundary:hover {
-          background: rgba(74, 144, 226, 0.25);
-        }
-        
-        .top-bar-suggestion {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 10px;
-          padding: 8px 12px;
-          background: rgba(74, 144, 226, 0.15);
-          border: 1px solid rgba(74, 144, 226, 0.3);
-          border-radius: 10px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .top-bar-suggestion:hover {
-          background: rgba(74, 144, 226, 0.25);
-          border-color: rgba(74, 144, 226, 0.5);
-        }
-        .top-bar-suggestion .suggestion-label {
-          font-size: 0.7rem;
-          color: rgba(255,255,255,0.5);
-          font-weight: 500;
-        }
-        .top-bar-suggestion .suggestion-name {
-          font-size: 0.85rem;
-          color: #4A90E2;
-          font-weight: 600;
-        }
-
-        .mapboxgl-ctrl-recenter {
-          width: 29px; height: 29px;
-          display: flex; align-items: center; justify-content: center;
-          background: #fff; border: none; cursor: pointer;
-          border-radius: 4px;
-        }
+      <style>{`
+        .orb-marker-map { background-color: #4A90E2; border-radius: 50%; box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8); cursor: pointer; width: 24px; height: 24px; }
+        .top-gradient-bar { position: fixed; top: 64px; left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0.4) 80%, transparent 100%); padding: 16px 20px 45px; display: flex; justify-content: center; pointer-events: none; }
+        .top-bar-card { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 280px; max-width: 400px; text-align: center; pointer-events: auto; }
+        .top-bar-card-empty { text-align: center; }
+        .top-bar-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; color: #4A90E2; margin-bottom: 4px; }
+        .top-bar-title { margin: 0; font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+        .top-bar-subtitle { margin: 4px 0 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+        .top-bar-close { position: absolute; top: 0; right: 0; background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.2s; pointer-events: auto; }
+        .top-bar-close:hover { color: rgba(255,255,255,0.8); }
+        .top-bar-content-centered { display: flex; flex-direction: column; align-items: center; margin-top: 10px; padding-right: 40px; padding-left: 40px; }
+        .top-bar-name-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
+        .top-bar-star-btn { background: transparent; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .top-bar-star-btn:hover { color: rgba(255,255,255,0.6); transform: scale(1.1); }
+        .top-bar-star-btn.saved { color: #F59E0B; filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4)); }
+        .top-bar-lake-name { margin: 0; font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .top-bar-name-input { flex: 1; background: transparent; border: none; border-bottom: 1px dashed rgba(255,255,255,0.3); color: #fff; font-size: 1.25rem; font-weight: 700; padding: 4px 0; outline: none; letter-spacing: -0.02em; min-width: 0; text-align: center; }
+        .top-bar-name-input:focus { border-bottom-color: #4A90E2; }
+        .top-bar-name-input::placeholder { color: rgba(255,255,255,0.35); font-style: italic; font-weight: 500; }
+        .top-bar-save-btn { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4); }
+        .top-bar-save-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 6px 16px rgba(74, 144, 226, 0.5); }
+        .top-bar-save-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+        .top-bar-location { display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 4px; font-weight: 500; }
+        .top-bar-edit-boundary { display: flex; align-items: center; gap: 4px; padding: 2px 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid rgba(74, 144, 226, 0.3); border-radius: 12px; color: #4A90E2; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .top-bar-edit-boundary:hover { background: rgba(74, 144, 226, 0.25); }
+        .top-bar-suggestion { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 12px; background: rgba(74, 144, 226, 0.15); border: 1px solid rgba(74, 144, 226, 0.3); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+        .top-bar-suggestion:hover { background: rgba(74, 144, 226, 0.25); border-color: rgba(74, 144, 226, 0.5); }
+        .top-bar-suggestion .suggestion-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 500; }
+        .top-bar-suggestion .suggestion-name { font-size: 0.85rem; color: #4A90E2; font-weight: 600; }
+        .mapboxgl-ctrl-recenter { width: 29px; height: 29px; display: flex; align-items: center; justify-content: center; background: #fff; border: none; cursor: pointer; border-radius: 4px; }
         .mapboxgl-ctrl-recenter:hover { background: #f0f0f0; }
         .mapboxgl-ctrl-recenter svg { color: #333; }
-
         .members-navigation-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 92%; max-width: 480px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         .members-navigation-container.expanded { bottom: 30px; }
-        
-        .glass-deck { 
-          display: flex; flex-direction: column; justify-content: flex-end; 
-          padding: 8px 12px; background: rgba(18, 18, 18, 0.92); 
-          backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); 
-          border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
-          transition: all 0.3s ease; position: relative; 
-          overflow: visible; 
-        }
-
+        .glass-deck { display: flex; flex-direction: column; justify-content: flex-end; padding: 8px 12px; background: rgba(18, 18, 18, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative; overflow: visible; }
         .nav-icons-row { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
-        
-        .nav-favorites-section {
-          padding: 12px 8px 8px;
-          border-bottom: 1px solid rgba(255,255,255,0.08);
-          animation: nav-fav-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes nav-fav-slide-down {
-          from { opacity: 0; transform: translateY(-10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .nav-favorites-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 4px 10px;
-        }
-        .nav-favorites-title {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-        }
-        .nav-favorites-title > span:first-child {
-          font-size: 0.95rem;
-          font-weight: 700;
-          color: #fff;
-        }
-        .nav-favorites-count {
-          font-size: 0.75rem;
-          color: rgba(255,255,255,0.4);
-        }
-        .nav-favorites-scroll {
-          display: flex;
-          gap: 10px;
-          overflow-x: auto;
-          padding-bottom: 4px;
-          scrollbar-width: none;
-        }
+        .nav-favorites-section { padding: 12px 8px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); animation: nav-fav-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes nav-fav-slide-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-favorites-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 10px; }
+        .nav-favorites-title { display: flex; align-items: baseline; gap: 8px; }
+        .nav-favorites-title > span:first-child { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        .nav-favorites-count { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+        .nav-favorites-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .nav-favorites-scroll::-webkit-scrollbar { display: none; }
-        
-        .nav-fav-card {
-          flex: 0 0 110px;
-          height: 90px;
-          border-radius: 14px;
-          background: rgba(30, 30, 40, 0.6);
-          position: relative;
-          overflow: hidden;
-          cursor: pointer;
-          display: flex;
-          flex-direction: column;
-          justify-content: flex-end;
-          padding: 10px;
-          transition: all 0.2s;
-        }
-        .nav-fav-card:hover {
-          border-color: rgba(255,255,255,0.2);
-        }
-        .nav-fav-card.active {
-          border-color: #4A90E2;
-          box-shadow: 0 0 12px rgba(74,144,226,0.3);
-        }
-        .nav-fav-card-gradient {
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.85) 100%);
-        }
-        .nav-fav-card-content {
-          position: relative;
-          z-index: 2;
-        }
-        .nav-fav-card-name {
-          font-size: 0.8rem;
-          font-weight: 600;
-          color: #fff;
-          line-height: 1.15;
-          max-height: 2.3em;
-          overflow: hidden;
-        }
-        .nav-fav-card-location {
-          font-size: 0.65rem;
-          color: rgba(255,255,255,0.6);
-          margin-top: 2px;
-        }
-        .nav-fav-card-add {
-          background: rgba(255,255,255,0.03);
-          align-items: center;
-          justify-content: center;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .nav-fav-card-add span {
-          font-size: 0.75rem;
-          color: rgba(255,255,255,0.5);
-          font-weight: 600;
-        }
-        .nav-fav-add-icon {
-          color: rgba(255,255,255,0.4);
-        }
-        .nav-fav-card-delete {
-          position: absolute;
-          top: 6px;
-          right: 6px;
-          width: 24px;
-          height: 24px;
-          padding: 0;
-          background: rgba(0,0,0,0.5);
-          border-radius: 6px;
-          border: none;
-          color: rgba(255,255,255,0.7);
-          opacity: 0;
-          z-index: 10;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: opacity 0.2s;
-        }
-        .nav-fav-card:hover .nav-fav-card-delete {
-          opacity: 1;
-        }
-        .nav-fav-card-delete:hover {
-          background: rgba(239, 68, 68, 0.8);
-          color: #fff;
-        }
-
+        .nav-fav-card { flex: 0 0 110px; height: 90px; border-radius: 14px; background: rgba(30, 30, 40, 0.6); position: relative; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; transition: all 0.2s; }
+        .nav-fav-card:hover { border-color: rgba(255,255,255,0.2); }
+        .nav-fav-card.active { border-color: #4A90E2; box-shadow: 0 0 12px rgba(74,144,226,0.3); }
+        .nav-fav-card-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.85) 100%); }
+        .nav-fav-card-content { position: relative; z-index: 2; }
+        .nav-fav-card-name { font-size: 0.8rem; font-weight: 600; color: #fff; line-height: 1.15; max-height: 2.3em; overflow: hidden; }
+        .nav-fav-card-location { font-size: 0.65rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+        .nav-fav-card-add { background: rgba(255,255,255,0.03); align-items: center; justify-content: center; flex-direction: column; gap: 4px; }
+        .nav-fav-card-add span { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; }
+        .nav-fav-add-icon { color: rgba(255,255,255,0.4); }
+        .nav-fav-card-delete { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; padding: 0; background: rgba(0,0,0,0.5); border-radius: 6px; border: none; color: rgba(255,255,255,0.7); opacity: 0; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
+        .nav-fav-card:hover .nav-fav-card-delete { opacity: 1; }
+        .nav-fav-card-delete:hover { background: rgba(239, 68, 68, 0.8); color: #fff; }
         .nav-cluster { flex: 1; display: flex; gap: 20px; align-items: center; }
         .nav-cluster-left { justify-content: center; }
         .nav-cluster-right { justify-content: center; }
-        
         .nav-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; border-radius: 12px; transition: all 0.2s; color: rgba(255, 255, 255, 0.5); }
         .nav-btn:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,0.08); }
         .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
         .nav-btn-icon { padding: 8px; }
-        
         .nav-btn-primary { color: #4A90E2; background: rgba(74, 144, 226, 0.1); }
         .nav-btn-primary:hover:not(:disabled) { background: rgba(74, 144, 226, 0.25); color: #fff; box-shadow: 0 0 15px rgba(74, 144, 226, 0.3); }
         .nav-btn-danger { color: #F87171; }
         .nav-btn-danger:hover { background: rgba(248,113,113,0.15); color: #FCA5A5; }
-        
         .orb-nav-cluster { display: flex; align-items: center; justify-content: center; margin-top: -10px; }
         .orb-wrapper { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; position: relative; }
         .orb-glow-ring { position: absolute; inset: 4px; border-radius: 50%; background: linear-gradient(180deg, rgba(74, 144, 226, 0.6), transparent); opacity: 0.2; z-index: -1; animation: orb-pulse 3s infinite; }
-
-        /* CENTER ORB STYLE - Pure CSS for Bottom Dock */
-        .nav-center-orb {
-          position: relative;
-          width: 56px;
-          height: 56px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }
-        .nav-center-orb-core {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #4A90E2;
-          box-shadow: 0 0 12px rgba(74, 144, 226, 0.8);
-          z-index: 2;
-          transition: all 0.3s ease;
-        }
-        .nav-center-orb:hover .nav-center-orb-core {
-          transform: scale(1.1);
-          background: #60a5fa;
-          box-shadow: 0 0 20px rgba(74, 144, 226, 1);
-        }
-        .nav-center-orb-glow {
-          position: absolute;
-          inset: 0;
-          margin: auto;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          animation: nav-orb-pulse 3s infinite ease-in-out;
-          pointer-events: none;
-        }
-        @keyframes nav-orb-pulse {
-          0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4); }
-          70% { box-shadow: 0 0 0 10px rgba(74, 144, 226, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); }
-        }
-
+        .nav-center-orb { position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .nav-center-orb-core { width: 24px; height: 24px; border-radius: 50%; background: #4A90E2; box-shadow: 0 0 12px rgba(74, 144, 226, 0.8); z-index: 2; transition: all 0.3s ease; }
+        .nav-center-orb:hover .nav-center-orb-core { transform: scale(1.1); background: #60a5fa; box-shadow: 0 0 20px rgba(74, 144, 226, 1); }
+        .nav-center-orb-glow { position: absolute; inset: 0; margin: auto; width: 100%; height: 100%; border-radius: 50%; animation: nav-orb-pulse 3s infinite ease-in-out; pointer-events: none; }
+        @keyframes nav-orb-pulse { 0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(74, 144, 226, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); } }
         .modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
         .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
         .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; color: white; }
@@ -2773,13 +2458,11 @@ export function Members() {
         .generate-btn { flex: 1; padding: 18px; color: #fff; border: none; border-radius: 16px; font-weight: 700; font-size: 1.05rem; cursor: pointer; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.25); }
         .save-fav-btn { width: 60px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: #fff; cursor: pointer; }
         .save-fav-btn.remove { border-color: rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.1); }
-        
         .menu-item-btn { width: 100%; padding: 10px; text-align: left; background: transparent; border: none; font-weight: 600; cursor: pointer; }
         .menu-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 2px 0; }
-
         @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        `}
-      </style>
+        @keyframes pulse-dot { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+      `}</style>
     </div>
   );
 }
