@@ -37,6 +37,12 @@ class Catch:
     state: Optional[str]
     source: str  # 'camera', 'library', 'manual'
     created_at: str
+    # ✅ NEW WEATHER FIELDS
+    temp: Optional[float]
+    wind_speed: Optional[float]
+    wind_direction: Optional[str]
+    pressure: Optional[float]
+    sky_condition: Optional[str]
 
 
 class CatchStore:
@@ -87,7 +93,12 @@ class CatchStore:
                     city TEXT,
                     state TEXT,
                     source TEXT NOT NULL DEFAULT 'manual',
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    temp DECIMAL(5,2),
+                    wind_speed DECIMAL(5,2),
+                    wind_direction TEXT,
+                    pressure DECIMAL(6,2),
+                    sky_condition TEXT
                 );
                 """
             )
@@ -121,6 +132,12 @@ class CatchStore:
             state=row["state"],
             source=row["source"],
             created_at=str(row["created_at"]),
+            # ✅ Map new fields safely (handle missing keys for old SQLite files)
+            temp=float(row["temp"]) if row.get("temp") is not None else None,
+            wind_speed=float(row["wind_speed"]) if row.get("wind_speed") is not None else None,
+            wind_direction=row.get("wind_direction"),
+            pressure=float(row["pressure"]) if row.get("pressure") is not None else None,
+            sky_condition=row.get("sky_condition"),
         )
 
     # -------------------------
@@ -161,10 +178,25 @@ class CatchStore:
                     city TEXT,
                     state TEXT,
                     source TEXT NOT NULL DEFAULT 'manual',
-                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    temp REAL,
+                    wind_speed REAL,
+                    wind_direction TEXT,
+                    pressure REAL,
+                    sky_condition TEXT
                 );
                 """
             )
+            # Safe migration for local SQLite dev if columns missing
+            try:
+                conn.execute("ALTER TABLE catches ADD COLUMN temp REAL")
+                conn.execute("ALTER TABLE catches ADD COLUMN wind_speed REAL")
+                conn.execute("ALTER TABLE catches ADD COLUMN wind_direction TEXT")
+                conn.execute("ALTER TABLE catches ADD COLUMN pressure REAL")
+                conn.execute("ALTER TABLE catches ADD COLUMN sky_condition TEXT")
+            except sqlite3.OperationalError:
+                pass # Columns already exist
+            
             conn.commit()
 
     # -------------------------
@@ -191,6 +223,12 @@ class CatchStore:
         city: Optional[str] = None,
         state: Optional[str] = None,
         source: str = "manual",
+        # ✅ New arguments
+        temp: Optional[float] = None,
+        wind_speed: Optional[float] = None,
+        wind_direction: Optional[str] = None,
+        pressure: Optional[float] = None,
+        sky_condition: Optional[str] = None,
     ) -> str:
         """Create a new catch record. Returns the catch ID."""
         catch_id = f"catch_{uuid.uuid4().hex[:12]}"
@@ -203,17 +241,20 @@ class CatchStore:
                     INSERT INTO catches (
                         id, email, date, time, species, weight, length,
                         lure, color, notes, photo_url, lat, lng,
-                        lake_id, lake_type, lake_name, city, state, source
+                        lake_id, lake_type, lake_name, city, state, source,
+                        temp, wind_speed, wind_direction, pressure, sky_condition
                     ) VALUES (
                         %s, %s, %s, %s, %s, %s, %s,
                         %s, %s, %s, %s, %s, %s,
-                        %s, %s, %s, %s, %s, %s
+                        %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s, %s, %s
                     )
                     """,
                     (
                         catch_id, email_norm, date, time, species, weight, length,
                         lure, color, notes, photo_url, lat, lng,
                         lake_id, lake_type, lake_name, city, state, source,
+                        temp, wind_speed, wind_direction, pressure, sky_condition
                     ),
                 )
                 conn.commit()
@@ -224,13 +265,15 @@ class CatchStore:
                     INSERT INTO catches (
                         id, email, date, time, species, weight, length,
                         lure, color, notes, photo_url, lat, lng,
-                        lake_id, lake_type, lake_name, city, state, source
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        lake_id, lake_type, lake_name, city, state, source,
+                        temp, wind_speed, wind_direction, pressure, sky_condition
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         catch_id, email_norm, date, time, species, weight, length,
                         lure, color, notes, photo_url, lat, lng,
                         lake_id, lake_type, lake_name, city, state, source,
+                        temp, wind_speed, wind_direction, pressure, sky_condition
                     ),
                 )
                 conn.commit()
@@ -342,13 +385,12 @@ class CatchStore:
         """Update an existing catch."""
         email_norm = email.lower().strip()
         
-        # Filter out None values to only update what's passed (optional)
-        # or assuming full replacement if PUT. 
-        # For simplicity, we update fields that match our columns.
+        # ✅ Add new fields to allowed set
         allowed_fields = {
             "date", "time", "species", "weight", "length", "lure", "color",
             "notes", "photo_url", "lat", "lng", "lake_id", "lake_type", 
-            "lake_name", "city", "state", "source"
+            "lake_name", "city", "state", "source",
+            "temp", "wind_speed", "wind_direction", "pressure", "sky_condition"
         }
         updates = {k: v for k, v in kwargs.items() if k in allowed_fields}
         
