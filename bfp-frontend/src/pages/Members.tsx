@@ -938,15 +938,36 @@ export function Members() {
     }
   }, [selectedCoords?.lat, selectedCoords?.lng]);
 
-  // 2. FETCH LOGIC
+  // 2. FETCH LOGIC (Updated with HTTPS Fix)
   useEffect(() => {
     if (showWeather && selectedCoords && !weatherData) {
       const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+      // ✅ FIX: Use VITE_API_BASE_URL (matching your other files) and handle Mixed Content
+      let baseUrl =
+        import.meta.env.VITE_API_BASE_URL ||
+        import.meta.env.VITE_API_URL ||
+        "https://your-api.onrender.com";
+
+      // Remove trailing slash if present
+      baseUrl = baseUrl.replace(/\/$/, "");
+
+      // Auto-upgrade to HTTPS if on secure site (Fixes Mobile/Prod blocking)
+      if (
+        window.location.protocol === "https:" &&
+        baseUrl.startsWith("http:")
+      ) {
+        console.warn("Upgrading Map Weather fetch to HTTPS");
+        baseUrl = baseUrl.replace("http:", "https:");
+      }
+
       fetch(
         `${baseUrl}/weather/current?lat=${selectedCoords.lat}&lon=${selectedCoords.lng}`,
       )
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error("Weather fetch failed");
+          return res.json();
+        })
         .then((data) => {
           setWeatherData(data);
           weatherCache.current[key] = {
@@ -959,7 +980,6 @@ export function Members() {
         .catch((err) => console.error("Weather fetch failed:", err));
     }
   }, [showWeather, selectedCoords, weatherData]);
-
   // 3. BACKGROUND TIMER LOGIC
   useEffect(() => {
     if (!showWeather && weatherData && !tipReady && selectedCoords) {
