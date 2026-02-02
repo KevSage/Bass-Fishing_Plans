@@ -140,7 +140,26 @@ async def create_custom_lake(
     """
     email = await verify_clerk_session(authorization)
     
-    # Check if user already has a custom lake at these coordinates
+    # If lake has custom boundaries (anchors), skip proximity check entirely
+    # The boundaries define the lake's identity - no need for fuzzy matching
+    if request.anchors and len(request.anchors) >= 3:
+        # Has boundaries - create directly without proximity check
+        lake_id = custom_lake_store.create(
+            email=email,
+            name=request.name,
+            lat=request.lat,
+            lng=request.lng,
+            city=request.city,
+            state=request.state,
+            anchors=request.anchors,
+        )
+        
+        return {
+            "success": True,
+            "lake_id": lake_id,
+        }
+    
+    # No boundaries - check if user already has a custom lake nearby
     existing = custom_lake_store.find_by_proximity(
         email, request.lat, request.lng, radius_km=0.5
     )
