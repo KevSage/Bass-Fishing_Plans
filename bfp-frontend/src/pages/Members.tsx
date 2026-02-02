@@ -870,12 +870,23 @@ export function Members() {
 
   const lakeLabelData = useMemo(() => {
     if (!selectedCoords) return null;
-    const isSaved = favorites.some(
-      (f) =>
-        f.name === waterName ||
-        (Math.abs(f.lat - selectedCoords.lat) < 0.001 &&
-          Math.abs(f.lng - selectedCoords.lng) < 0.001),
+
+    // Use the same sophisticated matching logic as map clicks
+    const polygonMatch = findLakeByPolygon(
+      selectedCoords.lat,
+      selectedCoords.lng,
+      customLakesRef.current as any,
+      favorites,
     );
+
+    const nearbyFavorite = !polygonMatch
+      ? findNearestFavorite(selectedCoords.lat, selectedCoords.lng, favorites)
+      : null;
+
+    // Check if saved: either polygon match with source="favorite" or nearby favorite
+    const isSaved =
+      (polygonMatch && polygonMatch.source === "favorite") || !!nearbyFavorite;
+
     const isKnown =
       waterName !== "" &&
       !waterName.startsWith("Water near") &&
@@ -1476,18 +1487,29 @@ export function Members() {
 
   const handleRemoveSpecificLake = useCallback(
     async (lake: FavoriteLake) => {
+      // Optimistically remove from favorites
       setFavorites((prev) => prev.filter((f) => f.id !== lake.id));
+
+      // If we're currently viewing this favorite, clear the viewingFavoriteId
+      if (viewingFavoriteId === lake.id) {
+        setViewingFavoriteId(null);
+      }
+
       try {
         const token = await getToken();
         if (!token) throw new Error("No token");
         await removeFavorite(lake.id, lake.lake_type, token);
       } catch (err) {
         console.error("Failed to remove favorite", err);
+        // Rollback on error
         setFavorites((prev) => [...prev, lake]);
+        if (viewingFavoriteId === lake.id) {
+          setViewingFavoriteId(lake.id);
+        }
         alert("Failed to remove lake.");
       }
     },
-    [getToken],
+    [getToken, viewingFavoriteId],
   );
 
   const toggleFavoriteLake = useCallback(
@@ -1498,12 +1520,28 @@ export function Members() {
       const token = await getToken();
       if (!token) return;
       if (isCurrentLocationSaved) {
-        const fav = favorites.find(
-          (f) =>
-            f.name === waterName ||
-            (Math.abs(f.lat - selectedCoords.lat) < 0.001 &&
-              Math.abs(f.lng - selectedCoords.lng) < 0.001),
+        // Use polygon matching to find the correct favorite
+        const polygonMatch = findLakeByPolygon(
+          selectedCoords.lat,
+          selectedCoords.lng,
+          customLakesRef.current as any,
+          favorites,
         );
+
+        let fav: FavoriteLake | null = null;
+
+        if (polygonMatch && polygonMatch.source === "favorite") {
+          // Found via polygon - match by ID
+          fav = favorites.find((f) => f.id === polygonMatch.id) || null;
+        } else {
+          // Fallback to nearby favorite
+          fav = findNearestFavorite(
+            selectedCoords.lat,
+            selectedCoords.lng,
+            favorites,
+          );
+        }
+
         if (fav) {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
@@ -1962,7 +2000,11 @@ export function Members() {
                           className="nav-fav-card-delete"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleRemoveSpecificLake(lake);
+                            if (
+                              confirm(`Remove ${lake.name} from favorites?`)
+                            ) {
+                              handleRemoveSpecificLake(lake);
+                            }
                           }}
                         >
                           <svg
