@@ -143,7 +143,19 @@ async def create_custom_lake(
     # If lake has custom boundaries (anchors), skip proximity check entirely
     # The boundaries define the lake's identity - no need for fuzzy matching
     if request.anchors and len(request.anchors) >= 3:
-        # Has boundaries - create directly without proximity check
+        # Check if this exact lake already exists (by name or ID)
+        existing_lakes = custom_lake_store.list_by_user(email)
+        for existing in existing_lakes:
+            # Check if it's the same lake by name
+            if existing.name.lower() == request.name.lower():
+                # Lake exists - return its ID instead of creating duplicate
+                return {
+                    "success": True,
+                    "lake_id": existing.id,
+                    "already_existed": True,
+                }
+        
+        # No match found - create directly without proximity check
         lake_id = custom_lake_store.create(
             email=email,
             name=request.name,

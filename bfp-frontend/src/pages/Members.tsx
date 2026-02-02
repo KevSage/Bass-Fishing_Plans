@@ -1750,12 +1750,9 @@ export function Members() {
         let lakeId = "";
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
-        if (
-          dbMatch &&
-          dbMatch.id &&
-          dbMatch.name === (manualWaterName || waterName)
-        ) {
-          lakeId = dbMatch.id;
+        if (dbMatch && dbMatch.name === (manualWaterName || waterName)) {
+          // Use ID if available, otherwise use name as ID
+          lakeId = dbMatch.id || dbMatch.name;
           lakeType = "known";
         } else {
           lakeType = "custom";
