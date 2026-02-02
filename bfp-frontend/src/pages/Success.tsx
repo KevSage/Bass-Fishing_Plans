@@ -105,7 +105,7 @@ export function Success() {
             </div>
 
             <Link
-              to="/sign-up"
+              to="/subscribe"
               className="btn primary"
               style={{ textDecoration: "none", display: "inline-block" }}
             >
