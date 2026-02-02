@@ -185,8 +185,8 @@ function ComparisonTable() {
           </div>
         </div>
 
-        <Link to="/members" className="plan-btn secondary">
-          Sign Up - Free
+        <Link to="/subscribe" className="plan-btn secondary">
+          Start - Free
         </Link>
       </div>
 
@@ -347,47 +347,69 @@ export function Landing() {
                 ...h1Style,
                 color: "#ffffff",
                 textShadow: "0 4px 24px rgba(0,0,0,0.6)",
-                marginBottom: 48,
+                marginBottom: 24,
               }}
             >
               Clarity on the Water.
             </h1>
+            <p
+              style={{
+                fontSize: "1.1rem",
+                lineHeight: 1.6,
+                opacity: 0.75,
+                maxWidth: "600px",
+                margin: "0 auto 32px",
+                color: "#fff",
+              }}
+            >
+              Start free or upgrade to Pro for $10/mo to unlock unlimited AI
+              fishing plans
+            </p>
           </Reveal>
 
           <Reveal delay={200}>
-            <div
+            <Link
+              to="/subscribe"
               style={{
-                display: "flex",
-                gap: 16,
-                flexWrap: "wrap",
-                justifyContent: "center",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "16px 32px",
+                fontSize: "1.05rem",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 14,
+                textDecoration: "none",
+                boxShadow: "0 10px 30px rgba(74, 144, 226, 0.3)",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow =
+                  "0 15px 40px rgba(74, 144, 226, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow =
+                  "0 10px 30px rgba(74, 144, 226, 0.3)";
               }}
             >
-              <Link
-                className="plan-btn primary"
-                to="/members"
-                style={{
-                  width: "auto",
-                  padding: "12px 22px",
-                  fontSize: ".9em",
-                }}
+              Get Started
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                Join Today - Free
-              </Link>
-
-              <Link
-                to="/subscribe"
-                className="plan-btn secondary"
-                style={{
-                  width: "auto",
-                  padding: "12px 22px",
-                  fontSize: "1rem",
-                  backdropFilter: "blur(10px)",
-                }}
-              >
-                Go Pro - $10/mo
-              </Link>
-            </div>
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </Link>
           </Reveal>
         </div>
       </section>

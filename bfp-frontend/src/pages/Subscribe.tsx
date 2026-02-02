@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { useAuth, useUser, SignInButton } from "@clerk/clerk-react";
-import { Link, useNavigate } from "react-router-dom"; // Added Link/useNavigate
+import { useAuth, useUser, useSignUp } from "@clerk/clerk-react";
+import { Link, useNavigate } from "react-router-dom";
+import { BackIcon } from "@/components/UnifiedIcons";
 
-// Ensure this points to your real backend
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export function Subscribe() {
   const { isSignedIn, getToken } = useAuth();
   const { user } = useUser();
+  const { isLoaded, signUp, setActive } = useSignUp();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [isMember, setIsMember] = useState(false);
 
-  // 1. NEW: Check if user is already a member when the page loads
+  // Sign up form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [showSignUpForm, setShowSignUpForm] = useState(true); // Show form by default
+
+  // Check if user is already a member
   useEffect(() => {
     if (isSignedIn) {
       const checkStatus = async () => {
@@ -43,12 +50,11 @@ export function Subscribe() {
     try {
       const token = await getToken();
 
-      // Call our new SECURE endpoint
       const response = await fetch(`${API_BASE}/billing/checkout`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // Pass the user's proof of identity
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -56,13 +62,67 @@ export function Subscribe() {
 
       const data = await response.json();
       if (data.url) {
-        // Redirect to Stripe
         window.location.href = data.url;
       }
     } catch (err) {
       console.error("Checkout error:", err);
       alert("Something went wrong initializing payment. Please try again.");
       setLoading(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      setError("Please enter both email and password");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+
+    if (!isLoaded || !signUp) {
+      setError("Authentication is still loading. Please wait a moment.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // Create account
+      const result = await signUp.create({
+        emailAddress: email,
+        password,
+      });
+
+      // Since email verification is disabled, account should be complete immediately
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        // After creating account, reload to show subscription option
+        window.location.reload();
+      } else {
+        // Fallback if somehow verification is required
+        setError(
+          "Account created but needs verification. Please check your email.",
+        );
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        "Failed to create account";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !loading) {
+      e.preventDefault();
+      handleSignUp();
     }
   };
 
@@ -141,12 +201,12 @@ export function Subscribe() {
             }}
           >
             {[
-              "Unlimited AI Scouting Reports",
-              "Works on ANY Water (Custom Lakes Supported)",
-              "Live Wind, Gust & Safety Analysis",
-              "Primary & Secondary Pattern Breakdowns",
-              "Tournament-Grade Gear Recommendations",
+              "Unlimited Lake Scouting on ANY Water",
+              "Unlimited AI Generated Plans for Any Location",
+              "Customized Lure/Gear Recommendations",
+              "Full Day Strategy. Any Location, Any Time",
               "Smart Catch Log & History",
+              "Your Insights including Personal Best, Productive Lakes/Lures/Techniques",
             ].map((item, i) => (
               <li
                 key={i}
@@ -198,21 +258,184 @@ export function Subscribe() {
           }}
         >
           {!isSignedIn ? (
-            // STATE 1: GUEST USER
-            <div>
-              <h3
-                style={{ fontSize: "1.2rem", marginBottom: 8, fontWeight: 700 }}
-              >
-                Step 1: Create Your Profile
-              </h3>
-              <p
-                style={{ opacity: 0.6, marginBottom: 24, fontSize: "0.95rem" }}
-              >
-                Secure your data and history with a free account.
-              </p>
+            // STATE 1: GUEST USER - Show Sign Up Form
+            showSignUpForm ? (
+              <div>
+                <h3
+                  style={{
+                    fontSize: "1.2rem",
+                    marginBottom: 8,
+                    fontWeight: 700,
+                  }}
+                >
+                  Create Your Account
+                </h3>
+                <p
+                  style={{
+                    opacity: 0.6,
+                    marginBottom: 24,
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Then subscribe to unlock all features
+                </p>
 
-              <SignInButton mode="modal">
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                    textAlign: "left",
+                  }}
+                >
+                  {error && (
+                    <div
+                      style={{
+                        color: "#ff6b6b",
+                        fontSize: "0.9rem",
+                        background: "rgba(255,0,0,0.1)",
+                        padding: 12,
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,107,107,0.2)",
+                      }}
+                    >
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    <label
+                      htmlFor="email"
+                      style={{
+                        color: "rgba(255,255,255,0.7)",
+                        fontSize: "0.85rem",
+                        marginBottom: 6,
+                        display: "block",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Email Address
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(0,0,0,0.3)",
+                        color: "white",
+                        fontSize: "1rem",
+                        outline: "none",
+                      }}
+                      disabled={loading}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="password"
+                      style={{
+                        color: "rgba(255,255,255,0.7)",
+                        fontSize: "0.85rem",
+                        marginBottom: 6,
+                        display: "block",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="At least 8 characters"
+                      autoComplete="new-password"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(0,0,0,0.3)",
+                        color: "white",
+                        fontSize: "1rem",
+                        outline: "none",
+                      }}
+                      disabled={loading}
+                      minLength={8}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleSignUp}
+                    disabled={loading}
+                    style={{
+                      width: "100%",
+                      padding: "18px 24px",
+                      fontSize: "1.1rem",
+                      fontWeight: 700,
+                      background: loading
+                        ? "rgba(74, 144, 226, 0.3)"
+                        : "#4A90E2",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 16,
+                      cursor: loading ? "not-allowed" : "pointer",
+                      marginTop: 8,
+                    }}
+                  >
+                    {loading ? "Creating Account..." : "Create Account"}
+                  </button>
+
+                  <p
+                    style={{
+                      marginTop: 12,
+                      fontSize: "0.85rem",
+                      opacity: 0.6,
+                      textAlign: "center",
+                    }}
+                  >
+                    Already have an account?{" "}
+                    <Link
+                      to="/sign-in"
+                      style={{ color: "#4A90E2", fontWeight: 500 }}
+                    >
+                      Sign In
+                    </Link>
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h3
+                  style={{
+                    fontSize: "1.2rem",
+                    marginBottom: 8,
+                    fontWeight: 700,
+                  }}
+                >
+                  Step 1: Create Your Profile
+                </h3>
+                <p
+                  style={{
+                    opacity: 0.6,
+                    marginBottom: 24,
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  Secure your data and history with a free account.
+                </p>
+
                 <button
+                  onClick={() => setShowSignUpForm(true)}
                   style={{
                     width: "100%",
                     padding: "18px 24px",
@@ -233,12 +456,22 @@ export function Subscribe() {
                     (e.currentTarget.style.transform = "translateY(0)")
                   }
                 >
-                  Create Account / Log In
+                  Get Started
                 </button>
-              </SignInButton>
-            </div>
+
+                <p style={{ marginTop: 16, fontSize: "0.85rem", opacity: 0.6 }}>
+                  Already have an account?{" "}
+                  <Link
+                    to="/sign-in"
+                    style={{ color: "#4A90E2", fontWeight: 500 }}
+                  >
+                    Sign In
+                  </Link>
+                </p>
+              </div>
+            )
           ) : isMember ? (
-            // STATE 3: ALREADY A MEMBER (NEW)
+            // STATE 3: ALREADY A MEMBER
             <div>
               <div style={{ marginBottom: 24 }}>
                 <div
