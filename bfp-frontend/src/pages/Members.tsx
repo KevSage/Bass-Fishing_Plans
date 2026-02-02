@@ -11,6 +11,7 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import polylabel from "polylabel";
 import { MapLoadingScreen } from "@/components/MapLoadingScreen";
 // API Imports
 import { generateMemberPlan, RateLimitError } from "@/lib/api";
@@ -406,6 +407,48 @@ function pointInPolygon(
     if (intersect) inside = !inside;
   }
   return inside;
+}
+
+function findWaterCenter(lake: {
+  lat: number;
+  lng: number;
+  latitude?: number;
+  longitude?: number;
+  anchors?: { lat: number; lng: number }[];
+}): { lat: number; lng: number } {
+  /**
+   * Find the optimal "visual center" of a lake.
+   * For lakes with boundaries (anchors), uses Pole of Inaccessibility algorithm
+   * to find the point inside the polygon that's furthest from all edges.
+   * This ensures the center is always in water, even for irregular/branching lakes.
+   *
+   * For lakes without boundaries, returns the stored lat/lng.
+   */
+
+  // Use stored coordinates if no polygon
+  if (!lake.anchors || lake.anchors.length < 3) {
+    return {
+      lat: lake.lat || lake.latitude || 0,
+      lng: lake.lng || lake.longitude || 0,
+    };
+  }
+
+  try {
+    // Convert to polylabel format: [[lng, lat], [lng, lat], ...]
+    const polygon = [lake.anchors.map((a) => [a.lng, a.lat])];
+
+    // Get pole of inaccessibility (tolerance = 1.0 for precision)
+    const [lng, lat] = polylabel(polygon, 1.0);
+
+    return { lat, lng };
+  } catch (err) {
+    console.error("Error calculating water center:", err);
+    // Fallback to stored coordinates
+    return {
+      lat: lake.lat || lake.latitude || 0,
+      lng: lake.lng || lake.longitude || 0,
+    };
+  }
 }
 
 function findUserLakeByAnchors(
@@ -820,27 +863,42 @@ export function Members() {
     const normalize = (s: string) => s.toLowerCase().replace("lake", "").trim();
     const query = normalize(name);
 
-    // First, try exact name match
+    // 1. Try EXACT name match first (highest priority)
     let match = (LAKES_DATA as LakeData[]).find(
-      (l) =>
-        normalize(l.name).includes(query) || query.includes(normalize(l.name)),
+      (l) => normalize(l.name) === query,
     );
+    if (match) return match;
 
-    // If no name match, try proximity - but ONLY for lakes without boundaries
-    if (!match) {
-      match = (LAKES_DATA as LakeData[]).find((l) => {
-        // If lake has boundaries, skip proximity check - use polygon matching instead
-        if (l.anchors && l.anchors.length >= 3) {
-          return false; // Don't match by proximity, polygon matching will handle it
+    // 2. For lakes with boundaries, check if point is inside polygon
+    for (const lake of LAKES_DATA as LakeData[]) {
+      if (lake.anchors && lake.anchors.length >= 3) {
+        if (pointInPolygon({ lat, lng }, lake.anchors as any)) {
+          return lake;
         }
-
-        // For lakes without boundaries, use proximity (tightened from 0.05° to 0.01°)
-        return (
-          Math.abs(l.latitude - lat) < 0.01 &&
-          Math.abs(l.longitude - lng) < 0.01
-        );
-      });
+      }
     }
+
+    // 3. Fuzzy name match (but avoid partial matches that are too broad)
+    match = (LAKES_DATA as LakeData[]).find((l) => {
+      const lakeName = normalize(l.name);
+      // Both must be longer than 3 chars to avoid false matches like "bay", "arm", etc.
+      if (query.length < 4 || lakeName.length < 4) return false;
+      return lakeName.includes(query) || query.includes(lakeName);
+    });
+    if (match) return match;
+
+    // 4. Finally, proximity for lakes without boundaries (tightened to 0.01°)
+    match = (LAKES_DATA as LakeData[]).find((l) => {
+      // If lake has boundaries, skip - polygon check already handled it
+      if (l.anchors && l.anchors.length >= 3) {
+        return false;
+      }
+
+      // For lakes without boundaries, use tight proximity
+      return (
+        Math.abs(l.latitude - lat) < 0.01 && Math.abs(l.longitude - lng) < 0.01
+      );
+    });
 
     return match;
   };
@@ -1272,6 +1330,125 @@ export function Members() {
       m.remove();
     };
   }, [isActive]);
+
+  // --- AUTO-DETECTION: Detect lake based on map center and zoom ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMountedRef.current) return;
+
+    const handleAutoDetect = () => {
+      // Don't auto-detect if user has manually selected a lake (has marker)
+      if (selectedCoords || markerRef.current) return;
+
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+
+      // Only detect at reasonable zoom levels
+      if (zoom < 9) {
+        if (waterName && !selectedCoords) {
+          setWaterName("");
+          setLocationDetails({});
+        }
+        return;
+      }
+
+      // Priority 1: Check custom lakes with boundaries
+      const customMatch = findLakeByPolygon(
+        center.lat,
+        center.lng,
+        customLakesRef.current as any,
+        favoritesRef.current,
+      );
+
+      if (customMatch) {
+        // Check if zoom is appropriate for this lake
+        const minZoom = getZoomForLake(customMatch.acres ?? 0) - 1;
+        if (zoom >= minZoom) {
+          if (waterName !== customMatch.name) {
+            setWaterName(customMatch.name);
+            setLocationDetails({
+              city: customMatch.city,
+              state: customMatch.state,
+            });
+          }
+          return;
+        }
+      }
+
+      // Priority 2: Check known lakes from LAKES_DATA
+      for (const lake of LAKES_DATA as LakeData[]) {
+        // Skip if zoom too low for this lake size
+        const minZoom = getZoomForLake(lake.acres ?? 0) - 1;
+        if (zoom < minZoom) continue;
+
+        // Check if has boundaries
+        if (lake.anchors && lake.anchors.length >= 3) {
+          if (
+            pointInPolygon(
+              { lat: center.lat, lng: center.lng },
+              lake.anchors as any,
+            )
+          ) {
+            if (waterName !== lake.name) {
+              setWaterName(lake.name);
+              setLocationDetails({
+                city: lake.city,
+                state: lake.state,
+              });
+            }
+            return;
+          }
+        } else {
+          // No boundaries - check proximity with distance threshold based on size
+          const lakeAcres = lake.acres ?? 0;
+          const maxDistance =
+            lakeAcres > 1000 ? 500 : lakeAcres > 100 ? 200 : 100;
+          const distance = getDistanceMeters(
+            center.lat,
+            center.lng,
+            lake.latitude,
+            lake.longitude,
+          );
+
+          if (distance <= maxDistance) {
+            if (waterName !== lake.name) {
+              setWaterName(lake.name);
+              setLocationDetails({
+                city: lake.city,
+                state: lake.state,
+              });
+            }
+            return;
+          }
+        }
+      }
+
+      // No lake detected - clear name if not manually selected
+      if (waterName && !selectedCoords) {
+        setWaterName("");
+        setLocationDetails({});
+      }
+    };
+
+    // Debounce to avoid excessive calls during pan/zoom
+    let timeoutId: NodeJS.Timeout;
+    const debouncedHandler = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoDetect, 300);
+    };
+
+    map.on("move", debouncedHandler);
+    map.on("zoom", debouncedHandler);
+
+    // Run once on mount
+    handleAutoDetect();
+
+    return () => {
+      clearTimeout(timeoutId);
+      map.off("move", debouncedHandler);
+      map.off("zoom", debouncedHandler);
+    };
+  }, [selectedCoords, waterName, customLakesRef.current, favoritesRef.current]);
 
   // --- HANDLERS ---
   const handleLiveCameraClick = () => {
