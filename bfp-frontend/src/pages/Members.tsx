@@ -409,47 +409,50 @@ function pointInPolygon(
   return inside;
 }
 
-function findWaterCenter(lake: {
-  lat: number;
-  lng: number;
-  latitude?: number;
-  longitude?: number;
-  anchors?: { lat: number; lng: number }[];
-}): { lat: number; lng: number } {
+function findWaterCenter(
+  lake: { 
+    lat: number; 
+    lng: number; 
+    latitude?: number;
+    longitude?: number;
+    anchors?: { lat: number; lng: number }[] 
+  }
+): { lat: number; lng: number } {
   /**
    * Find the optimal "visual center" of a lake.
    * For lakes with boundaries (anchors), uses Pole of Inaccessibility algorithm
    * to find the point inside the polygon that's furthest from all edges.
    * This ensures the center is always in water, even for irregular/branching lakes.
-   *
+   * 
    * For lakes without boundaries, returns the stored lat/lng.
    */
-
+  
   // Use stored coordinates if no polygon
   if (!lake.anchors || lake.anchors.length < 3) {
-    return {
-      lat: lake.lat || lake.latitude || 0,
-      lng: lake.lng || lake.longitude || 0,
+    return { 
+      lat: lake.lat || lake.latitude || 0, 
+      lng: lake.lng || lake.longitude || 0 
     };
   }
-
+  
   try {
     // Convert to polylabel format: [[lng, lat], [lng, lat], ...]
-    const polygon = [lake.anchors.map((a) => [a.lng, a.lat])];
-
+    const polygon = [lake.anchors.map(a => [a.lng, a.lat])];
+    
     // Get pole of inaccessibility (tolerance = 1.0 for precision)
     const [lng, lat] = polylabel(polygon, 1.0);
-
+    
     return { lat, lng };
   } catch (err) {
     console.error("Error calculating water center:", err);
     // Fallback to stored coordinates
-    return {
-      lat: lake.lat || lake.latitude || 0,
-      lng: lake.lng || lake.longitude || 0,
+    return { 
+      lat: lake.lat || lake.latitude || 0, 
+      lng: lake.lng || lake.longitude || 0 
     };
   }
 }
+
 
 function findUserLakeByAnchors(
   lat: number,
@@ -862,13 +865,13 @@ export function Members() {
   ): LakeData | undefined => {
     const normalize = (s: string) => s.toLowerCase().replace("lake", "").trim();
     const query = normalize(name);
-
+    
     // 1. Try EXACT name match first (highest priority)
     let match = (LAKES_DATA as LakeData[]).find(
-      (l) => normalize(l.name) === query,
+      (l) => normalize(l.name) === query
     );
     if (match) return match;
-
+    
     // 2. For lakes with boundaries, check if point is inside polygon
     for (const lake of LAKES_DATA as LakeData[]) {
       if (lake.anchors && lake.anchors.length >= 3) {
@@ -877,7 +880,7 @@ export function Members() {
         }
       }
     }
-
+    
     // 3. Fuzzy name match (but avoid partial matches that are too broad)
     match = (LAKES_DATA as LakeData[]).find((l) => {
       const lakeName = normalize(l.name);
@@ -886,20 +889,21 @@ export function Members() {
       return lakeName.includes(query) || query.includes(lakeName);
     });
     if (match) return match;
-
+    
     // 4. Finally, proximity for lakes without boundaries (tightened to 0.01°)
     match = (LAKES_DATA as LakeData[]).find((l) => {
       // If lake has boundaries, skip - polygon check already handled it
       if (l.anchors && l.anchors.length >= 3) {
         return false;
       }
-
+      
       // For lakes without boundaries, use tight proximity
       return (
-        Math.abs(l.latitude - lat) < 0.01 && Math.abs(l.longitude - lng) < 0.01
+        Math.abs(l.latitude - lat) < 0.01 &&
+        Math.abs(l.longitude - lng) < 0.01
       );
     });
-
+    
     return match;
   };
 
@@ -941,7 +945,7 @@ export function Members() {
 
   const lakeLabelData = useMemo(() => {
     if (!selectedCoords) return null;
-
+    
     // Use the same sophisticated matching logic as map clicks
     const polygonMatch = findLakeByPolygon(
       selectedCoords.lat,
@@ -949,15 +953,16 @@ export function Members() {
       customLakesRef.current as any,
       favorites,
     );
-
+    
     const nearbyFavorite = !polygonMatch
       ? findNearestFavorite(selectedCoords.lat, selectedCoords.lng, favorites)
       : null;
-
+    
     // Check if saved: either polygon match with source="favorite" or nearby favorite
-    const isSaved =
-      (polygonMatch && polygonMatch.source === "favorite") || !!nearbyFavorite;
-
+    const isSaved = 
+      (polygonMatch && polygonMatch.source === "favorite") ||
+      !!nearbyFavorite;
+    
     const isKnown =
       waterName !== "" &&
       !waterName.startsWith("Water near") &&
@@ -1335,14 +1340,14 @@ export function Members() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !isMountedRef.current) return;
-
+    
     const handleAutoDetect = () => {
       // Don't auto-detect if user has manually selected a lake (has marker)
       if (selectedCoords || markerRef.current) return;
-
+      
       const center = map.getCenter();
       const zoom = map.getZoom();
-
+      
       // Only detect at reasonable zoom levels
       if (zoom < 9) {
         if (waterName && !selectedCoords) {
@@ -1351,7 +1356,7 @@ export function Members() {
         }
         return;
       }
-
+      
       // Priority 1: Check custom lakes with boundaries
       const customMatch = findLakeByPolygon(
         center.lat,
@@ -1359,7 +1364,7 @@ export function Members() {
         customLakesRef.current as any,
         favoritesRef.current,
       );
-
+      
       if (customMatch) {
         // Check if zoom is appropriate for this lake
         const minZoom = getZoomForLake(customMatch.acres ?? 0) - 1;
@@ -1374,21 +1379,16 @@ export function Members() {
           return;
         }
       }
-
+      
       // Priority 2: Check known lakes from LAKES_DATA
       for (const lake of LAKES_DATA as LakeData[]) {
         // Skip if zoom too low for this lake size
         const minZoom = getZoomForLake(lake.acres ?? 0) - 1;
         if (zoom < minZoom) continue;
-
+        
         // Check if has boundaries
         if (lake.anchors && lake.anchors.length >= 3) {
-          if (
-            pointInPolygon(
-              { lat: center.lat, lng: center.lng },
-              lake.anchors as any,
-            )
-          ) {
+          if (pointInPolygon({ lat: center.lat, lng: center.lng }, lake.anchors as any)) {
             if (waterName !== lake.name) {
               setWaterName(lake.name);
               setLocationDetails({
@@ -1401,15 +1401,9 @@ export function Members() {
         } else {
           // No boundaries - check proximity with distance threshold based on size
           const lakeAcres = lake.acres ?? 0;
-          const maxDistance =
-            lakeAcres > 1000 ? 500 : lakeAcres > 100 ? 200 : 100;
-          const distance = getDistanceMeters(
-            center.lat,
-            center.lng,
-            lake.latitude,
-            lake.longitude,
-          );
-
+          const maxDistance = lakeAcres > 1000 ? 500 : lakeAcres > 100 ? 200 : 100;
+          const distance = getDistanceMeters(center.lat, center.lng, lake.latitude, lake.longitude);
+          
           if (distance <= maxDistance) {
             if (waterName !== lake.name) {
               setWaterName(lake.name);
@@ -1422,31 +1416,31 @@ export function Members() {
           }
         }
       }
-
+      
       // No lake detected - clear name if not manually selected
       if (waterName && !selectedCoords) {
         setWaterName("");
         setLocationDetails({});
       }
     };
-
+    
     // Debounce to avoid excessive calls during pan/zoom
     let timeoutId: NodeJS.Timeout;
     const debouncedHandler = () => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(handleAutoDetect, 300);
     };
-
-    map.on("move", debouncedHandler);
-    map.on("zoom", debouncedHandler);
-
+    
+    map.on('move', debouncedHandler);
+    map.on('zoom', debouncedHandler);
+    
     // Run once on mount
     handleAutoDetect();
-
+    
     return () => {
       clearTimeout(timeoutId);
-      map.off("move", debouncedHandler);
-      map.off("zoom", debouncedHandler);
+      map.off('move', debouncedHandler);
+      map.off('zoom', debouncedHandler);
     };
   }, [selectedCoords, waterName, customLakesRef.current, favoritesRef.current]);
 
@@ -1679,12 +1673,12 @@ export function Members() {
     async (lake: FavoriteLake) => {
       // Optimistically remove from favorites
       setFavorites((prev) => prev.filter((f) => f.id !== lake.id));
-
+      
       // If we're currently viewing this favorite, clear the viewingFavoriteId
       if (viewingFavoriteId === lake.id) {
         setViewingFavoriteId(null);
       }
-
+      
       try {
         const token = await getToken();
         if (!token) throw new Error("No token");
@@ -1717,21 +1711,17 @@ export function Members() {
           customLakesRef.current as any,
           favorites,
         );
-
+        
         let fav: FavoriteLake | null = null;
-
+        
         if (polygonMatch && polygonMatch.source === "favorite") {
           // Found via polygon - match by ID
-          fav = favorites.find((f) => f.id === polygonMatch.id) || null;
+          fav = favorites.find(f => f.id === polygonMatch.id) || null;
         } else {
           // Fallback to nearby favorite
-          fav = findNearestFavorite(
-            selectedCoords.lat,
-            selectedCoords.lng,
-            favorites,
-          );
+          fav = findNearestFavorite(selectedCoords.lat, selectedCoords.lng, favorites);
         }
-
+        
         if (fav) {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
@@ -1750,9 +1740,12 @@ export function Members() {
         let lakeId = "";
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
-        if (dbMatch && dbMatch.name === (manualWaterName || waterName)) {
-          // Use ID if available, otherwise use name as ID
-          lakeId = dbMatch.id || dbMatch.name;
+        if (
+          dbMatch &&
+          dbMatch.id &&
+          dbMatch.name === (manualWaterName || waterName)
+        ) {
+          lakeId = dbMatch.id;
           lakeType = "known";
         } else {
           lakeType = "custom";
@@ -2187,9 +2180,7 @@ export function Members() {
                           className="nav-fav-card-delete"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (
-                              confirm(`Remove ${lake.name} from favorites?`)
-                            ) {
+                            if (confirm(`Remove ${lake.name} from favorites?`)) {
                               handleRemoveSpecificLake(lake);
                             }
                           }}
