@@ -819,16 +819,29 @@ export function Members() {
   ): LakeData | undefined => {
     const normalize = (s: string) => s.toLowerCase().replace("lake", "").trim();
     const query = normalize(name);
+
+    // First, try exact name match
     let match = (LAKES_DATA as LakeData[]).find(
       (l) =>
         normalize(l.name).includes(query) || query.includes(normalize(l.name)),
     );
-    if (!match)
-      match = (LAKES_DATA as LakeData[]).find(
-        (l) =>
-          Math.abs(l.latitude - lat) < 0.05 &&
-          Math.abs(l.longitude - lng) < 0.05,
-      );
+
+    // If no name match, try proximity - but ONLY for lakes without boundaries
+    if (!match) {
+      match = (LAKES_DATA as LakeData[]).find((l) => {
+        // If lake has boundaries, skip proximity check - use polygon matching instead
+        if (l.anchors && l.anchors.length >= 3) {
+          return false; // Don't match by proximity, polygon matching will handle it
+        }
+
+        // For lakes without boundaries, use proximity (tightened from 0.05° to 0.01°)
+        return (
+          Math.abs(l.latitude - lat) < 0.01 &&
+          Math.abs(l.longitude - lng) < 0.01
+        );
+      });
+    }
+
     return match;
   };
 
