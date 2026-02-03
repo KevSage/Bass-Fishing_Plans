@@ -770,7 +770,32 @@ export function Members() {
       try {
         const res = await listFavorites(token);
         if (mounted && res.favorites) {
-          const mapped: FavoriteLake[] = res.favorites.map((f: any) => {
+          const mapped = res.favorites.map((f: any) => {
+            // Known lakes: hydrate from LAKES_DATA (backend has no access to lakes.json)
+            if (f.lake_type === "known") {
+              const lakeData = (LAKES_DATA as LakeData[]).find(
+                (l) => l.name === f.lake_id
+              );
+              if (lakeData) {
+                const acres = lakeData.acres || undefined;
+                const imageZoom = getZoomForLake(acres);
+                return {
+                  id: f.lake_id,
+                  lake_type: "known",
+                  name: lakeData.name,
+                  lat: lakeData.latitude,
+                  lng: lakeData.longitude,
+                  city: lakeData.city,
+                  state: lakeData.state,
+                  acres: acres,
+                  tier: lakeData.tier,
+                  zoom: imageZoom,
+                  image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lakeData.longitude},${lakeData.latitude},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
+                } as FavoriteLake;
+              }
+              return null;
+            }
+            // Custom lakes: already hydrated by backend
             const acres = f.acres || undefined;
             const imageZoom = getZoomForLake(acres);
             return {
@@ -779,14 +804,14 @@ export function Members() {
               name: f.name,
               lat: f.lat,
               lng: f.lng,
-              city: f.city || undefined,
-              state: f.state || undefined,
+              city: f.city,
+              state: f.state,
               acres: acres,
-              tier: f.tier || undefined,
+              tier: f.tier,
               zoom: imageZoom,
               image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${f.lng},${f.lat},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
-            };
-          });
+            } as FavoriteLake;
+          }).filter((f): f is FavoriteLake => f !== null);
           setFavorites(mapped);
         }
       } catch (err) {
@@ -1740,14 +1765,13 @@ export function Members() {
         let lakeId = "";
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
-        if (
-          dbMatch &&
-          dbMatch.id &&
-          dbMatch.name === (manualWaterName || waterName)
-        ) {
-          lakeId = dbMatch.id;
+        if (dbMatch && dbMatch.name) {
+          // Lake exists in lakes.json - use name as the identifier.
+          // Backend matches known lakes by name (no id field needed).
+          lakeId = dbMatch.name;
           lakeType = "known";
         } else {
+          // Truly unlisted water - create as custom lake
           lakeType = "custom";
           shouldCreateCustom = true;
         }
@@ -1760,7 +1784,7 @@ export function Members() {
               lng: selectedCoords.lng,
               city: locationDetails.city || "",
               state: locationDetails.state || "",
-              anchors: [],
+              anchors: dbMatch?.anchors || [],
             },
             token,
           );
