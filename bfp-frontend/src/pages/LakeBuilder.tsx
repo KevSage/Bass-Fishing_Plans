@@ -415,7 +415,7 @@ export function LakeBuilder() {
         .title-name { font-weight: 700; font-size: 1rem; }
 
         .builder-footer {
-          position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+          position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); left: 50%; transform: translateX(-50%);
           width: 90%; max-width: 400px;
           background: rgba(20, 20, 20, 0.9);
           backdrop-filter: blur(16px);

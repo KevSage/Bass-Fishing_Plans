@@ -4,12 +4,17 @@ import type {
   PlanGenerateResponse,
   PlanViewResponse,
 } from "../features/plan/types";
+import { getApiBaseUrl } from "./platform";
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 const API_KEY = import.meta.env.VITE_API_KEY;
 
+// Use platform-aware API base URL
+function getApiBase(): string {
+  return getApiBaseUrl();
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -33,7 +38,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     method: "GET",
     headers: {
       ...(API_KEY ? { "X-API-Key": API_KEY } : {}),

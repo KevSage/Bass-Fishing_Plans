@@ -3,9 +3,10 @@
  * API client for catch logging endpoints.
  * Talks to FastAPI backend on Render.
  */
+import { getApiBaseUrl } from "./platform";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "https://your-api.onrender.com";
+// Use platform-aware API base URL
+const getApiBase = () => getApiBaseUrl();
 
 // =============================================================================
 // TYPES
@@ -120,7 +121,7 @@ async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
+  const response = await fetch(`${getApiBase()}${endpoint}`, {
     ...options,
     headers,
   });

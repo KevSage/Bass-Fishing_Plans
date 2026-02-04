@@ -112,7 +112,8 @@ export function Navigation() {
         background: "rgba(0, 0, 0, 0.4)",
         backdropFilter: "blur(6px)",
         zIndex: 10000,
-        paddingTop: 68,
+        // Account for iOS safe area + header height (68px base)
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)",
         animation: "fadeIn 0.2s ease-out",
       }}
       onClick={() => setIsOpen(false)}
@@ -123,6 +124,8 @@ export function Navigation() {
           borderTop: "1px solid rgba(255,255,255,0.08)",
           borderBottom: "1px solid rgba(255,255,255,0.08)",
           padding: "20px 24px 32px",
+          paddingLeft: "max(24px, env(safe-area-inset-left, 24px))",
+          paddingRight: "max(24px, env(safe-area-inset-right, 24px))",
           boxShadow: "0 20px 50px rgba(0,0,0,0.8)",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -280,6 +283,8 @@ export function Navigation() {
             ? "1px solid rgba(255,255,255,0.08)"
             : "1px solid transparent",
           transition: "all 0.3s ease",
+          // iOS safe area for notch
+          paddingTop: "env(safe-area-inset-top, 0px)",
         }}
       >
         <div
@@ -287,6 +292,8 @@ export function Navigation() {
             maxWidth: 1200,
             margin: "0 auto",
             padding: "16px 24px",
+            paddingLeft: "max(24px, env(safe-area-inset-left, 24px))",
+            paddingRight: "max(24px, env(safe-area-inset-right, 24px))",
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",

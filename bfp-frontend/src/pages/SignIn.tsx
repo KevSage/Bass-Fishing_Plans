@@ -1,55 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { useSignIn, useClerk } from "@clerk/clerk-react";
+import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { Link, useNavigate } from "react-router-dom";
 import { BackIcon } from "@/components/UnifiedIcons";
 
 export default function SignInPage() {
   const { isLoaded, signIn, setActive } = useSignIn();
-  const clerk = useClerk();
+  const { isSignedIn } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [clerkReady, setClerkReady] = useState(false);
+  const [showClerkWarning, setShowClerkWarning] = useState(false);
 
-  // Monitor Clerk loading status
+  // Redirect if already signed in
   useEffect(() => {
-    console.log("Clerk status check:");
-    console.log("- isLoaded:", isLoaded);
-    console.log("- signIn exists:", !!signIn);
-    console.log("- clerk exists:", !!clerk);
-    console.log("- clerk.loaded:", clerk?.loaded);
-
-    if (isLoaded && signIn) {
-      console.log("✅ Clerk is ready!");
-      setClerkReady(true);
-    } else {
-      console.log("⏳ Waiting for Clerk...");
+    if (isLoaded && isSignedIn) {
+      navigate("/members");
     }
-  }, [isLoaded, signIn, clerk]);
+  }, [isLoaded, isSignedIn, navigate]);
 
-  // Log if Clerk hasn't loaded after 5 seconds
+  // Show warning if Clerk doesn't load within 5 seconds (mobile issue)
   useEffect(() => {
     if (!isLoaded) {
       const timer = setTimeout(() => {
-        console.warn("⚠️ Clerk still not loaded after 5 seconds");
-        console.log(
-          "This may indicate Clerk cannot initialize in the iOS wrapper",
-        );
+        setShowClerkWarning(true);
       }, 5000);
-
       return () => clearTimeout(timer);
     }
   }, [isLoaded]);
 
   const handleSignIn = async () => {
-    console.log("🎣 Sign in button clicked!");
-    console.log("Email:", email);
-    console.log("Clerk ready:", clerkReady);
-    console.log("isLoaded:", isLoaded);
-
     // Basic validation
     if (!email || !password) {
       setError("Please enter both email and password");
@@ -59,13 +41,7 @@ export default function SignInPage() {
     // Check if Clerk is ready
     if (!isLoaded || !signIn) {
       setError(
-        "Authentication system is still loading. Please wait 5 seconds and try again.",
-      );
-      console.error(
-        "Clerk not ready - isLoaded:",
-        isLoaded,
-        "signIn:",
-        !!signIn,
+        "Authentication is still loading. Please wait a moment and try again.",
       );
       return;
     }
@@ -74,44 +50,48 @@ export default function SignInPage() {
     setError("");
 
     try {
-      console.log("Calling signIn.create...");
-
       const result = await signIn.create({
         identifier: email,
         password,
       });
 
-      console.log("Sign in result:", result);
-      console.log("Result status:", result.status);
+      console.log("Sign in result status:", result.status);
+      console.log("Created session ID:", result.createdSessionId);
 
-      if (result.status === "complete") {
-        console.log("✅ Sign in complete! Setting session...");
+      // Try to set session regardless of status as long as credentials are correct
+      if (result.createdSessionId) {
+        console.log("✅ Have session ID - setting active session");
         await setActive({ session: result.createdSessionId });
-        console.log("✅ Session set! Navigating to /members");
-
-        // Small delay to ensure session is fully set
-        setTimeout(() => {
-          navigate("/members");
-        }, 500);
+        navigate("/members");
+      } else if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        navigate("/members");
       } else {
-        console.log("❌ Sign in incomplete. Status:", result.status);
+        // No session ID created - this is a real problem
+        console.error("No session ID available. Status:", result.status);
         setError(
-          `Sign in incomplete. Status: ${result.status}. Please check your email for verification.`,
+          `Unable to sign in. Your account may need attention. Please contact support or try creating a new account.`,
         );
       }
     } catch (err: any) {
-      console.error("❌ Sign in error:", err);
-      console.error("Error details:", JSON.stringify(err, null, 2));
-
+      console.error("Sign in error:", err);
       const errorMessage =
         err.errors?.[0]?.longMessage ||
         err.errors?.[0]?.message ||
         err.message ||
-        "Invalid email or password.";
+        "Invalid email or password";
 
       setError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Enter key
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !loading) {
+      e.preventDefault();
+      handleSignIn();
     }
   };
 
@@ -128,7 +108,7 @@ export default function SignInPage() {
         backgroundColor: "#0a0a0a",
       }}
     >
-      {/* --- BACKGROUND LAYERS --- */}
+      {/* Background Layers */}
       <div
         style={{
           position: "absolute",
@@ -142,7 +122,7 @@ export default function SignInPage() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url(/images/hero_bass.jpg)",
+          backgroundImage: "url(/images/hero_bass.png)",
           backgroundSize: "cover",
           backgroundPosition: "65% 45%",
           opacity: 1,
@@ -160,7 +140,7 @@ export default function SignInPage() {
         }}
       />
 
-      {/* --- BACK BUTTON --- */}
+      {/* Back Button */}
       <div
         style={{
           position: "absolute",
@@ -184,6 +164,7 @@ export default function SignInPage() {
             padding: "8px 16px",
             borderRadius: 100,
             border: "1px solid rgba(255,255,255,0.1)",
+            transition: "all 0.2s",
           }}
         >
           <BackIcon size={18} />
@@ -191,7 +172,7 @@ export default function SignInPage() {
         </Link>
       </div>
 
-      {/* --- CUSTOM FORM CONTAINER --- */}
+      {/* Form Container */}
       <div
         className="container"
         style={{
@@ -230,8 +211,8 @@ export default function SignInPage() {
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {/* Clerk Status Indicator */}
-            {!clerkReady && (
+            {/* Clerk Loading Warning (mainly for mobile) */}
+            {showClerkWarning && !isLoaded && (
               <div
                 style={{
                   color: "#fbbf24",
@@ -240,24 +221,10 @@ export default function SignInPage() {
                   padding: 10,
                   borderRadius: 8,
                   textAlign: "center",
+                  border: "1px solid rgba(251, 191, 36, 0.2)",
                 }}
               >
-                ⏳ Loading authentication... (this may take a few seconds)
-              </div>
-            )}
-
-            {clerkReady && (
-              <div
-                style={{
-                  color: "#10b981",
-                  fontSize: "0.85rem",
-                  background: "rgba(16, 185, 129, 0.1)",
-                  padding: 10,
-                  borderRadius: 8,
-                  textAlign: "center",
-                }}
-              >
-                ✓ Ready to sign in
+                ⏳ Authentication is taking longer than usual...
               </div>
             )}
 
@@ -268,8 +235,9 @@ export default function SignInPage() {
                   color: "#ff6b6b",
                   fontSize: "0.9rem",
                   background: "rgba(255,0,0,0.1)",
-                  padding: 10,
+                  padding: 12,
                   borderRadius: 8,
+                  border: "1px solid rgba(255,107,107,0.2)",
                 }}
               >
                 {error}
@@ -279,20 +247,25 @@ export default function SignInPage() {
             {/* Email Input */}
             <div style={{ textAlign: "left" }}>
               <label
+                htmlFor="email"
                 style={{
                   color: "rgba(255,255,255,0.7)",
                   fontSize: "0.85rem",
                   marginBottom: 6,
                   display: "block",
+                  fontWeight: 500,
                 }}
               >
                 Email Address
               </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="Enter your email"
+                autoComplete="email"
                 style={{
                   width: "100%",
                   padding: "12px 16px",
@@ -302,34 +275,34 @@ export default function SignInPage() {
                   color: "white",
                   fontSize: "1rem",
                   outline: "none",
+                  transition: "border-color 0.2s",
                 }}
                 disabled={loading}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSignIn();
-                  }
-                }}
               />
             </div>
 
             {/* Password Input */}
             <div style={{ textAlign: "left" }}>
               <label
+                htmlFor="password"
                 style={{
                   color: "rgba(255,255,255,0.7)",
                   fontSize: "0.85rem",
                   marginBottom: 6,
                   display: "block",
+                  fontWeight: 500,
                 }}
               >
                 Password
               </label>
               <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={handleKeyPress}
                 placeholder="Enter your password"
+                autoComplete="current-password"
                 style={{
                   width: "100%",
                   padding: "12px 16px",
@@ -339,14 +312,9 @@ export default function SignInPage() {
                   color: "white",
                   fontSize: "1rem",
                   outline: "none",
+                  transition: "border-color 0.2s",
                 }}
                 disabled={loading}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSignIn();
-                  }
-                }}
               />
             </div>
 
@@ -383,8 +351,12 @@ export default function SignInPage() {
           >
             Don't have an account?{" "}
             <Link
-              to="/sign-up"
-              style={{ color: "#4A90E2", textDecoration: "none" }}
+              to="/subscribe"
+              style={{
+                color: "#4A90E2",
+                textDecoration: "none",
+                fontWeight: 500,
+              }}
             >
               Sign Up
             </Link>

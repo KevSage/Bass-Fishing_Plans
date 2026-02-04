@@ -348,6 +348,10 @@ class CustomLakeStore:
         """
         Find a custom lake within radius of coordinates.
         Uses simple bounding box then Haversine for accuracy.
+        
+        IMPORTANT: Only matches lakes WITHOUT boundaries (no anchors).
+        Lakes with custom boundaries have their own identity and should not
+        be matched by proximity alone.
         """
         email_norm = email.lower().strip()
         
@@ -386,9 +390,14 @@ class CustomLakeStore:
                     ),
                 ).fetchall()
 
-        # Filter by actual distance
+        # Filter by actual distance AND skip lakes with boundaries
         for row in rows:
             lake = self._row_to_custom_lake(dict(row))
+            
+            # Skip lakes with custom boundaries - they have their own identity
+            if lake.anchors and len(lake.anchors) >= 3:
+                continue
+            
             dist = self._haversine(lat, lng, lake.lat, lake.lng)
             if dist <= radius_km:
                 return lake
