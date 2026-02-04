@@ -1,6 +1,7 @@
 import React from "react";
-import { Routes, Route, Link, Navigate } from "react-router-dom";
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
+import { SignedIn, SignedOut, useAuth } from "@clerk/clerk-react";
+import { isNativePlatform } from "./lib/platform";
 import { Navigation } from "./components/Navigation";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
@@ -20,6 +21,45 @@ import { NotFound } from "./pages/NotFound";
 import { VerifyEmail } from "./pages/VerifyEmail";
 import "./complete-styles.css";
 import { LakeBuilder } from "./pages/LakeBuilder";
+
+/**
+ * Root route handler - redirects to sign-in on native platforms
+ */
+function RootRoute() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const [timedOut, setTimedOut] = React.useState(false);
+
+  // Timeout for Clerk loading on native (Clerk often fails in WebView)
+  React.useEffect(() => {
+    if (isNativePlatform() && !isLoaded) {
+      const timer = setTimeout(() => {
+        console.log("Clerk load timeout - redirecting to sign-in");
+        setTimedOut(true);
+      }, 3000); // 3 second timeout
+      return () => clearTimeout(timer);
+    }
+  }, [isLoaded]);
+
+  // On native platforms, skip landing and go to sign-in or members
+  if (isNativePlatform()) {
+    // If Clerk loaded successfully, check auth status
+    if (isLoaded) {
+      if (isSignedIn) {
+        return <Navigate to="/members" replace />;
+      }
+      return <Navigate to="/sign-in" replace />;
+    }
+    // If timed out waiting for Clerk, go to sign-in anyway
+    if (timedOut) {
+      return <Navigate to="/sign-in" replace />;
+    }
+    // Still waiting for Clerk to load
+    return null;
+  }
+
+  // On web, show the landing page
+  return <Landing />;
+}
 import { PlanPage } from "./pages/PlanPage";
 import { WeatherClarityPage } from "./pages/WeatherClarity";
 import { PresentationClarityPage } from "./pages/PresentationClarity";
@@ -73,7 +113,7 @@ export default function App() {
       <Navigation />
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/about" element={<About />} />
         <Route path="/subscribe" element={<Subscribe />} />
         {/* <Route path="/preview" element={<PreviewEnhanced />} /> */}

@@ -46,6 +46,12 @@ import {
 } from "@/lib/exif-utils";
 // IMPORT COMPRESSION UTILITY
 import { compressImage } from "@/lib/image-utils";
+// IMPORT CAPACITOR CAMERA FOR NATIVE iOS/Android
+import {
+  isNativePlatform,
+  capturePhoto,
+  type CapturedPhoto,
+} from "@/lib/capacitor-camera";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -1605,6 +1611,108 @@ export function CatchFormView({
     }
   };
 
+  /**
+   * Handle native camera/library photo capture (iOS/Android)
+   * Uses Capacitor Camera plugin for native experience
+   */
+  const handleNativePhoto = async () => {
+    try {
+      const result = await capturePhoto();
+      if (!result) return; // User cancelled
+
+      const { file, source: photoSource } = result;
+      setExifStatus("extracting");
+      setSource(photoSource);
+
+      // Extract EXIF data (same as web flow)
+      try {
+        const exif = await extractExifData(file);
+        let foundLoc = false;
+        let foundTime = false;
+
+        if (exif.latitude && exif.longitude) {
+          setCatchLat(exif.latitude);
+          setCatchLng(exif.longitude);
+          setLocationStatus("exif");
+          foundLoc = true;
+          checkLakeMatch(exif.latitude, exif.longitude);
+        }
+
+        if (exif.dateTime) {
+          setCaughtAt(exif.dateTime.toISOString());
+          foundTime = true;
+        }
+
+        if (foundLoc && foundTime) {
+          setExifStatus("found-all");
+          autoFetchWeather(
+            exif.latitude!,
+            exif.longitude!,
+            exif.dateTime!.toISOString(),
+          );
+        } else if (foundLoc) {
+          setExifStatus("found-all");
+        } else if (foundTime) {
+          setExifStatus("found-time");
+        } else {
+          setExifStatus("none");
+        }
+      } catch (err) {
+        console.warn("EXIF extraction failed:", err);
+        setExifStatus("none");
+      }
+
+      // Compress and upload (same as web flow)
+      let fileToUpload = file;
+      try {
+        fileToUpload = await compressImage(file);
+        const reader = new FileReader();
+        reader.onload = () => setPhotoPreview(reader.result as string);
+        reader.readAsDataURL(fileToUpload);
+      } catch (err) {
+        const reader = new FileReader();
+        reader.onload = () => setPhotoPreview(reader.result as string);
+        reader.readAsDataURL(file);
+      }
+
+      // Upload to R2
+      try {
+        setIsUploading(true);
+        const token = await getToken();
+        if (!token) throw new Error("No token available");
+        const { upload_url, public_url } = await getPresignedUrl(
+          fileToUpload.name,
+          fileToUpload.type,
+          token,
+        );
+        await uploadFileToR2(upload_url, fileToUpload);
+        setPhotoUrl(public_url);
+      } catch (err) {
+        console.error("Upload failed:", err);
+      } finally {
+        setIsUploading(false);
+      }
+    } catch (err) {
+      console.error("Native photo capture error:", err);
+    }
+  };
+
+  /**
+   * Handle photo button click - use native on iOS/Android, web file input on browser
+   */
+  const handlePhotoButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (isNativePlatform()) {
+      // Use native camera/library picker
+      handleNativePhoto();
+    } else {
+      // Fall back to web file input
+      fileInputRef.current?.click();
+    }
+  };
+
   const handleSubmit = async () => {
     if (!lure || !activeLake) return;
     setIsResolving(true);
@@ -1766,15 +1874,11 @@ export function CatchFormView({
           ) : (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                fileInputRef.current?.click();
-              }}
+              onClick={handlePhotoButtonClick}
               className="catch-photo-btn"
             >
               <CameraIcon size={20} />
-              <span>Upload Photo</span>
+              <span>{isNativePlatform() ? "Add Photo" : "Upload Photo"}</span>
             </button>
           )}
         </div>

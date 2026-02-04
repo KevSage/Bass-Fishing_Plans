@@ -1238,7 +1238,7 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
 function StyleBlock() {
   return (
     <style>{`
-      .members-navigation-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 92%; max-width: 480px; }
+      .members-navigation-container { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); left: 50%; transform: translateX(-50%); z-index: 1000; width: 92%; max-width: 480px; }
       .glass-deck { background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 24px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; align-items: center; color: #fff; }
       .glass-btn { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
       .glass-btn:hover { background: rgba(255, 255, 255, 0.1); }

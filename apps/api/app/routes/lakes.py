@@ -140,7 +140,38 @@ async def create_custom_lake(
     """
     email = await verify_clerk_session(authorization)
     
-    # Check if user already has a custom lake at these coordinates
+    # If lake has custom boundaries (anchors), skip proximity check entirely
+    # The boundaries define the lake's identity - no need for fuzzy matching
+    if request.anchors and len(request.anchors) >= 3:
+        # Check if this exact lake already exists (by name or ID)
+        existing_lakes = custom_lake_store.list_by_user(email)
+        for existing in existing_lakes:
+            # Check if it's the same lake by name
+            if existing.name.lower() == request.name.lower():
+                # Lake exists - return its ID instead of creating duplicate
+                return {
+                    "success": True,
+                    "lake_id": existing.id,
+                    "already_existed": True,
+                }
+        
+        # No match found - create directly without proximity check
+        lake_id = custom_lake_store.create(
+            email=email,
+            name=request.name,
+            lat=request.lat,
+            lng=request.lng,
+            city=request.city,
+            state=request.state,
+            anchors=request.anchors,
+        )
+        
+        return {
+            "success": True,
+            "lake_id": lake_id,
+        }
+    
+    # No boundaries - check if user already has a custom lake nearby
     existing = custom_lake_store.find_by_proximity(
         email, request.lat, request.lng, radius_km=0.5
     )
@@ -338,15 +369,8 @@ async def add_favorite(
         lake = custom_lake_store.get(request.lake_id, email)
         if not lake:
             raise HTTPException(status_code=404, detail="Custom lake not found")
-    else:
-        # For known lakes, verify it exists in the JSON
-        lakes = get_known_lakes()
-        lake_exists = any(
-            l.get("id") == request.lake_id or l.get("name") == request.lake_id
-            for l in lakes
-        )
-        if not lake_exists:
-            raise HTTPException(status_code=404, detail="Known lake not found")
+    # Known lakes: no validation needed. lakes.json lives in the frontend only.
+    # The frontend already verified the lake exists via hydrateLakeData before sending.
     
     added = user_lake_store.add(email, request.lake_id, request.lake_type)
     
@@ -391,28 +415,18 @@ async def list_favorites(
     email = await verify_clerk_session(authorization)
     
     favorites = user_lake_store.list_by_user(email)
-    known_lakes = get_known_lakes()
     
     hydrated = []
     
     for fav in favorites:
         if fav.lake_type == "known":
-            # Find in known lakes
-            lake_data = next(
-                (l for l in known_lakes if l.get("id") == fav.lake_id or l.get("name") == fav.lake_id),
-                None
-            )
-            if lake_data:
-                hydrated.append({
-                    "lake_id": fav.lake_id,
-                    "lake_type": "known",
-                    "name": lake_data.get("name"),
-                    "lat": lake_data.get("lat") or lake_data.get("latitude"),
-                    "lng": lake_data.get("lng") or lake_data.get("lon") or lake_data.get("longitude"),
-                    "city": lake_data.get("city"),
-                    "state": lake_data.get("state"),
-                    "added_at": fav.added_at,
-                })
+            # Known lakes: return minimal data. Frontend hydrates from LAKES_DATA
+            # (lakes.json lives in frontend only, not accessible to backend)
+            hydrated.append({
+                "lake_id": fav.lake_id,
+                "lake_type": "known",
+                "added_at": fav.added_at,
+            })
         else:
             # Custom lake
             lake = custom_lake_store.get(fav.lake_id, email)

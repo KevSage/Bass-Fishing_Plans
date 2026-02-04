@@ -11,6 +11,7 @@ import { useUser, useAuth } from "@clerk/clerk-react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import polylabel from "polylabel";
 import { MapLoadingScreen } from "@/components/MapLoadingScreen";
 // API Imports
 import { generateMemberPlan, RateLimitError } from "@/lib/api";
@@ -408,6 +409,51 @@ function pointInPolygon(
   return inside;
 }
 
+function findWaterCenter(
+  lake: { 
+    lat: number; 
+    lng: number; 
+    latitude?: number;
+    longitude?: number;
+    anchors?: { lat: number; lng: number }[] 
+  }
+): { lat: number; lng: number } {
+  /**
+   * Find the optimal "visual center" of a lake.
+   * For lakes with boundaries (anchors), uses Pole of Inaccessibility algorithm
+   * to find the point inside the polygon that's furthest from all edges.
+   * This ensures the center is always in water, even for irregular/branching lakes.
+   * 
+   * For lakes without boundaries, returns the stored lat/lng.
+   */
+  
+  // Use stored coordinates if no polygon
+  if (!lake.anchors || lake.anchors.length < 3) {
+    return { 
+      lat: lake.lat || lake.latitude || 0, 
+      lng: lake.lng || lake.longitude || 0 
+    };
+  }
+  
+  try {
+    // Convert to polylabel format: [[lng, lat], [lng, lat], ...]
+    const polygon = [lake.anchors.map(a => [a.lng, a.lat])];
+    
+    // Get pole of inaccessibility (tolerance = 1.0 for precision)
+    const [lng, lat] = polylabel(polygon, 1.0);
+    
+    return { lat, lng };
+  } catch (err) {
+    console.error("Error calculating water center:", err);
+    // Fallback to stored coordinates
+    return { 
+      lat: lake.lat || lake.latitude || 0, 
+      lng: lake.lng || lake.longitude || 0 
+    };
+  }
+}
+
+
 function findUserLakeByAnchors(
   lat: number,
   lng: number,
@@ -724,7 +770,32 @@ export function Members() {
       try {
         const res = await listFavorites(token);
         if (mounted && res.favorites) {
-          const mapped: FavoriteLake[] = res.favorites.map((f: any) => {
+          const mapped = res.favorites.map((f: any) => {
+            // Known lakes: hydrate from LAKES_DATA (backend has no access to lakes.json)
+            if (f.lake_type === "known") {
+              const lakeData = (LAKES_DATA as LakeData[]).find(
+                (l) => l.name === f.lake_id
+              );
+              if (lakeData) {
+                const acres = lakeData.acres || undefined;
+                const imageZoom = getZoomForLake(acres);
+                return {
+                  id: f.lake_id,
+                  lake_type: "known",
+                  name: lakeData.name,
+                  lat: lakeData.latitude,
+                  lng: lakeData.longitude,
+                  city: lakeData.city,
+                  state: lakeData.state,
+                  acres: acres,
+                  tier: lakeData.tier,
+                  zoom: imageZoom,
+                  image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lakeData.longitude},${lakeData.latitude},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
+                } as FavoriteLake;
+              }
+              return null;
+            }
+            // Custom lakes: already hydrated by backend
             const acres = f.acres || undefined;
             const imageZoom = getZoomForLake(acres);
             return {
@@ -733,14 +804,14 @@ export function Members() {
               name: f.name,
               lat: f.lat,
               lng: f.lng,
-              city: f.city || undefined,
-              state: f.state || undefined,
+              city: f.city,
+              state: f.state,
               acres: acres,
-              tier: f.tier || undefined,
+              tier: f.tier,
               zoom: imageZoom,
               image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${f.lng},${f.lat},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
-            };
-          });
+            } as FavoriteLake;
+          }).filter((f): f is FavoriteLake => f !== null);
           setFavorites(mapped);
         }
       } catch (err) {
@@ -819,16 +890,45 @@ export function Members() {
   ): LakeData | undefined => {
     const normalize = (s: string) => s.toLowerCase().replace("lake", "").trim();
     const query = normalize(name);
+    
+    // 1. Try EXACT name match first (highest priority)
     let match = (LAKES_DATA as LakeData[]).find(
-      (l) =>
-        normalize(l.name).includes(query) || query.includes(normalize(l.name)),
+      (l) => normalize(l.name) === query
     );
-    if (!match)
-      match = (LAKES_DATA as LakeData[]).find(
-        (l) =>
-          Math.abs(l.latitude - lat) < 0.05 &&
-          Math.abs(l.longitude - lng) < 0.05,
+    if (match) return match;
+    
+    // 2. For lakes with boundaries, check if point is inside polygon
+    for (const lake of LAKES_DATA as LakeData[]) {
+      if (lake.anchors && lake.anchors.length >= 3) {
+        if (pointInPolygon({ lat, lng }, lake.anchors as any)) {
+          return lake;
+        }
+      }
+    }
+    
+    // 3. Fuzzy name match (but avoid partial matches that are too broad)
+    match = (LAKES_DATA as LakeData[]).find((l) => {
+      const lakeName = normalize(l.name);
+      // Both must be longer than 3 chars to avoid false matches like "bay", "arm", etc.
+      if (query.length < 4 || lakeName.length < 4) return false;
+      return lakeName.includes(query) || query.includes(lakeName);
+    });
+    if (match) return match;
+    
+    // 4. Finally, proximity for lakes without boundaries (tightened to 0.01°)
+    match = (LAKES_DATA as LakeData[]).find((l) => {
+      // If lake has boundaries, skip - polygon check already handled it
+      if (l.anchors && l.anchors.length >= 3) {
+        return false;
+      }
+      
+      // For lakes without boundaries, use tight proximity
+      return (
+        Math.abs(l.latitude - lat) < 0.01 &&
+        Math.abs(l.longitude - lng) < 0.01
       );
+    });
+    
     return match;
   };
 
@@ -870,12 +970,24 @@ export function Members() {
 
   const lakeLabelData = useMemo(() => {
     if (!selectedCoords) return null;
-    const isSaved = favorites.some(
-      (f) =>
-        f.name === waterName ||
-        (Math.abs(f.lat - selectedCoords.lat) < 0.001 &&
-          Math.abs(f.lng - selectedCoords.lng) < 0.001),
+    
+    // Use the same sophisticated matching logic as map clicks
+    const polygonMatch = findLakeByPolygon(
+      selectedCoords.lat,
+      selectedCoords.lng,
+      customLakesRef.current as any,
+      favorites,
     );
+    
+    const nearbyFavorite = !polygonMatch
+      ? findNearestFavorite(selectedCoords.lat, selectedCoords.lng, favorites)
+      : null;
+    
+    // Check if saved: either polygon match with source="favorite" or nearby favorite
+    const isSaved = 
+      (polygonMatch && polygonMatch.source === "favorite") ||
+      !!nearbyFavorite;
+    
     const isKnown =
       waterName !== "" &&
       !waterName.startsWith("Water near") &&
@@ -1249,6 +1361,114 @@ export function Members() {
     };
   }, [isActive]);
 
+  // --- AUTO-DETECTION: Detect lake based on map center and zoom ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMountedRef.current) return;
+    
+    const handleAutoDetect = () => {
+      // Don't auto-detect if user has manually selected a lake (has marker)
+      if (selectedCoords || markerRef.current) return;
+      
+      const center = map.getCenter();
+      const zoom = map.getZoom();
+      
+      // Only detect at reasonable zoom levels
+      if (zoom < 9) {
+        if (waterName && !selectedCoords) {
+          setWaterName("");
+          setLocationDetails({});
+        }
+        return;
+      }
+      
+      // Priority 1: Check custom lakes with boundaries
+      const customMatch = findLakeByPolygon(
+        center.lat,
+        center.lng,
+        customLakesRef.current as any,
+        favoritesRef.current,
+      );
+      
+      if (customMatch) {
+        // Check if zoom is appropriate for this lake
+        const minZoom = getZoomForLake(customMatch.acres ?? 0) - 1;
+        if (zoom >= minZoom) {
+          if (waterName !== customMatch.name) {
+            setWaterName(customMatch.name);
+            setLocationDetails({
+              city: customMatch.city,
+              state: customMatch.state,
+            });
+          }
+          return;
+        }
+      }
+      
+      // Priority 2: Check known lakes from LAKES_DATA
+      for (const lake of LAKES_DATA as LakeData[]) {
+        // Skip if zoom too low for this lake size
+        const minZoom = getZoomForLake(lake.acres ?? 0) - 1;
+        if (zoom < minZoom) continue;
+        
+        // Check if has boundaries
+        if (lake.anchors && lake.anchors.length >= 3) {
+          if (pointInPolygon({ lat: center.lat, lng: center.lng }, lake.anchors as any)) {
+            if (waterName !== lake.name) {
+              setWaterName(lake.name);
+              setLocationDetails({
+                city: lake.city,
+                state: lake.state,
+              });
+            }
+            return;
+          }
+        } else {
+          // No boundaries - check proximity with distance threshold based on size
+          const lakeAcres = lake.acres ?? 0;
+          const maxDistance = lakeAcres > 1000 ? 500 : lakeAcres > 100 ? 200 : 100;
+          const distance = getDistanceMeters(center.lat, center.lng, lake.latitude, lake.longitude);
+          
+          if (distance <= maxDistance) {
+            if (waterName !== lake.name) {
+              setWaterName(lake.name);
+              setLocationDetails({
+                city: lake.city,
+                state: lake.state,
+              });
+            }
+            return;
+          }
+        }
+      }
+      
+      // No lake detected - clear name if not manually selected
+      if (waterName && !selectedCoords) {
+        setWaterName("");
+        setLocationDetails({});
+      }
+    };
+    
+    // Debounce to avoid excessive calls during pan/zoom
+    let timeoutId: NodeJS.Timeout;
+    const debouncedHandler = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleAutoDetect, 300);
+    };
+    
+    map.on('move', debouncedHandler);
+    map.on('zoom', debouncedHandler);
+    
+    // Run once on mount
+    handleAutoDetect();
+    
+    return () => {
+      clearTimeout(timeoutId);
+      map.off('move', debouncedHandler);
+      map.off('zoom', debouncedHandler);
+    };
+  }, [selectedCoords, waterName, customLakesRef.current, favoritesRef.current]);
+
   // --- HANDLERS ---
   const handleLiveCameraClick = () => {
     if (!isActive) {
@@ -1476,18 +1696,29 @@ export function Members() {
 
   const handleRemoveSpecificLake = useCallback(
     async (lake: FavoriteLake) => {
+      // Optimistically remove from favorites
       setFavorites((prev) => prev.filter((f) => f.id !== lake.id));
+      
+      // If we're currently viewing this favorite, clear the viewingFavoriteId
+      if (viewingFavoriteId === lake.id) {
+        setViewingFavoriteId(null);
+      }
+      
       try {
         const token = await getToken();
         if (!token) throw new Error("No token");
         await removeFavorite(lake.id, lake.lake_type, token);
       } catch (err) {
         console.error("Failed to remove favorite", err);
+        // Rollback on error
         setFavorites((prev) => [...prev, lake]);
+        if (viewingFavoriteId === lake.id) {
+          setViewingFavoriteId(lake.id);
+        }
         alert("Failed to remove lake.");
       }
     },
-    [getToken],
+    [getToken, viewingFavoriteId],
   );
 
   const toggleFavoriteLake = useCallback(
@@ -1498,12 +1729,24 @@ export function Members() {
       const token = await getToken();
       if (!token) return;
       if (isCurrentLocationSaved) {
-        const fav = favorites.find(
-          (f) =>
-            f.name === waterName ||
-            (Math.abs(f.lat - selectedCoords.lat) < 0.001 &&
-              Math.abs(f.lng - selectedCoords.lng) < 0.001),
+        // Use polygon matching to find the correct favorite
+        const polygonMatch = findLakeByPolygon(
+          selectedCoords.lat,
+          selectedCoords.lng,
+          customLakesRef.current as any,
+          favorites,
         );
+        
+        let fav: FavoriteLake | null = null;
+        
+        if (polygonMatch && polygonMatch.source === "favorite") {
+          // Found via polygon - match by ID
+          fav = favorites.find(f => f.id === polygonMatch.id) || null;
+        } else {
+          // Fallback to nearby favorite
+          fav = findNearestFavorite(selectedCoords.lat, selectedCoords.lng, favorites);
+        }
+        
         if (fav) {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
@@ -1522,14 +1765,13 @@ export function Members() {
         let lakeId = "";
         let lakeType: "known" | "custom" = "known";
         let shouldCreateCustom = false;
-        if (
-          dbMatch &&
-          dbMatch.id &&
-          dbMatch.name === (manualWaterName || waterName)
-        ) {
-          lakeId = dbMatch.id;
+        if (dbMatch && dbMatch.name) {
+          // Lake exists in lakes.json - use name as the identifier.
+          // Backend matches known lakes by name (no id field needed).
+          lakeId = dbMatch.name;
           lakeType = "known";
         } else {
+          // Truly unlisted water - create as custom lake
           lakeType = "custom";
           shouldCreateCustom = true;
         }
@@ -1542,7 +1784,7 @@ export function Members() {
               lng: selectedCoords.lng,
               city: locationDetails.city || "",
               state: locationDetails.state || "",
-              anchors: [],
+              anchors: dbMatch?.anchors || [],
             },
             token,
           );
@@ -1962,7 +2204,9 @@ export function Members() {
                           className="nav-fav-card-delete"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleRemoveSpecificLake(lake);
+                            if (confirm(`Remove ${lake.name} from favorites?`)) {
+                              handleRemoveSpecificLake(lake);
+                            }
                           }}
                         >
                           <svg
@@ -2388,7 +2632,7 @@ export function Members() {
 
       <style>{`
         .orb-marker-map { background-color: #4A90E2; border-radius: 50%; box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8); cursor: pointer; width: 24px; height: 24px; }
-        .top-gradient-bar { position: fixed; top: 64px; left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0.4) 80%, transparent 100%); padding: 16px 20px 45px; display: flex; justify-content: center; pointer-events: none; }
+        .top-gradient-bar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 64px); left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0.4) 80%, transparent 100%); padding: 16px 20px 45px; padding-left: max(20px, env(safe-area-inset-left, 20px)); padding-right: max(20px, env(safe-area-inset-right, 20px)); display: flex; justify-content: center; pointer-events: none; }
         .top-bar-card { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 280px; max-width: 400px; text-align: center; pointer-events: auto; }
         .top-bar-card-empty { text-align: center; }
         .top-bar-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; color: #4A90E2; margin-bottom: 4px; }
@@ -2418,8 +2662,8 @@ export function Members() {
         .mapboxgl-ctrl-recenter { width: 29px; height: 29px; display: flex; align-items: center; justify-content: center; background: #fff; border: none; cursor: pointer; border-radius: 4px; }
         .mapboxgl-ctrl-recenter:hover { background: #f0f0f0; }
         .mapboxgl-ctrl-recenter svg { color: #333; }
-        .members-navigation-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; width: 92%; max-width: 480px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .members-navigation-container.expanded { bottom: 30px; }
+        .members-navigation-container { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); left: 50%; transform: translateX(-50%); z-index: 1000; width: 92%; max-width: 480px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .members-navigation-container.expanded { bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); }
         .glass-deck { display: flex; flex-direction: column; justify-content: flex-end; padding: 8px 12px; background: rgba(18, 18, 18, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative; overflow: visible; }
         .nav-icons-row { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
         .nav-favorites-section { padding: 12px 8px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); animation: nav-fav-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
