@@ -377,7 +377,7 @@ export function Landing() {
               If you find value in the platform and want to support the
               developer, there is an optional subscription or you can support
               <a
-                href="https://www.gofundme.com"
+                href="https://gofund.me/817e0cce5"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
