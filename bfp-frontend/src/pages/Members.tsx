@@ -658,6 +658,17 @@ export function Members() {
     setShowTutorial(false);
   };
 
+  // --- WELCOME BANNER (for new signups) ---
+  const [showWelcome, setShowWelcome] = useState(false);
+  useEffect(() => {
+    if (searchParams.get("welcome") === "true") {
+      setShowWelcome(true);
+      // Remove the query param from URL without reload
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [searchParams]);
+
   // Favorites Panel State
   const [showFavorites, setShowFavorites] = useState(false);
 
@@ -1947,6 +1958,142 @@ export function Members() {
         onClose={() => setShowUpgradeModal(false)}
         message={upgradeMessage}
       />
+
+      {/* WELCOME BANNER - Shows for new signups */}
+      {showWelcome && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.8)",
+            backdropFilter: "blur(4px)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+          }}
+          onClick={() => setShowWelcome(false)}
+        >
+          <div
+            style={{
+              background: "linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%)",
+              borderRadius: 24,
+              padding: "32px 28px",
+              maxWidth: 420,
+              width: "100%",
+              border: "1px solid rgba(74, 144, 226, 0.3)",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+              textAlign: "center",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                background: "rgba(34, 197, 94, 0.15)",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px",
+              }}
+            >
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#4ade80"
+                strokeWidth="2.5"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+            <h2
+              style={{
+                color: "#fff",
+                fontSize: "1.5rem",
+                fontWeight: 700,
+                marginBottom: 12,
+              }}
+            >
+              Welcome to Bass Clarity!
+            </h2>
+            <p
+              style={{
+                color: "rgba(255,255,255,0.7)",
+                fontSize: "1rem",
+                lineHeight: 1.6,
+                marginBottom: 24,
+              }}
+            >
+              Your account is now active. Tap any lake on the map to get started
+              with AI-powered fishing strategies.
+            </p>
+            <div
+              style={{
+                background: "rgba(74, 144, 226, 0.1)",
+                border: "1px solid rgba(74, 144, 226, 0.2)",
+                borderRadius: 12,
+                padding: "14px 16px",
+                marginBottom: 24,
+                textAlign: "left",
+              }}
+            >
+              <p
+                style={{
+                  color: "rgba(255,255,255,0.8)",
+                  fontSize: "0.9rem",
+                  margin: 0,
+                  lineHeight: 1.5,
+                }}
+              >
+                <strong style={{ color: "#4A90E2" }}>Tip:</strong> You can always
+                return here by tapping the blue profile icon in the navigation bar.
+                Subscriptions are optional and help support development.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowWelcome(false)}
+              style={{
+                width: "100%",
+                padding: "16px 24px",
+                fontSize: "1.1rem",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                border: "none",
+                borderRadius: 14,
+                color: "#fff",
+                cursor: "pointer",
+                marginBottom: 12,
+              }}
+            >
+              Start Exploring
+            </button>
+            <button
+              onClick={() => {
+                setShowWelcome(false);
+                navigate("/subscribe");
+              }}
+              style={{
+                width: "100%",
+                padding: "14px 24px",
+                fontSize: "0.95rem",
+                fontWeight: 600,
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 14,
+                color: "rgba(255,255,255,0.7)",
+                cursor: "pointer",
+              }}
+            >
+              Support Bass Clarity →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* WEATHER OVERLAY */}
       {showWeather && selectedCoords && (
