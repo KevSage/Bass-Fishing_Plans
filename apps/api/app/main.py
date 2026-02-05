@@ -54,6 +54,14 @@ from app.routes.lakes import router as lakes_router
 from app.routes.uploads import router as uploads_router
 
 # ----------------------------------------
+# FREE MODE CONFIGURATION
+# ----------------------------------------
+# When enabled, all authenticated users get full member access
+# Toggle via environment variable: FREE_MODE=true
+FREE_MODE = os.getenv("FREE_MODE", "false").lower() == "true"
+DAILY_PLAN_LIMIT = 10  # Universal rate limit for all users
+
+# ----------------------------------------
 # 1. INITIALIZE STORES FIRST
 # ----------------------------------------
 # These must exist BEFORE importing routes that use them
@@ -279,21 +287,31 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         )
     
     admin_override = request.headers.get("X-Admin-Override") == "true"
-    is_member = subs.is_active(email)
-    
+
+    # FREE_MODE: All authenticated users are treated as members
+    is_member = True if FREE_MODE else subs.is_active(email)
+
     if not admin_override:
+        # Subscription check (skipped in FREE_MODE since is_member is always True)
         if not is_member:
             raise HTTPException(
                 status_code=403,
                 detail="Subscription required to generate scouting reports."
             )
-            
-        if not rate_limits.is_within_daily_limit(email):
+
+        # Universal rate limiting (applies to everyone)
+        if not rate_limits.is_within_daily_limit(email, limit=DAILY_PLAN_LIMIT):
+            # Calculate seconds until midnight for frontend display
+            now = datetime.now()
+            midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            seconds_remaining = int((midnight - now).total_seconds())
+
             raise HTTPException(
                 status_code=429,
                 detail={
-                    "error": "rate_limit_daily",
-                    "message": "You've used your 10 daily scouting reports. New insights reset at midnight."
+                    "error": "rate_limit_member",
+                    "message": f"You've used your {DAILY_PLAN_LIMIT} daily scouting reports. New insights reset at midnight.",
+                    "seconds_remaining": seconds_remaining
                 }
             )
     

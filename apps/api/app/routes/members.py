@@ -28,11 +28,19 @@ rate_limit_store = RateLimitStore()
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
 # =============================================================================
-# JWT VERIFICATION SETUP
+# FREE MODE & RATE LIMITS
 # =============================================================================
 
-# Daily plan limit - single source of truth
-DAILY_PLAN_LIMIT = 25
+# FREE_MODE: When enabled, all authenticated users get full member access
+# Toggle via environment variable: FREE_MODE=true
+FREE_MODE = os.getenv("FREE_MODE", "false").lower() == "true"
+
+# Daily plan limit - single source of truth (applies to all users in free mode)
+DAILY_PLAN_LIMIT = 10
+
+# =============================================================================
+# JWT VERIFICATION SETUP
+# =============================================================================
 
 @lru_cache(maxsize=1)
 def get_jwks_client() -> Optional[PyJWKClient]:
@@ -177,8 +185,9 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
     subscriber = subscriber_store.get(email)
 
     # Default membership decision from stored flag
-    is_member = bool(subscriber and subscriber.active)
-    has_subscription = subscriber is not None
+    # FREE_MODE: All authenticated users are treated as members with full access
+    is_member = True if FREE_MODE else bool(subscriber and subscriber.active)
+    has_subscription = True if FREE_MODE else (subscriber is not None)
 
     # If we have a Stripe subscription id, trust Stripe status (includes trialing)
     if subscriber and subscriber.stripe_subscription_id:
