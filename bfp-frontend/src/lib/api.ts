@@ -50,15 +50,16 @@ export async function apiGet<T>(path: string): Promise<T> {
 
 // Custom error class for rate limits
 export class RateLimitError extends Error {
-  error: "rate_limit_preview" | "rate_limit_member";
+  error: "rate_limit_preview" | "rate_limit_member" | "rate_limit_daily";
   seconds_remaining: number;
   upgrade_url?: string;
 
-  constructor(data: RateLimitError) {
-    super(data.message);
+  constructor(data: Partial<RateLimitError> & { message?: string }) {
+    super(data.message || "Rate limit exceeded");
     this.name = "RateLimitError";
-    this.error = data.error;
-    this.seconds_remaining = data.seconds_remaining;
+    this.error = data.error || "rate_limit_member";
+    // Default to 24 hours if seconds_remaining is missing (prevents NaN)
+    this.seconds_remaining = data.seconds_remaining ?? 86400;
     this.upgrade_url = data.upgrade_url;
   }
 

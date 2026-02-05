@@ -90,7 +90,7 @@ class RateLimitStore:
             )
             conn.commit()
 
-    def is_within_daily_limit(self, email: str, limit: int = 20) -> bool:
+    def is_within_daily_limit(self, email: str, limit: int = 10) -> bool:
         """Check if the user is under the daily cap."""
         # Bypass for admin/test accounts
         # Fix: Ensure we strip whitespace from env vars and ignore empty strings
