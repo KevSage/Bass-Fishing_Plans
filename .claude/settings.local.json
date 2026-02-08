@@ -1,7 +1,33 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd FREE_MODE backend support for mobile\n\n- Add FREE_MODE env toggle to treat all auth users as members\n- Set universal rate limit to 10 plans/day\n- Add seconds_remaining to rate limit response\n- Fix has_subscription for FREE_MODE users\n\nCherry-picked backend changes from main branch.\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(sips:*)",
+      "Bash(identify:*)",
+      "Bash(for f in /Users/kevinsage/Bass_Fishing_Plans/mobile/assets/*.png)",
+      "Bash(do echo '=== $\\(basename $f\\) ===')",
+      "Bash(done)",
+      "Bash(watchman watch-del-all:*)",
+      "WebSearch",
+      "WebFetch(domain:clerk.com)",
+      "WebFetch(domain:clerk-fapi.redoc.ly)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:hexdocs.pm)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(npx cap:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd platform-aware auth for mobile Capacitor app\n\n- Add mobile_auth.py backend routes for native sign-in/sign-up\n- Add NativeAuthContext and platform detection utilities\n- Update Subscribe, SignIn, Success pages with platform-aware auth\n- Add iOS safe area inset support for Members page\n- Remove unused Clarity pages \\(Location, Presentation, Strategic, Weather\\)\n- Update iOS assets and project configuration\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(file:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)"
     ]
   }
 }

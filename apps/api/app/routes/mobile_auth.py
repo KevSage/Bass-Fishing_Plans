@@ -4,6 +4,7 @@ Mobile authentication endpoints.
 Routes auth through the backend to bypass Clerk's CORS restrictions for native apps.
 """
 import os
+from typing import Optional
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
@@ -27,10 +28,10 @@ class SignUpRequest(BaseModel):
 
 class AuthResponse(BaseModel):
     success: bool
-    session_id: str | None = None
-    user_id: str | None = None
-    token: str | None = None
-    error: str | None = None
+    session_id: Optional[str] = None
+    user_id: Optional[str] = None
+    token: Optional[str] = None
+    error: Optional[str] = None
 
 
 @router.post("/sign-in", response_model=AuthResponse)

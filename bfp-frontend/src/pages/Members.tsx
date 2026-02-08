@@ -833,7 +833,8 @@ export function Members() {
     return () => {
       mounted = false;
     };
-  }, [getToken, dataVersion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataVersion]);
 
   useEffect(() => {
     let mounted = true;
@@ -852,7 +853,8 @@ export function Members() {
     return () => {
       mounted = false;
     };
-  }, [getToken, dataVersion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataVersion]);
 
   // Handle pending lake selection after returning from LakeBuilder
   useEffect(() => {
@@ -1729,7 +1731,8 @@ export function Members() {
         alert("Failed to remove lake.");
       }
     },
-    [getToken, viewingFavoriteId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [viewingFavoriteId],
   );
 
   const toggleFavoriteLake = useCallback(

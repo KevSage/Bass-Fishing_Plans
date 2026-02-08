@@ -87,6 +87,11 @@ origins = [
     "https://bassclarity.vercel.app",
     "http://localhost:3000",
     "http://localhost:5173",
+    # Capacitor mobile app origins
+    "capacitor://localhost",
+    "ionic://localhost",
+    "http://localhost",
+    "https://localhost",
 ]
 
 app.add_middleware(

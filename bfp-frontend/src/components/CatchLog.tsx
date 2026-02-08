@@ -583,7 +583,8 @@ export function useCatchLog(
     } finally {
       setIsLoading(false);
     }
-  }, [getToken, getOfflineCatches, state.entries.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getOfflineCatches, state.entries.length]);
 
   useEffect(() => {
     if (isSignedIn) fetchCatches();
@@ -614,7 +615,8 @@ export function useCatchLog(
     await fetchCatches();
     if (syncedCount > 0) alert(`Synced ${syncedCount} catches.`);
     setIsLoading(false);
-  }, [getToken, activeLake, fetchCatches, getOfflineCatches]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLake, fetchCatches, getOfflineCatches]);
 
   const lakeCatches = useMemo(() => {
     if (!activeLake) return [];
@@ -789,7 +791,8 @@ export function useCatchLog(
         fetchCatches();
       }
     },
-    [getToken, activeLake, state.entries, fetchCatches],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeLake, state.entries, fetchCatches],
   );
 
   const deleteCatch = useCallback(
@@ -823,7 +826,8 @@ export function useCatchLog(
         }
       }
     },
-    [getToken, getOfflineCatches, state.entries, fetchCatches],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [getOfflineCatches, state.entries, fetchCatches],
   );
 
   return {
