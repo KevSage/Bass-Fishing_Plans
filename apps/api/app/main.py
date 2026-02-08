@@ -88,6 +88,7 @@ origins = [
     "http://localhost:3000",
     "http://localhost:5173",
     # Capacitor mobile app origins
+    "capacitor://bassclarity.com",
     "capacitor://localhost",
     "ionic://localhost",
     "http://localhost",
