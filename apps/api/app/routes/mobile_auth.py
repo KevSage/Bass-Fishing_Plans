@@ -1,7 +1,7 @@
 # apps/api/app/routes/mobile_auth.py
 """
 Mobile authentication endpoints.
-Routes auth through the backend to bypass Clerk's CORS restrictions for native apps.
+Uses Clerk Backend API to verify credentials directly, bypassing the client-side 2FA flow.
 """
 import os
 from typing import Optional
@@ -12,8 +12,8 @@ from pydantic import BaseModel, EmailStr
 router = APIRouter(prefix="/mobile-auth", tags=["mobile-auth"])
 
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
-CLERK_FRONTEND_API = os.getenv("CLERK_FRONTEND_API", "clerk.bassclarity.com")
-CLERK_API_BASE = f"https://{CLERK_FRONTEND_API}"
+# Backend API base URL (not Frontend API)
+CLERK_BACKEND_API = "https://api.clerk.com/v1"
 
 
 class SignInRequest(BaseModel):
@@ -31,76 +31,88 @@ class AuthResponse(BaseModel):
     session_id: Optional[str] = None
     user_id: Optional[str] = None
     token: Optional[str] = None
+    email: Optional[str] = None
     error: Optional[str] = None
+
+
+def get_clerk_headers():
+    """Get headers for Clerk Backend API requests."""
+    return {
+        "Authorization": f"Bearer {CLERK_SECRET_KEY}",
+        "Content-Type": "application/json",
+    }
 
 
 @router.post("/sign-in", response_model=AuthResponse)
 async def mobile_sign_in(request: SignInRequest):
     """
     Sign in via Clerk Backend API.
-    Used by mobile apps to bypass CORS restrictions.
+    1. Find user by email
+    2. Verify password
+    3. Return user info for session
     """
     if not CLERK_SECRET_KEY:
         raise HTTPException(status_code=500, detail="Clerk secret key not configured")
 
     async with httpx.AsyncClient() as client:
         try:
-            # Step 1: Create a sign-in attempt
-            sign_in_response = await client.post(
-                f"{CLERK_API_BASE}/v1/client/sign_ins",
-                data={
-                    "identifier": request.email,
-                    "strategy": "password",
-                    "password": request.password,
-                },
-                headers={
-                    "Authorization": f"Bearer {CLERK_SECRET_KEY}",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
+            # Step 1: Find user by email
+            users_response = await client.get(
+                f"{CLERK_BACKEND_API}/users",
+                params={"email_address": request.email},
+                headers=get_clerk_headers(),
             )
 
-            if sign_in_response.status_code != 200:
-                error_data = sign_in_response.json()
+            if users_response.status_code != 200:
+                return AuthResponse(success=False, error="Failed to lookup user")
+
+            users = users_response.json()
+
+            if not users or len(users) == 0:
+                return AuthResponse(success=False, error="No account found with this email")
+
+            user = users[0]
+            user_id = user.get("id")
+
+            # Step 2: Verify password
+            verify_response = await client.post(
+                f"{CLERK_BACKEND_API}/users/{user_id}/verify_password",
+                json={"password": request.password},
+                headers=get_clerk_headers(),
+            )
+
+            if verify_response.status_code != 200:
+                error_data = verify_response.json()
                 error_msg = error_data.get("errors", [{}])[0].get(
-                    "long_message", "Sign in failed"
+                    "long_message", "Invalid password"
                 )
                 return AuthResponse(success=False, error=error_msg)
 
-            result = sign_in_response.json()
+            verify_result = verify_response.json()
 
-            # Check for active session in client response
-            client_data = result.get("client", {})
-            sessions = client_data.get("sessions", [])
+            if not verify_result.get("verified"):
+                return AuthResponse(success=False, error="Invalid password")
 
-            # Find active session
-            active_session = None
-            for session in sessions:
-                if session.get("status") == "active":
-                    active_session = session
+            # Step 3: Get user's primary email
+            primary_email = None
+            email_addresses = user.get("email_addresses", [])
+            for email_obj in email_addresses:
+                if email_obj.get("id") == user.get("primary_email_address_id"):
+                    primary_email = email_obj.get("email_address")
                     break
 
-            if active_session:
-                return AuthResponse(
-                    success=True,
-                    session_id=active_session.get("id"),
-                    user_id=active_session.get("user", {}).get("id"),
-                    token=active_session.get("last_active_token", {}).get("jwt"),
-                )
+            if not primary_email and email_addresses:
+                primary_email = email_addresses[0].get("email_address")
 
-            # Check sign_in response status
-            sign_in = result.get("response", result)
-            if sign_in.get("status") == "complete":
-                # Get session from created_session_id
-                return AuthResponse(
-                    success=True,
-                    session_id=sign_in.get("created_session_id"),
-                    user_id=client_data.get("sessions", [{}])[0].get("user", {}).get("id"),
-                    token=client_data.get("sessions", [{}])[0].get("last_active_token", {}).get("jwt"),
-                )
-
+            # Return success with user info
+            # Note: For a full implementation, you'd create a session token here
+            # For now, we return user_id which the app can use for authenticated requests
             return AuthResponse(
-                success=False,
-                error=f"Sign in incomplete: {sign_in.get('status', 'unknown')}"
+                success=True,
+                user_id=user_id,
+                email=primary_email,
+                # session_id and token would require additional Clerk API calls
+                # The app can use user_id + email for its own session management
             )
 
         except httpx.HTTPError as e:
@@ -113,53 +125,65 @@ async def mobile_sign_in(request: SignInRequest):
 async def mobile_sign_up(request: SignUpRequest):
     """
     Sign up via Clerk Backend API.
-    Used by mobile apps to bypass CORS restrictions.
+    Creates a new user directly without email verification.
     """
     if not CLERK_SECRET_KEY:
         raise HTTPException(status_code=500, detail="Clerk secret key not configured")
 
     async with httpx.AsyncClient() as client:
         try:
-            # Step 1: Create sign-up
-            sign_up_response = await client.post(
-                f"{CLERK_API_BASE}/v1/client/sign_ups",
-                data={
-                    "email_address": request.email,
-                    "password": request.password,
-                },
-                headers={
-                    "Authorization": f"Bearer {CLERK_SECRET_KEY}",
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
+            # Check if user already exists
+            existing_response = await client.get(
+                f"{CLERK_BACKEND_API}/users",
+                params={"email_address": request.email},
+                headers=get_clerk_headers(),
             )
 
-            if sign_up_response.status_code != 200:
-                error_data = sign_up_response.json()
+            if existing_response.status_code == 200:
+                existing_users = existing_response.json()
+                if existing_users and len(existing_users) > 0:
+                    return AuthResponse(
+                        success=False,
+                        error="An account with this email already exists"
+                    )
+
+            # Create new user via Backend API
+            create_response = await client.post(
+                f"{CLERK_BACKEND_API}/users",
+                json={
+                    "email_address": [request.email],
+                    "password": request.password,
+                    "skip_password_checks": False,
+                    "skip_password_requirement": False,
+                },
+                headers=get_clerk_headers(),
+            )
+
+            if create_response.status_code not in [200, 201]:
+                error_data = create_response.json()
                 error_msg = error_data.get("errors", [{}])[0].get(
-                    "long_message", "Sign up failed"
+                    "long_message", "Failed to create account"
                 )
                 return AuthResponse(success=False, error=error_msg)
 
-            result = sign_up_response.json()
-            sign_up = result.get("response", result)
-            client_data = result.get("client", {})
+            user = create_response.json()
+            user_id = user.get("id")
 
-            # Check if sign-up is complete (no email verification required)
-            if sign_up.get("status") == "complete":
-                sessions = client_data.get("sessions", [])
-                active_session = sessions[0] if sessions else {}
+            # Get primary email
+            primary_email = None
+            email_addresses = user.get("email_addresses", [])
+            for email_obj in email_addresses:
+                if email_obj.get("id") == user.get("primary_email_address_id"):
+                    primary_email = email_obj.get("email_address")
+                    break
 
-                return AuthResponse(
-                    success=True,
-                    session_id=sign_up.get("created_session_id") or active_session.get("id"),
-                    user_id=active_session.get("user", {}).get("id"),
-                    token=active_session.get("last_active_token", {}).get("jwt"),
-                )
+            if not primary_email and email_addresses:
+                primary_email = email_addresses[0].get("email_address")
 
-            # Sign-up needs verification
             return AuthResponse(
-                success=False,
-                error=f"Account created but needs verification: {sign_up.get('status')}"
+                success=True,
+                user_id=user_id,
+                email=primary_email,
             )
 
         except httpx.HTTPError as e:

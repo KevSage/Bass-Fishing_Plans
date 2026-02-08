@@ -106,17 +106,17 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
 
     const result = await signInWithPassword(email, password);
 
-    if (result.success && result.sessionId && result.userId) {
-      // Save to storage
+    if (result.success && result.userId) {
+      // Save to storage - use userId as sessionId if no sessionId provided
       await saveAuth({
-        sessionId: result.sessionId,
+        sessionId: result.sessionId || result.userId,
         userId: result.userId,
         token: result.token || '',
         userEmail: email,
       });
 
       // Update state
-      setSessionId(result.sessionId);
+      setSessionId(result.sessionId || result.userId);
       setUserId(result.userId);
       setUserEmail(email);
       setToken(result.token || null);
@@ -133,17 +133,17 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
 
     const result = await signUpWithPassword(email, password);
 
-    if (result.success && result.status === 'complete' && result.sessionId && result.userId) {
-      // Save to storage
+    if (result.success && result.userId) {
+      // Save to storage - use userId as sessionId if no sessionId provided
       await saveAuth({
-        sessionId: result.sessionId,
+        sessionId: result.sessionId || result.userId,
         userId: result.userId,
         token: result.token || '',
         userEmail: email,
       });
 
       // Update state
-      setSessionId(result.sessionId);
+      setSessionId(result.sessionId || result.userId);
       setUserId(result.userId);
       setUserEmail(email);
       setToken(result.token || null);
