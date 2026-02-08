@@ -18,8 +18,6 @@ import { useSignIn, useAuth } from '@clerk/clerk-expo';
 import { AuthStackParamList } from '@/navigation/AuthNavigator';
 import { colors } from '@/constants/colors';
 import { APP_CONFIG } from '@/constants/config';
-import { BackButton } from '@/components/BackButton';
-
 type NavigationProp = NativeStackNavigationProp<AuthStackParamList, 'SignIn'>;
 
 /**
@@ -31,6 +29,9 @@ export function SignInScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { isLoaded, signIn, setActive } = useSignIn();
   const { isSignedIn } = useAuth();
+
+  // Debug logging
+  console.log('[SignIn] isLoaded:', isLoaded, 'signIn exists:', !!signIn);
 
   // Form state
   const [email, setEmail] = useState('');
@@ -101,14 +102,11 @@ export function SignInScreen() {
         source={require('@/assets/hero_bass.png')}
         style={styles.backgroundImage}
         resizeMode="cover"
+        onError={(e) => console.error('[SignIn] Background image error:', e.nativeEvent.error)}
+        onLoad={() => console.log('[SignIn] Background image loaded successfully')}
       >
         <View style={styles.backgroundOverlay} />
       </ImageBackground>
-
-      {/* Back Button - Safe Area Aware */}
-      <View style={[styles.backButtonContainer, { top: insets.top + 12 }]}>
-        <BackButton onPress={() => navigation.goBack()} />
-      </View>
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
@@ -123,8 +121,14 @@ export function SignInScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Branding */}
+          <View style={styles.brandingContainer}>
+            <Text style={styles.brandTitle}>Bass Clarity</Text>
+            <Text style={styles.brandSubtitle}>AI-Powered Fishing Intelligence</Text>
+          </View>
+
           {/* Title */}
-          <Text style={styles.title}>Welcome Back.</Text>
+          <Text style={styles.title}>Sign In</Text>
 
           {/* Form Card */}
           <View style={styles.formCard}>
@@ -227,11 +231,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  backButtonContainer: {
-    position: 'absolute',
-    left: 16,
-    zIndex: 10,
-  },
   keyboardView: {
     flex: 1,
   },
@@ -240,15 +239,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 36,
+  brandingContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  brandTitle: {
+    fontSize: 38,
     fontWeight: '700',
     color: colors.text.primary,
-    textAlign: 'center',
-    marginBottom: 32,
+    letterSpacing: 1,
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10,
+  },
+  brandSubtitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginTop: 6,
+    letterSpacing: 0.5,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: 20,
   },
   formCard: {
     backgroundColor: 'rgba(20, 20, 25, 0.9)',

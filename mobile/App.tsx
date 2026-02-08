@@ -64,6 +64,13 @@ function ClerkKeyMissing() {
 }
 
 export default function App() {
+  // Debug: Log Clerk key status
+  console.log('[App] Starting app...');
+  console.log('[App] Clerk key present:', !!CLERK_PUBLISHABLE_KEY);
+  console.log('[App] Clerk key length:', CLERK_PUBLISHABLE_KEY?.length);
+  console.log('[App] Clerk key prefix:', CLERK_PUBLISHABLE_KEY?.substring(0, 30));
+  console.log('[App] Raw env key:', process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY?.substring(0, 30));
+
   // Check for Clerk key
   if (!CLERK_PUBLISHABLE_KEY) {
     return (

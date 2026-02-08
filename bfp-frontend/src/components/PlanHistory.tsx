@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { usePlatformAuth } from "@/hooks/usePlatformAuth";
 import {
   MapPinIcon,
   CalendarIcon,
@@ -28,7 +28,7 @@ interface PlanHistoryResponse {
 }
 
 export function PlanHistory() {
-  const { getToken } = useAuth();
+  const { getToken } = usePlatformAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

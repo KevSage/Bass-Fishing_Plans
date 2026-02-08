@@ -1,7 +1,7 @@
 // src/hooks/useMemberStatus.ts
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { usePlatformAuth } from "./usePlatformAuth";
 
 export interface MemberStatus {
   email: string;
@@ -18,7 +18,7 @@ export interface MemberStatus {
 let globalCache: MemberStatus | null = null;
 
 export function useMemberStatus() {
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken, isSignedIn } = usePlatformAuth();
 
   // 2. Initialize State with Cache (Instant Load)
   const [status, setStatus] = useState<MemberStatus | null>(globalCache);

@@ -1,7 +1,8 @@
 import React from "react";
 import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
-import { SignedIn, SignedOut, useAuth } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "./components/PlatformAuth";
 import { isNativePlatform } from "./lib/platform";
+import { usePlatformAuth } from "./hooks/usePlatformAuth";
 import { Navigation } from "./components/Navigation";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
@@ -26,7 +27,7 @@ import { LakeBuilder } from "./pages/LakeBuilder";
  * Root route handler - redirects to sign-in on native platforms
  */
 function RootRoute() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded } = usePlatformAuth();
   const [timedOut, setTimedOut] = React.useState(false);
 
   // Timeout for Clerk loading on native (Clerk often fails in WebView)
@@ -61,10 +62,6 @@ function RootRoute() {
   return <Landing />;
 }
 import { PlanPage } from "./pages/PlanPage";
-import { WeatherClarityPage } from "./pages/WeatherClarity";
-import { PresentationClarityPage } from "./pages/PresentationClarity";
-import { StrategicClarityPage } from "./pages/StrategicClarity";
-import { LocationClarityPage } from "./pages/LocationClarity";
 import { ScrollToTop } from "./components/ScrollToTop";
 
 function TopBar() {
@@ -121,9 +118,6 @@ export default function App() {
         <Route path="/sign-up/" element={<SignUpPage />} />
         <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/location" element={<LocationClarityPage />} />
-        <Route path="/weather" element={<WeatherClarityPage />} />
-        <Route path="/presentation" element={<PresentationClarityPage />} />
         <Route path="/insights" element={<Insights />} />
         <Route path="/lake-builder" element={<LakeBuilder />} />
         <Route

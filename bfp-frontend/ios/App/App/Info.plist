@@ -61,5 +61,14 @@
     
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>Bass Clarity uses your location to show local weather conditions and map data.</string>
+
+    <!-- Allow network requests for Clerk authentication -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+        <key>NSAllowsArbitraryLoadsInWebContent</key>
+        <true/>
+    </dict>
 </dict>
 </plist>

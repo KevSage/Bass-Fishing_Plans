@@ -2,10 +2,22 @@ import React, { useState, useEffect } from "react";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { Link, useNavigate } from "react-router-dom";
 import { BackIcon } from "@/components/UnifiedIcons";
+import { isNativePlatform } from "@/lib/platform";
+import { useNativeAuth } from "@/context/NativeAuthContext";
 
 export default function SignInPage() {
-  const { isLoaded, signIn, setActive } = useSignIn();
-  const { isSignedIn } = useAuth();
+  // Clerk SDK hooks (for web)
+  const { isLoaded: clerkIsLoaded, signIn, setActive } = useSignIn();
+  const { isSignedIn: clerkIsSignedIn } = useAuth();
+
+  // Native auth (for iOS/Android)
+  const nativeAuth = useNativeAuth();
+
+  // Platform-aware state
+  const isNative = isNativePlatform();
+  const isLoaded = isNative ? nativeAuth.isLoaded : clerkIsLoaded;
+  const isSignedIn = isNative ? nativeAuth.isSignedIn : clerkIsSignedIn;
+
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -14,6 +26,13 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [showClerkWarning, setShowClerkWarning] = useState(false);
 
+  // Debug logging
+  console.log("[SignIn] Platform:", isNative ? "native" : "web");
+  console.log("[SignIn] isLoaded:", isLoaded, "isSignedIn:", isSignedIn);
+
+  // On-screen debug info (temporary)
+  const [showDebug, setShowDebug] = useState(true);
+
   // Redirect if already signed in
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -21,13 +40,15 @@ export default function SignInPage() {
     }
   }, [isLoaded, isSignedIn, navigate]);
 
-  // Show warning if Clerk doesn't load within 5 seconds (mobile issue)
+  // Show warning if auth doesn't load within 5 seconds
   useEffect(() => {
     if (!isLoaded) {
       const timer = setTimeout(() => {
         setShowClerkWarning(true);
       }, 5000);
       return () => clearTimeout(timer);
+    } else {
+      setShowClerkWarning(false);
     }
   }, [isLoaded]);
 
@@ -38,11 +59,9 @@ export default function SignInPage() {
       return;
     }
 
-    // Check if Clerk is ready
-    if (!isLoaded || !signIn) {
-      setError(
-        "Authentication is still loading. Please wait a moment and try again.",
-      );
+    // Check if auth is ready
+    if (!isLoaded) {
+      setError("Authentication is still loading. Please wait a moment and try again.");
       return;
     }
 
@@ -50,28 +69,45 @@ export default function SignInPage() {
     setError("");
 
     try {
-      const result = await signIn.create({
-        identifier: email,
-        password,
-      });
+      if (isNative) {
+        // Use native direct API
+        console.log("[SignIn] Using native auth...");
+        const result = await nativeAuth.signIn(email, password);
 
-      console.log("Sign in result status:", result.status);
-      console.log("Created session ID:", result.createdSessionId);
-
-      // Try to set session regardless of status as long as credentials are correct
-      if (result.createdSessionId) {
-        console.log("✅ Have session ID - setting active session");
-        await setActive({ session: result.createdSessionId });
-        navigate("/members");
-      } else if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        navigate("/members");
+        if (result.success) {
+          console.log("[SignIn] Native sign-in successful");
+          navigate("/members");
+        } else {
+          setError(result.error || "Invalid email or password");
+        }
       } else {
-        // No session ID created - this is a real problem
-        console.error("No session ID available. Status:", result.status);
-        setError(
-          `Unable to sign in. Your account may need attention. Please contact support or try creating a new account.`,
-        );
+        // Use Clerk SDK (web)
+        if (!signIn) {
+          setError("Authentication is still loading. Please wait a moment and try again.");
+          return;
+        }
+
+        const result = await signIn.create({
+          identifier: email,
+          password,
+        });
+
+        console.log("Sign in result status:", result.status);
+        console.log("Created session ID:", result.createdSessionId);
+
+        if (result.createdSessionId) {
+          console.log("✅ Have session ID - setting active session");
+          await setActive({ session: result.createdSessionId });
+          navigate("/members");
+        } else if (result.status === "complete") {
+          await setActive({ session: result.createdSessionId });
+          navigate("/members");
+        } else {
+          console.error("No session ID available. Status:", result.status);
+          setError(
+            `Unable to sign in. Your account may need attention. Please contact support or try creating a new account.`,
+          );
+        }
       }
     } catch (err: any) {
       console.error("Sign in error:", err);
@@ -122,9 +158,9 @@ export default function SignInPage() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url(/images/hero_bass.png)",
+          backgroundImage: "url(/hero_bass.jpg)",
           backgroundSize: "cover",
-          backgroundPosition: "65% 45%",
+          backgroundPosition: "right center",
           opacity: 1,
           filter: "brightness(0.85)",
           zIndex: 0,
@@ -139,6 +175,32 @@ export default function SignInPage() {
           zIndex: 1,
         }}
       />
+
+      {/* Debug Panel (tap to dismiss) */}
+      {showDebug && (
+        <div
+          onClick={() => setShowDebug(false)}
+          style={{
+            position: "absolute",
+            top: "max(50px, env(safe-area-inset-top))",
+            right: 10,
+            zIndex: 100,
+            background: "rgba(0,0,0,0.9)",
+            padding: 10,
+            borderRadius: 8,
+            fontSize: 11,
+            color: "#0f0",
+            fontFamily: "monospace",
+            maxWidth: 200,
+          }}
+        >
+          <div>Platform: {isNative ? "NATIVE" : "WEB"}</div>
+          <div>isLoaded: {isLoaded ? "YES" : "NO"}</div>
+          <div>isSignedIn: {isSignedIn ? "YES" : "NO"}</div>
+          {!isNative && <div>signIn exists: {signIn ? "YES" : "NO"}</div>}
+          <div style={{ color: "#888", marginTop: 4 }}>tap to dismiss</div>
+        </div>
+      )}
 
       {/* Back Button */}
       <div

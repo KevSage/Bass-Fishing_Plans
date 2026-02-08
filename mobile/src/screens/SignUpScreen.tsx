@@ -175,10 +175,36 @@ export function SignUpScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Branding */}
+          <View style={styles.brandingContainer}>
+            <Text style={styles.brandTitle}>Bass Clarity</Text>
+            <Text style={styles.brandSubtitle}>AI-Powered Fishing Intelligence</Text>
+          </View>
+
           {/* Title */}
           <Text style={styles.title}>
-            {verifying ? 'Verify Email' : 'Create Account'}
+            {verifying ? 'Verify Email' : 'Get Started Free'}
           </Text>
+
+          {!verifying && (
+            /* Pro Features List */
+            <View style={styles.featuresContainer}>
+              {[
+                'AI-powered fishing plans',
+                'Real-time weather & conditions',
+                'Lake scouting on any water',
+                'Personalized lure recommendations',
+              ].map((feature, index) => (
+                <View key={index} style={styles.featureRow}>
+                  <View style={styles.featureCheck}>
+                    <Text style={styles.featureCheckText}>✓</Text>
+                  </View>
+                  <Text style={styles.featureText}>{feature}</Text>
+                </View>
+              ))}
+              <Text style={styles.freeNote}>Free during beta • No credit card required</Text>
+            </View>
+          )}
 
           {/* Form Card */}
           <View style={styles.formCard}>
@@ -306,14 +332,33 @@ export function SignUpScreen() {
                   )}
                 </TouchableOpacity>
 
-                {/* Back to Sign Up */}
-                <TouchableOpacity
-                  style={styles.backLink}
-                  onPress={handleBackToSignUp}
-                  disabled={loading}
-                >
-                  <Text style={styles.backLinkText}>← Back to sign up</Text>
-                </TouchableOpacity>
+                {/* Resend & Back Links */}
+                <View style={styles.verifyLinksRow}>
+                  <TouchableOpacity
+                    onPress={handleBackToSignUp}
+                    disabled={loading}
+                  >
+                    <Text style={styles.backLinkText}>← Back</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={async () => {
+                      if (!signUp) return;
+                      setLoading(true);
+                      setError('');
+                      try {
+                        await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+                        setError('');
+                      } catch (err: any) {
+                        setError(err.errors?.[0]?.message || 'Failed to resend code');
+                      } finally {
+                        setLoading(false);
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    <Text style={styles.resendLinkText}>Resend code</Text>
+                  </TouchableOpacity>
+                </View>
               </>
             )}
           </View>
@@ -356,15 +401,65 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
-  title: {
-    fontSize: 36,
+  brandingContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  brandTitle: {
+    fontSize: 34,
     fontWeight: '700',
     color: colors.text.primary,
-    textAlign: 'center',
-    marginBottom: 32,
+    letterSpacing: 1,
     textShadowColor: 'rgba(0,0,0,0.5)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10,
+  },
+  brandSubtitle: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: '600',
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  featuresContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  featureCheck: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  featureCheckText: {
+    color: colors.text.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  featureText: {
+    color: colors.text.secondary,
+    fontSize: 15,
+  },
+  freeNote: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginTop: 12,
   },
   formCard: {
     backgroundColor: 'rgba(20, 20, 25, 0.9)',
@@ -475,5 +570,18 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontSize: 14,
     fontWeight: '500',
+  },
+  verifyLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingHorizontal: 4,
+  },
+  resendLinkText: {
+    color: colors.text.muted,
+    fontSize: 14,
+    fontWeight: '500',
+    textDecorationLine: 'underline',
   },
 });

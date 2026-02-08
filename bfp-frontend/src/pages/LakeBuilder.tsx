@@ -10,7 +10,7 @@ import React, {
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useUser, useAuth } from "@clerk/clerk-react";
+import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
 import { MapOrb } from "../components/MapOrb";
 
 // --- API ---
@@ -108,8 +108,8 @@ function calculateAcres(coords: { lat: number; lng: number }[]): number {
 export function LakeBuilder() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { user } = useUser();
-  const { getToken } = useAuth();
+  const { user } = usePlatformUser();
+  const { getToken } = usePlatformAuth();
 
   // Redirect if no state (direct URL access)
   useEffect(() => {

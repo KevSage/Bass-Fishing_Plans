@@ -7,7 +7,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { useUser, useAuth } from "@clerk/clerk-react";
+import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -578,8 +578,8 @@ function findNearestFavorite(
 // =============================================================================
 
 export function Members() {
-  const { user } = useUser();
-  const { getToken } = useAuth();
+  const { user } = usePlatformUser();
+  const { getToken } = usePlatformAuth();
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
   const location = useLocation();

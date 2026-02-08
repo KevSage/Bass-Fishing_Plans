@@ -1,7 +1,7 @@
-import { useUser, useClerk, useAuth } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PlanHistory } from "../components/PlanHistory";
+import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -163,9 +163,8 @@ interface MemberStatus {
 }
 
 export function Account() {
-  const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
-  const { getToken } = useAuth();
+  const { user, isLoaded } = usePlatformUser();
+  const { signOut, getToken } = usePlatformAuth();
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
     null,

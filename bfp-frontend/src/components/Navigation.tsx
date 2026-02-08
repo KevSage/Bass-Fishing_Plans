@@ -1,14 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  useUser,
-  useClerk,
-  useAuth,
-  SignedIn,
-  SignedOut,
-} from "@clerk/clerk-react";
 import { createPortal } from "react-dom";
 import { MapOrb } from "./MapOrb";
+import { SignedIn, SignedOut } from "./PlatformAuth";
+import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
 
 // Define API Base for status check
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -20,9 +15,8 @@ export function Navigation() {
   const [isPro, setIsPro] = useState(false);
 
   const location = useLocation();
-  const { user } = useUser();
-  const { getToken, isSignedIn, isLoaded } = useAuth(); // Add isLoaded
-  const { signOut } = useClerk();
+  const { user } = usePlatformUser();
+  const { getToken, isSignedIn, isLoaded, signOut } = usePlatformAuth();
   const navigate = useNavigate();
 
   // --- CONTEXTUAL ORB LOGIC ---

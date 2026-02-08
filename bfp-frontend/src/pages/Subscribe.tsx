@@ -2,13 +2,36 @@ import React, { useState, useEffect } from "react";
 import { useAuth, useUser, useSignUp } from "@clerk/clerk-react";
 import { Link, useNavigate } from "react-router-dom";
 import { BackIcon } from "@/components/UnifiedIcons";
+import { isNativePlatform } from "@/lib/platform";
+import { useNativeAuth } from "@/context/NativeAuthContext";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export function Subscribe() {
-  const { isSignedIn, getToken } = useAuth();
-  const { user } = useUser();
-  const { isLoaded, signUp, setActive } = useSignUp();
+  // Clerk SDK hooks (for web)
+  const { isSignedIn: clerkIsSignedIn, getToken: clerkGetToken } = useAuth();
+  const { user: clerkUser } = useUser();
+  const { isLoaded: clerkIsLoaded, signUp, setActive } = useSignUp();
+
+  // Native auth (for iOS/Android)
+  const nativeAuth = useNativeAuth();
+
+  // Platform-aware state
+  const isNative = isNativePlatform();
+  const isLoaded = isNative ? nativeAuth.isLoaded : clerkIsLoaded;
+  const isSignedIn = isNative ? nativeAuth.isSignedIn : clerkIsSignedIn;
+  const userEmail = isNative
+    ? nativeAuth.userEmail
+    : clerkUser?.primaryEmailAddress?.emailAddress;
+
+  // Platform-aware getToken
+  const getToken = async () => {
+    if (isNative) {
+      return nativeAuth.getToken();
+    }
+    return clerkGetToken();
+  };
+
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
@@ -20,6 +43,10 @@ export function Subscribe() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showSignUpForm, setShowSignUpForm] = useState(true); // Show form by default
+
+  // Debug logging
+  console.log("[Subscribe] Platform:", isNative ? "native" : "web");
+  console.log("[Subscribe] isLoaded:", isLoaded, "isSignedIn:", isSignedIn);
 
   // Check if user is already a member
   useEffect(() => {
@@ -82,7 +109,7 @@ export function Subscribe() {
       return;
     }
 
-    if (!isLoaded || !signUp) {
+    if (!isLoaded) {
       setError("Authentication is still loading. Please wait a moment.");
       return;
     }
@@ -91,22 +118,41 @@ export function Subscribe() {
     setError("");
 
     try {
-      // Create account
-      const result = await signUp.create({
-        emailAddress: email,
-        password,
-      });
+      if (isNative) {
+        // Use native direct API
+        console.log("[Subscribe] Using native auth for sign-up...");
+        const result = await nativeAuth.signUp(email, password);
 
-      // Since email verification is disabled, account should be complete immediately
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-        // After creating account, reload to show subscription option
-        window.location.reload();
+        if (result.success) {
+          console.log("[Subscribe] Native sign-up successful");
+          // After creating account, reload to show subscription option
+          window.location.reload();
+        } else {
+          setError(result.error || "Failed to create account");
+        }
       } else {
-        // Fallback if somehow verification is required
-        setError(
-          "Account created but needs verification. Please check your email.",
-        );
+        // Use Clerk SDK (web)
+        if (!signUp) {
+          setError("Authentication is still loading. Please wait a moment.");
+          return;
+        }
+
+        const result = await signUp.create({
+          emailAddress: email,
+          password,
+        });
+
+        // Since email verification is disabled, account should be complete immediately
+        if (result.status === "complete") {
+          await setActive({ session: result.createdSessionId });
+          // After creating account, reload to show subscription option
+          window.location.reload();
+        } else {
+          // Fallback if somehow verification is required
+          setError(
+            "Account created but needs verification. Please check your email.",
+          );
+        }
       }
     } catch (err: any) {
       const errorMessage =
@@ -130,12 +176,34 @@ export function Subscribe() {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
+        position: "relative",
         color: "#fff",
         padding: "80px 20px 60px",
+        overflow: "hidden",
       }}
     >
-      <div style={{ maxWidth: 640, margin: "0 auto" }}>
+      {/* Background Image */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: "url(/hero_bass.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "right center",
+          filter: "brightness(0.7)",
+          zIndex: 0,
+        }}
+      />
+      {/* Gradient Overlay */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(to bottom, rgba(10,10,10,0.6) 0%, rgba(26,26,46,0.9) 100%)",
+          zIndex: 1,
+        }}
+      />
+      <div style={{ maxWidth: 640, margin: "0 auto", position: "relative", zIndex: 2 }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <div
@@ -497,7 +565,7 @@ export function Subscribe() {
                     marginTop: 16,
                   }}
                 >
-                  {user?.primaryEmailAddress?.emailAddress}
+                  {userEmail}
                 </div>
               </div>
 
@@ -555,7 +623,7 @@ export function Subscribe() {
                 <div
                   style={{ fontSize: "1.1rem", fontWeight: 600, color: "#fff" }}
                 >
-                  {user?.primaryEmailAddress?.emailAddress}
+                  {userEmail}
                 </div>
               </div>
 

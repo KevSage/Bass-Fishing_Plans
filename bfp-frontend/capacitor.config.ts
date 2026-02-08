@@ -13,20 +13,32 @@ const config: CapacitorConfig = {
     allowsLinkPreview: true,
     // Handle safe areas properly
     scrollEnabled: true,
+    // Allow loading from any origin (helps with Clerk auth)
+    limitsNavigationsToAppBoundDomains: false,
   },
 
   // Server configuration
   server: {
+    // Use bassclarity.com as hostname so Origin header matches Clerk's expected domain
+    hostname: 'bassclarity.com',
+    iosScheme: 'https',
     // Allow external domains for API calls, Clerk auth, and maps
     allowNavigation: [
       'bassclarity.onrender.com',
       '*.mapbox.com',
+      // Clerk authentication domains
+      'tolerant-skylark-94.clerk.accounts.dev',
       '*.clerk.accounts.dev',
       '*.clerk.com',
       'clerk.com',
       'api.clerk.com',
       'api.clerk.dev',
+      'clerk.shared.lcl.dev',
+      '*.clerkstage.dev',
+      '*.lclclerk.com',
+      // CDN and infrastructure
       '*.cloudflare.com',
+      '*.cloudfront.net',
     ],
   },
 

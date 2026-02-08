@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useUser, SignedIn, SignedOut } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "@/components/PlatformAuth";
+import { usePlatformUser } from "@/hooks/usePlatformAuth";
 
 export function Success() {
-  const { user } = useUser();
+  const { user } = usePlatformUser();
   const [email, setEmail] = useState<string>("");
 
   useEffect(() => {

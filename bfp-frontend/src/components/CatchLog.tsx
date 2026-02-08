@@ -27,7 +27,7 @@ import {
 } from "@/components/UnifiedIcons";
 
 // API and EXIF imports
-import { useAuth } from "@clerk/clerk-react";
+import { usePlatformAuth } from "@/hooks/usePlatformAuth";
 import {
   createCatch,
   listCatches,
@@ -516,7 +516,7 @@ export function useCatchLog(
   activeLake: ActiveLake,
   options?: { disableListView?: boolean },
 ) {
-  const { getToken, isSignedIn } = useAuth();
+  const { getToken, isSignedIn } = usePlatformAuth();
   const OFFLINE_KEY = "offline_catches";
 
   const [state, setState] = useState<CatchLogState>(() => {
@@ -1420,7 +1420,7 @@ export function CatchFormView({
   initialCoords,
   initialDateTime,
 }: CatchFormViewProps) {
-  const { getToken } = useAuth();
+  const { getToken } = usePlatformAuth();
   const [isResolving, setIsResolving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isAutoResolving, setIsAutoResolving] = useState(false);
