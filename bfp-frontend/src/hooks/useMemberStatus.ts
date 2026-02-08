@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePlatformAuth } from "./usePlatformAuth";
+import { isNativePlatform } from "@/lib/platform";
 
 export interface MemberStatus {
   email: string;
@@ -35,6 +36,24 @@ export function useMemberStatus() {
       setLoading(false);
       globalCache = null; // Clear cache on logout
       setStatus(null);
+      return;
+    }
+
+    // On native platforms, return mock member status (FREE_MODE is enabled)
+    // This bypasses the Clerk JWT requirement for mobile
+    if (isNativePlatform()) {
+      const mockStatus: MemberStatus = {
+        email: "mobile@user.local",
+        is_member: true,
+        has_subscription: true,
+        rate_limit_allowed: true,
+        rate_limit_seconds: 0,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+      };
+      globalCache = mockStatus;
+      setStatus(mockStatus);
+      setLoading(false);
       return;
     }
 

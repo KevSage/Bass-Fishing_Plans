@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { MapOrb } from "./MapOrb";
 import { SignedIn, SignedOut } from "./PlatformAuth";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
+import { isNativePlatform } from "@/lib/platform";
 
 // Define API Base for status check
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -42,6 +43,12 @@ export function Navigation() {
   // Check Pro Status on Mount
   useEffect(() => {
     if (isSignedIn) {
+      // On native platforms, assume Pro status (FREE_MODE is enabled)
+      if (isNativePlatform()) {
+        setIsPro(true);
+        return;
+      }
+
       const checkStatus = async () => {
         try {
           const token = await getToken();
@@ -60,7 +67,8 @@ export function Navigation() {
     } else {
       setIsPro(false);
     }
-  }, [isSignedIn, getToken]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
 
   const publicLinks = useMemo(
     () => [
