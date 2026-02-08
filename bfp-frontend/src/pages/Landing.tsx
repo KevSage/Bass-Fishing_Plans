@@ -354,7 +354,7 @@ export function Landing() {
             </h1>
             <p
               style={{
-                fontSize: "1.1rem",
+                fontSize: "1.2rem",
                 lineHeight: 1.6,
                 opacity: 0.75,
                 maxWidth: "600px",
@@ -362,8 +362,42 @@ export function Landing() {
                 color: "#fff",
               }}
             >
-              Start free or upgrade to Pro for $10/mo to unlock unlimited AI
-              fishing plans
+              Bass Clarity is now Open and Free for All Anglers
+            </p>
+            <p
+              style={{
+                fontSize: ".9rem",
+                lineHeight: 1.3,
+                opacity: 0.75,
+                maxWidth: "600px",
+                margin: "0 auto 32px",
+                color: "#fff",
+              }}
+            >
+              If you find value in the platform and want to support the
+              developer, there is an optional subscription or you can support
+              <a
+                href="https://gofund.me/817e0cce5"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#4A90E2",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "2px",
+                  transition: "color 0.2s, opacity 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#60a5fa";
+                  e.currentTarget.style.opacity = "1";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#4A90E2";
+                  e.currentTarget.style.opacity = "1";
+                }}
+              >
+                {" "}
+                here.
+              </a>
             </p>
           </Reveal>
 
@@ -396,7 +430,7 @@ export function Landing() {
                   "0 10px 30px rgba(74, 144, 226, 0.3)";
               }}
             >
-              Get Started
+              Full Access - Free
               <svg
                 width="20"
                 height="20"
@@ -546,7 +580,7 @@ export function Landing() {
                   left: "3.1%",
                   width: "97%",
                   height: "92.4%",
-                  borderRadius: "90px",
+                  borderRadius: "75px",
                   overflow: "hidden",
                   zIndex: 1,
                   background: "rgba(0,0,0,0.25)",
@@ -706,7 +740,7 @@ export function Landing() {
                     left: "2.2%",
                     width: "94.6%",
                     height: "92.4%",
-                    borderRadius: "42px",
+                    borderRadius: "72px",
                     overflow: "hidden",
                     zIndex: 1,
                     background: "rgba(0,0,0,0.25)",

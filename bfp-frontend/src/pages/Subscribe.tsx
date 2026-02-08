@@ -37,12 +37,15 @@ export function Subscribe() {
   const [loading, setLoading] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [isMember, setIsMember] = useState(false);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
 
   // Sign up form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showSignUpForm, setShowSignUpForm] = useState(true); // Show form by default
+  const [verifying, setVerifying] = useState(false);
+  const [code, setCode] = useState("");
 
   // Debug logging
   console.log("[Subscribe] Platform:", isNative ? "native" : "web");
@@ -61,6 +64,9 @@ export function Subscribe() {
           if (res.ok) {
             const data = await res.json();
             setIsMember(data.is_member);
+            // Check if user has actual paid subscription (not just FREE_MODE access)
+            const subStatus = data.subscription_status;
+            setHasActiveSubscription(subStatus === "active" || subStatus === "trialing");
           }
         } catch (err) {
           console.error("Failed to check status", err);
@@ -119,7 +125,7 @@ export function Subscribe() {
 
     try {
       if (isNative) {
-        // Use native direct API
+        // Use native direct API (no email verification for mobile)
         console.log("[Subscribe] Using native auth for sign-up...");
         const result = await nativeAuth.signUp(email, password);
 
@@ -131,34 +137,64 @@ export function Subscribe() {
           setError(result.error || "Failed to create account");
         }
       } else {
-        // Use Clerk SDK (web)
+        // Use Clerk SDK (web) with email verification
         if (!signUp) {
           setError("Authentication is still loading. Please wait a moment.");
           return;
         }
 
-        const result = await signUp.create({
+        // Create account
+        await signUp.create({
           emailAddress: email,
           password,
         });
 
-        // Since email verification is disabled, account should be complete immediately
-        if (result.status === "complete") {
-          await setActive({ session: result.createdSessionId });
-          // After creating account, reload to show subscription option
-          window.location.reload();
-        } else {
-          // Fallback if somehow verification is required
-          setError(
-            "Account created but needs verification. Please check your email.",
-          );
-        }
+        // Send verification email
+        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+
+        // Show verification form
+        setVerifying(true);
       }
     } catch (err: any) {
       const errorMessage =
         err.errors?.[0]?.longMessage ||
         err.errors?.[0]?.message ||
         "Failed to create account";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!code) {
+      setError("Please enter the verification code");
+      return;
+    }
+
+    if (!isLoaded || !signUp) {
+      setError("Please wait a moment and try again");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await signUp.attemptEmailAddressVerification({ code });
+
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        // Navigate to members area with welcome flag
+        navigate("/members?welcome=true");
+      } else {
+        setError("Verification incomplete. Please try again.");
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        "Invalid verification code";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -326,8 +362,179 @@ export function Subscribe() {
           }}
         >
           {!isSignedIn ? (
-            // STATE 1: GUEST USER - Show Sign Up Form
-            showSignUpForm ? (
+            // STATE 1: GUEST USER - Show Sign Up Form or Verification
+            verifying ? (
+              // VERIFICATION FORM
+              <div>
+                <h3
+                  style={{
+                    fontSize: "1.2rem",
+                    marginBottom: 8,
+                    fontWeight: 700,
+                  }}
+                >
+                  Verify Your Email
+                </h3>
+                <p
+                  style={{
+                    opacity: 0.6,
+                    marginBottom: 24,
+                    fontSize: "0.95rem",
+                  }}
+                >
+                  We sent a code to{" "}
+                  <strong style={{ color: "#fff" }}>{email}</strong>
+                </p>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                    textAlign: "left",
+                  }}
+                >
+                  {error && (
+                    <div
+                      style={{
+                        color: "#ff6b6b",
+                        fontSize: "0.9rem",
+                        background: "rgba(255,0,0,0.1)",
+                        padding: 12,
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,107,107,0.2)",
+                      }}
+                    >
+                      {error}
+                    </div>
+                  )}
+
+                  <div>
+                    <label
+                      htmlFor="code"
+                      style={{
+                        color: "rgba(255,255,255,0.7)",
+                        fontSize: "0.85rem",
+                        marginBottom: 6,
+                        display: "block",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Verification Code
+                    </label>
+                    <input
+                      id="code"
+                      type="text"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter" && !loading) {
+                          e.preventDefault();
+                          handleVerify();
+                        }
+                      }}
+                      placeholder="Enter 6-digit code"
+                      autoComplete="one-time-code"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: 8,
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(0,0,0,0.3)",
+                        color: "white",
+                        fontSize: "1rem",
+                        outline: "none",
+                        letterSpacing: "0.3em",
+                        textAlign: "center",
+                      }}
+                      disabled={loading}
+                      maxLength={6}
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleVerify}
+                    disabled={loading}
+                    style={{
+                      width: "100%",
+                      padding: "18px 24px",
+                      fontSize: "1.1rem",
+                      fontWeight: 700,
+                      background: loading
+                        ? "rgba(74, 144, 226, 0.3)"
+                        : "#4A90E2",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 16,
+                      cursor: loading ? "not-allowed" : "pointer",
+                      marginTop: 8,
+                    }}
+                  >
+                    {loading ? "Verifying..." : "Verify Email"}
+                  </button>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginTop: 4,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setVerifying(false);
+                        setCode("");
+                        setError("");
+                      }}
+                      disabled={loading}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#4A90E2",
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      ← Back to sign up
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!signUp) return;
+                        setLoading(true);
+                        setError("");
+                        try {
+                          await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+                          setError(""); // Clear any previous error
+                          alert("Verification code resent!");
+                        } catch (err: any) {
+                          setError(err.errors?.[0]?.message || "Failed to resend code");
+                        } finally {
+                          setLoading(false);
+                        }
+                      }}
+                      disabled={loading}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "rgba(255,255,255,0.5)",
+                        fontSize: "0.85rem",
+                        fontWeight: 500,
+                        cursor: loading ? "not-allowed" : "pointer",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      Resend code
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : showSignUpForm ? (
+              // SIGN UP FORM
               <div>
                 <h3
                   style={{
@@ -538,8 +745,8 @@ export function Subscribe() {
                 </p>
               </div>
             )
-          ) : isMember ? (
-            // STATE 3: ALREADY A MEMBER
+          ) : hasActiveSubscription ? (
+            // STATE 3: ALREADY SUBSCRIBED
             <div>
               <div style={{ marginBottom: 24 }}>
                 <div
@@ -555,7 +762,7 @@ export function Subscribe() {
                     fontWeight: 700,
                   }}
                 >
-                  <span>✓</span> Active Member
+                  <span>✓</span> Active Subscriber
                 </div>
                 <div
                   style={{
@@ -569,6 +776,18 @@ export function Subscribe() {
                 </div>
               </div>
 
+              <p
+                style={{
+                  opacity: 0.7,
+                  marginBottom: 24,
+                  fontSize: "0.95rem",
+                  lineHeight: 1.6,
+                }}
+              >
+                Thank you for supporting Bass Clarity! Your subscription helps
+                keep the app running and improving.
+              </p>
+
               <Link to="/members">
                 <button
                   style={{
@@ -576,21 +795,18 @@ export function Subscribe() {
                     padding: "18px 24px",
                     fontSize: "1.1rem",
                     fontWeight: 700,
-                    background: "rgba(255, 255, 255, 0.1)",
-                    border: "1px solid rgba(255,255,255,0.2)",
+                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    border: "none",
                     borderRadius: 16,
                     color: "#fff",
                     cursor: "pointer",
                     transition: "all 0.2s",
+                    boxShadow: "0 10px 30px rgba(74, 144, 226, 0.25)",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.15)";
                     e.currentTarget.style.transform = "translateY(-2px)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      "rgba(255, 255, 255, 0.1)";
                     e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
@@ -599,11 +815,116 @@ export function Subscribe() {
               </Link>
 
               <p style={{ marginTop: 16, fontSize: "0.85rem", opacity: 0.4 }}>
-                You are already subscribed.{" "}
                 <Link to="/account" style={{ color: "#4A90E2" }}>
-                  Manage Billing
+                  Manage Subscription
                 </Link>
               </p>
+            </div>
+          ) : isMember ? (
+            // STATE 2B: MEMBER (FREE ACCESS) - CAN OPTIONALLY SUBSCRIBE
+            <div>
+              <div style={{ marginBottom: 24 }}>
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "rgba(34, 197, 94, 0.1)",
+                    color: "#4ade80",
+                    padding: "6px 16px",
+                    borderRadius: 99,
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  <span>✓</span> Account Active
+                </div>
+                <div
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 600,
+                    color: "#fff",
+                    marginTop: 16,
+                  }}
+                >
+                  {userEmail}
+                </div>
+              </div>
+
+              <p
+                style={{
+                  opacity: 0.7,
+                  marginBottom: 24,
+                  fontSize: "0.95rem",
+                  lineHeight: 1.6,
+                }}
+              >
+                You have full access to Bass Clarity! Subscriptions are optional
+                and help support continued development.
+              </p>
+
+              <button
+                onClick={handleSubscribe}
+                disabled={loading || checkingStatus}
+                style={{
+                  width: "100%",
+                  padding: "18px 24px",
+                  fontSize: "1.1rem",
+                  fontWeight: 700,
+                  background:
+                    loading || checkingStatus
+                      ? "rgba(74, 144, 226, 0.3)"
+                      : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                  border: "none",
+                  borderRadius: 16,
+                  color: "#fff",
+                  cursor: loading || checkingStatus ? "not-allowed" : "pointer",
+                  transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                  boxShadow:
+                    "0 10px 30px rgba(74, 144, 226, 0.25), inset 0 1px 1px rgba(255,255,255,0.2)",
+                  marginBottom: 12,
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading && !checkingStatus)
+                    e.currentTarget.style.transform =
+                      "translateY(-2px) scale(1.01)";
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading && !checkingStatus)
+                    e.currentTarget.style.transform = "translateY(0) scale(1)";
+                }}
+              >
+                {checkingStatus
+                  ? "Checking..."
+                  : loading
+                    ? "Preparing Checkout..."
+                    : "Support Bass Clarity - $10/month"}
+              </button>
+
+              <Link to="/members">
+                <button
+                  style={{
+                    width: "100%",
+                    padding: "16px 24px",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    background: "transparent",
+                    border: "1px solid rgba(255,255,255,0.2)",
+                    borderRadius: 16,
+                    color: "#fff",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  Continue to Map →
+                </button>
+              </Link>
             </div>
           ) : (
             // STATE 2: LOGGED IN BUT NOT PAID

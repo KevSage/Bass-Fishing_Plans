@@ -137,9 +137,9 @@ export type PlanViewResponse = {
 };
 
 export type RateLimitError = {
-  error: "rate_limit_member";
+  error: "rate_limit_preview" | "rate_limit_member" | "rate_limit_daily";
   message: string;
-  seconds_remaining: number;
+  seconds_remaining?: number;
 };
 
 // --- LEGACY TYPES (Keep for safety, but marked as legacy) ---
