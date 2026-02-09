@@ -10,6 +10,7 @@ import { Subscribe } from "./pages/Subscribe";
 // import { PreviewEnhanced } from "./pages/Preview";
 import { Members } from "./pages/Members";
 import { Insights } from "./pages/Insights";
+import { Journey } from "./pages/Journey";
 // import { HowToUse } from "./pages/HowToUse";
 import { FAQ } from "./pages/FAQ";
 import SignInPage from "./pages/SignIn";
@@ -119,6 +120,8 @@ export default function App() {
         <Route path="/sign-up/verify-email-address" element={<VerifyEmail />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/insights" element={<Insights />} />
+        <Route path="/journey" element={<Journey />} />
+
         <Route path="/lake-builder" element={<LakeBuilder />} />
         <Route
           path="/members"

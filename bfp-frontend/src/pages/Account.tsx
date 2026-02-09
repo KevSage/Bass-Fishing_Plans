@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PlanHistory } from "../components/PlanHistory";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
+import { useNativeAuth } from "@/context/NativeAuthContext";
+import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -165,6 +167,7 @@ interface MemberStatus {
 export function Account() {
   const { user, isLoaded } = usePlatformUser();
   const { signOut, getToken } = usePlatformAuth();
+  const nativeAuth = useNativeAuth();
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(
     null,
@@ -175,21 +178,52 @@ export function Account() {
 
   useEffect(() => {
     const fetchSubscription = async () => {
-      if (!isLoaded || !user) return;
+      // For native platform, check nativeAuth instead of user
+      if (isNativePlatform()) {
+        if (!nativeAuth.isSignedIn || !nativeAuth.userEmail || !nativeAuth.userId) {
+          setLoading(false);
+          return;
+        }
+      } else {
+        if (!isLoaded || !user) return;
+      }
 
       try {
-        const token = await getToken();
-        const response = await fetch(`${API_BASE}/members/status`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        let data: MemberStatus;
 
-        if (!response.ok)
-          throw new Error("Failed to fetch subscription status");
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          // Use mobile endpoint for native platforms
+          console.log('[Account] Fetching member status via mobile endpoint');
+          const response = await fetch(`${getApiBaseUrl()}/mobile-auth/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: nativeAuth.userEmail,
+              user_id: nativeAuth.userId,
+            }),
+          });
 
-        const data: MemberStatus = await response.json();
+          if (!response.ok) {
+            throw new Error("Failed to fetch subscription status");
+          }
+
+          data = await response.json();
+        } else {
+          // Web platform: use JWT token
+          const token = await getToken();
+          const response = await fetch(`${API_BASE}/members/status`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!response.ok)
+            throw new Error("Failed to fetch subscription status");
+
+          data = await response.json();
+        }
+
         setMemberStatus(data);
 
-        if (data.is_member && data.next_billing_date) {
+        if (data.is_member) {
           let mappedStatus: "active" | "inactive" | "cancelled" | "expired" =
             "active";
           if (data.subscription_status) {
@@ -210,19 +244,20 @@ export function Account() {
                 mappedStatus = "expired";
                 break;
               default:
-                mappedStatus = "inactive";
+                // Default to active for FREE_MODE (no subscription_status)
+                mappedStatus = "active";
             }
           }
 
           setSubscription({
             status: mappedStatus,
-            nextBillingDate: new Date(
-              data.next_billing_date * 1000,
-            ).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            }),
+            nextBillingDate: data.next_billing_date
+              ? new Date(data.next_billing_date * 1000).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : undefined,
             plan: data.plan_interval === "year" ? "Annual" : "Monthly",
             price: `$${data.plan_amount || 10}/${data.plan_interval || "mo"}`,
           });
@@ -242,7 +277,7 @@ export function Account() {
     };
 
     fetchSubscription();
-  }, [isLoaded, user?.id]); // getToken removed from deps to prevent loop
+  }, [isLoaded, user?.id, nativeAuth.isSignedIn, nativeAuth.userEmail]); // getToken removed from deps to prevent loop
 
   const handleManageSubscription = async () => {
     try {
@@ -267,7 +302,10 @@ export function Account() {
     navigate("/");
   };
 
-  if (!isLoaded || loading) {
+  // On native, use nativeAuth.isLoaded; on web, use Clerk's isLoaded
+  const authLoaded = isNativePlatform() ? nativeAuth.isLoaded : isLoaded;
+
+  if (!authLoaded || loading) {
     return (
       <div
         style={{
@@ -340,7 +378,7 @@ export function Account() {
           <div>
             <h1 className="header-title">Account</h1>
             <p className="header-email">
-              {user?.primaryEmailAddress?.emailAddress}
+              {isNativePlatform() ? nativeAuth.userEmail : user?.primaryEmailAddress?.emailAddress}
             </p>
           </div>
           {isPro && (

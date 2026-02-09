@@ -3,7 +3,7 @@
  * API client for catch logging endpoints.
  * Talks to FastAPI backend on Render.
  */
-import { getApiBaseUrl } from "./platform";
+import { getApiBaseUrl, isNativePlatform } from "./platform";
 
 // Use platform-aware API base URL
 const getApiBase = () => getApiBaseUrl();
@@ -160,6 +160,29 @@ export async function listCatches(
   offset = 0,
 ): Promise<{ catches: CatchRecord[]; total: number; has_more: boolean }> {
   return apiRequest(`/catches?limit=${limit}&offset=${offset}`, {}, token);
+}
+
+/**
+ * List catches for mobile app using email instead of JWT.
+ * Uses the mobile-auth endpoint that accepts email directly.
+ */
+export async function listCatchesMobile(
+  email: string,
+  userId: string,
+  limit = 500,
+  offset = 0,
+): Promise<{ catches: CatchRecord[]; total: number }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/catches`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, user_id: userId, limit, offset }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch catches: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function getCatch(

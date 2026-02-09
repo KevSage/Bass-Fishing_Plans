@@ -79,8 +79,13 @@ export function Navigation() {
     [],
   );
 
-  const memberLinks = useMemo(() => [{ to: "/account", label: "Account" }], []);
-
+  const memberLinks = useMemo(
+    () => [
+      { to: "/journey", label: "Journey" }, // Added Journey link
+      { to: "/account", label: "Account" },
+    ],
+    [],
+  );
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {

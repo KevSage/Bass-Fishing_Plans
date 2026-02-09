@@ -272,6 +272,72 @@ async def weather_current(lat: float, lon: float):
         raise HTTPException(status_code=500, detail="Weather unavailable")
 
 
+@app.get("/weather/history")
+async def weather_history(lat: float, lon: float, dt: int):
+    """
+    Fetch historical weather for a specific timestamp.
+    Used by CatchLog to get weather at the time a photo was taken.
+
+    Args:
+        lat: Latitude
+        lon: Longitude
+        dt: Unix timestamp (seconds since epoch)
+    """
+    import os
+    import httpx
+    from app.services.weather import degrees_to_cardinal
+
+    api_key = os.getenv("OPENWEATHER_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Weather API not configured")
+
+    try:
+        url = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
+        params = {
+            "lat": lat,
+            "lon": lon,
+            "dt": dt,
+            "appid": api_key,
+            "units": "imperial"
+        }
+
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(url, params=params)
+
+            if resp.status_code != 200:
+                print(f"Weather history API error: {resp.status_code} - {resp.text}")
+                raise HTTPException(status_code=502, detail="Historical weather unavailable")
+
+            data = resp.json()
+
+        # Extract the data point closest to requested time
+        hist_data = data.get("data", [{}])[0] if data.get("data") else {}
+
+        if not hist_data:
+            raise HTTPException(status_code=404, detail="No historical data for this time")
+
+        wind_deg = hist_data.get("wind_deg")
+        weather_desc = hist_data.get("weather", [{}])[0] if hist_data.get("weather") else {}
+
+        return {
+            "temp_f": hist_data.get("temp"),
+            "wind_mph": hist_data.get("wind_speed"),
+            "wind_direction": degrees_to_cardinal(wind_deg),
+            "pressure_mb": hist_data.get("pressure"),
+            "sky_condition": weather_desc.get("main", "Unknown"),
+            "cloud_cover": weather_desc.get("description", "unknown"),
+            "humidity": hist_data.get("humidity"),
+            "historical": True,
+            "timestamp": dt,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Historical weather fetch failed: {e}")
+        raise HTTPException(status_code=500, detail="Weather history unavailable")
+
+
 # ========================================
 # PLAN GENERATION (UNIFIED ENDPOINT)
 # ========================================

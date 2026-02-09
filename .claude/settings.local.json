@@ -28,7 +28,8 @@
       "Bash(file:*)",
       "Bash(python3:*)",
       "Bash(ls:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(open:*)"
     ]
   }
 }

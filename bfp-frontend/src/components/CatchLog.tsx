@@ -28,9 +28,12 @@ import {
 
 // API and EXIF imports
 import { usePlatformAuth } from "@/hooks/usePlatformAuth";
+import { useNativeAuth } from "@/context/NativeAuthContext";
+import { isNativePlatform } from "@/lib/platform";
 import {
   createCatch,
   listCatches,
+  listCatchesMobile,
   deleteCatch as deleteCatchApi,
   updateCatch as updateCatchApi,
   resolveLake,
@@ -48,7 +51,6 @@ import {
 import { compressImage } from "@/lib/image-utils";
 // IMPORT CAPACITOR CAMERA FOR NATIVE iOS/Android
 import {
-  isNativePlatform,
   capturePhoto,
   type CapturedPhoto,
 } from "@/lib/capacitor-camera";
@@ -248,15 +250,47 @@ async function fetchWeatherForLocation(
   if (!API_BASE_URL) return null;
 
   try {
-    // For now, we only use current weather.
-    // In V2, we can check timestamp vs now to decide if we need historical API.
     const cleanLat = Number(lat).toFixed(4);
     const cleanLng = Number(lng).toFixed(4);
 
-    const url = `${API_BASE_URL}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
+    // Check if timestamp is more than 1 hour in the past
+    const catchTime = new Date(timestamp).getTime();
+    const now = Date.now();
+    const oneHourMs = 60 * 60 * 1000;
+    const isHistorical = (now - catchTime) > oneHourMs;
+
+    let url: string;
+    if (isHistorical) {
+      // Use historical weather endpoint
+      const unixTimestamp = Math.floor(catchTime / 1000);
+      url = `${API_BASE_URL}/weather/history?lat=${cleanLat}&lon=${cleanLng}&dt=${unixTimestamp}`;
+      console.log('[Weather] Fetching historical weather for:', new Date(catchTime).toISOString());
+    } else {
+      // Use current weather endpoint
+      url = `${API_BASE_URL}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
+      console.log('[Weather] Fetching current weather');
+    }
 
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn('[Weather] API returned:', res.status);
+      // Fall back to current weather if historical fails
+      if (isHistorical) {
+        console.log('[Weather] Falling back to current weather');
+        const fallbackUrl = `${API_BASE_URL}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
+        const fallbackRes = await fetch(fallbackUrl);
+        if (!fallbackRes.ok) return null;
+        const fallbackJson = await fallbackRes.json();
+        return {
+          temp: fallbackJson.temp_f,
+          windSpeed: fallbackJson.wind_mph,
+          windDir: fallbackJson.wind_direction,
+          pressure: fallbackJson.pressure_mb,
+          skyCondition: fallbackJson.sky_condition,
+        };
+      }
+      return null;
+    }
 
     const json = await res.json();
     return {
@@ -517,6 +551,8 @@ export function useCatchLog(
   options?: { disableListView?: boolean },
 ) {
   const { getToken, isSignedIn } = usePlatformAuth();
+  // Get native auth credentials for mobile endpoints
+  const nativeAuth = useNativeAuth();
   const OFFLINE_KEY = "offline_catches";
 
   const [state, setState] = useState<CatchLogState>(() => {
@@ -566,15 +602,29 @@ export function useCatchLog(
     try {
       const offline = getOfflineCatches();
       let apiEntries: CatchEntry[] = [];
-      const token = await getToken();
-      if (token) {
+
+      // Use mobile endpoint on native platforms
+      if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
         try {
-          const response = await listCatches(token, 500, 0);
+          const response = await listCatchesMobile(nativeAuth.userEmail, nativeAuth.userId, 500, 0);
           apiEntries = response.catches.map(apiRecordToEntry);
           globalEntriesCache = [...offline, ...apiEntries];
           localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
         } catch (apiErr) {
-          console.warn("Background fetch failed:", apiErr);
+          console.warn("Mobile catch fetch failed:", apiErr);
+        }
+      } else {
+        // Web platform: use JWT token
+        const token = await getToken();
+        if (token) {
+          try {
+            const response = await listCatches(token, 500, 0);
+            apiEntries = response.catches.map(apiRecordToEntry);
+            globalEntriesCache = [...offline, ...apiEntries];
+            localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
+          } catch (apiErr) {
+            console.warn("Background fetch failed:", apiErr);
+          }
         }
       }
       setState((s) => ({ ...s, entries: [...offline, ...apiEntries] }));

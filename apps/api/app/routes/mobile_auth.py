@@ -190,3 +190,61 @@ async def mobile_sign_up(request: SignUpRequest):
             return AuthResponse(success=False, error=f"Network error: {str(e)}")
         except Exception as e:
             return AuthResponse(success=False, error=f"Unexpected error: {str(e)}")
+
+
+# =============================================================================
+# MOBILE DATA ENDPOINTS (use email instead of JWT)
+# =============================================================================
+
+class MobileStatusRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+
+
+@router.post("/status")
+async def mobile_member_status(request: MobileStatusRequest):
+    """
+    Get member status for mobile app using email instead of JWT.
+    During FREE_MODE beta, all authenticated mobile users are treated as members.
+    """
+    # For beta/FREE_MODE, return full member access
+    return {
+        "email": request.email,
+        "is_member": True,
+        "has_subscription": True,
+        "rate_limit_allowed": True,
+        "rate_limit_seconds": 0,
+        "stripe_customer_id": None,
+        "stripe_subscription_id": None,
+        "subscription_status": "active",
+        "next_billing_date": None,
+        "cancel_at_period_end": False,
+        "plan_interval": "month",
+        "plan_amount": 10,
+    }
+
+
+class MobileCatchesRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    limit: int = 500
+    offset: int = 0
+
+
+@router.post("/catches")
+async def mobile_list_catches(request: MobileCatchesRequest):
+    """
+    List catches for mobile app using email instead of JWT.
+    """
+    from app.main import catch_store
+
+    try:
+        catches = catch_store.list_by_email(request.email, request.limit, request.offset)
+        return {
+            "catches": catches,
+            "total": len(catches),
+            "limit": request.limit,
+            "offset": request.offset,
+        }
+    except Exception as e:
+        return {"catches": [], "total": 0, "error": str(e)}

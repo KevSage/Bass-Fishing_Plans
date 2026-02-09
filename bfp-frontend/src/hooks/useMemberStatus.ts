@@ -22,12 +22,29 @@ export function useMemberStatus() {
   const { getToken, isSignedIn } = usePlatformAuth();
 
   // 2. Initialize State with Cache (Instant Load)
-  const [status, setStatus] = useState<MemberStatus | null>(globalCache);
+  // On native platforms, skip loading state entirely (FREE_MODE means all are members)
+  const [status, setStatus] = useState<MemberStatus | null>(() => {
+    if (isNativePlatform() && isSignedIn) {
+      return {
+        email: "mobile@user.local",
+        is_member: true,
+        has_subscription: true,
+        rate_limit_allowed: true,
+        rate_limit_seconds: 0,
+        stripe_customer_id: null,
+        stripe_subscription_id: null,
+      };
+    }
+    return globalCache;
+  });
 
   // 3. Smart Loading State:
-  // Only show "loading" if we are signed in AND have no cached data.
-  // If we have cache, we load instantly (loading = false).
-  const [loading, setLoading] = useState(!globalCache && !!isSignedIn);
+  // On native platforms, never show loading (already have mock status)
+  // On web: only show "loading" if signed in AND no cached data
+  const [loading, setLoading] = useState(() => {
+    if (isNativePlatform()) return false;
+    return !globalCache && !!isSignedIn;
+  });
 
   const [error, setError] = useState<string | null>(null);
 

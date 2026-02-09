@@ -62,13 +62,9 @@ body {
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   overflow-x: hidden;
-  padding-top: env(safe-area-inset-top);
+  /* Safe area insets handled by individual components (Navigation, etc.) */
+  /* Only keep bottom padding for content pages */
   padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
-
-  /* Ensures the background color extends to the edge */
-  min-height: 100vh;
 }
 
 /* === LAYOUT === */
