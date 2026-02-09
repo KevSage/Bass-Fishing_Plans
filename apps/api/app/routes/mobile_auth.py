@@ -236,7 +236,9 @@ async def mobile_list_catches(request: MobileCatchesRequest):
     """
     List catches for mobile app using email instead of JWT.
     """
-    from app.main import catch_store
+    from app.services.catches import CatchStore
+
+    catch_store = CatchStore()
 
     try:
         catches = catch_store.list_by_email(request.email, request.limit, request.offset)
@@ -353,7 +355,9 @@ async def mobile_plan_history(request: MobilePlanHistoryRequest):
     """
     List plan history for mobile app using email instead of JWT.
     """
-    from app.main import plan_history_store
+    from app.services.plan_history import PlanHistoryStore
+
+    plan_history_store = PlanHistoryStore()
 
     try:
         plans = plan_history_store.get_user_plans(
