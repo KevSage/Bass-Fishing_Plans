@@ -377,3 +377,145 @@ async def mobile_plan_history(request: MobilePlanHistoryRequest):
         }
     except Exception as e:
         return {"plans": [], "total": 0, "has_more": False, "error": str(e)}
+
+
+# =============================================================================
+# PUSH NOTIFICATION DEVICE REGISTRATION
+# =============================================================================
+
+class RegisterDeviceRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    device_token: str
+    platform: str = "ios"
+
+
+class UnregisterDeviceRequest(BaseModel):
+    device_token: str
+
+
+@router.post("/register-device")
+async def register_device(request: RegisterDeviceRequest):
+    """
+    Register a device token for push notifications.
+    Called after successful sign-in on mobile app.
+    """
+    from app.services.device_tokens import DeviceTokenStore
+    from app.services.user_regions import UserRegionService
+
+    try:
+        # Register the device token
+        device_store = DeviceTokenStore()
+        device_store.register(
+            email=request.email,
+            device_token=request.device_token,
+            platform=request.platform,
+        )
+
+        # Compute/update user's region for weather alerts
+        region_service = UserRegionService()
+        region_service.compute_user_region(request.email)
+
+        return {"success": True, "message": "Device registered for notifications"}
+
+    except Exception as e:
+        print(f"[mobile_auth] register-device error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/unregister-device")
+async def unregister_device(request: UnregisterDeviceRequest):
+    """
+    Unregister a device token (e.g., on sign-out or app uninstall).
+    """
+    from app.services.device_tokens import DeviceTokenStore
+
+    try:
+        device_store = DeviceTokenStore()
+        device_store.unregister(request.device_token)
+        return {"success": True, "message": "Device unregistered"}
+    except Exception as e:
+        print(f"[mobile_auth] unregister-device error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# ADMIN/TEST ENDPOINTS FOR NOTIFICATIONS
+# =============================================================================
+
+CRON_API_KEY = os.getenv("CRON_API_KEY")
+
+
+class CronJobRequest(BaseModel):
+    api_key: str
+
+
+@router.post("/run-weather-alerts")
+async def run_weather_alerts(request: CronJobRequest):
+    """
+    Cron job endpoint for weather alerts.
+    Called by Render Cron Jobs on Wed & Sat mornings.
+
+    Schedule in Render: 0 7 * * 3,6 (7 AM UTC on Wed & Sat)
+    """
+    if not CRON_API_KEY:
+        return {"error": "CRON_API_KEY not configured", "success": False}
+
+    if request.api_key != CRON_API_KEY:
+        return {"error": "Invalid API key", "success": False}
+
+    from app.services.weather_alerts import run_weather_alert_job
+
+    try:
+        results = await run_weather_alert_job()
+        return {
+            "success": True,
+            "results": results,
+        }
+    except Exception as e:
+        print(f"[cron] weather alerts error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/test-weather-alert")
+async def test_weather_alert(request: MobileStatusRequest):
+    """
+    Test weather alert for a specific user.
+    Returns weather conditions and whether an alert would be sent.
+    """
+    from app.services.weather_alerts import test_weather_alert as _test_weather_alert
+
+    try:
+        result = await _test_weather_alert(request.email)
+        return result
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@router.post("/test-achievement-alert")
+async def test_achievement_alert(request: MobileStatusRequest):
+    """
+    Test achievement proximity for a specific user.
+    Returns all achievement proximities.
+    """
+    from app.services.achievement_alerts import get_all_proximities
+
+    try:
+        proximities = get_all_proximities(request.email)
+        return {
+            "email": request.email,
+            "achievements": [
+                {
+                    "id": p.achievement_id,
+                    "name": p.achievement_name,
+                    "current": p.current,
+                    "threshold": p.threshold,
+                    "remaining": p.remaining,
+                    "percentage": p.percentage,
+                    "message": p.message,
+                }
+                for p in proximities
+            ],
+        }
+    except Exception as e:
+        return {"error": str(e)}

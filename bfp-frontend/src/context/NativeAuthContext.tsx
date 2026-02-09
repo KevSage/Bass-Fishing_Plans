@@ -18,6 +18,10 @@ import {
   needsTokenRefresh,
   updateToken,
 } from '../lib/nativeAuthStorage';
+import {
+  initializePushNotifications,
+  unregisterPushNotifications,
+} from '../lib/pushNotifications';
 
 interface NativeAuthContextType {
   // State
@@ -71,6 +75,13 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
           setUserEmail(storedAuth.userEmail);
           setToken(storedAuth.token);
           setIsSignedIn(true);
+
+          // Re-initialize push notifications for existing session
+          if (storedAuth.userEmail && storedAuth.userId) {
+            initializePushNotifications(storedAuth.userEmail, storedAuth.userId).catch((err) => {
+              console.warn('[NativeAuth] Push notification re-init failed:', err);
+            });
+          }
         }
       } catch (err) {
         console.error('[NativeAuth] Init error:', err);
@@ -122,6 +133,11 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
       setToken(result.token || null);
       setIsSignedIn(true);
 
+      // Initialize push notifications for mobile
+      initializePushNotifications(email, result.userId).catch((err) => {
+        console.warn('[NativeAuth] Push notification init failed:', err);
+      });
+
       return { success: true };
     }
 
@@ -149,6 +165,11 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
       setToken(result.token || null);
       setIsSignedIn(true);
 
+      // Initialize push notifications for mobile
+      initializePushNotifications(email, result.userId).catch((err) => {
+        console.warn('[NativeAuth] Push notification init failed:', err);
+      });
+
       return { success: true };
     }
 
@@ -157,6 +178,11 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
 
   const signOut = useCallback(async () => {
     console.log('[NativeAuth] Sign out');
+
+    // Unregister push notifications before sign out
+    await unregisterPushNotifications().catch((err) => {
+      console.warn('[NativeAuth] Push unregister failed:', err);
+    });
 
     if (sessionId) {
       await apiSignOut(sessionId);

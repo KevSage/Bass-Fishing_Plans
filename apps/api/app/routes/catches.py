@@ -117,7 +117,16 @@ async def create_catch(
     # If this is a custom lake, increment catch count
     if request.lake_type == "custom" and request.lake_id:
         custom_lake_store.increment_catch_count(request.lake_id, email)
-    
+
+    # Check achievement proximity and send notification if close to milestone
+    try:
+        import asyncio
+        from app.services.achievement_alerts import check_and_notify_achievement
+        asyncio.create_task(check_and_notify_achievement(email))
+    except Exception as e:
+        # Don't fail the catch creation if notification fails
+        print(f"[catches] Achievement notification check failed: {e}")
+
     return {
         "success": True,
         "catch_id": catch_id,

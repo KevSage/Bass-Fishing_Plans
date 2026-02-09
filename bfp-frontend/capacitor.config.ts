@@ -72,6 +72,11 @@ const config: CapacitorConfig = {
       splashImmersive: true,
       splashFullScreen: true,
     },
+
+    // Push notifications configuration
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
   },
 };
 
