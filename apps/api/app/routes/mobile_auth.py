@@ -248,3 +248,124 @@ async def mobile_list_catches(request: MobileCatchesRequest):
         }
     except Exception as e:
         return {"catches": [], "total": 0, "error": str(e)}
+
+
+# =============================================================================
+# MOBILE FAVORITES ENDPOINT
+# =============================================================================
+
+@router.post("/favorites")
+async def mobile_list_favorites(request: MobileStatusRequest):
+    """
+    List favorite lakes for mobile app using email instead of JWT.
+    """
+    from app.services.user_lakes import UserLakeStore
+    from app.services.custom_lakes import CustomLakeStore
+
+    user_lake_store = UserLakeStore()
+    custom_lake_store = CustomLakeStore()
+
+    try:
+        favorites = user_lake_store.list_by_user(request.email)
+
+        hydrated = []
+        for fav in favorites:
+            if fav.lake_type == "known":
+                hydrated.append({
+                    "lake_id": fav.lake_id,
+                    "lake_type": "known",
+                    "added_at": fav.added_at,
+                })
+            else:
+                lake = custom_lake_store.get(fav.lake_id, request.email)
+                if lake:
+                    hydrated.append({
+                        "lake_id": fav.lake_id,
+                        "lake_type": "custom",
+                        "name": lake.name,
+                        "lat": lake.lat,
+                        "lng": lake.lng,
+                        "city": lake.city,
+                        "state": lake.state,
+                        "anchors": getattr(lake, "anchors", None),
+                        "catch_count": lake.catch_count,
+                        "added_at": fav.added_at,
+                    })
+
+        return {
+            "favorites": hydrated,
+            "total": len(hydrated),
+        }
+    except Exception as e:
+        return {"favorites": [], "total": 0, "error": str(e)}
+
+
+# =============================================================================
+# MOBILE CUSTOM LAKES ENDPOINT
+# =============================================================================
+
+@router.post("/custom-lakes")
+async def mobile_list_custom_lakes(request: MobileStatusRequest):
+    """
+    List custom lakes for mobile app using email instead of JWT.
+    """
+    from app.services.custom_lakes import CustomLakeStore
+
+    custom_lake_store = CustomLakeStore()
+
+    try:
+        lakes = custom_lake_store.list_by_user(request.email)
+
+        return {
+            "lakes": [
+                {
+                    "id": lake.id,
+                    "name": lake.name,
+                    "lat": lake.lat,
+                    "lng": lake.lng,
+                    "city": lake.city,
+                    "state": lake.state,
+                    "anchors": getattr(lake, "anchors", None),
+                    "catch_count": lake.catch_count,
+                    "created_at": lake.created_at,
+                }
+                for lake in lakes
+            ],
+            "total": len(lakes),
+        }
+    except Exception as e:
+        return {"lakes": [], "total": 0, "error": str(e)}
+
+
+# =============================================================================
+# MOBILE PLAN HISTORY ENDPOINT
+# =============================================================================
+
+class MobilePlanHistoryRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    limit: int = 10
+    offset: int = 0
+
+
+@router.post("/plan-history")
+async def mobile_plan_history(request: MobilePlanHistoryRequest):
+    """
+    List plan history for mobile app using email instead of JWT.
+    """
+    from app.main import plan_history_store
+
+    try:
+        plans = plan_history_store.get_user_plans(
+            request.email,
+            limit=request.limit,
+            offset=request.offset
+        )
+
+        return {
+            "plans": plans,
+            "total": len(plans),
+            "has_more": len(plans) >= request.limit,
+        }
+    except Exception as e:
+        return {"plans": [], "total": 0, "has_more": False, "error": str(e)}

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { usePlatformAuth } from "@/hooks/usePlatformAuth";
+import { useNativeAuth } from "@/context/NativeAuthContext";
+import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
+import { listPlanHistoryMobile } from "@/lib/catches-api";
 import {
   MapPinIcon,
   CalendarIcon,
@@ -29,6 +32,7 @@ interface PlanHistoryResponse {
 
 export function PlanHistory() {
   const { getToken } = usePlatformAuth();
+  const nativeAuth = useNativeAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,24 +48,37 @@ export function PlanHistory() {
 
   const fetchPlans = async () => {
     try {
-      const token = await getToken();
-      const response = await fetch(
-        `${API_BASE}/members/plan-history?limit=10&offset=${offset}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      let data: PlanHistoryResponse;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `Failed to fetch plan history: ${response.status} - ${errorText}`,
+      if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+        // Use mobile endpoint
+        data = await listPlanHistoryMobile(
+          nativeAuth.userEmail,
+          nativeAuth.userId,
+          10,
+          offset
         );
-      }
+      } else {
+        // Use web endpoint with JWT
+        const token = await getToken();
+        const response = await fetch(
+          `${API_BASE}/members/plan-history?limit=10&offset=${offset}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
 
-      const data: PlanHistoryResponse = await response.json();
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(
+            `Failed to fetch plan history: ${response.status} - ${errorText}`,
+          );
+        }
+
+        data = await response.json();
+      }
 
       if (offset === 0) {
         setPlans(data.plans);

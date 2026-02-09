@@ -409,3 +409,69 @@ export async function uploadFileToR2(uploadUrl: string, file: File) {
   });
   if (!response.ok) throw new Error("Failed to upload image to cloud");
 }
+
+// =============================================================================
+// MOBILE-SPECIFIC API FUNCTIONS
+// =============================================================================
+
+/**
+ * List favorites for mobile app using email instead of JWT.
+ */
+export async function listFavoritesMobile(
+  email: string,
+  userId: string,
+): Promise<{ favorites: FavoriteLake[]; total: number }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/favorites`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, user_id: userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch favorites: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * List custom lakes for mobile app using email instead of JWT.
+ */
+export async function listCustomLakesMobile(
+  email: string,
+  userId: string,
+): Promise<{ lakes: CustomLake[]; total: number }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/custom-lakes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, user_id: userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch custom lakes: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * List plan history for mobile app using email instead of JWT.
+ */
+export async function listPlanHistoryMobile(
+  email: string,
+  userId: string,
+  limit = 10,
+  offset = 0,
+): Promise<{ plans: any[]; total: number; has_more: boolean }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/plan-history`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, user_id: userId, limit, offset }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch plan history: ${response.status}`);
+  }
+
+  return response.json();
+}

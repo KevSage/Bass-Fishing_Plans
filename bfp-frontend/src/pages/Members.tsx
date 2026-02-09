@@ -8,6 +8,8 @@ import React, {
   useMemo,
 } from "react";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
+import { useNativeAuth } from "@/context/NativeAuthContext";
+import { isNativePlatform } from "@/lib/platform";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -17,9 +19,11 @@ import { MapLoadingScreen } from "@/components/MapLoadingScreen";
 import { generateMemberPlan, RateLimitError } from "@/lib/api";
 import {
   listFavorites,
+  listFavoritesMobile,
   addFavorite,
   removeFavorite,
   listCustomLakes,
+  listCustomLakesMobile,
   createCustomLake,
   updateCustomLake,
   type CustomLake,
@@ -580,6 +584,7 @@ function findNearestFavorite(
 export function Members() {
   const { user } = usePlatformUser();
   const { getToken } = usePlatformAuth();
+  const nativeAuth = useNativeAuth();
   const { isActive, isLoading: statusLoading } = useMemberStatus();
   const navigate = useNavigate();
   const location = useLocation();
@@ -776,10 +781,18 @@ export function Members() {
   useEffect(() => {
     let mounted = true;
     async function fetchFavs() {
-      const token = await getToken();
-      if (!token) return;
       try {
-        const res = await listFavorites(token);
+        let res;
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          // Use mobile endpoint
+          res = await listFavoritesMobile(nativeAuth.userEmail, nativeAuth.userId);
+        } else {
+          // Use web endpoint with JWT
+          const token = await getToken();
+          if (!token) return;
+          res = await listFavorites(token);
+        }
+
         if (mounted && res.favorites) {
           const mapped = res.favorites.map((f: any) => {
             // Known lakes: hydrate from LAKES_DATA (backend has no access to lakes.json)
@@ -834,15 +847,23 @@ export function Members() {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataVersion]);
+  }, [dataVersion, nativeAuth.userEmail]);
 
   useEffect(() => {
     let mounted = true;
     async function fetchCustomLakes() {
-      const token = await getToken();
-      if (!token) return;
       try {
-        const res = await listCustomLakes(token);
+        let res;
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          // Use mobile endpoint
+          res = await listCustomLakesMobile(nativeAuth.userEmail, nativeAuth.userId);
+        } else {
+          // Use web endpoint with JWT
+          const token = await getToken();
+          if (!token) return;
+          res = await listCustomLakes(token);
+        }
+
         if (!mounted) return;
         setCustomLakes((res.lakes as any) || []);
       } catch (err) {
@@ -854,7 +875,7 @@ export function Members() {
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataVersion]);
+  }, [dataVersion, nativeAuth.userEmail]);
 
   // Handle pending lake selection after returning from LakeBuilder
   useEffect(() => {
