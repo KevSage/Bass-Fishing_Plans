@@ -362,7 +362,7 @@ export function Landing() {
                 color: "#fff",
               }}
             >
-              Bass Clarity is now Open and Free for All Anglers
+              Bass Clarity is Open and Free for All Anglers while in Beta
             </p>
             <p
               style={{
@@ -375,29 +375,7 @@ export function Landing() {
               }}
             >
               If you find value in the platform and want to support the
-              developer, there is an optional subscription or you can support
-              <a
-                href="https://gofund.me/817e0cce5"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#4A90E2",
-                  textDecoration: "underline",
-                  textUnderlineOffset: "2px",
-                  transition: "color 0.2s, opacity 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#60a5fa";
-                  e.currentTarget.style.opacity = "1";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "#4A90E2";
-                  e.currentTarget.style.opacity = "1";
-                }}
-              >
-                {" "}
-                here.
-              </a>
+              developer, there is an optional subscription{" "}
             </p>
           </Reveal>
 
