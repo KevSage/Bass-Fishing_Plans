@@ -1030,6 +1030,7 @@ export function Insights() {
       <CatchLogModal
         {...catchLog}
         disableListView={true}
+        galleryOnly={true}
         onDraftDone={() => {
           catchLog.close();
           // NO NEED TO RELOAD - Hook handles it

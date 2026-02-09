@@ -963,6 +963,7 @@ export type CatchLogModalProps = UseCatchLogReturn & {
   onFlyToLocation?: (lat: number, lng: number) => void;
   onDraftDone?: () => void;
   disableListView?: boolean;
+  galleryOnly?: boolean;
 };
 
 export function CatchLogModal(props: CatchLogModalProps) {
@@ -988,6 +989,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
     syncOfflineCatches,
     hasOffline,
     disableListView,
+    galleryOnly,
   } = props;
 
   if (!isOpen) return null;
@@ -1037,6 +1039,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
               entry={selectedEntry}
               isEditing={isEditing}
               activeLake={activeLake}
+              galleryOnly={galleryOnly}
               onSave={(data) => {
                 if (isEditing && selectedEntry) {
                   updateCatch(selectedEntry.id, data);
@@ -1482,6 +1485,7 @@ export type CatchFormViewProps = {
   initialSource?: "camera" | "library" | "manual";
   initialCoords?: { lat: number; lng: number };
   initialDateTime?: Date;
+  galleryOnly?: boolean;
 };
 export function CatchFormView({
   entry,
@@ -1492,6 +1496,7 @@ export function CatchFormView({
   initialSource = "manual",
   initialCoords,
   initialDateTime,
+  galleryOnly = false,
 }: CatchFormViewProps) {
   const { getToken } = usePlatformAuth();
   const [isResolving, setIsResolving] = useState(false);
@@ -1687,10 +1692,12 @@ export function CatchFormView({
   /**
    * Handle native camera/library photo capture (iOS/Android)
    * Uses Capacitor Camera plugin for native experience
+   * When galleryOnly is true, skips camera option and goes straight to photo library
    */
   const handleNativePhoto = async () => {
     try {
-      const result = await capturePhoto();
+      // If galleryOnly, force library selection; otherwise show camera+library prompt
+      const result = await capturePhoto(galleryOnly ? 'library' : undefined);
       if (!result) return; // User cancelled
 
       const { file, source: photoSource } = result;

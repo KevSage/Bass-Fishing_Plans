@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
 import { useNativeAuth } from "@/context/NativeAuthContext";
-import { isNativePlatform } from "@/lib/platform";
+import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -1084,28 +1084,13 @@ export function Members() {
     }
   }, [selectedCoords?.lat, selectedCoords?.lng]);
 
-  // 2. FETCH LOGIC (Updated with HTTPS Fix)
+  // 2. FETCH LOGIC (Using getApiBaseUrl for native platform support)
   useEffect(() => {
     if (showWeather && selectedCoords && !weatherData) {
       const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
 
-      // ✅ FIX: Use VITE_API_BASE_URL (matching your other files) and handle Mixed Content
-      let baseUrl =
-        import.meta.env.VITE_API_BASE_URL ||
-        import.meta.env.VITE_API_URL ||
-        "https://your-api.onrender.com";
-
-      // Remove trailing slash if present
-      baseUrl = baseUrl.replace(/\/$/, "");
-
-      // Auto-upgrade to HTTPS if on secure site (Fixes Mobile/Prod blocking)
-      if (
-        window.location.protocol === "https:" &&
-        baseUrl.startsWith("http:")
-      ) {
-        console.warn("Upgrading Map Weather fetch to HTTPS");
-        baseUrl = baseUrl.replace("http:", "https:");
-      }
+      // Use getApiBaseUrl() which handles native vs web platforms correctly
+      const baseUrl = getApiBaseUrl();
 
       fetch(
         `${baseUrl}/weather/current?lat=${selectedCoords.lat}&lon=${selectedCoords.lng}`,
@@ -2296,7 +2281,7 @@ export function Members() {
 
       {!catchLog.isOpen && (
         <div
-          className={`members-navigation-container ${showFavorites ? "expanded" : ""}`}
+          className={`members-navigation-container ${showFavorites ? "expanded" : ""} ${isNativePlatform() ? "native-ios" : ""}`}
         >
           <div className="glass-deck">
             {showFavorites && (
@@ -2835,6 +2820,8 @@ export function Members() {
         .mapboxgl-ctrl-recenter svg { color: #333; }
         .members-navigation-container { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); left: 50%; transform: translateX(-50%); z-index: 1000; width: 92%; max-width: 480px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         .members-navigation-container.expanded { bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); }
+        .members-navigation-container.native-ios { bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+        .members-navigation-container.native-ios.expanded { bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
         .glass-deck { display: flex; flex-direction: column; justify-content: flex-end; padding: 8px 12px; background: rgba(18, 18, 18, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative; overflow: visible; }
         .nav-icons-row { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
         .nav-favorites-section { padding: 12px 8px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); animation: nav-fav-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1); }

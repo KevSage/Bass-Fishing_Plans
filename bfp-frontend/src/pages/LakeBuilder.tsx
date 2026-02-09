@@ -11,6 +11,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
+import { isNativePlatform } from "@/lib/platform";
 import { MapOrb } from "../components/MapOrb";
 
 // --- API ---
@@ -366,7 +367,7 @@ export function LakeBuilder() {
       )}
 
       {/* FOOTER CONTROLS */}
-      <div className="builder-footer">
+      <div className={`builder-footer ${isNativePlatform() ? "native-ios" : ""}`}>
         <div className="pin-counter">
           <span style={{ color: pins.length >= MAX_PINS ? "#EF4444" : "#fff" }}>
             {pins.length}
@@ -425,6 +426,9 @@ export function LakeBuilder() {
           display: flex; align-items: center; justify-content: space-between;
           z-index: 10;
           box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .builder-footer.native-ios {
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
         }
         .pin-counter { font-family: monospace; font-size: 1.1rem; font-weight: 700; }
         .footer-actions { display: flex; gap: 16px; }

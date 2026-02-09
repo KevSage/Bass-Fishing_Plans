@@ -530,48 +530,38 @@ export function Navigation() {
               </Link>
             </SignedIn>
 
+            {/* Avatar menu button - replaces hamburger for iOS-native feel */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               style={{
-                background: "transparent",
-                border: "none",
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: isSignedIn ? "rgba(255,255,255,0.08)" : "transparent",
+                border: isSignedIn ? "1px solid rgba(255,255,255,0.15)" : "none",
                 color: "#fff",
                 cursor: "pointer",
-                padding: 4,
+                fontSize: "0.8rem",
+                fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
               }}
               aria-label="Menu"
             >
-              {isOpen ? (
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                >
-                  <path
-                    d="M18 6L6 18M6 6l12 12"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+              {isSignedIn ? (
+                user?.firstName?.charAt(0) || "U"
               ) : (
                 <svg
-                  width="20"
-                  height="20"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="1.5"
                 >
-                  <path
-                    d="M3 12h18M3 6h18M3 18h18"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="12" cy="7" r="4" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               )}
             </button>

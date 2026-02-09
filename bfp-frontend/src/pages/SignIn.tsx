@@ -109,24 +109,26 @@ export default function SignInPage() {
   return (
     <section
       style={{
-        minHeight: "100vh",
-        width: "100%",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        position: "relative",
         overflow: "hidden",
         backgroundColor: "#0a0a0a",
       }}
     >
-      {/* Background Image */}
+      {/* Background Image - positioned like Landing page hero */}
       <div
         style={{
           position: "absolute",
           inset: 0,
           backgroundImage: "url(/images/hero_bass.jpg)",
           backgroundSize: "cover",
-          backgroundPosition: "right center",
+          backgroundPosition: "65% 45%",
           filter: "brightness(0.7)",
           zIndex: 0,
         }}
