@@ -603,17 +603,24 @@ export function useCatchLog(
       const offline = getOfflineCatches();
       let apiEntries: CatchEntry[] = [];
 
+      const isNative = isNativePlatform();
+      const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
+
+      console.log('[CatchLog] fetchCatches - isNative:', isNative, 'hasNativeAuth:', hasNativeAuth, 'email:', nativeAuth.userEmail);
+
       // Use mobile endpoint on native platforms
-      if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+      if (isNative && hasNativeAuth) {
         try {
-          const response = await listCatchesMobile(nativeAuth.userEmail, nativeAuth.userId, 500, 0);
+          console.log('[CatchLog] Fetching via mobile endpoint...');
+          const response = await listCatchesMobile(nativeAuth.userEmail!, nativeAuth.userId!, 500, 0);
+          console.log('[CatchLog] Mobile response catches:', response.catches?.length);
           apiEntries = response.catches.map(apiRecordToEntry);
           globalEntriesCache = [...offline, ...apiEntries];
           localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
         } catch (apiErr) {
           console.warn("Mobile catch fetch failed:", apiErr);
         }
-      } else {
+      } else if (!isNative) {
         // Web platform: use JWT token
         const token = await getToken();
         if (token) {
@@ -626,6 +633,11 @@ export function useCatchLog(
             console.warn("Background fetch failed:", apiErr);
           }
         }
+      } else {
+        // Native but no auth yet - skip and wait for auth
+        console.log('[CatchLog] Native platform but no auth yet, skipping fetch');
+        setIsLoading(false);
+        return;
       }
       setState((s) => ({ ...s, entries: [...offline, ...apiEntries] }));
     } catch (err) {
@@ -634,11 +646,18 @@ export function useCatchLog(
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [getOfflineCatches, state.entries.length]);
+  }, [getOfflineCatches, state.entries.length, nativeAuth.userEmail, nativeAuth.userId]);
 
   useEffect(() => {
-    if (isSignedIn) fetchCatches();
-  }, [fetchCatches, isSignedIn]);
+    // On native, also check that we have the email/userId before fetching
+    if (isNativePlatform()) {
+      if (isSignedIn && nativeAuth.userEmail && nativeAuth.userId) {
+        fetchCatches();
+      }
+    } else {
+      if (isSignedIn) fetchCatches();
+    }
+  }, [fetchCatches, isSignedIn, nativeAuth.userEmail, nativeAuth.userId]);
 
   const syncOfflineCatches = useCallback(async () => {
     const offline = getOfflineCatches();
