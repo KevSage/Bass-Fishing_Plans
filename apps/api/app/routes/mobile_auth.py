@@ -237,18 +237,22 @@ async def mobile_list_catches(request: MobileCatchesRequest):
     List catches for mobile app using email instead of JWT.
     """
     from app.services.catches import CatchStore
+    from dataclasses import asdict
 
     catch_store = CatchStore()
 
     try:
-        catches = catch_store.list_by_email(request.email, request.limit, request.offset)
+        catches = catch_store.list_by_user(request.email, limit=request.limit, offset=request.offset)
+        # Convert Catch dataclass objects to dicts for JSON serialization
+        catches_dicts = [asdict(c) for c in catches]
         return {
-            "catches": catches,
-            "total": len(catches),
+            "catches": catches_dicts,
+            "total": len(catches_dicts),
             "limit": request.limit,
             "offset": request.offset,
         }
     except Exception as e:
+        print(f"[mobile_auth] catches error: {e}")
         return {"catches": [], "total": 0, "error": str(e)}
 
 
