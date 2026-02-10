@@ -622,12 +622,12 @@ export function LureLibrary() {
         .lure-modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.8);
-          backdrop-filter: blur(8px);
-          z-index: 10001;
+          background: #0a0a0f;
+          z-index: 100;
           display: flex;
-          align-items: flex-end;
-          justify-content: center;
+          flex-direction: column;
+          overflow-y: auto;
+          padding-top: calc(68px + env(safe-area-inset-top, 0px));
           animation: fadeIn 0.2s ease-out;
         }
 
@@ -638,23 +638,14 @@ export function LureLibrary() {
 
         .lure-modal-content {
           width: 100%;
-          max-width: 500px;
-          max-height: 90vh;
-          background: #1a1a24;
-          border-radius: 24px 24px 0 0;
-          overflow-y: auto;
-          animation: slideUp 0.3s ease-out;
-          padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to { transform: translateY(0); }
+          max-width: 600px;
+          margin: 0 auto;
+          background: transparent;
+          padding-bottom: calc(40px + env(safe-area-inset-bottom));
         }
 
         .lure-modal-header-bar {
           padding: 16px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .lure-modal-back {
@@ -670,9 +661,15 @@ export function LureLibrary() {
           padding: 0;
         }
 
+        .lure-modal-back:active {
+          opacity: 0.7;
+        }
+
         .lure-modal-image {
-          aspect-ratio: 16/10;
-          background: rgba(0, 0, 0, 0.4);
+          aspect-ratio: 4/3;
+          background: rgba(255, 255, 255, 0.03);
+          border-radius: 16px;
+          margin: 0 20px;
           display: flex;
           align-items: center;
           justify-content: center;
