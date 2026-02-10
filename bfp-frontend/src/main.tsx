@@ -4,7 +4,7 @@ import { ClerkProvider } from "@clerk/clerk-react";
 import App from "./App";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./complete-styles.css";
-import { HashRouter } from "react-router-dom";
+import { BrowserRouter, HashRouter } from "react-router-dom";
 import { isNativePlatform } from "./lib/platform";
 import { NativeAuthProvider } from "./context/NativeAuthContext";
 
@@ -20,12 +20,15 @@ if (!clerkPubKey) {
   throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
 }
 
+// Use BrowserRouter for web (real URLs), HashRouter for native (Capacitor)
+const Router = isNativePlatform() ? HashRouter : BrowserRouter;
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ClerkProvider publishableKey={clerkPubKey}>
     <NativeAuthProvider>
-      <HashRouter>
+      <Router>
         <App />
-      </HashRouter>
+      </Router>
     </NativeAuthProvider>
   </ClerkProvider>,
 );
