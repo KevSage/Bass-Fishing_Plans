@@ -28,6 +28,10 @@ import {
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
+// Helper to capitalize each word for display
+const capitalize = (str: string) =>
+  str.replace(/\b\w/g, (c) => c.toUpperCase());
+
 // =============================================================================
 // ICONS & MODALS
 // =============================================================================
@@ -844,7 +848,7 @@ export function Insights() {
                             );
                           }}
                         >
-                          {lure}
+                          {capitalize(lure)}
                         </button>
                       ))}
                   </div>
@@ -909,7 +913,7 @@ export function Insights() {
                     )
                   }
                 >
-                  {lure}
+                  {capitalize(lure)}
                 </button>
               ))}
             </div>

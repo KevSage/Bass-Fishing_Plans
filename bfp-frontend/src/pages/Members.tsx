@@ -56,6 +56,11 @@ const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 // =============================================================================
 // LURE POOL FOR USER SELECTION
 // =============================================================================
+
+// Helper to capitalize each word for display
+const capitalize = (str: string) =>
+  str.replace(/\b\w/g, (c) => c.toUpperCase());
+
 const LURE_CATEGORIES = [
   {
     name: "Horizontal Reaction",
@@ -2659,7 +2664,7 @@ export function Members() {
                       <optgroup key={cat.name} label={cat.name}>
                         {cat.lures.map((lure) => (
                           <option key={lure} value={lure}>
-                            {lure}
+                            {capitalize(lure)}
                           </option>
                         ))}
                       </optgroup>
@@ -2697,7 +2702,7 @@ export function Members() {
                       <optgroup key={cat.name} label={cat.name}>
                         {cat.lures.map((lure) => (
                           <option key={lure} value={lure}>
-                            {lure}
+                            {capitalize(lure)}
                           </option>
                         ))}
                       </optgroup>
