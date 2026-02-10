@@ -237,6 +237,8 @@ class PlanGenerateRequest(BaseModel):
     longitude: float
     location_name: str
     access_type: str = "boat"
+    user_primary_lure: Optional[str] = None    # User-selected primary lure (bypasses AI selection)
+    user_secondary_lure: Optional[str] = None  # User-selected secondary lure (bypasses AI selection)
 
 class SubscribeRequest(BaseModel):
     email: EmailStr
@@ -410,14 +412,14 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     else:
         phase = raw_season
     
-    recent_data = get_recent_lures(email, current_lake_name=body.location_name, limit=2)
+    recent_data = get_recent_lures(email, current_lake_name=body.location_name, limit=3)
     trip_date = datetime.now().strftime("%B %d, %Y")
     
     try:
         plan = await generate_llm_plan_with_retries(
             weather=weather,
             phase=phase,
-            location=location, 
+            location=location,
             latitude=latitude,
             longitude=longitude,
             access_type=access_type,
@@ -426,6 +428,8 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
             recent_primary_lures=recent_data["primary"],
             recent_secondary_lures=recent_data["secondary"],
             regen_context=recent_data["context"],
+            user_primary_lure=body.user_primary_lure,
+            user_secondary_lure=body.user_secondary_lure,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Plan generation error: {e}")

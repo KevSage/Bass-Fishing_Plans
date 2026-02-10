@@ -83,7 +83,9 @@ export type GeneratePlanRequest = {
   latitude: number;
   longitude: number;
   location_name: string;
-  access_type?: "boat" | "bank"; // ← NEW: Optional boat/bank access
+  access_type?: "boat" | "bank";
+  user_primary_lure?: string;    // User-selected primary lure (bypasses AI selection)
+  user_secondary_lure?: string;  // User-selected secondary lure (bypasses AI selection)
 };
 
 export async function generatePlan(
@@ -127,7 +129,9 @@ export type MembersRequest = {
   email: string;
   water: { name: string; lat: number; lon: number; mapbox_place_id?: string };
   trip_date?: string;
-  access_type?: "boat" | "bank"; // ← NEW: Optional boat/bank access
+  access_type?: "boat" | "bank";
+  user_primary_lure?: string;    // User-selected primary lure
+  user_secondary_lure?: string;  // User-selected secondary lure
 };
 
 export async function generateMemberPlan(
@@ -139,7 +143,9 @@ export async function generateMemberPlan(
     latitude: payload.water.lat,
     longitude: payload.water.lon,
     location_name: payload.water.name,
-    access_type: payload.access_type || "boat", // ← NEW: Default to boat for backward compat
+    access_type: payload.access_type || "boat",
+    user_primary_lure: payload.user_primary_lure,
+    user_secondary_lure: payload.user_secondary_lure,
   };
 
   return await generatePlan(newPayload);

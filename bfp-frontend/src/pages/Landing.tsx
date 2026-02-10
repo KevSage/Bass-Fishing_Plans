@@ -787,6 +787,131 @@ export function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ================= YOUR JOURNEY ================= */}
+      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
+        <div className="container" style={container(1100)}>
+          <Reveal>
+            <div
+              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
+            >
+              <div
+                className="water-text"
+                style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+              >
+                Your Journey
+              </div>
+              <h2 style={h2Style}>Track Your Growth.</h2>
+              <p style={{ ...leadStyle, maxWidth: 980 }}>
+                Level up as you fish. Track your technique mastery, unlock achievements,
+                and watch your angling skills evolve over time.
+              </p>
+            </div>
+          </Reveal>
+
+          <div
+            style={{
+              ...grid2,
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
+            }}
+          >
+            <Reveal delay={200}>
+              <div
+                style={{
+                  position: "relative",
+                  maxWidth: 420,
+                  margin: "0 auto",
+                }}
+              >
+                <img
+                  src="/images/iphone15.png"
+                  alt="Mobile"
+                  style={{
+                    width: "100%",
+                    display: "block",
+                    position: "relative",
+                    zIndex: 2,
+                    pointerEvents: "none",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "4.8%",
+                    left: "2.2%",
+                    width: "94.6%",
+                    height: "92.4%",
+                    borderRadius: "72px",
+                    overflow: "hidden",
+                    zIndex: 1,
+                    background: "rgba(0,0,0,0.25)",
+                  }}
+                >
+                  <img
+                    src="/images/ProductionScreenshots/Journey.png"
+                    alt="Journey"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                    }}
+                  />
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal>
+              <div
+                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
+              >
+                <div
+                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
+                >
+                  <div
+                    style={{
+                      ...eyebrow,
+                      marginBottom: 12,
+                      color: "rgba(255,255,255,0.68)",
+                    }}
+                  >
+                    Your Progress, Visualized
+                  </div>
+                  <div style={{ height: 14 }} />
+                  <ul
+                    style={{
+                      listStyle: "none",
+                      padding: 0,
+                      margin: 0,
+                      display: "grid",
+                      gap: 14,
+                    }}
+                  >
+                    <Bullet
+                      title="Level Progression"
+                      desc="Earn XP with every catch and level up as your experience grows."
+                    />
+                    <Bullet
+                      title="Technique Mastery"
+                      desc="See which techniques you've dialed in and where you're still developing."
+                    />
+                    <Bullet
+                      title="Seasonal Stats"
+                      desc="Track your performance across seasons — top patterns, best lakes, and catch counts."
+                    />
+                    <Bullet
+                      title="Trophy Case"
+                      desc="Unlock achievements and badges as you hit milestones on your fishing journey."
+                    />
+                  </ul>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* ================= DATA CLARITY ================= */}
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>

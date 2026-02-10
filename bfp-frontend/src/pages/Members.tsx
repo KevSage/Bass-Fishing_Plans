@@ -54,6 +54,58 @@ import LAKES_DATA from "../data/lakes.json";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
 // =============================================================================
+// LURE POOL FOR USER SELECTION
+// =============================================================================
+const LURE_CATEGORIES = [
+  {
+    name: "Horizontal Reaction",
+    lures: [
+      "shallow crankbait",
+      "mid crankbait",
+      "deep crankbait",
+      "lipless crankbait",
+      "flat-sided crankbait",
+      "chatterbait",
+      "swim jig",
+      "spinnerbait",
+      "underspin",
+      "paddle tail swimbait",
+    ],
+  },
+  {
+    name: "Vertical Reaction",
+    lures: ["jerkbait", "blade bait", "jighead minnow"],
+  },
+  {
+    name: "Bottom Contact",
+    lures: [
+      "texas rig",
+      "carolina rig",
+      "football jig",
+      "casting jig",
+      "shaky head",
+      "ned rig",
+    ],
+  },
+  {
+    name: "Finesse",
+    lures: ["neko rig", "wacky rig", "soft jerkbait", "dropshot"],
+  },
+  {
+    name: "Topwater",
+    lures: [
+      "walking bait",
+      "buzzbait",
+      "whopper plopper",
+      "wake bait",
+      "hollow body frog",
+      "popping frog",
+      "popper",
+    ],
+  },
+];
+
+// =============================================================================
 // ICONS & UI COMPONENTS
 // =============================================================================
 
@@ -686,9 +738,13 @@ export function Members() {
   );
 
   // Strategy/Generate Modals
-  const [showStrategyMenu, setShowStrategyMenu] = useState(false);
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
+
+  // Lure Selection Mode
+  const [lureSelectionMode, setLureSelectionMode] = useState<"ai" | "user">("ai");
+  const [userPrimaryLure, setUserPrimaryLure] = useState<string>("");
+  const [userSecondaryLure, setUserSecondaryLure] = useState<string>("");
 
   // Rate Limiting / Loading
   const [rateLimitInfo, setRateLimitInfo] = useState<{
@@ -1643,6 +1699,13 @@ export function Members() {
           lon: targetCoords.lng,
         },
         access_type: accessType,
+        // Pass user-selected lures if in "user" mode
+        ...(lureSelectionMode === "user" && userPrimaryLure
+          ? { user_primary_lure: userPrimaryLure }
+          : {}),
+        ...(lureSelectionMode === "user" && userSecondaryLure
+          ? { user_secondary_lure: userSecondaryLure }
+          : {}),
       });
       const tokenUrl = `/plan?token=${response.token}&owner=1`;
       sessionStorage.setItem("aiq_last_plan_url", tokenUrl);
@@ -1661,7 +1724,7 @@ export function Members() {
       }
       setLoading(false);
     }
-  }, [user, selectedCoords, waterName, accessType, currentFavorite, navigate]);
+  }, [user, selectedCoords, waterName, accessType, currentFavorite, navigate, lureSelectionMode, userPrimaryLure, userSecondaryLure]);
 
   const handleStrategyClick = useCallback(
     (e?: React.MouseEvent) => {
@@ -1677,9 +1740,15 @@ export function Members() {
       if (!targetName && !activeLake) return;
       const hasPlan = !!lastPlanUrl;
       const isSameLake = lastPlanLake === targetName;
-      if (hasPlan && isSameLake) {
-        setShowStrategyMenu(true);
-      } else if (hasPlan && !isSameLake) {
+
+      // Reset lure selection state when opening modal
+      setLureSelectionMode("ai");
+      setUserPrimaryLure("");
+      setUserSecondaryLure("");
+
+      // Always show the unified generate modal
+      // Only show replace confirm if changing lakes with existing plan
+      if (hasPlan && !isSameLake) {
         setShowReplaceConfirm(true);
       } else {
         setShowGenerateConfirm(true);
@@ -1707,11 +1776,6 @@ export function Members() {
     }
     setShowWeather((prev) => !prev);
   }, [isActive, favorites, activeLake]);
-
-  const handleResumePlan = useCallback(() => {
-    setShowStrategyMenu(false);
-    if (lastPlanUrl) navigate(lastPlanUrl);
-  }, [lastPlanUrl, navigate]);
 
   const handleRemoveSpecificLake = useCallback(
     async (lake: FavoriteLake) => {
@@ -2458,48 +2522,6 @@ export function Members() {
                         }}
                       />
                     )}
-                  {showStrategyMenu && (
-                    <>
-                      <div
-                        style={{ position: "fixed", inset: 0, zIndex: 3000 }}
-                        onClick={() => setShowStrategyMenu(false)}
-                      />
-                      <div
-                        style={{
-                          position: "absolute",
-                          bottom: "130%",
-                          right: 0,
-                          background: "rgba(20,20,20,0.95)",
-                          backdropFilter: "blur(12px)",
-                          borderRadius: 12,
-                          border: "1px solid rgba(255,255,255,0.1)",
-                          width: 160,
-                          padding: 4,
-                          zIndex: 3001,
-                          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-                        }}
-                      >
-                        <button
-                          onClick={handleResumePlan}
-                          className="menu-item-btn"
-                          style={{ color: "#fff" }}
-                        >
-                          View Active Plan
-                        </button>
-                        <div className="menu-divider" />
-                        <button
-                          onClick={() => {
-                            setShowStrategyMenu(false);
-                            performGeneration();
-                          }}
-                          className="menu-item-btn"
-                          style={{ color: "#4A90E2" }}
-                        >
-                          Regenerate
-                        </button>
-                      </div>
-                    </>
-                  )}
                 </div>
                 <button
                   onClick={handleCatchLogClick}
@@ -2523,7 +2545,7 @@ export function Members() {
           <div
             className="glass-panel modal-content"
             style={{
-              maxWidth: 320,
+              maxWidth: 360,
               alignItems: "center",
               textAlign: "center",
               padding: 30,
@@ -2531,13 +2553,160 @@ export function Members() {
             onClick={(e) => e.stopPropagation()}
           >
             <LightningIcon size={40} />
-            <h3 style={{ marginTop: 15, marginBottom: 5 }}>Generate Plan?</h3>
+            <h3 style={{ marginTop: 15, marginBottom: 5 }}>Generate Plan</h3>
             <p style={{ opacity: 0.6, fontSize: "0.9rem", marginBottom: 20 }}>
               Create a bass fishing plan for <br />
               <strong style={{ color: "#4A90E2" }}>
                 {currentFavorite?.name || waterName}
               </strong>
             </p>
+
+            {/* Lure Selection Mode */}
+            <div style={{ width: "100%", marginBottom: 20, textAlign: "left" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  border: lureSelectionMode === "ai"
+                    ? "1px solid rgba(74,144,226,0.5)"
+                    : "1px solid rgba(255,255,255,0.1)",
+                  background: lureSelectionMode === "ai"
+                    ? "rgba(74,144,226,0.1)"
+                    : "transparent",
+                  cursor: "pointer",
+                  marginBottom: 8,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="lureMode"
+                  checked={lureSelectionMode === "ai"}
+                  onChange={() => setLureSelectionMode("ai")}
+                  style={{ accentColor: "#4A90E2" }}
+                />
+                <span style={{ fontSize: "0.95rem" }}>AI Recommends</span>
+              </label>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  border: lureSelectionMode === "user"
+                    ? "1px solid rgba(74,144,226,0.5)"
+                    : "1px solid rgba(255,255,255,0.1)",
+                  background: lureSelectionMode === "user"
+                    ? "rgba(74,144,226,0.1)"
+                    : "transparent",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="lureMode"
+                  checked={lureSelectionMode === "user"}
+                  onChange={() => setLureSelectionMode("user")}
+                  style={{ accentColor: "#4A90E2" }}
+                />
+                <span style={{ fontSize: "0.95rem" }}>I'll Choose My Lures</span>
+              </label>
+            </div>
+
+            {/* Conditional Lure Pickers */}
+            {lureSelectionMode === "user" && (
+              <div
+                style={{
+                  width: "100%",
+                  marginBottom: 20,
+                  padding: 16,
+                  background: "rgba(255,255,255,0.03)",
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <div style={{ marginBottom: 14 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.8rem",
+                      opacity: 0.7,
+                      marginBottom: 6,
+                      textAlign: "left",
+                    }}
+                  >
+                    Primary Lure
+                  </label>
+                  <select
+                    value={userPrimaryLure}
+                    onChange={(e) => setUserPrimaryLure(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(0,0,0,0.3)",
+                      color: "#fff",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    <option value="">Select lure...</option>
+                    {LURE_CATEGORIES.map((cat) => (
+                      <optgroup key={cat.name} label={cat.name}>
+                        {cat.lures.map((lure) => (
+                          <option key={lure} value={lure}>
+                            {lure}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.8rem",
+                      opacity: 0.7,
+                      marginBottom: 6,
+                      textAlign: "left",
+                    }}
+                  >
+                    Secondary Lure
+                  </label>
+                  <select
+                    value={userSecondaryLure}
+                    onChange={(e) => setUserSecondaryLure(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(0,0,0,0.3)",
+                      color: "#fff",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    <option value="">Select lure...</option>
+                    {LURE_CATEGORIES.map((cat) => (
+                      <optgroup key={cat.name} label={cat.name}>
+                        {cat.lures.map((lure) => (
+                          <option key={lure} value={lure}>
+                            {lure}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10, width: "100%" }}>
               <button
                 onClick={() => setShowGenerateConfirm(false)}
@@ -2552,10 +2721,22 @@ export function Members() {
               <button
                 onClick={performGeneration}
                 className="generate-btn"
+                disabled={
+                  lureSelectionMode === "user" &&
+                  (!userPrimaryLure || !userSecondaryLure)
+                }
                 style={{
                   background:
-                    "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    lureSelectionMode === "user" &&
+                    (!userPrimaryLure || !userSecondaryLure)
+                      ? "rgba(74,144,226,0.3)"
+                      : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                   padding: "12px",
+                  cursor:
+                    lureSelectionMode === "user" &&
+                    (!userPrimaryLure || !userSecondaryLure)
+                      ? "not-allowed"
+                      : "pointer",
                 }}
               >
                 Generate

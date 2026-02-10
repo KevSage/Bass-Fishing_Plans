@@ -128,7 +128,7 @@ export default function SignInPage() {
           inset: 0,
           backgroundImage: "url(/images/hero_bass.jpg)",
           backgroundSize: "cover",
-          backgroundPosition: "65% 45%",
+          backgroundPosition: "65% 55%",
           filter: "brightness(0.7)",
           zIndex: 0,
         }}

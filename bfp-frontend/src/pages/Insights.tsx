@@ -735,12 +735,6 @@ export function Insights() {
 
   return (
     <div className="insights-container" style={{ paddingBottom: "80px" }}>
-      <div className="stats-header">
-        <button onClick={() => navigate("/members")} className="back-icon-btn">
-          <ArrowLeftIcon size={16} />
-        </button>
-        <h1>Back to Map</h1>
-      </div>
 
       {/* UPGRADE MODAL */}
       <UpgradeModal

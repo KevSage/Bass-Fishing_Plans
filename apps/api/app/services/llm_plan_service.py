@@ -280,10 +280,15 @@ def _validate_policy_constraints(
     seasonal_policy: Dict[str, Any],
     primary_targets: Optional[List[str]] = None,
     secondary_targets: Optional[List[str]] = None,
+    user_primary_lure: Optional[str] = None,
+    user_secondary_lure: Optional[str] = None,
 ) -> List[str]:
     """Extra validation layered on top of validate_llm_plan.
 
     Returns list of human-readable errors. Never raises.
+
+    When user_primary_lure or user_secondary_lure is provided, seasonal policy
+    validation is skipped for that lure (user choice overrides seasonal constraints).
     """
     errors: List[str] = []
     if not isinstance(plan, dict):
@@ -298,7 +303,14 @@ def _validate_policy_constraints(
         if not isinstance(obj, dict):
             return
         lure = obj.get("base_lure")
-        if allowed and isinstance(lure, str):
+
+        # Skip seasonal validation if user explicitly selected this lure
+        user_selected_lure = user_primary_lure if label == "primary" else user_secondary_lure
+        if user_selected_lure and isinstance(lure, str):
+            # User chose this lure - skip seasonal policy check entirely
+            # (We trust the user knows what they want)
+            pass
+        elif allowed and isinstance(lure, str):
             if lure in avoid:
                 errors.append(f"{label}.base_lure '{lure}' is in seasonal AVOID list")
             elif lure not in allowed:
@@ -1187,7 +1199,8 @@ async def call_openai_plan(
     seasonal_policy: Optional[Dict[str, Any]] = None,
     primary_targets: Optional[List[str]] = None,
     secondary_targets: Optional[List[str]] = None,
-
+    user_primary_lure: Optional[str] = None,
+    user_secondary_lure: Optional[str] = None,
 ) -> dict:
     """
     Generate LLM plan with access filtering and variety system.
@@ -1387,48 +1400,26 @@ async def call_openai_plan(
         if last_combo:
             regeneration_note += f"\n🚨 CRITICAL: Do NOT use combination ({last_combo[0]}, {last_combo[1]}). Combinations must never repeat.\n"
         
-        # Context-based guidance
+        # Context-based guidance - EXTENDED TO 24 HOURS FORBIDDEN WINDOW
         if minutes_ago is not None:
-            if minutes_ago < 60:  # <1 hour
-                if same_location:
-                    regeneration_note += "\nUser Intent: FORCE VARIETY (Rapid Regeneration)\n"
-                    regeneration_note += "1. You are FORBIDDEN from selecting: " + str(recent_primary_lures + recent_secondary_lures) + "\n"
-                    regeneration_note += "2. You MUST select the NEXT BEST optimal lure that is NOT in the list above.\n"
-                    regeneration_note += "3. If the 'Day Lean' logic forces a forbidden lure, you MUST pivot to the secondary appropriate presentation family.\n"
-                else:
-                    regeneration_note += "\nUser Intent: NEW LOCATION (rapid regeneration at different spot)\n"
-                    regeneration_note += "- Same lures are acceptable if they're optimal for this location's conditions\n"
-                    regeneration_note += "- Focus on what conditions suggest, not avoiding recent lures\n"
-            
-            elif 60 <= minutes_ago < 180:  # 1-3 hours
-                regeneration_note += "\nUser Intent: WANTS TO TRY SOMETHING DIFFERENT (1-3 hours later)\n"
-                regeneration_note += "- User is looking for alternative approaches\n"
-                regeneration_note += "- Avoid recent lures unless conditions have changed significantly\n"
-                if recent_primary_lures:
-                    regeneration_note += f"  • PRIMARY: Prefer lures NOT in [{', '.join(recent_primary_lures)}]\n"
-                if recent_secondary_lures:
-                    regeneration_note += f"  • SECONDARY: Prefer lures NOT in [{', '.join(recent_secondary_lures)}]\n"
-            
-            elif 180 <= minutes_ago < 360:  # 3-6 hours
-                regeneration_note += "\nUser Intent: CHECKING IF CONDITIONS CHANGED (3-6 hours later)\n"
-                regeneration_note += "- User wants to know what's optimal NOW based on current conditions\n"
-                regeneration_note += "- Same lures are acceptable if current conditions support them\n"
-                regeneration_note += "- Focus on condition analysis, not variety for variety's sake\n"
-            
-            else:  # 6+ hours
-                regeneration_note += "\nUser Intent: NEW DAY / FRESH CONDITIONS (6+ hours later)\n"
+            if minutes_ago < 1440:  # <24 hours - HARD FORBIDDEN regardless of location
+                regeneration_note += "\nUser Intent: FORCE VARIETY (Within 24-hour window)\n"
+                regeneration_note += "1. You are FORBIDDEN from selecting: " + str(recent_primary_lures + recent_secondary_lures) + "\n"
+                regeneration_note += "2. You MUST select the NEXT BEST optimal lure that is NOT in the list above.\n"
+                regeneration_note += "3. If the 'Day Lean' logic forces a forbidden lure, you MUST pivot to the secondary appropriate presentation family.\n"
+                regeneration_note += "4. This is a HARD CONSTRAINT - do not use 'optimal for conditions' as justification to repeat lures.\n"
+
+            else:  # 24+ hours
+                regeneration_note += "\nUser Intent: NEW DAY / FRESH CONDITIONS (24+ hours later)\n"
                 regeneration_note += "- Treat this as a fresh analysis of current conditions\n"
-                regeneration_note += "- Same lures are perfectly acceptable if conditions support them\n"
-                regeneration_note += "- Focus purely on optimal choices for current weather/phase\n"
+                regeneration_note += "- Same lures are acceptable if conditions strongly support them\n"
+                regeneration_note += "- Still prefer variety when multiple lures are equally valid\n"
         else:
-            # No timing info, use soft guidance
-            regeneration_note += "\nWhen selecting within your Day Lean:\n"
-            regeneration_note += "- If multiple lures fit equally well, prefer lures NOT in recent lists\n"
-            if recent_primary_lures:
-                regeneration_note += f"  • PRIMARY: Prefer to avoid {', '.join(recent_primary_lures)}\n"
-            if recent_secondary_lures:
-                regeneration_note += f"  • SECONDARY: Prefer to avoid {', '.join(recent_secondary_lures)}\n"
-            regeneration_note += "- Recent lures are still valid if they're clearly optimal for conditions\n"
+            # No timing info, default to FORBIDDEN to be safe
+            regeneration_note += "\nVARIETY ENFORCEMENT (No timing info - defaulting to strict):\n"
+            regeneration_note += "1. You are FORBIDDEN from selecting: " + str(recent_primary_lures + recent_secondary_lures) + "\n"
+            regeneration_note += "2. You MUST select the NEXT BEST optimal lure that is NOT in the list above.\n"
+            regeneration_note += "3. If the 'Day Lean' logic forces a forbidden lure, you MUST pivot to a different presentation family.\n"
         
         regeneration_note += "\n"
     
@@ -1507,6 +1498,76 @@ Good boat plans demonstrate:
 Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access provides offshore options
 """
         user_input["instructions"] += boat_instructions
+
+    # =========================================================================
+    # USER-SELECTED LURES OVERRIDE
+    # =========================================================================
+    # If user has selected their own lures, override the normal lure selection
+    user_lure_override_note = ""
+    if user_primary_lure or user_secondary_lure:
+        user_lure_override_note = "\n\n🎣 USER LURE SELECTION (LOCKED - HIGHEST PRIORITY) 🎣\n"
+        user_lure_override_note += "The user has selected their own lures. You MUST use these EXACT lures.\n"
+        user_lure_override_note += "DO NOT substitute, suggest alternatives, or override these selections.\n\n"
+
+        if user_primary_lure:
+            user_lure_override_note += f"PRIMARY LURE (LOCKED): {user_primary_lure}\n"
+            user_lure_override_note += "- Use this exact lure for primary.base_lure\n"
+            user_lure_override_note += "- Build the primary strategy around this lure choice\n"
+
+        if user_secondary_lure:
+            user_lure_override_note += f"\nSECONDARY LURE (LOCKED): {user_secondary_lure}\n"
+            user_lure_override_note += "- Use this exact lure for secondary.base_lure\n"
+            user_lure_override_note += "- Build the secondary strategy around this lure choice\n"
+
+        # When BOTH lures are user-selected, relax the presentation family constraint
+        if user_primary_lure and user_secondary_lure:
+            user_lure_override_note += "\n⚠️ PRESENTATION FAMILY OVERRIDE:\n"
+            user_lure_override_note += "Since the user selected BOTH lures, the normal 'different presentation family' rule is WAIVED.\n"
+            user_lure_override_note += "Assign each lure its natural presentation (from LURE_TO_PRESENTATION) even if both are in the same family.\n"
+            user_lure_override_note += "Example: If user picks texas rig + shaky head, both use Bottom Contact presentations - that's OK.\n\n"
+
+        user_lure_override_note += "\nYOUR JOB WITH USER-SELECTED LURES:\n"
+        user_lure_override_note += "1. Accept the user's lure choices without question\n"
+        user_lure_override_note += "2. Select appropriate TARGETS that work with these lures\n"
+        user_lure_override_note += "3. Select optimal COLORS (color_recommendations) based on water clarity and conditions\n"
+        user_lure_override_note += "4. STILL FOLLOW terminal tackle and trailer rules:\n"
+        user_lure_override_note += "   - If base_lure is in TERMINAL_PLASTIC_MAP → MUST include soft_plastic + soft_plastic_why\n"
+        user_lure_override_note += "   - If TRAILER_REQUIREMENT[base_lure]=='required' → MUST include trailer + trailer_why\n"
+        user_lure_override_note += "   - If TRAILER_REQUIREMENT[base_lure]=='optional' → include trailer if conditions warrant\n"
+        user_lure_override_note += "5. Generate RETRIEVE GUIDANCE (work_it) optimized for today's conditions\n"
+        user_lure_override_note += "6. Build STRATEGY and DAY PROGRESSION around these lures\n"
+        user_lure_override_note += "7. Explain how to fish these lures effectively in current conditions\n"
+        user_lure_override_note += "\n📝 TONE & PHRASING GUIDANCE FOR USER-SELECTED LURES:\n"
+        user_lure_override_note += "The user chose these lures deliberately. Write copy that RESPECTS their expertise.\n\n"
+        user_lure_override_note += "FOR 'why_this_works' FIELD:\n"
+        user_lure_override_note += "- Frame as 'how to maximize this lure today' NOT 'why this lure fits conditions'\n"
+        user_lure_override_note += "- Focus on retrieve speed, depth adjustments, and timing for current conditions\n"
+        user_lure_override_note += "- Example: 'Slow your texas rig cadence in cool water - longer pauses let bass commit.'\n"
+        user_lure_override_note += "- NEVER: 'While conditions might favor reaction baits, your texas rig can still...'\n\n"
+        user_lure_override_note += "FOR 'pattern_summary' FIELD:\n"
+        user_lure_override_note += "- Describe how bass may relate to structure with THIS lure's strengths in mind\n"
+        user_lure_override_note += "- Connect the lure's action to bass positioning and behavior\n\n"
+        user_lure_override_note += "FOR 'strategy' FIELD:\n"
+        user_lure_override_note += "- Describe the APPROACH for fishing this lure effectively today\n"
+        user_lure_override_note += "- Reference Day Lean but adapt to the lure's natural strengths\n\n"
+        user_lure_override_note += "FOR SECONDARY 'why_this_works' (when both lures user-selected):\n"
+        user_lure_override_note += "- Frame as 'complementing' the primary, not 'pivoting' from it\n"
+        user_lure_override_note += "- Example: 'Pairs well with your primary - covers different water column.'\n\n"
+        user_lure_override_note += "CRITICAL: Never imply the user made a suboptimal choice. Write as if coaching\n"
+        user_lure_override_note += "an angler who knows exactly what they want and just needs execution guidance.\n"
+
+        # Clear the regeneration note since user is overriding lure selection
+        regeneration_note = ""
+
+        # Clear seasonal constraints if BOTH lures are user-selected
+        # (If only one is selected, keep constraints for the AI-selected lure)
+        if user_primary_lure and user_secondary_lure:
+            seasonal_note = ""  # User selected both - no seasonal restrictions apply
+
+        # Add user lures to user_input for structured access
+        user_input["user_selected_primary_lure"] = user_primary_lure
+        user_input["user_selected_secondary_lure"] = user_secondary_lure
+
     # We use += to append this to the Trend/Boat instructions we just added above.
     user_input["instructions"] += (
         "\n" +
@@ -1517,9 +1578,10 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
         "- Accessible targets: " + str(accessible_targets) + "\n" +
         "- For work_it_cards definitions, use target_definitions[target_name]\n" +
         "\n" +
-        LURE_SELECTION_POLICY_PROMPT + 
-        "\n" + 
-        regeneration_note  # <--- PLACED AT THE VERY END (The Final Word)
+        LURE_SELECTION_POLICY_PROMPT +
+        "\n" +
+        user_lure_override_note +  # User-selected lures (if any) - highest priority
+        regeneration_note  # Burn list enforcement (if no user override)
     )
     system_prompt = build_system_prompt(include_pattern_2=True)
     max_tokens = 1700
@@ -1628,7 +1690,12 @@ Avoid: Selecting only shoreline cover (banks, docks, laydowns) when boat access 
 # Validation (service-level, aligned to Bass Clarity rules)
 # - Uses TARGET_DEFINITIONS.keys() as canonical targets
 # ----------------------------------------
-def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bool, List[str]]:
+def validate_llm_plan(
+    plan: Dict[str, Any],
+    is_member: bool = False,
+    user_primary_lure: Optional[str] = None,
+    user_secondary_lure: Optional[str] = None,
+) -> Tuple[bool, List[str]]:
     """
     Validate LLM output against canonical rules.
     Returns (is_valid, list_of_errors)
@@ -1636,6 +1703,8 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
     Args:
         plan: LLM output to validate
         is_member: If True, expects primary + secondary patterns
+        user_primary_lure: If set, user selected this lure (bypass some validations)
+        user_secondary_lure: If set, user selected this lure (bypass some validations)
     """
     import re
 
@@ -1652,14 +1721,17 @@ def validate_llm_plan(plan: Dict[str, Any], is_member: bool = False) -> Tuple[bo
 
         # Presentations must differ (exact string) AND must come from different
         # presentation families (e.g., no Bottom Contact + Bottom Contact).
+        # EXCEPTION: If user selected BOTH lures, they chose intentionally - skip this check.
         p1 = plan.get("primary", {}).get("presentation")
         p2 = plan.get("secondary", {}).get("presentation")
-        if p1 == p2:
-            errors.append("Primary and secondary must have DIFFERENT presentations")
-        if _presentation_family(p1) == _presentation_family(p2):
-            errors.append(
-                "Primary and secondary must be from DIFFERENT presentation families"
-            )
+        user_selected_both = user_primary_lure and user_secondary_lure
+        if not user_selected_both:
+            if p1 == p2:
+                errors.append("Primary and secondary must have DIFFERENT presentations")
+            if _presentation_family(p1) == _presentation_family(p2):
+                errors.append(
+                    "Primary and secondary must be from DIFFERENT presentation families"
+                )
 
         # shared fields
         for field in ("day_progression", "outlook_blurb"):
@@ -1977,6 +2049,8 @@ async def generate_llm_plan_with_retries(
     recent_secondary_lures: list[str] = None,
     regen_context: dict = None,
     max_attempts: int = 5,
+    user_primary_lure: Optional[str] = None,
+    user_secondary_lure: Optional[str] = None,
 ) -> dict:
     """
     Generate LLM plan with validation and retries.
@@ -2013,9 +2087,10 @@ async def generate_llm_plan_with_retries(
             recent_secondary_lures=recent_secondary_lures,
             regen_context=regen_context,
             seasonal_policy=seasonal_policy,
-            # ✅ PASS THE VARIABLES (which are now safely None)
             primary_targets=primary_targets,
-            secondary_targets=secondary_targets
+            secondary_targets=secondary_targets,
+            user_primary_lure=user_primary_lure,
+            user_secondary_lure=user_secondary_lure,
         )
 
         if plan is not None:
@@ -2026,12 +2101,19 @@ async def generate_llm_plan_with_retries(
             print("LLM_PLAN: Attempt " + str(attempt + 1) + " failed (no response)")
             continue
         
-        # Validate plan
-        is_valid, errors = validate_llm_plan(plan, is_member=is_member)
+        # Validate plan (user-selected lures bypass some constraints)
+        is_valid, errors = validate_llm_plan(
+            plan, is_member=is_member,
+            user_primary_lure=user_primary_lure, user_secondary_lure=user_secondary_lure
+        )
         
         # ✅ FIX: Now this line works because primary_targets is defined (as None)
         # The validator handles None gracefully by skipping the target check.
-        extra_errors = _validate_policy_constraints(plan, seasonal_policy, primary_targets, secondary_targets)
+        # User-selected lures bypass seasonal policy validation.
+        extra_errors = _validate_policy_constraints(
+            plan, seasonal_policy, primary_targets, secondary_targets,
+            user_primary_lure=user_primary_lure, user_secondary_lure=user_secondary_lure
+        )
         
         if extra_errors:
             is_valid = False

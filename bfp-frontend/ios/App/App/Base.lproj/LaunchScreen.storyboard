@@ -26,8 +26,8 @@
                             <constraint firstItem="YRO-k0-hao" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cX1-aB-cD2"/>
                             <!-- Center vertically -->
                             <constraint firstItem="YRO-k0-hao" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="cY1-eF-gH3"/>
-                            <!-- Width = 96% of superview width (20% larger than before) -->
-                            <constraint firstItem="YRO-k0-hao" firstAttribute="width" secondItem="Ze5-6b-2t3" secondAttribute="width" multiplier="0.96" id="wD1-iJ-kL4"/>
+                            <!-- Width = 100% of superview width (10% larger than 96%) -->
+                            <constraint firstItem="YRO-k0-hao" firstAttribute="width" secondItem="Ze5-6b-2t3" secondAttribute="width" multiplier="1.0" id="wD1-iJ-kL4"/>
                             <!-- Aspect ratio constraint (1:1 for square logo) -->
                             <constraint firstItem="YRO-k0-hao" firstAttribute="height" secondItem="YRO-k0-hao" secondAttribute="width" multiplier="1" id="aR1-mN-oP5"/>
                         </constraints>

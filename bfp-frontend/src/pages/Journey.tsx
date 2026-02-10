@@ -304,12 +304,6 @@ export function Journey() {
 
   return (
     <div className="journey-page">
-      <div className="j-header">
-        <button onClick={() => navigate("/members")} className="j-back-btn">
-          <ArrowLeftIcon size={18} />
-        </button>
-        <h1>My Journey</h1>
-      </div>
 
       <div className={`j-content ${showContent ? "visible" : ""}`}>
         {/* HERO RING */}
