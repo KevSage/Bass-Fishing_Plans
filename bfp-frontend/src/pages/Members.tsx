@@ -1818,24 +1818,33 @@ export function Members() {
       const token = await getToken();
       if (!token) return;
       if (isCurrentLocationSaved) {
-        // Use polygon matching to find the correct favorite
-        const polygonMatch = findLakeByPolygon(
-          selectedCoords.lat,
-          selectedCoords.lng,
-          customLakesRef.current as any,
-          favorites,
-        );
-        
+        // Find the favorite using same logic as isCurrentLocationSaved
         let fav: FavoriteLake | null = null;
-        
-        if (polygonMatch && polygonMatch.source === "favorite") {
-          // Found via polygon - match by ID
-          fav = favorites.find(f => f.id === polygonMatch.id) || null;
-        } else {
-          // Fallback to nearby favorite
-          fav = findNearestFavorite(selectedCoords.lat, selectedCoords.lng, favorites);
+
+        // First try: match by name (most reliable)
+        fav = favorites.find(f => f.name === waterName) || null;
+
+        // Second try: polygon matching
+        if (!fav) {
+          const polygonMatch = findLakeByPolygon(
+            selectedCoords.lat,
+            selectedCoords.lng,
+            customLakesRef.current as any,
+            favorites,
+          );
+          if (polygonMatch && polygonMatch.source === "favorite") {
+            fav = favorites.find(f => f.id === polygonMatch.id) || null;
+          }
         }
-        
+
+        // Third try: coordinate proximity (same threshold as isCurrentLocationSaved)
+        if (!fav) {
+          fav = favorites.find(f =>
+            Math.abs(f.lat - selectedCoords.lat) < 0.001 &&
+            Math.abs(f.lng - selectedCoords.lng) < 0.001
+          ) || null;
+        }
+
         if (fav) {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }

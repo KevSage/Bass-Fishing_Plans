@@ -205,7 +205,7 @@ export async function listCatchesByLake(
   token: string,
 ): Promise<{ catches: CatchRecord[]; total: number }> {
   return apiRequest(
-    `/catches/by-lake/${lakeId}?lake_type=${lakeType}`,
+    `/catches/by-lake/${encodeURIComponent(lakeId)}?lake_type=${lakeType}`,
     {},
     token,
   );
@@ -352,7 +352,7 @@ export async function removeFavorite(
   token: string,
 ): Promise<{ success: boolean; removed_id: string | null }> {
   return apiRequest(
-    `/favorites/${lakeId}?lake_type=${lakeType}`,
+    `/favorites/${encodeURIComponent(lakeId)}?lake_type=${lakeType}`,
     { method: "DELETE" },
     token,
   );
