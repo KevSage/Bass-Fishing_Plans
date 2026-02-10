@@ -22,6 +22,7 @@ import {
   listFavoritesMobile,
   addFavorite,
   removeFavorite,
+  removeFavoriteMobile,
   listCustomLakes,
   listCustomLakesMobile,
   createCustomLake,
@@ -1786,16 +1787,22 @@ export function Members() {
     async (lake: FavoriteLake) => {
       // Optimistically remove from favorites
       setFavorites((prev) => prev.filter((f) => f.id !== lake.id));
-      
+
       // If we're currently viewing this favorite, clear the viewingFavoriteId
       if (viewingFavoriteId === lake.id) {
         setViewingFavoriteId(null);
       }
-      
+
       try {
-        const token = await getToken();
-        if (!token) throw new Error("No token");
-        await removeFavorite(lake.id, lake.lake_type, token);
+        if (isNativePlatform() && nativeAuth.isSignedIn && nativeAuth.userEmail && nativeAuth.userId) {
+          // Use mobile endpoint for native app
+          await removeFavoriteMobile(nativeAuth.userEmail, nativeAuth.userId, lake.id, lake.lake_type);
+        } else {
+          // Use web endpoint with JWT
+          const token = await getToken();
+          if (!token) throw new Error("No token");
+          await removeFavorite(lake.id, lake.lake_type, token);
+        }
       } catch (err) {
         console.error("Failed to remove favorite", err);
         // Rollback on error
@@ -1807,18 +1814,22 @@ export function Members() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [viewingFavoriteId],
+    [viewingFavoriteId, nativeAuth.isSignedIn, nativeAuth.userEmail, nativeAuth.userId],
   );
 
   const toggleFavoriteLake = useCallback(
     async (e?: React.MouseEvent) => {
       e?.preventDefault();
       e?.stopPropagation();
-      if (!waterName || !selectedCoords) return;
-      const token = await getToken();
-      if (!token) return;
+      if (!waterName || !selectedCoords) {
+        console.log("[toggleFavorite] Early return - no waterName or selectedCoords", { waterName, selectedCoords });
+        return;
+      }
+
+      console.log("[toggleFavorite] isCurrentLocationSaved:", isCurrentLocationSaved, "waterName:", waterName, "favorites:", favorites.length);
+
       if (isCurrentLocationSaved) {
-        // Find the favorite using same logic as isCurrentLocationSaved
+        // REMOVAL - handleRemoveSpecificLake handles its own auth
         let fav: FavoriteLake | null = null;
 
         // First try: match by name (most reliable)
@@ -1845,106 +1856,115 @@ export function Members() {
           ) || null;
         }
 
+        console.log("[toggleFavorite] Found fav:", fav?.name || "null");
         if (fav) {
           if (confirm(`Remove ${fav.name}?`)) handleRemoveSpecificLake(fav);
         }
-      } else {
-        if (!isActive && favorites.length >= 1) {
-          triggerUpgrade(
-            "Free users can track 1 Home Lake. Upgrade to track unlimited waters.",
-          );
-          return;
-        }
-        const dbMatch = hydrateLakeData(
-          manualWaterName || waterName,
-          selectedCoords.lat,
-          selectedCoords.lng,
+        return;
+      }
+
+      // ADDING - need token for web, mobile adding not yet supported
+      const token = await getToken();
+      if (!token) {
+        console.log("[toggleFavorite] Early return - no token");
+        return;
+      }
+
+      if (!isActive && favorites.length >= 1) {
+        triggerUpgrade(
+          "Free users can track 1 Home Lake. Upgrade to track unlimited waters.",
         );
-        let lakeId = "";
-        let lakeType: "known" | "custom" = "known";
-        let shouldCreateCustom = false;
-        if (dbMatch && dbMatch.name) {
-          // Lake exists in lakes.json - use name as the identifier.
-          // Backend matches known lakes by name (no id field needed).
-          lakeId = dbMatch.name;
-          lakeType = "known";
-        } else {
-          // Truly unlisted water - create as custom lake
-          lakeType = "custom";
-          shouldCreateCustom = true;
-        }
-        const performCustomCreation = async () => {
-          const nameToSave = manualWaterName || waterName;
-          const createRes = await createCustomLake(
-            {
-              name: nameToSave,
-              lat: selectedCoords.lat,
-              lng: selectedCoords.lng,
-              city: locationDetails.city || "",
-              state: locationDetails.state || "",
-              anchors: dbMatch?.anchors || [],
-            },
-            token,
-          );
-          if (createRes.success) {
-            return (createRes as any).lake_id;
-          } else {
-            const existingLake = (createRes as any).existing_lake;
-            if (
-              existingLake &&
-              nameToSave &&
-              existingLake.name !== nameToSave
-            ) {
-              try {
-                await updateCustomLake(
-                  existingLake.id,
-                  { name: nameToSave },
-                  token,
-                );
-              } catch (err) {
-                console.error("Failed to update lake name:", err);
-              }
-            }
-            return existingLake?.id;
-          }
-        };
-        try {
-          if (shouldCreateCustom) {
-            lakeId = await performCustomCreation();
-            if (!lakeId) throw new Error("Failed to get lake ID");
-          } else {
-            try {
-              await addFavorite(lakeId, "known", token);
-            } catch (knownErr: any) {
-              lakeType = "custom";
-              lakeId = await performCustomCreation();
-              if (!lakeId) throw new Error("Failed fallback creation");
-              await addFavorite(lakeId, "custom", token);
-              return;
-            }
-          }
-          if (lakeType === "custom") await addFavorite(lakeId, "custom", token);
-          const zoom = mapRef.current?.getZoom() || 10;
-          const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${selectedCoords.lng},${selectedCoords.lat},${Math.min(zoom, 13)},0/600x400?access_token=${MAPBOX_TOKEN}`;
-          const newLake: FavoriteLake = {
-            id: lakeId,
-            lake_type: lakeType,
-            name: manualWaterName || waterName,
-            city: locationDetails.city,
-            state: locationDetails.state,
+        return;
+      }
+      const dbMatch = hydrateLakeData(
+        manualWaterName || waterName,
+        selectedCoords.lat,
+        selectedCoords.lng,
+      );
+      let lakeId = "";
+      let lakeType: "known" | "custom" = "known";
+      let shouldCreateCustom = false;
+      if (dbMatch && dbMatch.name) {
+        // Lake exists in lakes.json - use name as the identifier.
+        // Backend matches known lakes by name (no id field needed).
+        lakeId = dbMatch.name;
+        lakeType = "known";
+      } else {
+        // Truly unlisted water - create as custom lake
+        lakeType = "custom";
+        shouldCreateCustom = true;
+      }
+      const performCustomCreation = async () => {
+        const nameToSave = manualWaterName || waterName;
+        const createRes = await createCustomLake(
+          {
+            name: nameToSave,
             lat: selectedCoords.lat,
             lng: selectedCoords.lng,
-            zoom: zoom,
-            image: imageUrl,
-            acres: dbMatch?.acres,
-            tier: dbMatch?.tier,
-          };
-          setFavorites((prev) => [...prev, newLake]);
-          setViewingFavoriteId(lakeId);
-        } catch (err) {
-          console.error("Failed to save favorite", err);
-          alert("Error saving lake. Please try again.");
+            city: locationDetails.city || "",
+            state: locationDetails.state || "",
+            anchors: dbMatch?.anchors || [],
+          },
+          token!,
+        );
+        if (createRes.success) {
+          return (createRes as any).lake_id;
+        } else {
+          const existingLake = (createRes as any).existing_lake;
+          if (
+            existingLake &&
+            nameToSave &&
+            existingLake.name !== nameToSave
+          ) {
+            try {
+              await updateCustomLake(
+                existingLake.id,
+                { name: nameToSave },
+                token!,
+              );
+            } catch (err) {
+              console.error("Failed to update lake name:", err);
+            }
+          }
+          return existingLake?.id;
         }
+      };
+      try {
+        if (shouldCreateCustom) {
+          lakeId = await performCustomCreation();
+          if (!lakeId) throw new Error("Failed to get lake ID");
+        } else {
+          try {
+            await addFavorite(lakeId, "known", token!);
+          } catch (knownErr: any) {
+            lakeType = "custom";
+            lakeId = await performCustomCreation();
+            if (!lakeId) throw new Error("Failed fallback creation");
+            await addFavorite(lakeId, "custom", token!);
+            return;
+          }
+        }
+        if (lakeType === "custom") await addFavorite(lakeId, "custom", token!);
+        const zoom = mapRef.current?.getZoom() || 10;
+        const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${selectedCoords.lng},${selectedCoords.lat},${Math.min(zoom, 13)},0/600x400?access_token=${MAPBOX_TOKEN}`;
+        const newLake: FavoriteLake = {
+          id: lakeId,
+          lake_type: lakeType,
+          name: manualWaterName || waterName,
+          city: locationDetails.city,
+          state: locationDetails.state,
+          lat: selectedCoords.lat,
+          lng: selectedCoords.lng,
+          zoom: zoom,
+          image: imageUrl,
+          acres: dbMatch?.acres,
+          tier: dbMatch?.tier,
+        };
+        setFavorites((prev) => [...prev, newLake]);
+        setViewingFavoriteId(lakeId);
+      } catch (err) {
+        console.error("Failed to save favorite", err);
+        alert("Error saving lake. Please try again.");
       }
     },
     [

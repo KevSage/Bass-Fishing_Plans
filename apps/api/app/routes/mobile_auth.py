@@ -307,6 +307,39 @@ async def mobile_list_favorites(request: MobileStatusRequest):
 
 
 # =============================================================================
+# MOBILE REMOVE FAVORITE ENDPOINT
+# =============================================================================
+
+class MobileRemoveFavoriteRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    lake_id: str
+    lake_type: str  # 'known' or 'custom'
+
+
+@router.post("/remove-favorite")
+async def mobile_remove_favorite(request: MobileRemoveFavoriteRequest):
+    """
+    Remove a lake from favorites for mobile app using email instead of JWT.
+    """
+    from app.services.user_lakes import UserLakeStore
+
+    if request.lake_type not in ("known", "custom"):
+        return {"success": False, "error": "lake_type must be 'known' or 'custom'"}
+
+    user_lake_store = UserLakeStore()
+
+    try:
+        removed = user_lake_store.remove(request.email, request.lake_id, request.lake_type)
+        return {
+            "success": removed,
+            "removed_id": request.lake_id if removed else None,
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
 # MOBILE CUSTOM LAKES ENDPOINT
 # =============================================================================
 

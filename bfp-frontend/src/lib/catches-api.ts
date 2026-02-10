@@ -435,6 +435,28 @@ export async function listFavoritesMobile(
 }
 
 /**
+ * Remove a favorite lake for mobile app using email instead of JWT.
+ */
+export async function removeFavoriteMobile(
+  email: string,
+  userId: string,
+  lakeId: string,
+  lakeType: LakeType,
+): Promise<{ success: boolean; removed_id: string | null }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/remove-favorite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, user_id: userId, lake_id: lakeId, lake_type: lakeType }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to remove favorite: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
  * List custom lakes for mobile app using email instead of JWT.
  */
 export async function listCustomLakesMobile(
