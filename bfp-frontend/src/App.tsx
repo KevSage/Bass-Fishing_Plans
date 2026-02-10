@@ -23,6 +23,7 @@ import { NotFound } from "./pages/NotFound";
 import { VerifyEmail } from "./pages/VerifyEmail";
 import "./complete-styles.css";
 import { LakeBuilder } from "./pages/LakeBuilder";
+import { LureLibrary } from "./pages/LureLibrary";
 
 /**
  * Root route handler - redirects to sign-in on native platforms
@@ -123,6 +124,7 @@ export default function App() {
         <Route path="/journey" element={<Journey />} />
 
         <Route path="/lake-builder" element={<LakeBuilder />} />
+        <Route path="/lure-library" element={<LureLibrary />} />
         <Route
           path="/members"
           element={

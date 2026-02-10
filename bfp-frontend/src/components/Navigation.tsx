@@ -81,7 +81,8 @@ export function Navigation() {
 
   const memberLinks = useMemo(
     () => [
-      { to: "/journey", label: "Journey" }, // Added Journey link
+      { to: "/journey", label: "Journey" },
+      { to: "/lure-library", label: "Lure Library" },
       { to: "/account", label: "Account" },
     ],
     [],
@@ -137,7 +138,7 @@ export function Navigation() {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <nav style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <nav style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
           {publicLinks.map((link) => (
             <Link
               key={link.to}
@@ -150,6 +151,8 @@ export function Navigation() {
                 fontWeight: isActive(link.to) ? 500 : 400,
                 letterSpacing: "0.02em",
                 padding: "12px 0",
+                width: "100%",
+                textAlign: "center",
                 borderBottom: "1px solid rgba(255,255,255,0.04)",
                 transition: "color 0.2s",
               }}
@@ -173,6 +176,8 @@ export function Navigation() {
                   fontWeight: isActive(link.to) ? 500 : 400,
                   letterSpacing: "0.02em",
                   padding: "12px 0",
+                  width: "100%",
+                  textAlign: "center",
                   borderBottom: "1px solid rgba(255,255,255,0.04)",
                 }}
               >
