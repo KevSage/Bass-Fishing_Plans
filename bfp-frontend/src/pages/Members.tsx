@@ -2793,7 +2793,10 @@ export function Members() {
                 Cancel
               </button>
               <button
-                onClick={performGeneration}
+                onClick={() => {
+                  setShowReplaceConfirm(false);
+                  setShowGenerateConfirm(true);
+                }}
                 className="generate-btn"
                 style={{
                   background:
