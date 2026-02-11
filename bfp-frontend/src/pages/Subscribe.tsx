@@ -75,17 +75,28 @@ export function Subscribe() {
 
   // Send verification code for mobile
   const handleSendVerificationCode = async () => {
+    console.log("[Subscribe] handleSendVerificationCode called");
+    console.log("[Subscribe] nativeAuth.userEmail:", nativeAuth.userEmail);
+
+    if (!nativeAuth.userEmail) {
+      setError("Email not found. Please sign out and sign in again.");
+      return;
+    }
+
     setSendingCode(true);
     setError("");
 
     try {
+      console.log("[Subscribe] Sending verification to:", nativeAuth.userEmail);
       const response = await fetch(`${API_BASE}/mobile-auth/send-verification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: nativeAuth.userEmail }),
       });
 
+      console.log("[Subscribe] Response status:", response.status);
       const data = await response.json();
+      console.log("[Subscribe] Response data:", data);
 
       if (data.success) {
         setMobileVerifying(true);
@@ -93,7 +104,7 @@ export function Subscribe() {
         setError(data.error || "Failed to send verification code");
       }
     } catch (err) {
-      console.error("Send verification error:", err);
+      console.error("[Subscribe] Send verification error:", err);
       setError("Failed to send verification code. Please try again.");
     } finally {
       setSendingCode(false);
@@ -139,8 +150,12 @@ export function Subscribe() {
   };
 
   const handleSubscribe = async () => {
+    console.log("[Subscribe] handleSubscribe called");
+    console.log("[Subscribe] isNative:", isNative, "mobileVerified:", mobileVerified);
+
     // Mobile: Require verification before checkout
     if (isNative && !mobileVerified) {
+      console.log("[Subscribe] Triggering verification flow");
       handleSendVerificationCode();
       return;
     }

@@ -30,7 +30,8 @@
       "Bash(ls:*)",
       "Bash(git push:*)",
       "Bash(open:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(grep:*)"
     ]
   }
 }
