@@ -22,7 +22,9 @@ export function Subscribe() {
   // Platform-aware values
   const isSignedIn = isNative ? nativeAuth.isSignedIn : clerkIsSignedIn;
   const isLoaded = isNative ? nativeAuth.isLoaded : clerkIsLoaded;
-  const user = isNative ? { primaryEmailAddress: { emailAddress: nativeAuth.userEmail } } : clerkUser;
+  const user = isNative
+    ? { primaryEmailAddress: { emailAddress: nativeAuth.userEmail } }
+    : clerkUser;
   const getToken = isNative ? nativeAuth.getToken : clerkGetToken;
 
   const navigate = useNavigate();
@@ -61,7 +63,9 @@ export function Subscribe() {
             setIsMember(data.is_member);
             // Check if user has actual paid subscription (not just FREE_MODE access)
             const subStatus = data.subscription_status;
-            setHasActiveSubscription(subStatus === "active" || subStatus === "trialing");
+            setHasActiveSubscription(
+              subStatus === "active" || subStatus === "trialing",
+            );
           }
         } catch (err) {
           console.error("Failed to check status", err);
@@ -88,11 +92,14 @@ export function Subscribe() {
 
     try {
       console.log("[Subscribe] Sending verification to:", nativeAuth.userEmail);
-      const response = await fetch(`${API_BASE}/mobile-auth/send-verification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: nativeAuth.userEmail }),
-      });
+      const response = await fetch(
+        `${API_BASE}/mobile-auth/send-verification`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: nativeAuth.userEmail }),
+        },
+      );
 
       console.log("[Subscribe] Response status:", response.status);
       const data = await response.json();
@@ -151,7 +158,12 @@ export function Subscribe() {
 
   const handleSubscribe = async () => {
     console.log("[Subscribe] handleSubscribe called");
-    console.log("[Subscribe] isNative:", isNative, "mobileVerified:", mobileVerified);
+    console.log(
+      "[Subscribe] isNative:",
+      isNative,
+      "mobileVerified:",
+      mobileVerified,
+    );
 
     // Mobile: Require verification before checkout
     if (isNative && !mobileVerified) {
@@ -175,7 +187,8 @@ export function Subscribe() {
           }),
         });
         data = await response.json();
-        if (!data.success) throw new Error(data.error || "Failed to start checkout");
+        if (!data.success)
+          throw new Error(data.error || "Failed to start checkout");
       } else {
         // Web: Use standard checkout with JWT
         const token = await getToken();
@@ -238,7 +251,9 @@ export function Subscribe() {
         });
 
         // Send verification email
-        await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+        await signUp.prepareEmailAddressVerification({
+          strategy: "email_code",
+        });
 
         // Show verification form
         setVerifying(true);
@@ -574,11 +589,15 @@ export function Subscribe() {
                         setLoading(true);
                         setError("");
                         try {
-                          await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+                          await signUp.prepareEmailAddressVerification({
+                            strategy: "email_code",
+                          });
                           setError(""); // Clear any previous error
                           alert("Verification code resent!");
                         } catch (err: any) {
-                          setError(err.errors?.[0]?.message || "Failed to resend code");
+                          setError(
+                            err.errors?.[0]?.message || "Failed to resend code",
+                          );
                         } finally {
                           setLoading(false);
                         }
@@ -861,7 +880,8 @@ export function Subscribe() {
                     padding: "18px 24px",
                     fontSize: "1.1rem",
                     fontWeight: 700,
-                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    background:
+                      "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                     border: "none",
                     borderRadius: 16,
                     color: "#fff",
@@ -1058,7 +1078,9 @@ export function Subscribe() {
                     type="text"
                     value={verificationCode}
                     onChange={(e) =>
-                      setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                      setVerificationCode(
+                        e.target.value.replace(/\D/g, "").slice(0, 6),
+                      )
                     }
                     onKeyPress={(e) => {
                       if (e.key === "Enter" && !loading) {
@@ -1183,7 +1205,10 @@ export function Subscribe() {
               </div>
 
               <button
-                onClick={handleSubscribe}
+                onClick={() => {
+                  console.log("[Subscribe] BUTTON CLICKED!");
+                  handleSubscribe();
+                }}
                 disabled={loading || checkingStatus || sendingCode}
                 style={{
                   width: "100%",
@@ -1197,7 +1222,10 @@ export function Subscribe() {
                   border: "none",
                   borderRadius: 16,
                   color: "#fff",
-                  cursor: loading || checkingStatus || sendingCode ? "not-allowed" : "pointer",
+                  cursor:
+                    loading || checkingStatus || sendingCode
+                      ? "not-allowed"
+                      : "pointer",
                   transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                   boxShadow:
                     "0 10px 30px rgba(74, 144, 226, 0.25), inset 0 1px 1px rgba(255,255,255,0.2)",
