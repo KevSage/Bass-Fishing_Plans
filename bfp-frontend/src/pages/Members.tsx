@@ -1459,7 +1459,21 @@ export function Members() {
         // Clear selection if map center is more than 20km from selected lake
         const MAX_DISTANCE_FROM_LAKE = 20000; // 20km in meters
         if (distanceFromSelected > MAX_DISTANCE_FROM_LAKE) {
-          clearActiveLake();
+          // Inline clear to avoid dependency issues
+          setSelectedCoords(null);
+          setWaterName("");
+          setManualWaterName("");
+          setLocationDetails({});
+          setViewingFavoriteId(null);
+          setShowWeather(false);
+          if (markerRef.current) {
+            markerRef.current.remove();
+            markerRef.current = null;
+          }
+          if (markerElementRef.current) {
+            markerElementRef.current.remove();
+            markerElementRef.current = null;
+          }
         }
         return; // Don't auto-detect while a lake is selected
       }
@@ -1562,7 +1576,7 @@ export function Members() {
       map.off('move', debouncedHandler);
       map.off('zoom', debouncedHandler);
     };
-  }, [selectedCoords, waterName, customLakesRef.current, favoritesRef.current, clearActiveLake]);
+  }, [selectedCoords, waterName, customLakesRef.current, favoritesRef.current]);
 
   // --- HANDLERS ---
   const handleLiveCameraClick = () => {
