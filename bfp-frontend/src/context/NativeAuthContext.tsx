@@ -10,6 +10,7 @@ import {
   signUpWithPassword,
   signOut as apiSignOut,
   refreshToken,
+  signInWithAppleAPI, // NEW: Import Apple Sign-In API function
 } from '../lib/clerkDirectApi';
 import {
   saveAuth,
@@ -36,6 +37,13 @@ interface NativeAuthContextType {
   signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   getToken: () => Promise<string | null>;
+  // NEW: Apple Sign-In method
+  signInWithApple: (
+    identityToken: string,
+    email: string,
+    firstName?: string,
+    lastName?: string
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 const NativeAuthContext = createContext<NativeAuthContextType | null>(null);
@@ -175,6 +183,41 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
 
     return { success: false, error: result.error };
   }, []);
+  
+  // NEW: Sign in with Apple
+  const signInWithApple = useCallback(
+    async (identityToken: string, email: string, firstName?: string, lastName?: string) => {
+      console.log('[NativeAuth] Sign in with Apple attempt:', email);
+
+      // Call new API function for Apple Sign-In
+      // This function will be defined in clerkDirectApi.ts
+      const result = await signInWithAppleAPI(identityToken, email, firstName, lastName);
+
+      if (result.success && result.userId) {
+        await saveAuth({
+          sessionId: result.sessionId || result.userId,
+          userId: result.userId,
+          token: result.token || '',
+          userEmail: email, // Use the email from Apple
+        });
+
+        setSessionId(result.sessionId || result.userId);
+        setUserId(result.userId);
+        setUserEmail(email);
+        setToken(result.token || null);
+        setIsSignedIn(true);
+
+        initializePushNotifications(email, result.userId).catch((err) => {
+          console.warn('[NativeAuth] Push notification init failed:', err);
+        });
+
+        return { success: true };
+      }
+
+      return { success: false, error: result.error };
+    },
+    [],
+  );
 
   const signOut = useCallback(async () => {
     console.log('[NativeAuth] Sign out');
@@ -226,6 +269,8 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
     signUp,
     signOut,
     getToken,
+    // NEW: Include signInWithApple in the context value
+    signInWithApple,
   };
 
   return (

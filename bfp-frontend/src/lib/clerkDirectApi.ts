@@ -76,6 +76,57 @@ export async function signInWithPassword(
 }
 
 /**
+ * Sign in with Apple via backend proxy
+ */
+export async function signInWithAppleAPI(
+  identityToken: string,
+  email: string,
+  firstName?: string,
+  lastName?: string
+): Promise<SignInResult> {
+  try {
+    console.log('[ClerkAPI] Attempting sign-in with Apple via backend for:', email);
+    console.log('[ClerkAPI] POST to:', `${API_BASE_URL}/mobile-auth/apple-sign-in`);
+
+    const response = await fetch(`${API_BASE_URL}/mobile-auth/apple-sign-in`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        identity_token: identityToken,
+        email,
+        first_name: firstName,
+        last_name: lastName,
+      }),
+    });
+
+    const data = await response.json();
+    console.log('[ClerkAPI] Apple Sign-in response:', data);
+
+    if (data.success) {
+      return {
+        success: true,
+        sessionId: data.session_id,
+        userId: data.user_id,
+        token: data.token,
+      };
+    }
+
+    return {
+      success: false,
+      error: data.error || 'Apple Sign-In failed',
+    };
+  } catch (err: any) {
+    console.error('[ClerkAPI] Apple Sign-In error:', err);
+    return {
+      success: false,
+      error: err.message || 'Network error',
+    };
+  }
+}
+
+/**
  * Sign up with email and password via backend proxy
  */
 export async function signUpWithPassword(

@@ -16,6 +16,10 @@ class Subscriber:
     active: bool
     stripe_customer_id: Optional[str]
     stripe_subscription_id: Optional[str]
+    # NEW: Apple Sign-In fields
+    apple_user_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 
 class SubscriberStore:
@@ -51,7 +55,11 @@ class SubscriberStore:
                     email TEXT PRIMARY KEY,
                     active BOOLEAN NOT NULL,
                     stripe_customer_id TEXT,
-                    stripe_subscription_id TEXT UNIQUE
+                    stripe_subscription_id TEXT UNIQUE,
+                    -- NEW: Apple Sign-In fields
+                    apple_user_id TEXT UNIQUE,
+                    first_name TEXT,
+                    last_name TEXT
                 );
                 """
             )
@@ -77,20 +85,28 @@ class SubscriberStore:
         active: bool,
         stripe_customer_id: Optional[str],
         stripe_subscription_id: Optional[str],
+        # NEW: Apple Sign-In fields
+        apple_user_id: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
     ) -> None:
         email_norm = email.lower().strip()
         with self._pg_conn() as conn:
             conn.execute(
                 """
-                INSERT INTO subscribers (email, active, stripe_customer_id, stripe_subscription_id)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO subscribers (email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (email)
                 DO UPDATE SET
                     active = EXCLUDED.active,
                     stripe_customer_id = EXCLUDED.stripe_customer_id,
-                    stripe_subscription_id = EXCLUDED.stripe_subscription_id;
+                    stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+                    -- NEW: Update Apple fields if provided and not null
+                    apple_user_id = COALESCE(EXCLUDED.apple_user_id, subscribers.apple_user_id),
+                    first_name = COALESCE(EXCLUDED.first_name, subscribers.first_name),
+                    last_name = COALESCE(EXCLUDED.last_name, subscribers.last_name);
                 """,
-                (email_norm, active, stripe_customer_id, stripe_subscription_id),
+                (email_norm, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name),
             )
             conn.commit()
 
@@ -99,7 +115,7 @@ class SubscriberStore:
         with self._pg_conn() as conn:
             row = conn.execute(
                 """
-                SELECT email, active, stripe_customer_id, stripe_subscription_id
+                SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
                 FROM subscribers
                 WHERE email = %s
                 """,
@@ -114,6 +130,9 @@ class SubscriberStore:
             active=bool(row["active"]),
             stripe_customer_id=row["stripe_customer_id"],
             stripe_subscription_id=row["stripe_subscription_id"],
+            apple_user_id=row["apple_user_id"],
+            first_name=row["first_name"],
+            last_name=row["last_name"],
         )
 
     # -------------------------
@@ -138,7 +157,11 @@ class SubscriberStore:
                     email TEXT PRIMARY KEY,
                     active INTEGER NOT NULL,
                     stripe_customer_id TEXT,
-                    stripe_subscription_id TEXT
+                    stripe_subscription_id TEXT,
+                    -- NEW: Apple Sign-In fields
+                    apple_user_id TEXT UNIQUE,
+                    first_name TEXT,
+                    last_name TEXT
                 );
                 """
             )
@@ -147,6 +170,114 @@ class SubscriberStore:
     # -------------------------
     # Public API
     # -------------------------
+    def create(
+        self,
+        email: str,
+        *,
+        active: bool = True, # Default to active for new sign-ups
+        stripe_customer_id: Optional[str] = None,
+        stripe_subscription_id: Optional[str] = None,
+        apple_user_id: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+    ) -> None:
+        email_norm = email.lower().strip()
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO subscribers (email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (email) DO NOTHING; -- Do nothing if email already exists
+                    """,
+                    (email_norm, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name),
+                )
+                conn.commit()
+        else:
+            # SQLite path
+            with self._sqlite_conn() as conn:
+                conn.execute(
+                    """
+                    INSERT INTO subscribers (email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(email) DO NOTHING;
+                    """,
+                    (email_norm, 1 if active else 0, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name),
+                )
+                conn.commit()
+
+    def update_apple_user_id(self, email: str, apple_user_id: str) -> None:
+        """Updates the apple_user_id for a given email."""
+        email_norm = email.lower().strip()
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                conn.execute(
+                    """
+                    UPDATE subscribers SET apple_user_id = %s WHERE email = %s;
+                    """,
+                    (apple_user_id, email_norm),
+                )
+                conn.commit()
+        else:
+            with self._sqlite_conn() as conn:
+                conn.execute(
+                    """
+                    UPDATE subscribers SET apple_user_id = ? WHERE email = ?;
+                    """,
+                    (apple_user_id, email_norm),
+                )
+                conn.commit()
+
+    def update_email(self, old_email: str, new_email: str) -> None:
+        """Updates the email address for a subscriber.
+        This is typically used for Apple private relay emails when the real email is revealed later.
+        """
+        old_email_norm = old_email.lower().strip()
+        new_email_norm = new_email.lower().strip()
+
+        if old_email_norm == new_email_norm:
+            return # No change needed
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                # First, check if the new email already exists (violates PRIMARY KEY constraint)
+                existing_new_email = conn.execute(
+                    "SELECT email FROM subscribers WHERE email = %s;",
+                    (new_email_norm,)
+                ).fetchone()
+
+                if existing_new_email:
+                    # If new email exists, we need to merge or decide. For now, we'll error or ignore.
+                    # A more complex merge strategy might be needed depending on business rules.
+                    print(f"WARNING: Cannot update email from {old_email_norm} to {new_email_norm} as {new_email_norm} already exists.")
+                    return
+                
+                conn.execute(
+                    """
+                    UPDATE subscribers SET email = %s WHERE email = %s;
+                    """,
+                    (new_email_norm, old_email_norm),
+                )
+                conn.commit()
+        else:
+            with self._sqlite_conn() as conn:
+                existing_new_email = conn.execute(
+                    "SELECT email FROM subscribers WHERE email = ?;",
+                    (new_email_norm,)
+                ).fetchone()
+
+                if existing_new_email:
+                    print(f"WARNING: Cannot update email from {old_email_norm} to {new_email_norm} as {new_email_norm} already exists.")
+                    return
+
+                conn.execute(
+                    """
+                    UPDATE subscribers SET email = ? WHERE email = ?;
+                    """,
+                    (new_email_norm, old_email_norm),
+                )
+                conn.commit()
+
     def upsert_active(
         self,
         email: str,
@@ -154,6 +285,10 @@ class SubscriberStore:
         active: bool,
         stripe_customer_id: Optional[str] = None,
         stripe_subscription_id: Optional[str] = None,
+        # NEW: Apple Sign-In fields (added to upsert_active for consistency)
+        apple_user_id: Optional[str] = None,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
     ) -> None:
         if self._use_pg:
             return self._pg_upsert(
@@ -161,6 +296,9 @@ class SubscriberStore:
                 active=active,
                 stripe_customer_id=stripe_customer_id,
                 stripe_subscription_id=stripe_subscription_id,
+                apple_user_id=apple_user_id,
+                first_name=first_name,
+                last_name=last_name,
             )
 
         # SQLite path
@@ -168,14 +306,18 @@ class SubscriberStore:
         with self._sqlite_conn() as conn:
             conn.execute(
                 """
-                INSERT INTO subscribers (email, active, stripe_customer_id, stripe_subscription_id)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO subscribers (email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(email) DO UPDATE SET
                     active=excluded.active,
                     stripe_customer_id=excluded.stripe_customer_id,
-                    stripe_subscription_id=excluded.stripe_subscription_id
+                    stripe_subscription_id=excluded.stripe_subscription_id,
+                    -- NEW: Update Apple fields if provided and not null
+                    apple_user_id = COALESCE(excluded.apple_user_id, subscribers.apple_user_id),
+                    first_name = COALESCE(excluded.first_name, subscribers.first_name),
+                    last_name = COALESCE(excluded.last_name, subscribers.last_name)
                 """,
-                (email_norm, 1 if active else 0, stripe_customer_id, stripe_subscription_id),
+                (email_norm, 1 if active else 0, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name),
             )
             conn.commit()
 
@@ -203,7 +345,7 @@ class SubscriberStore:
         email_norm = email.lower().strip()
         with self._sqlite_conn() as conn:
             row = conn.execute(
-                "SELECT email, active, stripe_customer_id, stripe_subscription_id FROM subscribers WHERE email=?",
+                "SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name FROM subscribers WHERE email=?",
                 (email_norm,),
             ).fetchone()
             if not row:
@@ -213,6 +355,9 @@ class SubscriberStore:
                 active=bool(row["active"]),
                 stripe_customer_id=row["stripe_customer_id"],
                 stripe_subscription_id=row["stripe_subscription_id"],
+                apple_user_id=row["apple_user_id"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
             )
 
     def is_active(self, email: str) -> bool:

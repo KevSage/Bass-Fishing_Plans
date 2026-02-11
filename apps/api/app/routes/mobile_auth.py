@@ -4,17 +4,59 @@ Mobile authentication endpoints.
 Uses Clerk Backend API to verify credentials directly, bypassing the client-side 2FA flow.
 """
 import os
-from typing import Optional
 import httpx
-from fastapi import APIRouter, HTTPException
+import jwt # NEW: Import jwt library
+from datetime import datetime, timedelta # NEW: Import datetime for JWT expiration
+from typing import Optional, Dict, Any # NEW: Add Dict, Any for JWKS
+from fastapi import APIRouter, HTTPException, status # NEW: Add status for HTTP errors
 from pydantic import BaseModel, EmailStr
+
+# NEW: Import SubscriberStore for user management
+from app.services.subscribers import SubscriberStore
 
 router = APIRouter(prefix="/mobile-auth", tags=["mobile-auth"])
 
 CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
+# NEW: Secret for signing internal JWTs
+JWT_SECRET = os.getenv("JWT_SECRET")
 # Backend API base URL (not Frontend API)
 CLERK_BACKEND_API = "https://api.clerk.com/v1"
 
+# =============================================================================
+# JWT UTILITIES (for internal app tokens)
+# =============================================================================
+
+if not JWT_SECRET:
+    print("WARNING: JWT_SECRET environment variable is not set. JWT generation/verification will fail.")
+
+def create_jwt(user_id: str, email: str, expires_delta: Optional[timedelta] = None) -> str:
+    """Creates a signed JWT for the authenticated user."""
+    if not JWT_SECRET:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="JWT_SECRET not configured.")
+    
+    to_encode = {"sub": user_id, "email": email}
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=60 * 24 * 7) # Default to 1 week
+    to_encode.update({"exp": expire.timestamp()})
+    
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm="HS256")
+    return encoded_jwt
+
+def decode_jwt(token: str) -> Optional[Dict[str, Any]]:
+    """Decodes and verifies an internal JWT."""
+    if not JWT_SECRET:
+        return None
+    try:
+        decoded_payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return decoded_payload
+    except jwt.PyJWTError:
+        return None
+
+# =============================================================================
+# REQUEST MODELS
+# =============================================================================
 
 class SignInRequest(BaseModel):
     email: EmailStr
@@ -25,15 +67,176 @@ class SignUpRequest(BaseModel):
     email: EmailStr
     password: str
 
+# NEW: Model for Apple Sign-In request
+class AppleSignInRequest(BaseModel):
+    identity_token: str
+    email: EmailStr # Apple provides this, or a private relay email
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    # Potentially add a nonce if you use it for extra security, though it's optional
+    # nonce: Optional[str] = None
+
 
 class AuthResponse(BaseModel):
     success: bool
     session_id: Optional[str] = None
     user_id: Optional[str] = None
-    token: Optional[str] = None
-    email: Optional[str] = None
+    token: Optional[str] = None # Our internal JWT
+    email: Optional[EmailStr] = None
     error: Optional[str] = None
 
+# Initialize SubscriberStore
+_subs_store = SubscriberStore()
+
+# =============================================================================
+# APPLE JWKS CACHING
+# =============================================================================
+
+import time as _time
+
+# Simple cache for Apple's public keys (refresh every hour)
+_apple_keys_cache: Dict[str, Any] = {}
+_apple_keys_cache_time: float = 0
+_APPLE_KEYS_CACHE_TTL = 3600  # 1 hour
+
+async def get_apple_public_keys() -> Dict[str, Any]:
+    """Fetches Apple's public keys for JWT verification with caching."""
+    global _apple_keys_cache, _apple_keys_cache_time
+
+    # Return cached keys if still valid
+    if _apple_keys_cache and (_time.time() - _apple_keys_cache_time) < _APPLE_KEYS_CACHE_TTL:
+        return _apple_keys_cache
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get("https://appleid.apple.com/auth/keys")
+            response.raise_for_status()
+            _apple_keys_cache = response.json()
+            _apple_keys_cache_time = _time.time()
+            return _apple_keys_cache
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch Apple public keys: {e.response.status_code} - {e.response.text}"
+        )
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Network error fetching Apple public keys: {e}"
+        )
+
+# =============================================================================
+# APPLE SIGN-IN ENDPOINT
+# =============================================================================
+
+@router.post("/apple-sign-in", response_model=AuthResponse)
+async def mobile_apple_sign_in(request: AppleSignInRequest):
+    """
+    Handles Apple Sign-In authentication.
+    Verifies the identity token, then signs in or registers the user.
+    """
+    if not JWT_SECRET:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="JWT_SECRET not configured.")
+    if not os.getenv("APPLE_CLIENT_ID"):
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="APPLE_CLIENT_ID not configured.")
+
+    try:
+        # 1. Fetch Apple's public keys
+        apple_jwks = await get_apple_public_keys()
+
+        # 2. Get the signing key from the identity token
+        header = jwt.get_unverified_header(request.identity_token)
+        kid = header.get("kid")
+        if not kid:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Apple identity token: missing 'kid'.")
+
+        # Find the matching key in JWKS
+        signing_key = None
+        for key in apple_jwks.get("keys", []):
+            if key.get("kid") == kid:
+                from jwt.algorithms import RSAAlgorithm
+                signing_key = RSAAlgorithm.from_jwk(key)
+                break
+
+        if not signing_key:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Apple public key with kid '{kid}' not found.")
+
+        # 3. Decode and verify the identity token
+        decoded_token = jwt.decode(
+            request.identity_token,
+            signing_key,
+            algorithms=["RS256"],
+            audience=os.getenv("APPLE_CLIENT_ID"), # Your app's bundle ID (e.g., com.bassclarity.app)
+            issuer="https://appleid.apple.com",
+            options={"verify_exp": True} # Ensure token is not expired
+        )
+
+        # 4. Extract user info
+        apple_user_id = decoded_token.get("sub")
+        email_from_token = decoded_token.get("email") # This might be Apple's private relay email
+        
+        if not apple_user_id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Apple identity token: missing 'sub'.")
+        
+        # Use email from request body if provided (Apple sometimes doesn't send email after first login)
+        # Otherwise, fall back to email from token
+        user_email = request.email or email_from_token
+        
+        if not user_email:
+             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required for sign-in.")
+
+        # 5. Find or create user in our database
+        user = _subs_store.get(user_email)
+        
+        if user:
+            # User exists, update apple_user_id if missing or different
+            if not user.apple_user_id:
+                _subs_store.update_apple_user_id(user_email, apple_user_id)
+            elif user.apple_user_id != apple_user_id:
+                # Handle case where Apple user ID might have changed (e.g., user re-authenticated with Apple)
+                # Or if a different Apple ID is trying to sign in with an existing email
+                print(f"WARNING: Email {user_email} already linked to Apple ID {user.apple_user_id}, but new Apple ID {apple_user_id} is attempting to sign in.")
+                # You might want to link the new Apple ID, or block this, depending on your policy.
+                # For now, let's update it if the email matches.
+                _subs_store.update_apple_user_id(user_email, apple_user_id) # Update with the latest Apple ID
+            
+            # Ensure email is correct if Apple's private relay was used and updated
+            if user.email != user_email:
+                 _subs_store.update_email(user.email, user_email)
+
+        else:
+            # New user, create an entry
+            _subs_store.create(
+                email=user_email,
+                first_name=request.first_name,
+                last_name=request.last_name,
+                apple_user_id=apple_user_id,
+                # Default to active=False if you want to enforce email verification
+                # or set to True if Apple Sign-In is considered verified
+                active=True # Apple ID is inherently verified
+            )
+        
+        # 6. Generate our internal JWT
+        internal_jwt = create_jwt(user_id=apple_user_id, email=user_email) # Use apple_user_id as primary user_id for internal JWT
+
+        return AuthResponse(
+            success=True,
+            user_id=apple_user_id, # Use Apple's user ID as our internal userId
+            email=user_email,
+            token=internal_jwt,
+            session_id=None # No session_id for this flow, use JWT
+        )
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Apple identity token has expired.")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Invalid Apple identity token: {e}.")
+    except Exception as e:
+        print(f"[mobile_auth] Apple Sign-In error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during Apple Sign-In: {e}"
+        )
 
 def get_clerk_headers():
     """Get headers for Clerk Backend API requests."""
