@@ -193,6 +193,89 @@ async def mobile_sign_up(request: SignUpRequest):
 
 
 # =============================================================================
+# EMAIL VERIFICATION FOR MOBILE
+# =============================================================================
+
+from app.services.verification_codes import verification_store
+from app.services.email_service import send_verification_email
+
+
+class SendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+
+class VerificationResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    error: Optional[str] = None
+
+
+@router.post("/send-verification", response_model=VerificationResponse)
+async def send_verification_code(request: SendVerificationRequest):
+    """
+    Send a 6-digit verification code to the user's email.
+    Used for mobile signup flow before payment.
+    """
+    try:
+        # Generate code
+        code = verification_store.generate_code(request.email)
+
+        # Send email
+        success = send_verification_email(request.email, code)
+
+        if success:
+            return VerificationResponse(
+                success=True,
+                message="Verification code sent to your email"
+            )
+        else:
+            return VerificationResponse(
+                success=False,
+                error="Failed to send verification email. Please try again."
+            )
+
+    except Exception as e:
+        print(f"[mobile_auth] send-verification error: {e}")
+        return VerificationResponse(
+            success=False,
+            error="Failed to send verification code"
+        )
+
+
+@router.post("/verify-code", response_model=VerificationResponse)
+async def verify_code(request: VerifyCodeRequest):
+    """
+    Verify the 6-digit code entered by the user.
+    Returns success if code is valid and not expired.
+    """
+    try:
+        is_valid = verification_store.verify_code(request.email, request.code)
+
+        if is_valid:
+            return VerificationResponse(
+                success=True,
+                message="Email verified successfully"
+            )
+        else:
+            return VerificationResponse(
+                success=False,
+                error="Invalid or expired code. Please try again."
+            )
+
+    except Exception as e:
+        print(f"[mobile_auth] verify-code error: {e}")
+        return VerificationResponse(
+            success=False,
+            error="Verification failed"
+        )
+
+
+# =============================================================================
 # MOBILE DATA ENDPOINTS (use email instead of JWT)
 # =============================================================================
 

@@ -8,29 +8,22 @@ import { useNativeAuth } from "@/context/NativeAuthContext";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export function Subscribe() {
-  // Clerk SDK hooks (for web)
+  // Check platform once at component mount
+  const isNative = isNativePlatform();
+
+  // Native auth (only used on mobile)
+  const nativeAuth = useNativeAuth();
+
+  // Clerk hooks (used on web, also available on native but we use nativeAuth instead)
   const { isSignedIn: clerkIsSignedIn, getToken: clerkGetToken } = useAuth();
   const { user: clerkUser } = useUser();
   const { isLoaded: clerkIsLoaded, signUp, setActive } = useSignUp();
 
-  // Native auth (for iOS/Android)
-  const nativeAuth = useNativeAuth();
-
-  // Platform-aware state
-  const isNative = isNativePlatform();
-  const isLoaded = isNative ? nativeAuth.isLoaded : clerkIsLoaded;
+  // Platform-aware values
   const isSignedIn = isNative ? nativeAuth.isSignedIn : clerkIsSignedIn;
-  const userEmail = isNative
-    ? nativeAuth.userEmail
-    : clerkUser?.primaryEmailAddress?.emailAddress;
-
-  // Platform-aware getToken
-  const getToken = async () => {
-    if (isNative) {
-      return nativeAuth.getToken();
-    }
-    return clerkGetToken();
-  };
+  const isLoaded = isNative ? nativeAuth.isLoaded : clerkIsLoaded;
+  const user = isNative ? { primaryEmailAddress: { emailAddress: nativeAuth.userEmail } } : clerkUser;
+  const getToken = isNative ? nativeAuth.getToken : clerkGetToken;
 
   const navigate = useNavigate();
 
@@ -47,18 +40,11 @@ export function Subscribe() {
   const [verifying, setVerifying] = useState(false);
   const [code, setCode] = useState("");
 
-  // Debug logging
-  console.log("[Subscribe] Platform:", isNative ? "native" : "web");
-  console.log("[Subscribe] isLoaded:", isLoaded, "isSignedIn:", isSignedIn);
-
-  // Scroll input into view when keyboard opens (mobile)
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (isNative) {
-      setTimeout(() => {
-        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 300);
-    }
-  };
+  // Mobile verification state (verify before payment)
+  const [mobileVerifying, setMobileVerifying] = useState(false);
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [sendingCode, setSendingCode] = useState(false);
 
   // Check if user is already a member
   useEffect(() => {
@@ -87,33 +73,97 @@ export function Subscribe() {
     }
   }, [isSignedIn, getToken]);
 
+  // Send verification code for mobile
+  const handleSendVerificationCode = async () => {
+    setSendingCode(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE}/mobile-auth/send-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: nativeAuth.userEmail }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMobileVerifying(true);
+      } else {
+        setError(data.error || "Failed to send verification code");
+      }
+    } catch (err) {
+      console.error("Send verification error:", err);
+      setError("Failed to send verification code. Please try again.");
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  // Verify code for mobile
+  const handleVerifyMobileCode = async () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      setError("Please enter the 6-digit code");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE}/mobile-auth/verify-code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: nativeAuth.userEmail,
+          code: verificationCode,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMobileVerified(true);
+        setMobileVerifying(false);
+        // Now proceed to checkout
+        handleSubscribe();
+      } else {
+        setError(data.error || "Invalid code. Please try again.");
+      }
+    } catch (err) {
+      console.error("Verify code error:", err);
+      setError("Verification failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubscribe = async () => {
+    // Mobile: Require verification before checkout
+    if (isNative && !mobileVerified) {
+      handleSendVerificationCode();
+      return;
+    }
+
     setLoading(true);
     try {
       let data;
 
       if (isNative) {
-        // Mobile: Use mobile-specific checkout endpoint with email/user_id
+        // Mobile: Use mobile-specific checkout endpoint
         const response = await fetch(`${API_BASE}/mobile-auth/checkout`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: nativeAuth.userEmail,
             user_id: nativeAuth.userId,
           }),
         });
-
         data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || "Failed to start checkout");
-        }
+        if (!data.success) throw new Error(data.error || "Failed to start checkout");
       } else {
         // Web: Use standard checkout with JWT
         const token = await getToken();
-
         const response = await fetch(`${API_BASE}/billing/checkout`, {
           method: "POST",
           headers: {
@@ -121,9 +171,7 @@ export function Subscribe() {
             Authorization: `Bearer ${token}`,
           },
         });
-
         if (!response.ok) throw new Error("Failed to start checkout");
-
         data = await response.json();
       }
 
@@ -148,31 +196,23 @@ export function Subscribe() {
       return;
     }
 
-    if (!isLoaded) {
-      setError("Authentication is still loading. Please wait a moment.");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
     try {
       if (isNative) {
-        // Use native direct API (no email verification for mobile)
-        console.log("[Subscribe] Using native auth for sign-up...");
+        // Mobile: Use native auth (Clerk SDK doesn't work in WebView)
+        // TODO: Add custom email verification later
         const result = await nativeAuth.signUp(email, password);
-
-        if (result.success) {
-          console.log("[Subscribe] Native sign-up successful - isSignedIn will update automatically");
-          // nativeAuth.signUp() sets isSignedIn=true in context
-          // This triggers re-render showing subscription options
-        } else {
+        if (!result.success) {
           setError(result.error || "Failed to create account");
         }
+        // On success, isSignedIn updates automatically via context
       } else {
-        // Use Clerk SDK (web) with email verification
-        if (!signUp) {
+        // Web: Use Clerk SDK with email verification
+        if (!clerkIsLoaded || !signUp) {
           setError("Authentication is still loading. Please wait a moment.");
+          setLoading(false);
           return;
         }
 
@@ -205,7 +245,7 @@ export function Subscribe() {
       return;
     }
 
-    if (!isLoaded || !signUp) {
+    if (!clerkIsLoaded || !signUp) {
       setError("Please wait a moment and try again");
       return;
     }
@@ -244,38 +284,13 @@ export function Subscribe() {
   return (
     <div
       style={{
-        minHeight: "100dvh",
-        position: "relative",
+        minHeight: "100vh",
+        background: "linear-gradient(to bottom, #0a0a0a, #1a1a2e)",
         color: "#fff",
         padding: "80px 20px 60px",
-        paddingBottom: isNative ? 300 : 60,
-        overflow: "auto",
-        overflowX: "hidden",
-        WebkitOverflowScrolling: "touch",
       }}
     >
-      {/* Background Image */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundImage: "url(/hero_bass.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "right center",
-          filter: "brightness(0.7)",
-          zIndex: 0,
-        }}
-      />
-      {/* Gradient Overlay */}
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "linear-gradient(to bottom, rgba(10,10,10,0.6) 0%, rgba(26,26,46,0.9) 100%)",
-          zIndex: 1,
-        }}
-      />
-      <div style={{ maxWidth: 640, margin: "0 auto", position: "relative", zIndex: 2 }}>
+      <div style={{ maxWidth: 640, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <div
@@ -463,7 +478,6 @@ export function Subscribe() {
                       type="text"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
-                      onFocus={handleInputFocus}
                       onKeyPress={(e) => {
                         if (e.key === "Enter" && !loading) {
                           e.preventDefault();
@@ -634,7 +648,6 @@ export function Subscribe() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      onFocus={handleInputFocus}
                       placeholder="you@example.com"
                       autoComplete="email"
                       style={{
@@ -670,7 +683,6 @@ export function Subscribe() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      onFocus={handleInputFocus}
                       placeholder="At least 8 characters"
                       autoComplete="new-password"
                       style={{
@@ -811,7 +823,7 @@ export function Subscribe() {
                     marginTop: 16,
                   }}
                 >
-                  {userEmail}
+                  {user?.primaryEmailAddress?.emailAddress}
                 </div>
               </div>
 
@@ -886,7 +898,7 @@ export function Subscribe() {
                     marginTop: 16,
                   }}
                 >
-                  {userEmail}
+                  {user?.primaryEmailAddress?.emailAddress}
                 </div>
               </div>
 
@@ -965,6 +977,174 @@ export function Subscribe() {
                 </button>
               </Link>
             </div>
+          ) : mobileVerifying ? (
+            // STATE 2B: MOBILE EMAIL VERIFICATION
+            <div>
+              <h3
+                style={{
+                  fontSize: "1.2rem",
+                  marginBottom: 8,
+                  fontWeight: 700,
+                }}
+              >
+                Verify Your Email
+              </h3>
+              <p
+                style={{
+                  opacity: 0.6,
+                  marginBottom: 24,
+                  fontSize: "0.95rem",
+                }}
+              >
+                We sent a code to{" "}
+                <strong style={{ color: "#fff" }}>
+                  {nativeAuth.userEmail}
+                </strong>
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                  textAlign: "left",
+                }}
+              >
+                {error && (
+                  <div
+                    style={{
+                      color: "#ff6b6b",
+                      fontSize: "0.9rem",
+                      background: "rgba(255,0,0,0.1)",
+                      padding: 12,
+                      borderRadius: 8,
+                      border: "1px solid rgba(255,107,107,0.2)",
+                    }}
+                  >
+                    {error}
+                  </div>
+                )}
+
+                <div>
+                  <label
+                    htmlFor="verificationCode"
+                    style={{
+                      color: "rgba(255,255,255,0.7)",
+                      fontSize: "0.85rem",
+                      marginBottom: 6,
+                      display: "block",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Verification Code
+                  </label>
+                  <input
+                    id="verificationCode"
+                    type="text"
+                    value={verificationCode}
+                    onChange={(e) =>
+                      setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" && !loading) {
+                        e.preventDefault();
+                        handleVerifyMobileCode();
+                      }
+                    }}
+                    placeholder="Enter 6-digit code"
+                    autoComplete="one-time-code"
+                    style={{
+                      width: "100%",
+                      padding: "12px 16px",
+                      borderRadius: 8,
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "rgba(0,0,0,0.3)",
+                      color: "white",
+                      fontSize: "1.2rem",
+                      outline: "none",
+                      letterSpacing: "0.3em",
+                      textAlign: "center",
+                    }}
+                    disabled={loading}
+                    maxLength={6}
+                  />
+                </div>
+
+                <button
+                  onClick={handleVerifyMobileCode}
+                  disabled={loading || verificationCode.length !== 6}
+                  style={{
+                    width: "100%",
+                    padding: "18px 24px",
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    background:
+                      loading || verificationCode.length !== 6
+                        ? "rgba(74, 144, 226, 0.3)"
+                        : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 16,
+                    cursor:
+                      loading || verificationCode.length !== 6
+                        ? "not-allowed"
+                        : "pointer",
+                    marginTop: 8,
+                  }}
+                >
+                  {loading ? "Verifying..." : "Verify & Continue to Payment"}
+                </button>
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: 4,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileVerifying(false);
+                      setVerificationCode("");
+                      setError("");
+                    }}
+                    disabled={loading}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#4A90E2",
+                      fontSize: "0.85rem",
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError("");
+                      handleSendVerificationCode();
+                    }}
+                    disabled={sendingCode}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "rgba(255,255,255,0.5)",
+                      fontSize: "0.85rem",
+                      fontWeight: 500,
+                      cursor: sendingCode ? "not-allowed" : "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    {sendingCode ? "Sending..." : "Resend code"}
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : (
             // STATE 2: LOGGED IN BUT NOT PAID
             <div>
@@ -983,44 +1163,44 @@ export function Subscribe() {
                 <div
                   style={{ fontSize: "1.1rem", fontWeight: 600, color: "#fff" }}
                 >
-                  {userEmail}
+                  {user?.primaryEmailAddress?.emailAddress}
                 </div>
               </div>
 
               <button
                 onClick={handleSubscribe}
-                disabled={loading || checkingStatus}
+                disabled={loading || checkingStatus || sendingCode}
                 style={{
                   width: "100%",
                   padding: "18px 24px",
                   fontSize: "1.1rem",
                   fontWeight: 700,
                   background:
-                    loading || checkingStatus
+                    loading || checkingStatus || sendingCode
                       ? "rgba(74, 144, 226, 0.3)"
                       : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                   border: "none",
                   borderRadius: 16,
                   color: "#fff",
-                  cursor: loading || checkingStatus ? "not-allowed" : "pointer",
+                  cursor: loading || checkingStatus || sendingCode ? "not-allowed" : "pointer",
                   transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                   boxShadow:
                     "0 10px 30px rgba(74, 144, 226, 0.25), inset 0 1px 1px rgba(255,255,255,0.2)",
                 }}
                 onMouseEnter={(e) => {
-                  if (!loading && !checkingStatus)
+                  if (!loading && !checkingStatus && !sendingCode)
                     e.currentTarget.style.transform =
                       "translateY(-2px) scale(1.01)";
                 }}
                 onMouseLeave={(e) => {
-                  if (!loading && !checkingStatus)
+                  if (!loading && !checkingStatus && !sendingCode)
                     e.currentTarget.style.transform = "translateY(0) scale(1)";
                 }}
               >
                 {checkingStatus
                   ? "Verifying..."
-                  : loading
-                    ? "Preparing Checkout..."
+                  : loading || sendingCode
+                    ? "Preparing..."
                     : "Activate Subscription →"}
               </button>
 

@@ -9,7 +9,8 @@ from typing import Optional
 
 
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-FROM_EMAIL = os.getenv("EMAIL_FROM", "plans@bassclarity.com")
+FROM_EMAIL = os.getenv("EMAIL_FROM", "noreply@bassclarity.com")
+REPLY_TO_EMAIL = os.getenv("REPLY_TO_EMAIL", "bassclarity@gmail.com")
 WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
 
 
@@ -98,6 +99,7 @@ def send_preview_plan_email(
             },
             json={
                 "from": FROM_EMAIL,
+                "reply_to": REPLY_TO_EMAIL,
                 "to": [to_email],
                 "subject": subject,
                 "html": html,
@@ -177,6 +179,7 @@ def send_welcome_email(to_email: str) -> None:
             },
             json={
                 "from": FROM_EMAIL,
+                "reply_to": REPLY_TO_EMAIL,
                 "to": [to_email],
                 "subject": subject,
                 "html": html,
@@ -187,6 +190,75 @@ def send_welcome_email(to_email: str) -> None:
         print(f"Welcome email sent to {to_email}")
     except Exception as e:
         print(f"Failed to send welcome email to {to_email}: {e}")
+
+
+def send_verification_email(to_email: str, code: str) -> bool:
+    """
+    Send email verification code for mobile signup.
+
+    Args:
+        to_email: Recipient email
+        code: 6-digit verification code
+
+    Returns:
+        True if sent successfully, False otherwise
+    """
+    if not RESEND_API_KEY:
+        print("WARNING: RESEND_API_KEY not set, skipping verification email")
+        return False
+
+    subject = "Verify your Bass Clarity account"
+
+    html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2 style="color: #4A90E2;">Verify Your Email</h2>
+
+    <p>Enter this code in the app to verify your email address:</p>
+
+    <div style="background: #f5f5f5; padding: 30px; border-radius: 8px; margin: 20px 0; text-align: center;">
+        <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #333;">{code}</span>
+    </div>
+
+    <p style="color: #666; font-size: 14px;">This code expires in 10 minutes.</p>
+
+    <p style="color: #666; font-size: 14px;">If you didn't request this code, you can safely ignore this email.</p>
+
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
+
+    <p style="font-size: 12px; color: #999;">
+        Bass Clarity - AI-Powered Fishing Intelligence
+    </p>
+</body>
+</html>
+    """
+
+    try:
+        r = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": FROM_EMAIL,
+                "to": [to_email],
+                "subject": subject,
+                "html": html,
+            },
+            timeout=10,
+        )
+        r.raise_for_status()
+        print(f"Verification email sent to {to_email}")
+        return True
+    except Exception as e:
+        print(f"Failed to send verification email to {to_email}: {e}")
+        return False
 
 
 def add_to_audience(

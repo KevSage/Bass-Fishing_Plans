@@ -238,7 +238,7 @@ export function Navigation() {
           <SignedOut>
             <div style={{ height: 20 }} />
             <Link
-              to="/sign-up"
+              to="/subscribe"
               onClick={() => setIsOpen(false)}
               style={{
                 display: "flex",
@@ -478,7 +478,7 @@ export function Navigation() {
                   Sign In
                 </Link>
                 <Link
-                  to="/sign-up"
+                  to="/subscribe"
                   style={{
                     textDecoration: "none",
                     background: "#fff",
