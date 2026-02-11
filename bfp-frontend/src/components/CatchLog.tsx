@@ -1418,7 +1418,7 @@ export function CatchDetailView({
       <style>{`
         /* ... (Keep existing detailed styles from previous file, they were good) ... */
         .catch-detail-container { display: flex; flex-direction: column; height: 100%; background: #121218; overflow-y: auto; }
-        .catch-hero { position: relative; width: 100%; height: 400px; flex-shrink: 0; background: #000; overflow: hidden; }
+        .catch-hero { position: relative; width: 100%; height: clamp(250px, 40vh, 350px); flex-shrink: 0; background: #000; overflow: hidden; margin-top: 60px; }
         .catch-hero img { width: 100%; height: 100%; object-fit: cover; }
         .catch-hero-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, #121218 100%); z-index: 1; }
         .catch-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%); color: rgba(255,255,255,0.15); }

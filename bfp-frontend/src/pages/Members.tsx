@@ -747,8 +747,8 @@ export function Members() {
   const [showReplaceConfirm, setShowReplaceConfirm] = useState(false);
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
 
-  // Lure Selection Mode
-  const [lureSelectionMode, setLureSelectionMode] = useState<"ai" | "user">("ai");
+  // Lure Selection Mode (includes "view" to view existing plan)
+  const [lureSelectionMode, setLureSelectionMode] = useState<"ai" | "user" | "view">("ai");
   const [userPrimaryLure, setUserPrimaryLure] = useState<string>("");
   const [userSecondaryLure, setUserSecondaryLure] = useState<string>("");
 
@@ -1448,10 +1448,24 @@ export function Members() {
     if (!map || !isMountedRef.current) return;
     
     const handleAutoDetect = () => {
-      // Don't auto-detect if user has manually selected a lake (has marker)
-      if (selectedCoords || markerRef.current) return;
-      
       const center = map.getCenter();
+
+      // Check if user has scrolled too far from a selected lake
+      if (selectedCoords) {
+        const distanceFromSelected = getDistanceMeters(
+          center.lat, center.lng,
+          selectedCoords.lat, selectedCoords.lng
+        );
+        // Clear selection if map center is more than 20km from selected lake
+        const MAX_DISTANCE_FROM_LAKE = 20000; // 20km in meters
+        if (distanceFromSelected > MAX_DISTANCE_FROM_LAKE) {
+          clearActiveLake();
+        }
+        return; // Don't auto-detect while a lake is selected
+      }
+
+      // Don't auto-detect if marker exists
+      if (markerRef.current) return;
       const zoom = map.getZoom();
       
       // Only detect at reasonable zoom levels
@@ -1548,7 +1562,7 @@ export function Members() {
       map.off('move', debouncedHandler);
       map.off('zoom', debouncedHandler);
     };
-  }, [selectedCoords, waterName, customLakesRef.current, favoritesRef.current]);
+  }, [selectedCoords, waterName, customLakesRef.current, favoritesRef.current, clearActiveLake]);
 
   // --- HANDLERS ---
   const handleLiveCameraClick = () => {
@@ -2638,6 +2652,7 @@ export function Members() {
                     ? "rgba(74,144,226,0.1)"
                     : "transparent",
                   cursor: "pointer",
+                  marginBottom: lastPlanUrl && lastPlanLake === (currentFavorite?.name || waterName) ? 8 : 0,
                 }}
               >
                 <input
@@ -2649,6 +2664,35 @@ export function Members() {
                 />
                 <span style={{ fontSize: "0.95rem" }}>I'll Choose My Lures</span>
               </label>
+
+              {/* View Existing Plan option - only shown if there's a plan for this lake */}
+              {lastPlanUrl && lastPlanLake === (currentFavorite?.name || waterName) && (
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: lureSelectionMode === "view"
+                      ? "1px solid rgba(34,197,94,0.5)"
+                      : "1px solid rgba(255,255,255,0.1)",
+                    background: lureSelectionMode === "view"
+                      ? "rgba(34,197,94,0.1)"
+                      : "transparent",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="lureMode"
+                    checked={lureSelectionMode === "view"}
+                    onChange={() => setLureSelectionMode("view")}
+                    style={{ accentColor: "#22C55E" }}
+                  />
+                  <span style={{ fontSize: "0.95rem" }}>View Existing Plan</span>
+                </label>
+              )}
             </div>
 
             {/* Conditional Lure Pickers */}
@@ -2753,7 +2797,14 @@ export function Members() {
                 Cancel
               </button>
               <button
-                onClick={performGeneration}
+                onClick={() => {
+                  if (lureSelectionMode === "view" && lastPlanUrl) {
+                    setShowGenerateConfirm(false);
+                    navigate(lastPlanUrl);
+                  } else {
+                    performGeneration();
+                  }
+                }}
                 className="generate-btn"
                 disabled={
                   lureSelectionMode === "user" &&
@@ -2761,10 +2812,12 @@ export function Members() {
                 }
                 style={{
                   background:
-                    lureSelectionMode === "user" &&
-                    (!userPrimaryLure || !userSecondaryLure)
-                      ? "rgba(74,144,226,0.3)"
-                      : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    lureSelectionMode === "view"
+                      ? "linear-gradient(135deg, #22C55E 0%, #16A34A 100%)"
+                      : lureSelectionMode === "user" &&
+                        (!userPrimaryLure || !userSecondaryLure)
+                        ? "rgba(74,144,226,0.3)"
+                        : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                   padding: "12px",
                   cursor:
                     lureSelectionMode === "user" &&
@@ -2773,7 +2826,7 @@ export function Members() {
                       : "pointer",
                 }}
               >
-                Generate
+                {lureSelectionMode === "view" ? "View Plan" : "Generate"}
               </button>
             </div>
           </div>

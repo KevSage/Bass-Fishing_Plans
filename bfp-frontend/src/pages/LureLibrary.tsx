@@ -13,7 +13,7 @@ type FilterState = {
   clarity: string[];
   conditions: string[];
   cover: string[];
-  pressure: string[];
+  finesse: boolean | null;
 };
 
 const EMPTY_FILTERS: FilterState = {
@@ -21,7 +21,7 @@ const EMPTY_FILTERS: FilterState = {
   clarity: [],
   conditions: [],
   cover: [],
-  pressure: [],
+  finesse: null,
 };
 
 // =============================================================================
@@ -117,14 +117,14 @@ function LureDetailModal({
             </div>
           </div>
 
+  {lure.finesse && (
           <div className="lure-modal-tag-group">
-            <span className="lure-modal-tag-label">Pressure</span>
+            <span className="lure-modal-tag-label">Style</span>
             <div className="lure-modal-tag-pills">
-              {lure.pressure_level.map((p) => (
-                <span key={p} className="lure-tag pressure">{p}</span>
-              ))}
+              <span className="lure-tag finesse">Finesse</span>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
@@ -164,8 +164,9 @@ export function LureLibrary() {
 
   // Toggle a filter value
   const toggleFilter = (group: keyof FilterState, value: string) => {
+    if (group === "finesse") return; // Use toggleFinesse instead
     setFilters((prev) => {
-      const current = prev[group];
+      const current = prev[group] as string[];
       const updated = current.includes(value)
         ? current.filter((v) => v !== value)
         : [...current, value];
@@ -173,11 +174,23 @@ export function LureLibrary() {
     });
   };
 
-  // Remove a specific filter
-  const removeFilter = (group: keyof FilterState, value: string) => {
+  // Toggle finesse filter
+  const toggleFinesse = (value: boolean) => {
     setFilters((prev) => ({
       ...prev,
-      [group]: prev[group].filter((v) => v !== value),
+      finesse: prev.finesse === value ? null : value,
+    }));
+  };
+
+  // Remove a specific filter
+  const removeFilter = (group: keyof FilterState, value: string) => {
+    if (group === "finesse") {
+      setFilters((prev) => ({ ...prev, finesse: null }));
+      return;
+    }
+    setFilters((prev) => ({
+      ...prev,
+      [group]: (prev[group] as string[]).filter((v) => v !== value),
     }));
   };
 
@@ -187,11 +200,14 @@ export function LureLibrary() {
   // Get all active filters as flat array for display
   const activeFilters = useMemo(() => {
     const result: { group: keyof FilterState; value: string }[] = [];
-    (Object.keys(filters) as (keyof FilterState)[]).forEach((group) => {
+    (["season", "clarity", "conditions", "cover"] as const).forEach((group) => {
       filters[group].forEach((value) => {
         result.push({ group, value });
       });
     });
+    if (filters.finesse !== null) {
+      result.push({ group: "finesse", value: filters.finesse ? "Finesse" : "Power" });
+    }
     return result;
   }, [filters]);
 
@@ -230,11 +246,8 @@ export function LureLibrary() {
         return false;
       }
 
-      // Pressure filter
-      if (
-        filters.pressure.length > 0 &&
-        !filters.pressure.some((p) => lure.pressure_level.includes(p))
-      ) {
+      // Finesse filter
+      if (filters.finesse !== null && lure.finesse !== filters.finesse) {
         return false;
       }
 
@@ -340,18 +353,20 @@ export function LureLibrary() {
           </div>
         </div>
 
-        {/* Pressure */}
+        {/* Finesse */}
         <div className="filter-section">
-          <div className="filter-section-title">Pressure</div>
+          <div className="filter-section-title">Style</div>
           <div className="filter-pills-row">
-            {FILTER_OPTIONS.pressure.map((p) => (
-              <FilterPill
-                key={p}
-                label={p}
-                active={filters.pressure.includes(p)}
-                onClick={() => toggleFilter("pressure", p)}
-              />
-            ))}
+            <FilterPill
+              label="Finesse"
+              active={filters.finesse === true}
+              onClick={() => toggleFinesse(true)}
+            />
+            <FilterPill
+              label="Power"
+              active={filters.finesse === false}
+              onClick={() => toggleFinesse(false)}
+            />
           </div>
         </div>
       </div>
@@ -762,9 +777,9 @@ export function LureLibrary() {
           color: #CE93D8;
         }
 
-        .lure-tag.pressure {
-          background: rgba(244, 67, 54, 0.15);
-          color: #EF9A9A;
+        .lure-tag.finesse {
+          background: rgba(156, 39, 176, 0.15);
+          color: #CE93D8;
         }
       `}</style>
     </div>
