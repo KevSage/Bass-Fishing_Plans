@@ -1448,38 +1448,10 @@ export function Members() {
     if (!map || !isMountedRef.current) return;
     
     const handleAutoDetect = () => {
+      // Don't auto-detect if user has manually selected a lake (has marker)
+      if (selectedCoords || markerRef.current) return;
+
       const center = map.getCenter();
-
-      // Check if user has scrolled too far from a selected lake
-      if (selectedCoords) {
-        const distanceFromSelected = getDistanceMeters(
-          center.lat, center.lng,
-          selectedCoords.lat, selectedCoords.lng
-        );
-        // Clear selection if map center is more than 20km from selected lake
-        const MAX_DISTANCE_FROM_LAKE = 20000; // 20km in meters
-        if (distanceFromSelected > MAX_DISTANCE_FROM_LAKE) {
-          // Inline clear to avoid dependency issues
-          setSelectedCoords(null);
-          setWaterName("");
-          setManualWaterName("");
-          setLocationDetails({});
-          setViewingFavoriteId(null);
-          setShowWeather(false);
-          if (markerRef.current) {
-            markerRef.current.remove();
-            markerRef.current = null;
-          }
-          if (markerElementRef.current) {
-            markerElementRef.current.remove();
-            markerElementRef.current = null;
-          }
-        }
-        return; // Don't auto-detect while a lake is selected
-      }
-
-      // Don't auto-detect if marker exists
-      if (markerRef.current) return;
       const zoom = map.getZoom();
       
       // Only detect at reasonable zoom levels

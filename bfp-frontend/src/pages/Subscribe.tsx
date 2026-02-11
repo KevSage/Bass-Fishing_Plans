@@ -51,6 +51,15 @@ export function Subscribe() {
   console.log("[Subscribe] Platform:", isNative ? "native" : "web");
   console.log("[Subscribe] isLoaded:", isLoaded, "isSignedIn:", isSignedIn);
 
+  // Scroll input into view when keyboard opens (mobile)
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (isNative) {
+      setTimeout(() => {
+        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+  };
+
   // Check if user is already a member
   useEffect(() => {
     if (isSignedIn) {
@@ -81,19 +90,43 @@ export function Subscribe() {
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      const token = await getToken();
+      let data;
 
-      const response = await fetch(`${API_BASE}/billing/checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      if (isNative) {
+        // Mobile: Use mobile-specific checkout endpoint with email/user_id
+        const response = await fetch(`${API_BASE}/mobile-auth/checkout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: nativeAuth.userEmail,
+            user_id: nativeAuth.userId,
+          }),
+        });
 
-      if (!response.ok) throw new Error("Failed to start checkout");
+        data = await response.json();
 
-      const data = await response.json();
+        if (!data.success) {
+          throw new Error(data.error || "Failed to start checkout");
+        }
+      } else {
+        // Web: Use standard checkout with JWT
+        const token = await getToken();
+
+        const response = await fetch(`${API_BASE}/billing/checkout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to start checkout");
+
+        data = await response.json();
+      }
+
       if (data.url) {
         window.location.href = data.url;
       }
@@ -130,9 +163,9 @@ export function Subscribe() {
         const result = await nativeAuth.signUp(email, password);
 
         if (result.success) {
-          console.log("[Subscribe] Native sign-up successful");
-          // After creating account, reload to show subscription option
-          window.location.reload();
+          console.log("[Subscribe] Native sign-up successful - isSignedIn will update automatically");
+          // nativeAuth.signUp() sets isSignedIn=true in context
+          // This triggers re-render showing subscription options
         } else {
           setError(result.error || "Failed to create account");
         }
@@ -211,17 +244,20 @@ export function Subscribe() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         position: "relative",
         color: "#fff",
         padding: "80px 20px 60px",
-        overflow: "hidden",
+        paddingBottom: isNative ? 300 : 60,
+        overflow: "auto",
+        overflowX: "hidden",
+        WebkitOverflowScrolling: "touch",
       }}
     >
       {/* Background Image */}
       <div
         style={{
-          position: "absolute",
+          position: "fixed",
           inset: 0,
           backgroundImage: "url(/hero_bass.jpg)",
           backgroundSize: "cover",
@@ -233,7 +269,7 @@ export function Subscribe() {
       {/* Gradient Overlay */}
       <div
         style={{
-          position: "absolute",
+          position: "fixed",
           inset: 0,
           background: "linear-gradient(to bottom, rgba(10,10,10,0.6) 0%, rgba(26,26,46,0.9) 100%)",
           zIndex: 1,
@@ -427,6 +463,7 @@ export function Subscribe() {
                       type="text"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
+                      onFocus={handleInputFocus}
                       onKeyPress={(e) => {
                         if (e.key === "Enter" && !loading) {
                           e.preventDefault();
@@ -597,6 +634,7 @@ export function Subscribe() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       onKeyPress={handleKeyPress}
+                      onFocus={handleInputFocus}
                       placeholder="you@example.com"
                       autoComplete="email"
                       style={{
@@ -632,6 +670,7 @@ export function Subscribe() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onKeyPress={handleKeyPress}
+                      onFocus={handleInputFocus}
                       placeholder="At least 8 characters"
                       autoComplete="new-password"
                       style={{

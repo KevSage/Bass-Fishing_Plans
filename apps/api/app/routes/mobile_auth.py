@@ -473,6 +473,52 @@ async def unregister_device(request: UnregisterDeviceRequest):
 
 
 # =============================================================================
+# MOBILE BILLING CHECKOUT
+# =============================================================================
+
+class MobileCheckoutRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+
+
+@router.post("/checkout")
+async def mobile_checkout(request: MobileCheckoutRequest):
+    """
+    Create a Stripe checkout session for mobile app users.
+    Uses email directly instead of JWT verification.
+    """
+    from app.services.stripe_billing import create_checkout_session
+
+    try:
+        # Verify the user exists in Clerk
+        async with httpx.AsyncClient() as client:
+            user_response = await client.get(
+                f"{CLERK_BACKEND_API}/users/{request.user_id}",
+                headers=get_clerk_headers(),
+            )
+
+            if user_response.status_code != 200:
+                return {"success": False, "error": "User not found"}
+
+            user_data = user_response.json()
+
+            # Verify email matches
+            email_addresses = user_data.get("email_addresses", [])
+            user_emails = [e.get("email_address", "").lower() for e in email_addresses]
+
+            if request.email.lower() not in user_emails:
+                return {"success": False, "error": "Email mismatch"}
+
+        # Create Stripe checkout session
+        url = create_checkout_session(email=request.email.lower())
+        return {"success": True, "url": url}
+
+    except Exception as e:
+        print(f"[mobile_auth] checkout error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
 # ADMIN/TEST ENDPOINTS FOR NOTIFICATIONS
 # =============================================================================
 

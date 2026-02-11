@@ -25,6 +25,15 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [showClerkWarning, setShowClerkWarning] = useState(false);
 
+  // Scroll input into view when keyboard opens (mobile)
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (isNative) {
+      setTimeout(() => {
+        e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 300);
+    }
+  };
+
   // Redirect if already signed in
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -109,22 +118,19 @@ export default function SignInPage() {
   return (
     <section
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        minHeight: "100dvh",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
+        flexDirection: "column",
+        overflow: "auto",
+        overflowX: "hidden",
         backgroundColor: "#0a0a0a",
+        WebkitOverflowScrolling: "touch",
       }}
     >
       {/* Background Image - positioned like Landing page hero */}
       <div
         style={{
-          position: "absolute",
+          position: "fixed",
           inset: 0,
           backgroundImage: "url(/images/hero_bass.jpg)",
           backgroundSize: "cover",
@@ -136,12 +142,15 @@ export default function SignInPage() {
       {/* Gradient Overlay */}
       <div
         style={{
-          position: "absolute",
+          position: "fixed",
           inset: 0,
           background: "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%)",
           zIndex: 1,
         }}
       />
+
+      {/* Spacer for vertical centering */}
+      <div style={{ flex: "1 1 auto", minHeight: 40 }} />
 
       {/* Form Container */}
       <div
@@ -153,6 +162,8 @@ export default function SignInPage() {
           width: "100%",
           padding: "0 24px",
           paddingTop: "env(safe-area-inset-top)",
+          margin: "0 auto",
+          flex: "0 0 auto",
         }}
       >
         {/* Branding */}
@@ -232,6 +243,7 @@ export default function SignInPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyPress={handleKeyPress}
+              onFocus={handleInputFocus}
               placeholder="Email address"
               autoComplete="email"
               disabled={loading}
@@ -252,6 +264,7 @@ export default function SignInPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyPress={handleKeyPress}
+              onFocus={handleInputFocus}
               placeholder="Password"
               autoComplete="current-password"
               disabled={loading}
@@ -309,6 +322,9 @@ export default function SignInPage() {
           </div>
         </div>
       </div>
+
+      {/* Bottom spacer - extra space for keyboard */}
+      <div style={{ flex: "1 1 auto", minHeight: 300 }} />
     </section>
   );
 }
