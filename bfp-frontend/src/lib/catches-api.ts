@@ -435,6 +435,28 @@ export async function listFavoritesMobile(
 }
 
 /**
+ * Add a lake to favorites for mobile app using email instead of JWT.
+ */
+export async function addFavoriteMobile(
+  email: string,
+  userId: string,
+  lakeId: string,
+  lakeType: LakeType,
+): Promise<{ success: boolean; added: boolean; lake_id: string; lake_type: LakeType }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/add-favorite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, user_id: userId, lake_id: lakeId, lake_type: lakeType }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to add favorite: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Remove a favorite lake for mobile app using email instead of JWT.
  */
 export async function removeFavoriteMobile(

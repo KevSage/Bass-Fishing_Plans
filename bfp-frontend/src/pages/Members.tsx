@@ -21,6 +21,7 @@ import {
   listFavorites,
   listFavoritesMobile,
   addFavorite,
+  addFavoriteMobile,
   removeFavorite,
   removeFavoriteMobile,
   listCustomLakes,
@@ -1929,22 +1930,31 @@ export function Members() {
           return existingLake?.id;
         }
       };
+      // Helper to add favorite on either platform
+      const addFavoriteCrossPlatform = async (id: string, type: "known" | "custom") => {
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          await addFavoriteMobile(nativeAuth.userEmail, nativeAuth.userId, id, type);
+        } else {
+          await addFavorite(id, type, token!);
+        }
+      };
+
       try {
         if (shouldCreateCustom) {
           lakeId = await performCustomCreation();
           if (!lakeId) throw new Error("Failed to get lake ID");
         } else {
           try {
-            await addFavorite(lakeId, "known", token!);
+            await addFavoriteCrossPlatform(lakeId, "known");
           } catch (knownErr: any) {
             lakeType = "custom";
             lakeId = await performCustomCreation();
             if (!lakeId) throw new Error("Failed fallback creation");
-            await addFavorite(lakeId, "custom", token!);
+            await addFavoriteCrossPlatform(lakeId, "custom");
             return;
           }
         }
-        if (lakeType === "custom") await addFavorite(lakeId, "custom", token!);
+        if (lakeType === "custom") await addFavoriteCrossPlatform(lakeId, "custom");
         const zoom = mapRef.current?.getZoom() || 10;
         const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${selectedCoords.lng},${selectedCoords.lat},${Math.min(zoom, 13)},0/600x400?access_token=${MAPBOX_TOKEN}`;
         const newLake: FavoriteLake = {
@@ -1977,6 +1987,7 @@ export function Members() {
       favorites,
       getToken,
       handleRemoveSpecificLake,
+      nativeAuth,
     ],
   );
 

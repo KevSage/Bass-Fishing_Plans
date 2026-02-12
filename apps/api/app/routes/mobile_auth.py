@@ -623,6 +623,49 @@ async def mobile_remove_favorite(request: MobileRemoveFavoriteRequest):
 
 
 # =============================================================================
+# MOBILE ADD FAVORITE ENDPOINT
+# =============================================================================
+
+class MobileAddFavoriteRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    lake_id: str
+    lake_type: str  # 'known' or 'custom'
+
+
+@router.post("/add-favorite")
+async def mobile_add_favorite(request: MobileAddFavoriteRequest):
+    """
+    Add a lake to favorites for mobile app using email instead of JWT.
+    """
+    from app.services.user_lakes import UserLakeStore
+    from app.services.custom_lakes import CustomLakeStore
+
+    if request.lake_type not in ("known", "custom"):
+        return {"success": False, "error": "lake_type must be 'known' or 'custom'"}
+
+    user_lake_store = UserLakeStore()
+
+    # Verify custom lake exists
+    if request.lake_type == "custom":
+        custom_lake_store = CustomLakeStore()
+        lake = custom_lake_store.get(request.lake_id, request.email)
+        if not lake:
+            return {"success": False, "error": "Custom lake not found"}
+
+    try:
+        added = user_lake_store.add(request.email, request.lake_id, request.lake_type)
+        return {
+            "success": True,
+            "added": added,
+            "lake_id": request.lake_id,
+            "lake_type": request.lake_type,
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
 # MOBILE CUSTOM LAKES ENDPOINT
 # =============================================================================
 
