@@ -291,84 +291,22 @@ export function LureLibrary() {
         Showing {filteredLures.length} of {LURES_ARRAY.length} lures
       </div>
 
-      {/* Filter Sections */}
-      <div className="filter-sections">
-        {/* Season */}
-        <div className="filter-section">
-          <div className="filter-section-title">Season</div>
-          <div className="filter-pills-row">
-            {FILTER_OPTIONS.season.map((s) => (
-              <FilterPill
-                key={s}
-                label={s}
-                active={filters.season.includes(s)}
-                onClick={() => toggleFilter("season", s)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Water Clarity */}
-        <div className="filter-section">
-          <div className="filter-section-title">Water Clarity</div>
-          <div className="filter-pills-row">
-            {FILTER_OPTIONS.clarity.map((c) => (
-              <FilterPill
-                key={c}
-                label={c}
-                active={filters.clarity.includes(c)}
-                onClick={() => toggleFilter("clarity", c)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Conditions */}
-        <div className="filter-section">
-          <div className="filter-section-title">Conditions</div>
-          <div className="filter-pills-row">
-            {FILTER_OPTIONS.conditions.map((c) => (
-              <FilterPill
-                key={c}
-                label={c}
-                active={filters.conditions.includes(c)}
-                onClick={() => toggleFilter("conditions", c)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Cover */}
-        <div className="filter-section">
-          <div className="filter-section-title">Cover</div>
-          <div className="filter-pills-row">
-            {FILTER_OPTIONS.cover.map((c) => (
-              <FilterPill
-                key={c}
-                label={c}
-                active={filters.cover.includes(c)}
-                onClick={() => toggleFilter("cover", c)}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Finesse */}
-        <div className="filter-section">
-          <div className="filter-section-title">Style</div>
-          <div className="filter-pills-row">
-            <FilterPill
-              label="Finesse"
-              active={filters.finesse === true}
-              onClick={() => toggleFinesse(true)}
-            />
-            <FilterPill
-              label="Power"
-              active={filters.finesse === false}
-              onClick={() => toggleFinesse(false)}
-            />
-          </div>
-        </div>
+      {/* Combined Filter Cloud */}
+      <div className="filter-cloud">
+        {FILTER_OPTIONS.season.map((s) => (
+          <FilterPill key={`s-${s}`} label={s} active={filters.season.includes(s)} onClick={() => toggleFilter("season", s)} />
+        ))}
+        {FILTER_OPTIONS.clarity.map((c) => (
+          <FilterPill key={`cl-${c}`} label={c} active={filters.clarity.includes(c)} onClick={() => toggleFilter("clarity", c)} />
+        ))}
+        {FILTER_OPTIONS.conditions.map((c) => (
+          <FilterPill key={`co-${c}`} label={c} active={filters.conditions.includes(c)} onClick={() => toggleFilter("conditions", c)} />
+        ))}
+        {FILTER_OPTIONS.cover.map((c) => (
+          <FilterPill key={`cv-${c}`} label={c} active={filters.cover.includes(c)} onClick={() => toggleFilter("cover", c)} />
+        ))}
+        <FilterPill label="Finesse" active={filters.finesse === true} onClick={() => toggleFinesse(true)} />
+        <FilterPill label="Power" active={filters.finesse === false} onClick={() => toggleFinesse(false)} />
       </div>
 
       {/* Lure Grid */}
@@ -409,14 +347,10 @@ export function LureLibrary() {
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 16px 20px;
-          padding-top: calc(16px + env(safe-area-inset-top));
+          padding: 12px 20px;
           background: rgba(10, 10, 15, 0.95);
           backdrop-filter: blur(20px);
           border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          position: sticky;
-          top: 0;
-          z-index: 100;
         }
 
         .lure-library-header h1 {
@@ -486,50 +420,29 @@ export function LureLibrary() {
 
         /* Results Count */
         .results-count {
-          padding: 12px 20px;
-          font-size: 0.85rem;
+          padding: 8px 16px;
+          font-size: 0.8rem;
           color: rgba(255, 255, 255, 0.5);
         }
 
-        /* Filter Sections */
-        .filter-sections {
-          padding: 0 20px 20px;
-        }
-
-        .filter-section {
-          margin-bottom: 16px;
-        }
-
-        .filter-section-title {
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.4);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-bottom: 8px;
-        }
-
-        .filter-pills-row {
+        /* Combined Filter Cloud */
+        .filter-cloud {
           display: flex;
           flex-wrap: wrap;
-          gap: 8px;
+          gap: 6px;
+          padding: 0 16px 12px;
         }
 
         .filter-pill {
-          padding: 8px 14px;
+          padding: 6px 12px;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 100px;
           color: rgba(255, 255, 255, 0.7);
-          font-size: 0.85rem;
+          font-size: 0.75rem;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s;
-        }
-
-        .filter-pill:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.2);
         }
 
         .filter-pill.active {

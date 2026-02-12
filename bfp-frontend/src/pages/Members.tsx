@@ -766,10 +766,18 @@ export function Members() {
   const [draftEntry, setDraftEntry] = useState<Partial<any> | null>(null);
   const clearDraftEntry = useCallback(() => setDraftEntry(null), []);
 
-  // Favorite Navigation State
-  const [viewingFavoriteId, setViewingFavoriteId] = useState<string | null>(
-    null,
+  // Favorite Navigation State - persist to sessionStorage
+  const [viewingFavoriteId, setViewingFavoriteIdState] = useState<string | null>(
+    () => sessionStorage.getItem("aiq_active_lake_id"),
   );
+  const setViewingFavoriteId = (id: string | null) => {
+    if (id) {
+      sessionStorage.setItem("aiq_active_lake_id", id);
+    } else {
+      sessionStorage.removeItem("aiq_active_lake_id");
+    }
+    setViewingFavoriteIdState(id);
+  };
 
   // Ephemeral Name
   const [manualWaterName, setManualWaterName] = useState("");
