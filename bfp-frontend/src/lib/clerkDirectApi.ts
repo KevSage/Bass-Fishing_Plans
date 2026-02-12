@@ -16,6 +16,7 @@ export interface SignInResult {
   sessionId?: string;
   userId?: string;
   token?: string;
+  email?: string;
   error?: string;
 }
 
@@ -110,6 +111,7 @@ export async function signInWithAppleAPI(
         sessionId: data.session_id,
         userId: data.user_id,
         token: data.token,
+        email: data.email,  // Backend returns the user's email (for returning users)
       };
     }
 

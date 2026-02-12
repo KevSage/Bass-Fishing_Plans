@@ -194,20 +194,23 @@ export function NativeAuthProvider({ children }: { children: React.ReactNode }) 
       const result = await signInWithAppleAPI(identityToken, email, firstName, lastName);
 
       if (result.success && result.userId) {
+        // Use email from backend response (for returning users) or fallback to parameter
+        const userEmailToSave = result.email || email;
+
         await saveAuth({
           sessionId: result.sessionId || result.userId,
           userId: result.userId,
           token: result.token || '',
-          userEmail: email, // Use the email from Apple
+          userEmail: userEmailToSave,
         });
 
         setSessionId(result.sessionId || result.userId);
         setUserId(result.userId);
-        setUserEmail(email);
+        setUserEmail(userEmailToSave);
         setToken(result.token || null);
         setIsSignedIn(true);
 
-        initializePushNotifications(email, result.userId).catch((err) => {
+        initializePushNotifications(userEmailToSave, result.userId).catch((err) => {
           console.warn('[NativeAuth] Push notification init failed:', err);
         });
 
