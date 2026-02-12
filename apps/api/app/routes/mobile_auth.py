@@ -70,11 +70,9 @@ class SignUpRequest(BaseModel):
 # NEW: Model for Apple Sign-In request
 class AppleSignInRequest(BaseModel):
     identity_token: str
-    email: EmailStr # Apple provides this, or a private relay email
+    email: Optional[str] = None  # Apple only provides on FIRST sign-in, null after
     first_name: Optional[str] = None
     last_name: Optional[str] = None
-    # Potentially add a nonce if you use it for extra security, though it's optional
-    # nonce: Optional[str] = None
 
 
 class AuthResponse(BaseModel):
@@ -171,53 +169,52 @@ async def mobile_apple_sign_in(request: AppleSignInRequest):
             options={"verify_exp": True} # Ensure token is not expired
         )
 
-        # 4. Extract user info
+        # 4. Extract user info from token
         apple_user_id = decoded_token.get("sub")
-        email_from_token = decoded_token.get("email") # This might be Apple's private relay email
-        
+        email_from_token = decoded_token.get("email")
+
         if not apple_user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Apple identity token: missing 'sub'.")
-        
-        # Use email from request body if provided (Apple sometimes doesn't send email after first login)
-        # Otherwise, fall back to email from token
-        user_email = request.email or email_from_token
-        
-        if not user_email:
-             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email is required for sign-in.")
 
-        # 5. Find or create user in our database
-        user = _subs_store.get(user_email)
-        
+        # Get email from request or token (Apple only sends email on FIRST sign-in)
+        provided_email = request.email or email_from_token
+
+        # 5. Find user - first by apple_user_id, then by email
+        user = _subs_store.get_by_apple_id(apple_user_id)
+
         if user:
-            # User exists, update apple_user_id if missing or different
-            if not user.apple_user_id:
-                _subs_store.update_apple_user_id(user_email, apple_user_id)
-            elif user.apple_user_id != apple_user_id:
-                # Handle case where Apple user ID might have changed (e.g., user re-authenticated with Apple)
-                # Or if a different Apple ID is trying to sign in with an existing email
-                print(f"WARNING: Email {user_email} already linked to Apple ID {user.apple_user_id}, but new Apple ID {apple_user_id} is attempting to sign in.")
-                # You might want to link the new Apple ID, or block this, depending on your policy.
-                # For now, let's update it if the email matches.
-                _subs_store.update_apple_user_id(user_email, apple_user_id) # Update with the latest Apple ID
-            
-            # Ensure email is correct if Apple's private relay was used and updated
-            if user.email != user_email:
-                 _subs_store.update_email(user.email, user_email)
+            # Returning user found by Apple ID
+            user_email = user.email
+            print(f"[Apple Sign-In] Returning user found: {user_email}")
+        elif provided_email:
+            # Check if user exists by email (first-time Apple sign-in for existing user)
+            user = _subs_store.get(provided_email)
+            user_email = provided_email
 
+            if user:
+                # Link Apple ID to existing email account
+                _subs_store.update_apple_user_id(user_email, apple_user_id)
+                print(f"[Apple Sign-In] Linked Apple ID to existing user: {user_email}")
+            else:
+                # New user - create account
+                _subs_store.create(
+                    email=user_email,
+                    first_name=request.first_name,
+                    last_name=request.last_name,
+                    apple_user_id=apple_user_id,
+                    active=True
+                )
+                print(f"[Apple Sign-In] Created new user: {user_email}")
         else:
-            # New user, create an entry
-            _subs_store.create(
-                email=user_email,
-                first_name=request.first_name,
-                last_name=request.last_name,
-                apple_user_id=apple_user_id,
-                # Default to active=False if you want to enforce email verification
-                # or set to True if Apple Sign-In is considered verified
-                active=True # Apple ID is inherently verified
+            # No email and user not found by Apple ID
+            # This happens if user deleted app data after first sign-in
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Account not found. Please go to Settings > Apple ID > Sign-In & Security > Apps Using Apple ID > Bass Clarity > Stop Using Apple ID, then try signing in again."
             )
-        
+
         # 6. Generate our internal JWT
-        internal_jwt = create_jwt(user_id=apple_user_id, email=user_email) # Use apple_user_id as primary user_id for internal JWT
+        internal_jwt = create_jwt(user_id=apple_user_id, email=user_email)
 
         return AuthResponse(
             success=True,

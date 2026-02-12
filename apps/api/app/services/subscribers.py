@@ -135,6 +135,30 @@ class SubscriberStore:
             last_name=row["last_name"],
         )
 
+    def _pg_get_by_apple_id(self, apple_user_id: str) -> Optional[Subscriber]:
+        with self._pg_conn() as conn:
+            row = conn.execute(
+                """
+                SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
+                FROM subscribers
+                WHERE apple_user_id = %s
+                """,
+                (apple_user_id,),
+            ).fetchone()
+
+        if not row:
+            return None
+
+        return Subscriber(
+            email=row["email"],
+            active=bool(row["active"]),
+            stripe_customer_id=row["stripe_customer_id"],
+            stripe_subscription_id=row["stripe_subscription_id"],
+            apple_user_id=row["apple_user_id"],
+            first_name=row["first_name"],
+            last_name=row["last_name"],
+        )
+
     # -------------------------
     # SQLite (local fallback)
     # -------------------------
@@ -347,6 +371,29 @@ class SubscriberStore:
             row = conn.execute(
                 "SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name FROM subscribers WHERE email=?",
                 (email_norm,),
+            ).fetchone()
+            if not row:
+                return None
+            return Subscriber(
+                email=row["email"],
+                active=bool(row["active"]),
+                stripe_customer_id=row["stripe_customer_id"],
+                stripe_subscription_id=row["stripe_subscription_id"],
+                apple_user_id=row["apple_user_id"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
+            )
+
+    def get_by_apple_id(self, apple_user_id: str) -> Optional[Subscriber]:
+        """Look up subscriber by Apple user ID."""
+        if self._use_pg:
+            return self._pg_get_by_apple_id(apple_user_id)
+
+        # SQLite fallback
+        with self._sqlite_conn() as conn:
+            row = conn.execute(
+                "SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name FROM subscribers WHERE apple_user_id=?",
+                (apple_user_id,),
             ).fetchone()
             if not row:
                 return None
