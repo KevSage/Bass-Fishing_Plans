@@ -719,7 +719,9 @@ async def mobile_plan_history(request: MobilePlanHistoryRequest):
     List plan history for mobile app using email instead of JWT.
     """
     from app.services.plan_history import PlanHistoryStore
+    import os
 
+    WEB_BASE_URL = os.getenv("WEB_BASE_URL", "https://bassclarity.com")
     plan_history_store = PlanHistoryStore()
 
     try:
@@ -729,8 +731,21 @@ async def mobile_plan_history(request: MobilePlanHistoryRequest):
             offset=request.offset
         )
 
+        # Format response with plan_url like the web endpoint does
+        formatted_plans = [
+            {
+                "id": plan["id"],
+                "lake_name": plan["lake_name"],
+                "generation_date": plan["generation_date"],
+                "plan_type": plan["plan_type"],
+                "conditions": plan["conditions"],
+                "plan_url": f"{WEB_BASE_URL}/plan?token={plan['plan_link_id']}",
+            }
+            for plan in plans
+        ]
+
         return {
-            "plans": plans,
+            "plans": formatted_plans,
             "total": len(plans),
             "has_more": len(plans) >= request.limit,
         }

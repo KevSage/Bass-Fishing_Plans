@@ -320,6 +320,10 @@ export function PlanHistory() {
             >
               <button
                 onClick={() => {
+                  if (!plan.plan_url) {
+                    console.warn("No plan_url for plan:", plan.id);
+                    return;
+                  }
                   // Extract token from plan_url and navigate internally
                   try {
                     const url = new URL(plan.plan_url);
