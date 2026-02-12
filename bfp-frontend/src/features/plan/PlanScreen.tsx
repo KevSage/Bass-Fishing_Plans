@@ -47,18 +47,18 @@ function LureDetailModal({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 20,
+        padding: "80px 20px 20px",
         animation: "fadeIn 0.2s ease-out",
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: "100%",
-          maxWidth: 400,
-          maxHeight: "80vh",
+          width: "85%",
+          maxWidth: 340,
+          maxHeight: "70vh",
           background: "#121218",
-          borderRadius: 24,
+          borderRadius: 20,
           border: "1px solid rgba(255, 255, 255, 0.1)",
           overflow: "hidden",
           display: "flex",

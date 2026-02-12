@@ -321,14 +321,26 @@ export function PlanHistory() {
               <button
                 onClick={() => {
                   // Extract token from plan_url and navigate internally
-                  const url = new URL(plan.plan_url, window.location.origin);
-                  const token = url.searchParams.get("token");
-                  if (token) {
-                    navigate(`/plan?token=${token}`);
-                  } else {
-                    // Fallback: navigate to the path portion
-                    navigate(url.pathname + url.search);
+                  try {
+                    const url = new URL(plan.plan_url);
+                    const token = url.searchParams.get("token");
+                    if (token) {
+                      navigate(`/plan?token=${token}`);
+                      return;
+                    }
+                  } catch {
+                    // plan_url might already be a relative path
                   }
+                  // Fallback: check if it's already a relative path with token
+                  if (plan.plan_url.includes("token=")) {
+                    const tokenMatch = plan.plan_url.match(/token=([^&]+)/);
+                    if (tokenMatch) {
+                      navigate(`/plan?token=${tokenMatch[1]}`);
+                      return;
+                    }
+                  }
+                  // Last fallback
+                  navigate(plan.plan_url.replace(/^https?:\/\/[^/]+/, ""));
                 }}
                 style={{
                   display: "flex",

@@ -7,6 +7,7 @@ import React, { useRef, useEffect, useCallback, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import type { PlanGenerateResponse } from "@/features/plan/types";
 import { PlanScreen } from "@/features/plan/PlanScreen";
+import { getApiBaseUrl } from "@/lib/platform";
 
 export function PlanPage() {
   const location = useLocation();
@@ -84,7 +85,7 @@ export function PlanPage() {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/plan/view/${tokenValue}`,
+        `${getApiBaseUrl()}/plan/view/${tokenValue}`,
       );
       const data = await res.json();
 
