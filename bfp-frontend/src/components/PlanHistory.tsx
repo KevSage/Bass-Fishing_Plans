@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePlatformAuth } from "@/hooks/usePlatformAuth";
 import { useNativeAuth } from "@/context/NativeAuthContext";
 import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
@@ -33,6 +34,7 @@ interface PlanHistoryResponse {
 export function PlanHistory() {
   const { getToken } = usePlatformAuth();
   const nativeAuth = useNativeAuth();
+  const navigate = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -316,8 +318,18 @@ export function PlanHistory() {
                 marginTop: "4px",
               }}
             >
-              <a
-                href={plan.plan_url}
+              <button
+                onClick={() => {
+                  // Extract token from plan_url and navigate internally
+                  const url = new URL(plan.plan_url, window.location.origin);
+                  const token = url.searchParams.get("token");
+                  if (token) {
+                    navigate(`/plan?token=${token}`);
+                  } else {
+                    // Fallback: navigate to the path portion
+                    navigate(url.pathname + url.search);
+                  }
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -328,14 +340,15 @@ export function PlanHistory() {
                     "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                   borderRadius: "10px",
                   color: "#fff",
-                  textDecoration: "none",
+                  border: "none",
                   fontSize: "0.85rem",
                   fontWeight: 600,
                   boxShadow: "0 4px 12px rgba(74, 144, 226, 0.2)",
+                  cursor: "pointer",
                 }}
               >
                 Open Plan <ArrowRightIcon size={14} />
-              </a>
+              </button>
               <button
                 onClick={() => copyPlanLink(plan)}
                 style={{

@@ -5,6 +5,309 @@ import type { PlanGenerateResponse, Pattern } from "./types";
 import { PlanNavigation, PlanTab } from "./PlanNavigation";
 import { WeatherSection } from "./WeatherSection";
 import { SolarArc } from "./components/SolarArc";
+import { LURE_CATALOG, type LureData } from "@/data/lures";
+
+// --- HELPER: Look up lure data by name ---
+function findLureByName(lureName: string): LureData | null {
+  const normalized = lureName.toLowerCase().replace(/[\s-]+/g, "_");
+  // Try exact match first
+  if (LURE_CATALOG[normalized]) return LURE_CATALOG[normalized];
+  // Try partial match
+  for (const key of Object.keys(LURE_CATALOG)) {
+    if (key.includes(normalized) || normalized.includes(key)) {
+      return LURE_CATALOG[key];
+    }
+  }
+  // Try display name match
+  for (const lure of Object.values(LURE_CATALOG)) {
+    const lureNormalized = lure.display_name.toLowerCase().replace(/[\s-]+/g, "_");
+    if (lureNormalized.includes(normalized) || normalized.includes(lureNormalized)) {
+      return lure;
+    }
+  }
+  return null;
+}
+
+// --- LURE DETAIL MODAL ---
+function LureDetailModal({
+  lure,
+  onClose,
+}: {
+  lure: LureData;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0, 0, 0, 0.85)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+        animation: "fadeIn 0.2s ease-out",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: "100%",
+          maxWidth: 400,
+          maxHeight: "80vh",
+          background: "#121218",
+          borderRadius: 24,
+          border: "1px solid rgba(255, 255, 255, 0.1)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Header with close button */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px 20px",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              color: "#4A90E2",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+            }}
+          >
+            Lure Details
+          </span>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              color: "rgba(255, 255, 255, 0.5)",
+              fontSize: "1.5rem",
+              cursor: "pointer",
+              padding: 0,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {/* Lure Image */}
+          <div
+            style={{
+              padding: 24,
+              background: "rgba(255, 255, 255, 0.03)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <img
+              src={lure.image}
+              alt={lure.display_name}
+              style={{
+                maxWidth: "80%",
+                maxHeight: 180,
+                objectFit: "contain",
+              }}
+            />
+          </div>
+
+          {/* Name and Category */}
+          <div style={{ padding: "20px 20px 0" }}>
+            <h2
+              style={{
+                margin: "0 0 8px",
+                fontSize: "1.25rem",
+                fontWeight: 700,
+                color: "#fff",
+              }}
+            >
+              {lure.display_name}
+            </h2>
+            <span
+              style={{
+                display: "inline-block",
+                padding: "4px 10px",
+                background: "rgba(74, 144, 226, 0.15)",
+                borderRadius: 100,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                color: "#4A90E2",
+              }}
+            >
+              {lure.primary_category}
+            </span>
+          </div>
+
+          {/* Description */}
+          <p
+            style={{
+              padding: "16px 20px",
+              fontSize: "0.9rem",
+              lineHeight: 1.6,
+              color: "rgba(255, 255, 255, 0.75)",
+              margin: 0,
+            }}
+          >
+            {lure.description}
+          </p>
+
+          {/* Tags */}
+          <div style={{ padding: "0 20px 24px" }}>
+            {/* Season */}
+            <div style={{ marginBottom: 12 }}>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: 6,
+                }}
+              >
+                Season
+              </span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {lure.season_affinity.map((s) => (
+                  <span
+                    key={s}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 100,
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      background: "rgba(76, 175, 80, 0.15)",
+                      color: "#4CAF50",
+                    }}
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Water Clarity */}
+            <div style={{ marginBottom: 12 }}>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: 6,
+                }}
+              >
+                Water Clarity
+              </span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {lure.water_clarity.map((c) => (
+                  <span
+                    key={c}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 100,
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      background: "rgba(33, 150, 243, 0.15)",
+                      color: "#2196F3",
+                    }}
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Conditions */}
+            <div style={{ marginBottom: 12 }}>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: 6,
+                }}
+              >
+                Conditions
+              </span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {lure.conditions.map((c) => (
+                  <span
+                    key={c}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 100,
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      background: "rgba(255, 193, 7, 0.15)",
+                      color: "#FFC107",
+                    }}
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Cover */}
+            <div>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "0.7rem",
+                  fontWeight: 600,
+                  color: "rgba(255, 255, 255, 0.4)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: 6,
+                }}
+              >
+                Cover
+              </span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {lure.cover_type.map((c) => (
+                  <span
+                    key={c}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 100,
+                      fontSize: "0.75rem",
+                      fontWeight: 500,
+                      background: "rgba(156, 39, 176, 0.15)",
+                      color: "#CE93D8",
+                    }}
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // --- UI CONFIG ---
 const UI = {
@@ -34,6 +337,15 @@ export function PlanScreen({
   const { plan } = response;
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<PlanTab>("weather");
+  const [selectedLure, setSelectedLure] = useState<LureData | null>(null);
+
+  // Handler for lure image clicks
+  const handleLureClick = (lureName: string) => {
+    const lureData = findLureByName(lureName);
+    if (lureData) {
+      setSelectedLure(lureData);
+    }
+  };
 
   // SCROLL TO TOP ON TAB CHANGE
   useEffect(() => {
@@ -87,12 +399,12 @@ export function PlanScreen({
 
         {/* VIEW 2: PRIMARY PATTERN */}
         {activeTab === "pattern1" && (
-          <PatternView pattern={plan.primary} number={1} isPrimary={true} />
+          <PatternView pattern={plan.primary} number={1} isPrimary={true} onLureClick={handleLureClick} />
         )}
 
         {/* VIEW 3: PIVOT PATTERN */}
         {activeTab === "pattern2" && (
-          <PatternView pattern={plan.secondary} number={2} isPrimary={false} />
+          <PatternView pattern={plan.secondary} number={2} isPrimary={false} onLureClick={handleLureClick} />
         )}
 
         {/* VIEW 4: TIMELINE */}
@@ -109,6 +421,14 @@ export function PlanScreen({
         onTabChange={setActiveTab}
         onMapClick={handleMapClick}
       />
+
+      {/* Lure Detail Modal */}
+      {selectedLure && (
+        <LureDetailModal
+          lure={selectedLure}
+          onClose={() => setSelectedLure(null)}
+        />
+      )}
     </>
   );
 }
@@ -118,10 +438,12 @@ function PatternView({
   pattern,
   number,
   isPrimary,
+  onLureClick,
 }: {
   pattern: Pattern;
   number: number;
   isPrimary: boolean;
+  onLureClick?: (lureName: string) => void;
 }) {
   if (!pattern)
     return <div className="p-8 text-center opacity-50">Pattern loading...</div>;
@@ -182,6 +504,7 @@ function PatternView({
 
       {/* 1. HERO LURE IMAGE */}
       <div
+        onClick={() => onLureClick?.(pattern.base_lure)}
         style={{
           position: "relative",
           background:
@@ -190,8 +513,11 @@ function PatternView({
           padding: "20px 0",
           marginBottom: 32,
           display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
           minHeight: 200,
+          cursor: onLureClick ? "pointer" : "default",
         }}
       >
         {pattern.colors?.asset_key ? (
@@ -215,6 +541,19 @@ function PatternView({
             }}
           >
             Lure Visual Pending
+          </div>
+        )}
+        {/* Tap hint */}
+        {onLureClick && (
+          <div
+            style={{
+              marginTop: 12,
+              fontSize: "0.75rem",
+              color: "rgba(255, 255, 255, 0.4)",
+              fontWeight: 500,
+            }}
+          >
+            Tap for lure details
           </div>
         )}
       </div>

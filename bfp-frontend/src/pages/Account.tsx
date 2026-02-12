@@ -449,13 +449,24 @@ export function Account() {
                   <span className="value">{subscription.nextBillingDate}</span>
                 </div>
               )}
-              {subscription.status === "active" && (
+              {/* Hide Manage Subscription on native (Stripe portal doesn't work in WebView) */}
+              {subscription.status === "active" && !isNativePlatform() && (
                 <button
                   onClick={handleManageSubscription}
                   className="manage-link"
                 >
                   Manage Subscription
                 </button>
+              )}
+              {/* Show contact support for native users */}
+              {subscription.status === "active" && isNativePlatform() && (
+                <a
+                  href="mailto:bassclarity@gmail.com?subject=Subscription%20Support"
+                  className="manage-link"
+                  style={{ textAlign: "center", textDecoration: "none" }}
+                >
+                  Contact Support for Billing
+                </a>
               )}
             </div>
           )}
