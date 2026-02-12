@@ -31,7 +31,8 @@
       "Bash(git push:*)",
       "Bash(open:*)",
       "Bash(npm install:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(wc:*)"
     ]
   }
 }
