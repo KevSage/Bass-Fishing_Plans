@@ -362,7 +362,7 @@ export function Landing() {
                 color: "#fff",
               }}
             >
-              Bass Clarity is Open and Free for All Anglers while in Beta
+              Bass Clarity is Open and Free for All Anglers while in Beta.
             </p>
             <p
               style={{
@@ -803,8 +803,8 @@ export function Landing() {
               </div>
               <h2 style={h2Style}>Track Your Growth.</h2>
               <p style={{ ...leadStyle, maxWidth: 980 }}>
-                Level up as you fish. Track your technique mastery, unlock achievements,
-                and watch your angling skills evolve over time.
+                Level up as you fish. Track your technique mastery, unlock
+                achievements, and watch your angling skills evolve over time.
               </p>
             </div>
           </Reveal>
