@@ -59,29 +59,57 @@ def get_known_lakes() -> List[Dict]:
 
 
 def find_known_lake_by_proximity(lat: float, lng: float, radius_km: float = 1.0) -> Optional[Dict]:
-    """Find a known lake within radius of coordinates."""
+    """
+    Find a known lake near coordinates.
+
+    Matching priority:
+    1. Inside bbox (with buffer for bank anglers)
+    2. Within radius_km of lake center
+
+    Bank angler buffer: ~0.5km added to bbox to catch anglers on shore.
+    """
     from math import radians, cos, sin, asin, sqrt
-    
+
+    # Buffer in degrees (~0.5km) for bank anglers outside bbox
+    BANK_BUFFER_DEG = 0.005
+
     def haversine(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
         lat1, lng1, lat2, lng2 = map(radians, [lat1, lng1, lat2, lng2])
         dlat = lat2 - lat1
         dlng = lng2 - lng1
         a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlng/2)**2
         return 2 * 6371 * asin(sqrt(a))
-    
+
+    def point_in_bbox_with_buffer(lat: float, lng: float, bbox: list) -> bool:
+        """Check if point is inside bbox with bank angler buffer."""
+        if not bbox or len(bbox) != 4:
+            return False
+        min_lng, min_lat, max_lng, max_lat = bbox
+        return (
+            (min_lat - BANK_BUFFER_DEG) <= lat <= (max_lat + BANK_BUFFER_DEG) and
+            (min_lng - BANK_BUFFER_DEG) <= lng <= (max_lng + BANK_BUFFER_DEG)
+        )
+
     lakes = get_known_lakes()
-    
+
+    # First pass: check bbox matches (most accurate for large/irregular lakes)
+    for lake in lakes:
+        bbox = lake.get("bbox")
+        if bbox and point_in_bbox_with_buffer(lat, lng, bbox):
+            return lake
+
+    # Second pass: center-point distance for lakes without bbox or edge cases
     for lake in lakes:
         lake_lat = lake.get("lat") or lake.get("latitude")
         lake_lng = lake.get("lng") or lake.get("lon") or lake.get("longitude")
-        
+
         if lake_lat is None or lake_lng is None:
             continue
-        
+
         dist = haversine(lat, lng, float(lake_lat), float(lake_lng))
         if dist <= radius_km:
             return lake
-    
+
     return None
 
 

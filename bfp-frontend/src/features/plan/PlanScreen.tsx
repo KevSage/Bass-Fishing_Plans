@@ -753,6 +753,40 @@ function PatternView({
               {pattern.gear?.line || "N/A"}
             </div>
           </div>
+          {pattern.gear?.note && (
+            <div
+              style={{
+                gridColumn: "span 2",
+                marginTop: 16,
+                padding: "12px 14px",
+                background: "rgba(74, 144, 226, 0.08)",
+                borderRadius: 10,
+                borderLeft: "3px solid rgba(74, 144, 226, 0.4)",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  color: "rgba(255,255,255,0.5)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  marginBottom: 4,
+                }}
+              >
+                Pro Tip
+              </div>
+              <div
+                style={{
+                  fontSize: "0.9rem",
+                  color: "rgba(255,255,255,0.85)",
+                  lineHeight: 1.4,
+                }}
+              >
+                {pattern.gear.note}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

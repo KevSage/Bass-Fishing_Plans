@@ -703,6 +703,91 @@ async def mobile_list_custom_lakes(request: MobileStatusRequest):
 
 
 # =============================================================================
+# MOBILE LAKE RESOLUTION ENDPOINT
+# =============================================================================
+
+class MobileResolveLakeRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    lat: float
+    lng: float
+    radius_km: float = 1.0
+
+
+@router.post("/resolve-lake")
+async def mobile_resolve_lake(request: MobileResolveLakeRequest):
+    """
+    Resolve coordinates to a lake (known or custom) for mobile app.
+    Uses email instead of JWT for authentication.
+
+    Priority:
+    1. Known lakes (from JSON)
+    2. User's custom lakes
+    3. Unresolved (return coordinates only)
+    """
+    from app.routes.lakes import find_known_lake_by_proximity
+    from app.services.custom_lakes import CustomLakeStore
+
+    custom_lake_store = CustomLakeStore()
+
+    try:
+        # 1. Check known lakes first
+        known = find_known_lake_by_proximity(request.lat, request.lng, request.radius_km)
+
+        if known:
+            return {
+                "resolved": True,
+                "lake_type": "known",
+                "lake_id": known.get("id") or known.get("name"),
+                "lake_name": known.get("name"),
+                "lat": known.get("lat") or known.get("latitude"),
+                "lng": known.get("lng") or known.get("lon") or known.get("longitude"),
+                "city": known.get("city"),
+                "state": known.get("state"),
+            }
+
+        # 2. Check user's custom lakes
+        custom = custom_lake_store.find_by_proximity(request.email, request.lat, request.lng, request.radius_km)
+
+        if custom:
+            return {
+                "resolved": True,
+                "lake_type": "custom",
+                "lake_id": custom.id,
+                "lake_name": custom.name,
+                "lat": custom.lat,
+                "lng": custom.lng,
+                "city": custom.city,
+                "state": custom.state,
+            }
+
+        # 3. Unresolved
+        return {
+            "resolved": False,
+            "lake_type": "unresolved",
+            "lake_id": None,
+            "lake_name": None,
+            "lat": request.lat,
+            "lng": request.lng,
+            "city": None,
+            "state": None,
+        }
+    except Exception as e:
+        print(f"[MobileAuth] Lake resolution failed: {e}")
+        return {
+            "resolved": False,
+            "lake_type": "unresolved",
+            "lake_id": None,
+            "lake_name": None,
+            "lat": request.lat,
+            "lng": request.lng,
+            "city": None,
+            "state": None,
+            "error": str(e),
+        }
+
+
+# =============================================================================
 # MOBILE PLAN HISTORY ENDPOINT
 # =============================================================================
 

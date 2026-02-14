@@ -564,47 +564,262 @@ def build_pattern_summary(presentation: str, phase: str, weather: Dict[str, Any]
     return " ".join(summary.split())
 
 
+# -----------------------------------------------------------------------------
+# ROBUST GEAR SPECS (Lure-Specific)
+# -----------------------------------------------------------------------------
+GEAR_SPECS = {
+    # --- HORIZONTAL REACTION (Treble Hooks = Moderate Action) ---
+    "shallow crankbait": {
+        "rod": '7\'0" Medium, Moderate-Fast (Glass/Composite)',
+        "reel": "6.3:1 - 7.1:1 Baitcaster",
+        "line": "12-15lb Fluorocarbon",
+        "note": "Moderate action prevents tearing hooks out during deflection."
+    },
+    "mid crankbait": {
+        "rod": '7\'2" Medium-Heavy, Moderate (Glass/Composite)',
+        "reel": "6.3:1 Baitcaster",
+        "line": "10-12lb Fluorocarbon",
+        "note": "Lighter line helps the bait dive deeper."
+    },
+    "deep crankbait": {
+        "rod": '7\'6" - 7\'10" Medium-Heavy, Moderate',
+        "reel": "5.4:1 - 6.3:1 Baitcaster",
+        "line": "10-12lb Fluorocarbon",
+        "note": "Long rod required for casting distance to achieve max depth."
+    },
+    "lipless crankbait": {
+        "rod": '7\'0" - 7\'3" Medium-Heavy, Moderate-Fast',
+        "reel": "7.1:1 - 7.5:1 Baitcaster",
+        "line": "15-17lb Fluorocarbon or 30lb Braid",
+        "note": "Need enough tip to rip it free from grass, but give for trebles."
+    },
+    "flat-sided crankbait": {
+        "rod": '7\'0" Medium, Moderate',
+        "reel": "6.3:1 Baitcaster",
+        "line": "10-12lb Fluorocarbon",
+        "note": "Light line essential for cold water action."
+    },
+    "jerkbait": {
+        "rod": '6\'10" - 7\'0" Medium, Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "10-12lb Fluorocarbon",
+        "note": "Shorter rod prevents hitting water during downward snaps."
+    },
+
+    # --- HORIZONTAL REACTION (Single Hook = Faster Action) ---
+    "chatterbait": {
+        "rod": '7\'2" - 7\'4" Medium-Heavy, Moderate-Fast (Glass Hybrid)',
+        "reel": "6.3:1 - 7.1:1 Baitcaster",
+        "line": "15-17lb Fluorocarbon",
+        "note": "Delay the hookset; let the rod load up before swinging."
+    },
+    "spinnerbait": {
+        "rod": '7\'0" - 7\'3" Medium-Heavy, Fast',
+        "reel": "7.1:1 Baitcaster",
+        "line": "15-17lb Fluorocarbon",
+        "note": "Fast action needed to drive single hook home at distance."
+    },
+    "swim jig": {
+        "rod": '7\'2" Medium-Heavy, Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "30-50lb Braid or 17-20lb Fluorocarbon",
+        "note": "Braid helps cut through vegetation stems on the hookset."
+    },
+    "underspin": {
+        "rod": '7\'0" Medium, Fast',
+        "reel": "7.1:1 Baitcaster or 2500 Spinning",
+        "line": "12lb Fluorocarbon",
+        "note": "Lighter tip ensures you don't pull the bait away on light bites."
+    },
+    "paddle tail swimbait": {
+        "rod": '7\'3" Medium-Heavy, Fast',
+        "reel": "6.3:1 - 7.1:1 Baitcaster",
+        "line": "15lb Fluorocarbon",
+        "note": "Steady retrieve; rod should have backbone for the hookset."
+    },
+
+    # --- VERTICAL / METAL ---
+    "blade bait": {
+        "rod": '7\'0" Medium, Fast (Spinning or Casting)',
+        "reel": "High Speed",
+        "line": "12-15lb Fluorocarbon or 20lb Braid",
+        "note": "Short snaps; heavier line prevents fouling on the fall."
+    },
+    "jighead minnow": {
+        "rod": '6\'10" - 7\'2" Medium-Light, Extra Fast (Spinning)',
+        "reel": "2500-3000 Spinning",
+        "line": "8-10lb Braid to 6-8lb Fluoro Leader",
+        "note": "Visual fishing; sensitivity is paramount."
+    },
+
+    # --- BOTTOM CONTACT (Power) ---
+    "football jig": {
+        "rod": '7\'3" - 7\'6" Heavy, Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "15-20lb Fluorocarbon",
+        "note": "Long rod moves more line on the sweep set in deep water."
+    },
+    "casting jig": {
+        "rod": '7\'2" - 7\'4" Heavy, Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "17-20lb Fluorocarbon",
+        "note": "Heavy power required to extract fish from wood/docks."
+    },
+    "texas rig": {
+        "rod": '7\'0" - 7\'3" Medium-Heavy, Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "15-17lb Fluorocarbon",
+        "note": "The 'do-everything' setup."
+    },
+    "carolina rig": {
+        "rod": '7\'6" Heavy, Moderate-Fast',
+        "reel": "7.1:1 Baitcaster",
+        "line": "Main: 20lb / Leader: 12-15lb Fluorocarbon",
+        "note": "Long rod sweeps line to set hook past the heavy weight."
+    },
+
+    # --- BOTTOM CONTACT (Finesse) ---
+    "shaky head": {
+        "rod": '7\'0" Medium, Fast (Spinning)',
+        "reel": "2500-3000 Spinning",
+        "line": "10-15lb Braid to 8-10lb Fluoro Leader",
+        "note": "Spinning gear allows better skip-casting into docks."
+    },
+    "ned rig": {
+        "rod": '6\'10" - 7\'0" Medium-Light, Extra Fast (Spinning)',
+        "reel": "2500 Spinning",
+        "line": "8-10lb Braid to 6lb Fluoro Leader",
+        "note": "Extra fast tip helps sense the 'mushy' pressure bite."
+    },
+    "dropshot": {
+        "rod": '6\'10" - 7\'2" Medium-Light, Extra Fast (Spinning)',
+        "reel": "2500 Spinning",
+        "line": "10lb Braid to 6-8lb Fluoro Leader",
+        "note": "Softer tip prevents fish from feeling resistance on the inhale."
+    },
+    "neko rig": {
+        "rod": '7\'0" - 7\'2" Medium, Fast (Spinning)',
+        "reel": "2500-3000 Spinning",
+        "line": "10-15lb Braid to 8-10lb Fluoro Leader",
+        "note": "Need slightly more backbone than a dropshot rod for the hookset."
+    },
+    "wacky rig": {
+        "rod": '6\'10" - 7\'0" Medium, Fast (Spinning)',
+        "reel": "2500 Spinning",
+        "line": "10-15lb Braid to 10lb Fluoro Leader",
+        "note": "Short rod improves skipping accuracy under docks."
+    },
+    "soft jerkbait": {
+        "rod": '7\'0" Medium, Fast (Spinning or Casting)',
+        "reel": "High Speed",
+        "line": "10-15lb Braid (Spin) or 12lb Fluoro (Cast)",
+        "note": "Work it quickly; high speed reel picks up slack after twitches."
+    },
+
+    # --- TOPWATER ---
+    "hollow body frog": {
+        "rod": '7\'3" - 7\'6" Heavy, Extra Fast',
+        "reel": "8.1:1 Baitcaster",
+        "line": "50-65lb Braid (Direct)",
+        "note": "Zero stretch essential for driving hooks and extracting from mats."
+    },
+    "popping frog": {
+        "rod": '7\'0" - 7\'3" Heavy, Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "40-50lb Braid",
+        "note": "Slightly shorter rod helps with 'walking' cadence."
+    },
+    "walking bait": {
+        "rod": '7\'0" - 7\'2" Medium-Heavy, Moderate-Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "30lb Braid (with mono leader) or 15lb Monofilament",
+        "note": "Mono/Braid floats; Fluoro sinks and kills the action."
+    },
+    "whopper plopper": {
+        "rod": '7\'3" - 7\'6" Medium-Heavy, Moderate-Fast',
+        "reel": "7.1:1 Baitcaster",
+        "line": "40-50lb Braid or 17lb Monofilament",
+        "note": "Parabolic flex prevents tearing hooks out on the strike."
+    },
+    "buzzbait": {
+        "rod": '7\'0" - 7\'3" Medium-Heavy, Fast',
+        "reel": "7.1:1 - 8.1:1 Baitcaster",
+        "line": "40-50lb Braid or 17lb Monofilament",
+        "note": "High speed reel essential to get bait on plane instantly."
+    },
+    "popper": {
+        "rod": '6\'8" - 7\'0" Medium, Fast',
+        "reel": "7.1:1 Baitcaster",
+        "line": "12-15lb Monofilament",
+        "note": "Short rod improves target accuracy; mono keeps nose up."
+    },
+    "wake bait": {
+        "rod": '7\'0" Medium-Heavy, Moderate-Fast',
+        "reel": "6.3:1 Baitcaster",
+        "line": "15-17lb Monofilament or Braid",
+        "note": "Slower reel prevents overworking the wake action."
+    }
+}
+
+
 def build_gear_for_lure(lure: str, presentation: str) -> Dict[str, str]:
     """
-    Generate gear recommendations based on lure and presentation.
-    Returns: {rod, reel, line, technique}
+    Generate robust gear recommendations based on specific lure type.
+    Falls back to family-based logic if lure not found in GEAR_SPECS.
     """
-    family = get_presentation_family(presentation)
     lure_lower = lure.lower()
-    
-    # Finesse/vertical presentations
+
+    # 1. Direct Lookup (The Robust Path)
+    if lure_lower in GEAR_SPECS:
+        spec = GEAR_SPECS[lure_lower]
+        return {
+            "rod": spec["rod"],
+            "reel": spec["reel"],
+            "line": spec["line"],
+            "technique": "spinning" if "Spinning" in spec["reel"] or "Spinning" in spec["rod"] else "casting",
+            "note": spec.get("note", "")
+        }
+
+    # 2. Fallback Logic (The "Safety Net" for unknown lures)
+    family = get_presentation_family(presentation)
+
+    # Finesse/vertical fallback
     if family == "vertical_hover" or any(x in lure_lower for x in ["dropshot", "damiki", "ned rig", "shaky head", "neko rig", "wacky rig"]):
         return {
-            "rod": '7\'0" medium spinning',
-            "reel": "2500 spinning",
-            "line": "10 lb braid to 8 lb fluorocarbon leader",
-            "technique": "spinning"
+            "rod": '7\'0" Medium Spinning',
+            "reel": "2500 Spinning",
+            "line": "10lb Braid to 8lb Fluoro Leader",
+            "technique": "spinning",
+            "note": "Standard finesse setup."
         }
-    
-    # Bottom contact
+
+    # Heavy cover fallback
     if family in ("bottom_dragging", "bottom_lift_drop") or any(x in lure_lower for x in ["jig", "carolina", "texas"]):
         return {
-            "rod": '7\'1" medium-heavy casting',
-            "reel": "7.3:1 baitcaster",
-            "line": "15-17 lb fluorocarbon",
-            "technique": "casting"
+            "rod": '7\'3" Heavy Casting',
+            "reel": "7.3:1 Baitcaster",
+            "line": "15-17lb Fluorocarbon",
+            "technique": "casting",
+            "note": "Standard power fishing setup."
         }
-    
-    # Topwater
+
+    # Topwater fallback
     if family in ("surface_chase", "surface_ambush") or any(x in lure_lower for x in ["frog", "buzzbait", "plopper", "popper", "walking bait"]):
         return {
-            "rod": '7\'0" medium-heavy casting',
-            "reel": "7.3-8.1:1 baitcaster",
-            "line": "30-50 lb braid",
-            "technique": "casting"
+            "rod": '7\'0" Medium-Heavy Casting',
+            "reel": "7.3-8.1:1 Baitcaster",
+            "line": "30-50 lb Braid",
+            "technique": "casting",
+            "note": "Standard topwater setup."
         }
-    
-    # Moving/horizontal default
+
+    # Generic moving bait fallback
     return {
-        "rod": '7\'0" medium-heavy casting',
-        "reel": "7.1:1 baitcaster",
-        "line": "15 lb fluorocarbon",
-        "technique": "casting"
+        "rod": '7\'0" Medium-Heavy Casting',
+        "reel": "7.1:1 Baitcaster",
+        "line": "15lb Fluorocarbon",
+        "technique": "casting",
+        "note": "Versatile moving bait setup."
     }
 
 

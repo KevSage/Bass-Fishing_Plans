@@ -37,6 +37,7 @@ import {
   deleteCatch as deleteCatchApi,
   updateCatch as updateCatchApi,
   resolveLake,
+  resolveLakeMobile,
   type CatchRecord,
   type CreateCatchInput,
   getPresignedUrl,
@@ -54,8 +55,7 @@ import {
   capturePhoto,
   type CapturedPhoto,
 } from "@/lib/capacitor-camera";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { getApiBaseUrl } from "@/lib/platform";
 
 // =============================================================================
 // ICONS (Offline & Sync)
@@ -247,7 +247,8 @@ async function fetchWeatherForLocation(
   lng: number,
   timestamp: string,
 ) {
-  if (!API_BASE_URL) return null;
+  const apiBase = getApiBaseUrl();
+  if (!apiBase) return null;
 
   try {
     const cleanLat = Number(lat).toFixed(4);
@@ -263,11 +264,11 @@ async function fetchWeatherForLocation(
     if (isHistorical) {
       // Use historical weather endpoint
       const unixTimestamp = Math.floor(catchTime / 1000);
-      url = `${API_BASE_URL}/weather/history?lat=${cleanLat}&lon=${cleanLng}&dt=${unixTimestamp}`;
+      url = `${apiBase}/weather/history?lat=${cleanLat}&lon=${cleanLng}&dt=${unixTimestamp}`;
       console.log('[Weather] Fetching historical weather for:', new Date(catchTime).toISOString());
     } else {
       // Use current weather endpoint
-      url = `${API_BASE_URL}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
+      url = `${apiBase}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
       console.log('[Weather] Fetching current weather');
     }
 
@@ -277,7 +278,7 @@ async function fetchWeatherForLocation(
       // Fall back to current weather if historical fails
       if (isHistorical) {
         console.log('[Weather] Falling back to current weather');
-        const fallbackUrl = `${API_BASE_URL}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
+        const fallbackUrl = `${apiBase}/weather/current?lat=${cleanLat}&lon=${cleanLng}`;
         const fallbackRes = await fetch(fallbackUrl);
         if (!fallbackRes.ok) return null;
         const fallbackJson = await fallbackRes.json();
@@ -1508,6 +1509,7 @@ export function CatchFormView({
   galleryOnly = false,
 }: CatchFormViewProps) {
   const { getToken } = usePlatformAuth();
+  const nativeAuth = useNativeAuth();
   const [isResolving, setIsResolving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isAutoResolving, setIsAutoResolving] = useState(false);
@@ -1590,9 +1592,18 @@ export function CatchFormView({
   const checkLakeMatch = async (lat: number, lng: number) => {
     try {
       setIsAutoResolving(true);
-      const token = await getToken();
-      if (!token) return;
-      const resolution = await resolveLake(lat, lng, token);
+      let resolution;
+
+      if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+        // Use mobile endpoint
+        resolution = await resolveLakeMobile(lat, lng, nativeAuth.userEmail, nativeAuth.userId);
+      } else {
+        // Use web endpoint with JWT
+        const token = await getToken();
+        if (!token) return;
+        resolution = await resolveLake(lat, lng, token);
+      }
+
       if (resolution.resolved && resolution.lake_name) {
         setLakeName(resolution.lake_name);
       }
@@ -1810,10 +1821,26 @@ export function CatchFormView({
       let lakeId = activeLake.id;
       let lakeType = "unresolved";
       let finalLakeName = lakeName || activeLake.name;
-      if (token && (catchLat !== 0 || catchLng !== 0)) {
+      if (catchLat !== 0 || catchLng !== 0) {
         try {
-          const resolution = await resolveLake(catchLat, catchLng, token);
-          if (resolution.resolved) {
+          let resolution;
+          console.log('[CatchLog] Lake resolve check:', {
+            isNative: isNativePlatform(),
+            hasEmail: !!nativeAuth.userEmail,
+            hasUserId: !!nativeAuth.userId,
+            hasToken: !!token,
+            coords: { catchLat, catchLng }
+          });
+          if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+            // Use mobile endpoint for native platforms
+            console.log('[CatchLog] Using mobile lake resolution');
+            resolution = await resolveLakeMobile(catchLat, catchLng, nativeAuth.userEmail, nativeAuth.userId);
+            console.log('[CatchLog] Mobile resolution result:', resolution);
+          } else if (token) {
+            // Use standard endpoint for web
+            resolution = await resolveLake(catchLat, catchLng, token);
+          }
+          if (resolution?.resolved) {
             lakeType = resolution.lake_type;
             lakeId = resolution.lake_id || undefined;
             finalLakeName = resolution.lake_name || activeLake.name;

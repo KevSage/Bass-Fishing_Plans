@@ -518,7 +518,7 @@ export default function SignInPage() {
                   onChange={(e) => setVerificationCode(e.target.value)}
                   onKeyPress={handleKeyPress}
                   onFocus={handleInputFocus}
-                  placeholder="Enter verification code"
+                  placeholder="Enter code"
                   autoComplete="one-time-code"
                   disabled={loading}
                   style={{
@@ -528,9 +528,9 @@ export default function SignInPage() {
                     border: "1px solid rgba(255,255,255,0.1)",
                     background: "rgba(255,255,255,0.08)",
                     color: "white",
-                    fontSize: "1.2rem",
+                    fontSize: "1.1rem",
                     textAlign: "center",
-                    letterSpacing: "0.3em",
+                    letterSpacing: "0.2em",
                     outline: "none",
                   }}
                 />

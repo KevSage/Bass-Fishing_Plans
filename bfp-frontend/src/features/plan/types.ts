@@ -96,6 +96,7 @@ export type Pattern = {
     reel: string;
     line: string;
     technique?: string;
+    note?: string;
   };
 };
 
