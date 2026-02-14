@@ -138,7 +138,7 @@ export default function SignInPage() {
         navigate("/members");
       } else {
         console.error("[SignIn] Unexpected status:", result.status, result);
-        setError(`Unable to sign in. Please try again or contact support.`);
+        setError(`Unable to sign in (status: ${result.status}). Please try again or contact support.`);
       }
     } catch (err: any) {
       const errorMessage =
