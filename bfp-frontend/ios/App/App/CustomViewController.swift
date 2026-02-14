@@ -33,7 +33,12 @@ class CustomViewController: CAPBridgeViewController {
             webView?.isInspectable = true
         }
 
-        // Set dark background to prevent white flash on overscroll/bounce
+        // Disable vertical/horizontal bounce (overscroll rubber-banding)
+        webView?.scrollView.bounces = false
+        webView?.scrollView.alwaysBounceVertical = false
+        webView?.scrollView.alwaysBounceHorizontal = false
+
+        // Set dark background to prevent white flash
         let darkColor = UIColor(red: 10/255, green: 10/255, blue: 10/255, alpha: 1) // #0a0a0a
         view.backgroundColor = darkColor
         webView?.backgroundColor = darkColor
