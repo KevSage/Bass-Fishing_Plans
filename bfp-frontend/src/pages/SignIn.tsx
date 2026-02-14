@@ -119,28 +119,16 @@ export default function SignInPage() {
     setError("");
 
     try {
-      // First, create the sign-in attempt with identifier
-      let result = await signIn.create({
+      // Sign in with email and password together
+      const result = await signIn.create({
         identifier: email,
+        password,
       });
 
-      console.log("[SignIn] Initial result:", {
+      console.log("[SignIn] Result:", {
         status: result.status,
-        hasSessionId: !!result.createdSessionId,
-        supportedFirstFactors: result.supportedFirstFactors?.map(f => f.strategy)
+        hasSessionId: !!result.createdSessionId
       });
-
-      // If needs first factor, attempt with password
-      if (result.status === "needs_first_factor") {
-        result = await signIn.attemptFirstFactor({
-          strategy: "password",
-          password,
-        });
-        console.log("[SignIn] After password attempt:", {
-          status: result.status,
-          hasSessionId: !!result.createdSessionId
-        });
-      }
 
       if (result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
@@ -148,15 +136,9 @@ export default function SignInPage() {
       } else if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         navigate("/members");
-      } else if (result.status === "needs_second_factor") {
-        setError("Two-factor authentication required but not supported yet.");
-      } else if (result.status === "needs_identifier") {
-        setError("Please enter your email address.");
-      } else if (result.status === "needs_new_password") {
-        setError("You need to reset your password. Please contact support.");
       } else {
-        console.error("[SignIn] Unexpected status:", result.status);
-        setError(`Unable to sign in (${result.status}). Please contact support.`);
+        console.error("[SignIn] Unexpected status:", result.status, result);
+        setError(`Unable to sign in. Please try again or contact support.`);
       }
     } catch (err: any) {
       const errorMessage =
