@@ -7,8 +7,8 @@ const config: CapacitorConfig = {
 
   // iOS-specific configuration
   ios: {
-    // Use WKWebView with better performance
-    contentInset: 'automatic',
+    // Let CSS handle safe areas exclusively (prevents double inset)
+    contentInset: 'never',
     // Allow inline media playback
     allowsLinkPreview: true,
     // Handle safe areas properly

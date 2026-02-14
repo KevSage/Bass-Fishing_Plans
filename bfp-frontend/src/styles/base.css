@@ -15,7 +15,7 @@ html,body{
   touch-action: manipulation;
   -webkit-text-size-adjust: 100%;
   /* Prevent overscroll rubber-band effect */
-  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 body{
   margin:0;

@@ -120,8 +120,8 @@ export function Navigation() {
         background: "rgba(0, 0, 0, 0.4)",
         backdropFilter: "blur(6px)",
         zIndex: 10000,
-        // Account for iOS safe area + header height (68px base)
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + 68px)",
+        // Account for iOS safe area + header height (56px)
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)",
         animation: "fadeIn 0.2s ease-out",
       }}
       onClick={() => setIsOpen(false)}
@@ -301,7 +301,7 @@ export function Navigation() {
           style={{
             maxWidth: 1200,
             margin: "0 auto",
-            padding: "16px 24px",
+            padding: "12px 24px",
             paddingLeft: "max(24px, env(safe-area-inset-left, 24px))",
             paddingRight: "max(24px, env(safe-area-inset-right, 24px))",
             display: "flex",
