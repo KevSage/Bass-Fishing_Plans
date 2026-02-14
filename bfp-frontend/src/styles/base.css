@@ -9,12 +9,21 @@
 }
 
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{
+  height:100%;
+  /* Prevent iOS viewport zoom issues */
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
 body{
   margin:0;
   font-family:var(--font-sans);
   background:var(--bg);
   color:var(--fg);
+}
+/* Prevent iOS auto-zoom on input focus (must be >= 16px) */
+input, textarea, select {
+  font-size: 16px !important;
 }
 
 /* Utility classes for safe area handling */

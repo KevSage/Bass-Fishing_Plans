@@ -702,6 +702,88 @@ async def mobile_list_custom_lakes(request: MobileStatusRequest):
         return {"lakes": [], "total": 0, "error": str(e)}
 
 
+class MobileCreateCustomLakeRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    name: str
+    lat: float
+    lng: float
+    city: Optional[str] = None
+    state: Optional[str] = None
+    anchors: Optional[list] = None
+
+
+@router.post("/create-custom-lake")
+async def mobile_create_custom_lake(request: MobileCreateCustomLakeRequest):
+    """
+    Create a custom lake for mobile app using email instead of JWT.
+    Mirrors the web /custom-lakes POST endpoint logic.
+    """
+    from app.services.custom_lakes import CustomLakeStore
+
+    custom_lake_store = CustomLakeStore()
+    email = request.email.lower().strip()
+
+    try:
+        # If lake has custom boundaries (anchors), skip proximity check
+        if request.anchors and len(request.anchors) >= 3:
+            existing_lakes = custom_lake_store.list_by_user(email)
+            for existing in existing_lakes:
+                if existing.name.lower() == request.name.lower():
+                    return {
+                        "success": True,
+                        "lake_id": existing.id,
+                        "already_existed": True,
+                    }
+
+            lake_id = custom_lake_store.create(
+                email=email,
+                name=request.name,
+                lat=request.lat,
+                lng=request.lng,
+                city=request.city,
+                state=request.state,
+                anchors=request.anchors,
+            )
+
+            return {"success": True, "lake_id": lake_id}
+
+        # No boundaries - check for nearby existing lake
+        existing = custom_lake_store.find_by_proximity(
+            email, request.lat, request.lng, radius_km=0.5
+        )
+
+        if existing:
+            return {
+                "success": False,
+                "error": "You already have a named water nearby",
+                "existing_lake": {
+                    "id": existing.id,
+                    "name": existing.name,
+                    "lat": existing.lat,
+                    "lng": existing.lng,
+                    "city": existing.city,
+                    "state": existing.state,
+                },
+            }
+
+        lake_id = custom_lake_store.create(
+            email=email,
+            name=request.name,
+            lat=request.lat,
+            lng=request.lng,
+            city=request.city,
+            state=request.state,
+            anchors=request.anchors,
+        )
+
+        return {"success": True, "lake_id": lake_id}
+
+    except Exception as e:
+        print(f"[MobileAuth] Create custom lake failed: {e}")
+        return {"success": False, "error": str(e)}
+
+
 # =============================================================================
 # MOBILE LAKE RESOLUTION ENDPOINT
 # =============================================================================

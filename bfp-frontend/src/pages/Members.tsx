@@ -27,6 +27,7 @@ import {
   listCustomLakes,
   listCustomLakesMobile,
   createCustomLake,
+  createCustomLakeMobile,
   updateCustomLake,
   type CustomLake,
   type FavoriteLake as ApiFavoriteLake,
@@ -1905,17 +1906,27 @@ export function Members() {
       }
       const performCustomCreation = async () => {
         const nameToSave = manualWaterName || waterName;
-        const createRes = await createCustomLake(
-          {
-            name: nameToSave,
-            lat: selectedCoords.lat,
-            lng: selectedCoords.lng,
-            city: locationDetails.city || "",
-            state: locationDetails.state || "",
-            anchors: dbMatch?.anchors || [],
-          },
-          token!,
-        );
+        const lakeInput = {
+          name: nameToSave,
+          lat: selectedCoords.lat,
+          lng: selectedCoords.lng,
+          city: locationDetails.city || "",
+          state: locationDetails.state || "",
+          anchors: dbMatch?.anchors || [],
+        };
+
+        // Use mobile endpoint on native platforms
+        let createRes;
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          createRes = await createCustomLakeMobile(
+            nativeAuth.userEmail,
+            nativeAuth.userId,
+            lakeInput,
+          );
+        } else {
+          createRes = await createCustomLake(lakeInput, token!);
+        }
+
         if (createRes.success) {
           return (createRes as any).lake_id;
         } else {

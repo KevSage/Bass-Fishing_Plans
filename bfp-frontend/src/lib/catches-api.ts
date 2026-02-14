@@ -523,6 +523,41 @@ export async function listCustomLakesMobile(
 }
 
 /**
+ * Create a custom lake for mobile app using email instead of JWT.
+ */
+export async function createCustomLakeMobile(
+  email: string,
+  userId: string,
+  input: {
+    name: string;
+    lat: number;
+    lng: number;
+    city?: string;
+    state?: string;
+    anchors?: { lat: number; lng: number }[];
+  },
+): Promise<
+  | { success: boolean; lake_id: string; already_existed?: boolean }
+  | { success: false; error: string; existing_lake?: CustomLake }
+> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/create-custom-lake`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email,
+      user_id: userId,
+      ...input,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create custom lake: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
  * List plan history for mobile app using email instead of JWT.
  */
 export async function listPlanHistoryMobile(
