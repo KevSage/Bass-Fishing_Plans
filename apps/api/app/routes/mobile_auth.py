@@ -784,6 +784,46 @@ async def mobile_create_custom_lake(request: MobileCreateCustomLakeRequest):
         return {"success": False, "error": str(e)}
 
 
+class MobileUpdateLakeGeometryRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    lake_id: str
+    anchors: list
+    acres: Optional[int] = None
+
+
+@router.post("/update-lake-geometry")
+async def mobile_update_lake_geometry(request: MobileUpdateLakeGeometryRequest):
+    """
+    Update custom lake geometry (boundaries) for mobile app.
+    Uses email instead of JWT for authentication.
+    """
+    from app.services.custom_lakes import CustomLakeStore
+
+    custom_lake_store = CustomLakeStore()
+    email = request.email.lower().strip()
+
+    try:
+        # Verify the lake belongs to this user
+        lake = custom_lake_store.get_by_id(request.lake_id, email)
+        if not lake:
+            return {"success": False, "error": "Lake not found or access denied"}
+
+        # Update the geometry
+        custom_lake_store.update_geometry(
+            lake_id=request.lake_id,
+            email=email,
+            anchors=request.anchors,
+            acres=request.acres,
+        )
+
+        return {"success": True}
+
+    except Exception as e:
+        print(f"[MobileAuth] Update lake geometry failed: {e}")
+        return {"success": False, "error": str(e)}
+
+
 # =============================================================================
 # MOBILE LAKE RESOLUTION ENDPOINT
 # =============================================================================

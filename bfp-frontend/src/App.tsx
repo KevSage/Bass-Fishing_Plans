@@ -111,6 +111,8 @@ export default function App() {
     <>
       <Navigation />
       <ScrollToTop />
+      {/* Main content area - padding for fixed nav. Members ignores this (position:fixed) */}
+      <main style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)" }}>
       <Routes>
         <Route path="/" element={<RootRoute />} />
         <Route path="/about" element={<About />} />
@@ -162,6 +164,7 @@ export default function App() {
         {/* 404 Catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </main>
     </>
   );
 }

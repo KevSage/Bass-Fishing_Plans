@@ -284,16 +284,14 @@ export function Navigation() {
     <>
       <header
         style={{
-          position: "sticky",
+          position: "fixed",
           top: 0,
+          left: 0,
+          right: 0,
           zIndex: 9999,
-          background: scrolled
-            ? "rgba(10, 10, 10, 0.85)"
-            : "rgba(10, 10, 10, 0.5)",
+          background: "rgba(10, 10, 10, 0.85)",
           backdropFilter: "blur(12px)",
-          borderBottom: scrolled
-            ? "1px solid rgba(255,255,255,0.08)"
-            : "1px solid transparent",
+          // No border - blends seamlessly with gradient below
           transition: "all 0.3s ease",
           // iOS safe area for notch
           paddingTop: "env(safe-area-inset-top, 0px)",

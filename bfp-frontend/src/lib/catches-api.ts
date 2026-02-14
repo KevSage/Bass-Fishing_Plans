@@ -294,6 +294,35 @@ export async function updateCustomLakeGeometry(
   );
 }
 
+/**
+ * Update custom lake geometry for mobile app using email instead of JWT.
+ */
+export async function updateCustomLakeGeometryMobile(
+  email: string,
+  userId: string,
+  lakeId: string,
+  anchors: { lat: number; lng: number }[],
+  acres?: number,
+): Promise<{ success: boolean; error?: string }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/update-lake-geometry`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email,
+      user_id: userId,
+      lake_id: lakeId,
+      anchors,
+      acres,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update lake geometry: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function listCustomLakes(
   token: string,
 ): Promise<{ lakes: CustomLake[]; total: number }> {

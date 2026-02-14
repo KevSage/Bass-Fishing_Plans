@@ -2061,7 +2061,7 @@ export function Members() {
 
   return (
     <div
-      style={{ position: "relative", height: "100vh", background: "#0a0a0a" }}
+      style={{ position: "fixed", inset: 0, background: "#0a0a0a", overflow: "hidden" }}
     >
       <input
         type="file"
@@ -3075,7 +3075,7 @@ export function Members() {
 
       <style>{`
         .orb-marker-map { background-color: #4A90E2; border-radius: 50%; box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8); cursor: pointer; width: 24px; height: 24px; }
-        .top-gradient-bar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 56px); left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.8) 50%, rgba(0,0,0,0.4) 80%, transparent 100%); padding: 12px 20px 45px; padding-left: max(20px, env(safe-area-inset-left, 20px)); padding-right: max(20px, env(safe-area-inset-right, 20px)); display: flex; justify-content: center; pointer-events: none; }
+        .top-gradient-bar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 56px); left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.7) 30%, rgba(0,0,0,0.4) 70%, transparent 100%); padding: 12px 20px 45px; padding-left: max(20px, env(safe-area-inset-left, 20px)); padding-right: max(20px, env(safe-area-inset-right, 20px)); display: flex; justify-content: center; pointer-events: none; }
         .top-bar-card { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 280px; max-width: 400px; text-align: center; pointer-events: auto; padding-top: 4px; }
         .top-bar-card-empty { text-align: center; }
         .top-bar-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; color: #4A90E2; margin-bottom: 4px; }

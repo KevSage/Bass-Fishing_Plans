@@ -16,7 +16,8 @@ import { MapOrb } from "../components/MapOrb";
 
 // --- API ---
 // We will call the backend to update geometry if it's a regular user save
-import { updateCustomLakeGeometry } from "@/lib/catches-api";
+import { updateCustomLakeGeometry, updateCustomLakeGeometryMobile } from "@/lib/catches-api";
+import { useNativeAuth } from "@/context/NativeAuthContext";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -111,6 +112,7 @@ export function LakeBuilder() {
   const navigate = useNavigate();
   const { user } = usePlatformUser();
   const { getToken } = usePlatformAuth();
+  const nativeAuth = useNativeAuth();
 
   // Redirect if no state (direct URL access)
   useEffect(() => {
@@ -308,15 +310,25 @@ export function LakeBuilder() {
     }
 
     try {
-      const token = await getToken();
-      if (!token) throw new Error("No Auth");
-
       // Calculate acres from polygon
       const acres = calculateAcres(pins);
       console.log("Calculated acres:", acres);
 
-      // Save geometry and acres to DB
-      await updateCustomLakeGeometry(lakeId, pins, token, acres);
+      // Use mobile auth on native platforms, Clerk JWT on web
+      if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+        console.log("[LakeBuilder] Using mobile auth for geometry save");
+        await updateCustomLakeGeometryMobile(
+          nativeAuth.userEmail,
+          nativeAuth.userId,
+          lakeId,
+          pins,
+          acres
+        );
+      } else {
+        const token = await getToken();
+        if (!token) throw new Error("No Auth");
+        await updateCustomLakeGeometry(lakeId, pins, token, acres);
+      }
 
       // --- UPDATED NAVIGATION ---
       // Send refresh signal to Members.tsx
@@ -396,12 +408,14 @@ export function LakeBuilder() {
       <style>{`
         .builder-header {
           position: absolute; top: 0; left: 0; right: 0;
-          height: 60px;
+          height: calc(60px + env(safe-area-inset-top, 0px));
+          padding-top: env(safe-area-inset-top, 0px);
           background: rgba(10, 10, 10, 0.85);
           backdrop-filter: blur(12px);
           border-bottom: 1px solid rgba(255,255,255,0.1);
           display: flex; align-items: center; justify-content: space-between;
-          padding: 0 16px;
+          padding-left: 16px;
+          padding-right: 16px;
           z-index: 10;
         }
         .header-btn {
