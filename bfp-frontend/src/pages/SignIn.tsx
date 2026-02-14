@@ -28,6 +28,10 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [showClerkWarning, setShowClerkWarning] = useState(false);
 
+  // Second factor verification state
+  const [needsSecondFactor, setNeedsSecondFactor] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+
   // Apple Sign-In state (only used on native)
   const [appleSignInLoading, setAppleSignInLoading] = useState(false);
 
@@ -127,7 +131,8 @@ export default function SignInPage() {
 
       console.log("[SignIn] Result:", {
         status: result.status,
-        hasSessionId: !!result.createdSessionId
+        hasSessionId: !!result.createdSessionId,
+        secondFactors: result.supportedSecondFactors
       });
 
       if (result.createdSessionId) {
@@ -136,6 +141,34 @@ export default function SignInPage() {
       } else if (result.status === "complete") {
         await setActive({ session: result.createdSessionId });
         navigate("/members");
+      } else if (result.status === "needs_second_factor") {
+        // Need to verify with email code
+        const emailFactor = result.supportedSecondFactors?.find(
+          (factor: any) => factor.strategy === "email_code"
+        );
+
+        if (emailFactor) {
+          await signIn.prepareSecondFactor({
+            strategy: "email_code",
+          });
+          setNeedsSecondFactor(true);
+          setError("");
+        } else {
+          // Check for other factors like phone_code
+          const phoneFactor = result.supportedSecondFactors?.find(
+            (factor: any) => factor.strategy === "phone_code"
+          );
+          if (phoneFactor) {
+            await signIn.prepareSecondFactor({
+              strategy: "phone_code",
+            });
+            setNeedsSecondFactor(true);
+            setError("");
+          } else {
+            console.error("[SignIn] No supported second factor:", result.supportedSecondFactors);
+            setError("Additional verification required but no supported method available.");
+          }
+        }
       } else {
         console.error("[SignIn] Unexpected status:", result.status, result);
         setError(`Unable to sign in (status: ${result.status}). Please try again or contact support.`);
@@ -155,7 +188,54 @@ export default function SignInPage() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !loading) {
       e.preventDefault();
-      handleWebSignIn();
+      if (needsSecondFactor) {
+        handleVerifyCode();
+      } else {
+        handleWebSignIn();
+      }
+    }
+  };
+
+  // Verify second factor code
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      setError("Please enter the verification code");
+      return;
+    }
+
+    if (!signIn) {
+      setError("Authentication error. Please refresh and try again.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: "email_code",
+        code: verificationCode,
+      });
+
+      console.log("[SignIn] Second factor result:", {
+        status: result.status,
+        hasSessionId: !!result.createdSessionId
+      });
+
+      if (result.status === "complete" && result.createdSessionId) {
+        await setActive({ session: result.createdSessionId });
+        navigate("/members");
+      } else {
+        setError("Verification failed. Please try again.");
+      }
+    } catch (err: any) {
+      const errorMessage =
+        err.errors?.[0]?.longMessage ||
+        err.errors?.[0]?.message ||
+        "Invalid verification code";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -316,7 +396,7 @@ export default function SignInPage() {
             {/* ============================================ */}
             {/* WEB: Email/Password Form */}
             {/* ============================================ */}
-            {!isNative && (
+            {!isNative && !needsSecondFactor && (
               <>
                 {showClerkWarning && !clerkIsLoaded && (
                   <div
@@ -414,6 +494,85 @@ export default function SignInPage() {
                     Subscribe
                   </Link>
                 </div>
+              </>
+            )}
+
+            {/* ============================================ */}
+            {/* WEB: Verification Code Input */}
+            {/* ============================================ */}
+            {!isNative && needsSecondFactor && (
+              <>
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "rgba(255,255,255,0.7)",
+                    marginBottom: 8,
+                  }}
+                >
+                  We sent a verification code to your email. Please enter it below.
+                </p>
+
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  onFocus={handleInputFocus}
+                  placeholder="Enter verification code"
+                  autoComplete="one-time-code"
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    padding: "14px 16px",
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(255,255,255,0.08)",
+                    color: "white",
+                    fontSize: "1.2rem",
+                    textAlign: "center",
+                    letterSpacing: "0.3em",
+                    outline: "none",
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  disabled={loading}
+                  style={{
+                    width: "100%",
+                    padding: "14px",
+                    borderRadius: 10,
+                    border: "none",
+                    background: loading ? "rgba(74,144,226,0.5)" : "#4A90E2",
+                    color: "white",
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    cursor: loading ? "not-allowed" : "pointer",
+                    marginTop: 4,
+                  }}
+                >
+                  {loading ? "Verifying..." : "Verify Code"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNeedsSecondFactor(false);
+                    setVerificationCode("");
+                    setError("");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "rgba(255,255,255,0.5)",
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    marginTop: 8,
+                  }}
+                >
+                  ← Back to sign in
+                </button>
               </>
             )}
           </div>
