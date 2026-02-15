@@ -1172,3 +1172,105 @@ async def test_achievement_alert(request: MobileStatusRequest):
         }
     except Exception as e:
         return {"error": str(e)}
+
+
+# =============================================================================
+# MOBILE CREATE CATCH ENDPOINT
+# =============================================================================
+
+class MobileCreateCatchRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    date: str  # YYYY-MM-DD
+    species: str
+    lat: float
+    lng: float
+    time: Optional[str] = None  # HH:MM
+    weight: Optional[float] = None
+    length: Optional[float] = None
+    lure: Optional[str] = None
+    color: Optional[str] = None
+    notes: Optional[str] = None
+    photo_url: Optional[str] = None
+    lake_id: Optional[str] = None
+    lake_type: str = "unresolved"  # 'known', 'custom', 'unresolved'
+    lake_name: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    source: str = "manual"  # 'camera', 'library', 'manual'
+    temp: Optional[float] = None
+    wind_speed: Optional[float] = None
+    wind_direction: Optional[str] = None
+    pressure: Optional[float] = None
+    sky_condition: Optional[str] = None
+
+
+@router.post("/create-catch")
+async def mobile_create_catch(request: MobileCreateCatchRequest):
+    """
+    Create a catch for mobile app using email instead of JWT.
+    """
+    from app.services.catches import CatchStore
+
+    catch_store = CatchStore()
+
+    try:
+        catch_id = catch_store.create(
+            email=request.email,
+            date=request.date,
+            species=request.species,
+            lat=request.lat,
+            lng=request.lng,
+            time=request.time,
+            weight=request.weight,
+            length=request.length,
+            lure=request.lure,
+            color=request.color,
+            notes=request.notes,
+            photo_url=request.photo_url,
+            lake_id=request.lake_id,
+            lake_type=request.lake_type,
+            lake_name=request.lake_name,
+            city=request.city,
+            state=request.state,
+            source=request.source,
+            temp=request.temp,
+            wind_speed=request.wind_speed,
+            wind_direction=request.wind_direction,
+            pressure=request.pressure,
+            sky_condition=request.sky_condition,
+        )
+        return {"success": True, "catch_id": catch_id}
+    except Exception as e:
+        print(f"[mobile_auth] create catch error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# MOBILE PRESIGNED UPLOAD URL ENDPOINT
+# =============================================================================
+
+class MobilePresignedRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    file_name: str
+    content_type: str
+
+
+@router.post("/presigned")
+async def mobile_presigned_url(request: MobilePresignedRequest):
+    """
+    Get presigned upload URL for mobile app using email instead of JWT.
+    """
+    from app.services.storage import StorageService
+
+    storage = StorageService()
+
+    try:
+        data = storage.generate_presigned_url(request.file_name, request.content_type)
+        if not data:
+            return {"success": False, "error": "Failed to generate upload URL"}
+        return {"success": True, **data}
+    except Exception as e:
+        print(f"[mobile_auth] presigned url error: {e}")
+        return {"success": False, "error": str(e)}

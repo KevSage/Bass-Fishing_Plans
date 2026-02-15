@@ -154,6 +154,28 @@ export async function createCatch(
   );
 }
 
+/**
+ * Create a catch for mobile app using email instead of JWT.
+ * Uses the mobile-auth endpoint that accepts email directly.
+ */
+export async function createCatchMobile(
+  input: CreateCatchInput,
+  email: string,
+  userId: string,
+): Promise<{ success: boolean; catch_id: string }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/create-catch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...input, email, user_id: userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create catch: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function listCatches(
   token: string,
   limit = 50,
@@ -450,6 +472,29 @@ export async function getPresignedUrl(
     },
     token,
   );
+}
+
+/**
+ * Get presigned upload URL for mobile app using email instead of JWT.
+ * Uses the mobile-auth endpoint that accepts email directly.
+ */
+export async function getPresignedUrlMobile(
+  fileName: string,
+  contentType: string,
+  email: string,
+  userId: string,
+): Promise<{ upload_url: string; public_url: string }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/presigned`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ file_name: fileName, content_type: contentType, email, user_id: userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get presigned URL: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function uploadFileToR2(uploadUrl: string, file: File) {

@@ -32,6 +32,7 @@ import { useNativeAuth } from "@/context/NativeAuthContext";
 import { isNativePlatform } from "@/lib/platform";
 import {
   createCatch,
+  createCatchMobile,
   listCatches,
   listCatchesMobile,
   deleteCatch as deleteCatchApi,
@@ -41,6 +42,7 @@ import {
   type CatchRecord,
   type CreateCatchInput,
   getPresignedUrl,
+  getPresignedUrlMobile,
   uploadFileToR2,
 } from "@/lib/catches-api";
 import {
@@ -811,10 +813,19 @@ export function useCatchLog(
 
       try {
         setIsLoading(true);
-        const token = await getToken();
-        if (!token) throw new Error("Offline");
         const input = entryToApiInput(catchData, activeLake);
-        const response = await createCatch(input, token);
+
+        let response: { success: boolean; catch_id: string };
+
+        // Use mobile endpoint on native platforms
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          response = await createCatchMobile(input, nativeAuth.userEmail, nativeAuth.userId);
+        } else {
+          const token = await getToken();
+          if (!token) throw new Error("Offline");
+          response = await createCatch(input, token);
+        }
+
         const savedEntry = { ...newEntry, id: response.catch_id };
         const newEntries = [savedEntry, ...state.entries];
         globalEntriesCache = newEntries;
@@ -1511,7 +1522,7 @@ export function CatchDetailView({
         .catch-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #0f0f12; color: rgba(255,255,255,0.1); }
 
         /* Orb - Radar ping style watermark that doubles as edit menu */
-        .catch-orb-wrapper { position: absolute; top: 14px; left: 14px; z-index: 20; }
+        .catch-orb-wrapper { position: absolute; bottom: 50px; left: 14px; z-index: 20; }
         .catch-orb-btn {
           width: 44px;
           height: 44px;
@@ -1831,13 +1842,32 @@ export function CatchFormView({
     }
     try {
       setIsUploading(true);
-      const token = await getToken();
-      if (!token) throw new Error("No token available");
-      const { upload_url, public_url } = await getPresignedUrl(
-        fileToUpload.name,
-        fileToUpload.type,
-        token,
-      );
+
+      let upload_url: string;
+      let public_url: string;
+
+      // Use mobile endpoint on native platforms
+      if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+        const result = await getPresignedUrlMobile(
+          fileToUpload.name,
+          fileToUpload.type,
+          nativeAuth.userEmail,
+          nativeAuth.userId,
+        );
+        upload_url = result.upload_url;
+        public_url = result.public_url;
+      } else {
+        const token = await getToken();
+        if (!token) throw new Error("No token available");
+        const result = await getPresignedUrl(
+          fileToUpload.name,
+          fileToUpload.type,
+          token,
+        );
+        upload_url = result.upload_url;
+        public_url = result.public_url;
+      }
+
       await uploadFileToR2(upload_url, fileToUpload);
       setPhotoUrl(public_url);
       setIsUploading(false);
@@ -1916,13 +1946,32 @@ export function CatchFormView({
       // Upload to R2
       try {
         setIsUploading(true);
-        const token = await getToken();
-        if (!token) throw new Error("No token available");
-        const { upload_url, public_url } = await getPresignedUrl(
-          fileToUpload.name,
-          fileToUpload.type,
-          token,
-        );
+
+        let upload_url: string;
+        let public_url: string;
+
+        // Use mobile endpoint on native platforms
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          const result = await getPresignedUrlMobile(
+            fileToUpload.name,
+            fileToUpload.type,
+            nativeAuth.userEmail,
+            nativeAuth.userId,
+          );
+          upload_url = result.upload_url;
+          public_url = result.public_url;
+        } else {
+          const token = await getToken();
+          if (!token) throw new Error("No token available");
+          const result = await getPresignedUrl(
+            fileToUpload.name,
+            fileToUpload.type,
+            token,
+          );
+          upload_url = result.upload_url;
+          public_url = result.public_url;
+        }
+
         await uploadFileToR2(upload_url, fileToUpload);
         setPhotoUrl(public_url);
       } catch (err) {

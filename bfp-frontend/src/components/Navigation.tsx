@@ -352,8 +352,7 @@ export function Navigation() {
       >
         <div
           style={{
-            maxWidth: 1200,
-            margin: "0 auto",
+            width: "100%",
             padding: "12px 24px",
             paddingLeft: "max(24px, env(safe-area-inset-left, 24px))",
             paddingRight: "max(24px, env(safe-area-inset-right, 24px))",
@@ -459,7 +458,7 @@ export function Navigation() {
               aria-label="Menu"
             >
               {isSignedIn ? (
-                user?.firstName?.charAt(0) || "U"
+                user?.firstName?.charAt(0) || nativeAuth.userEmail?.charAt(0).toUpperCase() || "U"
               ) : (
                 <svg
                   width="18"
