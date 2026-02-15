@@ -1170,8 +1170,8 @@ export function Insights() {
         .wall-empty { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); grid-column: span 3; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .wall-empty-clear { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 
-        .stats-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .stats-modal-content { width: 100%; max-width: 360px; max-height: 86vh; background: rgba(20,20,25,0.95); border-radius: 24px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; display: flex; flex-direction: column; }
+        .stats-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 12px; padding-top: calc(env(safe-area-inset-top, 0px) + 64px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+        .stats-modal-content { width: 100%; max-width: 360px; max-height: 90vh; background: #0a0a0a; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; display: flex; flex-direction: column; }
       `}</style>
     </div>
   );

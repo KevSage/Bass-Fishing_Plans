@@ -1229,254 +1229,367 @@ export function CatchDetailView({
 }: CatchDetailViewProps) {
   const isPB = isPersonalBest(entry, allEntries);
   const [showMenu, setShowMenu] = React.useState(false);
+  const [isSharing, setIsSharing] = React.useState(false);
+  const shareCardRef = React.useRef<HTMLDivElement>(null);
+
+  // Calculate season from catch date
+  const getSeason = (date: Date): string => {
+    const month = date.getMonth();
+    if (month >= 2 && month <= 4) return "Pre-Spawn";
+    if (month >= 5 && month <= 6) return "Spawn / Post-Spawn";
+    if (month >= 7 && month <= 9) return "Summer";
+    return "Winter";
+  };
+  const season = getSeason(new Date(entry.caughtAt));
+
+  // Build conditions string
+  const getConditionsString = (): string => {
+    const parts: string[] = [];
+    if (entry.temp) parts.push(`${Math.round(entry.temp)}°`);
+    if (entry.windSpeed) parts.push(`${Math.round(entry.windSpeed)}mph wind`);
+    if (entry.pressure) parts.push(`${Math.round(entry.pressure)}mb`);
+    if (entry.skyCondition) parts.push(entry.skyCondition);
+    return parts.length > 0 ? parts.join(" • ") : "";
+  };
+
+  // Share as image
+  const handleShare = async () => {
+    if (!shareCardRef.current) return;
+    setIsSharing(true);
+
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+
+      // Capture the card at high resolution - background-image is properly handled
+      const canvas = await html2canvas(shareCardRef.current, {
+        backgroundColor: '#0f0f12',
+        scale: 3, // 3x scale for high quality output
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      // Convert to PNG (lossless) for best quality
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setIsSharing(false);
+          return;
+        }
+
+        const file = new File([blob], 'bass-clarity-catch.png', { type: 'image/png' });
+
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'My Bass Catch',
+            });
+          } catch (e) {
+            // User cancelled - that's ok
+          }
+        } else {
+          // Fallback: download the image
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'bass-clarity-catch.png';
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+        setIsSharing(false);
+      }, 'image/png'); // PNG for lossless quality
+    } catch (e) {
+      console.error('Share failed:', e);
+      setIsSharing(false);
+    }
+  };
 
   return (
     <div className="catch-detail-container">
-      {/* 1. COMPACT HERO IMAGE (340px) */}
-      <div className="catch-hero">
-        {entry.photoUrl || entry.imageData ? (
-          <img src={entry.photoUrl || entry.imageData} alt="Catch" />
-        ) : (
-          <div className="catch-hero-placeholder">
-            <FishIcon size={56} style={{ opacity: 0.5 }} />
+      {/* Action bar - outside shareable area (only back button, edit is via orb) */}
+      <div className="catch-action-bar">
+        <button onClick={onBack} className="catch-icon-btn glass">
+          {readOnly ? <CloseIcon size={20} /> : <BackIcon size={20} />}
+        </button>
+      </div>
+
+      {/* SHAREABLE CARD - This gets captured for sharing */}
+      <div ref={shareCardRef} className="catch-share-card">
+        {/* Hero Image - Using background-image so html2canvas captures the cropped version */}
+        <div className="catch-hero">
+          {entry.photoUrl || entry.imageData ? (
+            <div
+              className="catch-hero-image"
+              style={{ backgroundImage: `url(${entry.photoUrl || entry.imageData})` }}
+            />
+          ) : (
+            <div className="catch-hero-placeholder">
+              <FishIcon size={48} style={{ opacity: 0.3 }} />
+            </div>
+          )}
+          <div className="catch-hero-gradient" />
+          {/* Orb - radar ping style watermark that doubles as edit menu */}
+          <div className="catch-orb-wrapper">
+            <button
+              className="catch-orb-btn"
+              onClick={() => !readOnly && (onEdit || onDelete) && setShowMenu(!showMenu)}
+              style={{ cursor: (!readOnly && (onEdit || onDelete)) ? 'pointer' : 'default' }}
+            >
+              {/* Radar ping rings - staggered animation */}
+              <div className="catch-orb-ping ping-1" />
+              <div className="catch-orb-ping ping-2" />
+              <div className="catch-orb-ping ping-3" />
+              {/* Core orb */}
+              <div className="catch-orb-core" />
+            </button>
+            {showMenu && !readOnly && (
+              <div className="catch-orb-dropdown">
+                {onEdit && (
+                  <button onClick={() => { onEdit(); setShowMenu(false); }} className="orb-menu-item">
+                    <EditIcon size={14} /> Edit
+                  </button>
+                )}
+                {onDelete && (
+                  <button onClick={() => { onDelete(); setShowMenu(false); }} className="orb-menu-item danger">
+                    <TrashIcon size={14} /> Delete
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        )}
-        <div className="catch-hero-gradient" />
-        <div className="catch-hero-overlay-top">
-          <button onClick={onBack} className="catch-icon-btn glass">
-            {readOnly ? <CloseIcon size={20} /> : <BackIcon size={20} />}
-          </button>
-          {!readOnly && (onEdit || onDelete) && (
-            <div style={{ position: "relative" }}>
-              <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="catch-icon-btn glass"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="19" cy="12" r="1" />
-                  <circle cx="5" cy="12" r="1" />
-                </svg>
-              </button>
-              {showMenu && (
-                <div className="catch-menu-dropdown">
-                  {onEdit && (
-                    <button
-                      onClick={() => {
-                        onEdit();
-                        setShowMenu(false);
-                      }}
-                      className="catch-menu-item"
-                    >
-                      <EditIcon size={16} /> Edit Details
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      onClick={() => {
-                        onDelete();
-                        setShowMenu(false);
-                      }}
-                      className="catch-menu-item danger"
-                    >
-                      <TrashIcon size={16} /> Delete Catch
-                    </button>
-                  )}
+          {/* PB Badge on image */}
+          {isPB && (
+            <div className="catch-pb-overlay">
+              <TrophyIcon size={12} /> PB
+            </div>
+          )}
+        </div>
+
+        {/* Catch Info Container - Compact */}
+        <div className="catch-info-container">
+          {/* Primary Stats Row */}
+          <div className="catch-primary-row">
+            <div className="catch-species-lure">
+              <span className="catch-species">{getSpeciesLabel(entry.species)} Bass</span>
+              <span className="catch-lure">{formatLureName(entry.lure)}{entry.color ? ` (${formatLureName(entry.color)})` : ''}</span>
+            </div>
+            {entry.weight && (
+              <div className="catch-weight-block">
+                <span className="catch-weight-value">{entry.weight}</span>
+                <span className="catch-weight-unit">LBS</span>
+              </div>
+            )}
+          </div>
+
+          {/* Date & Season */}
+          <div className="catch-meta-row">
+            <span>{formatCatchDate(entry.caughtAt)} • {formatCatchTime(entry.caughtAt)}</span>
+            <span className="catch-season-badge">{season}</span>
+          </div>
+
+          {/* Conditions - Table format */}
+          {(entry.temp || entry.windSpeed || entry.pressure || entry.skyCondition) && (
+            <div className="catch-conditions-grid">
+              {entry.temp && (
+                <div className="cond-item">
+                  <span className="cond-label">Temp</span>
+                  <span className="cond-value">{Math.round(entry.temp)}°</span>
+                </div>
+              )}
+              {entry.windSpeed && (
+                <div className="cond-item">
+                  <span className="cond-label">Wind</span>
+                  <span className="cond-value">{Math.round(entry.windSpeed)}mph</span>
+                </div>
+              )}
+              {entry.pressure && (
+                <div className="cond-item">
+                  <span className="cond-label">Pressure</span>
+                  <span className="cond-value">{Math.round(entry.pressure)}mb</span>
+                </div>
+              )}
+              {entry.skyCondition && (
+                <div className="cond-item">
+                  <span className="cond-label">Conditions</span>
+                  <span className="cond-icon">
+                    {entry.skyCondition.includes('Rain') ? (
+                      <DropletsIcon size={18} />
+                    ) : entry.skyCondition.includes('Cloud') ? (
+                      <CloudIcon size={18} />
+                    ) : (
+                      <SunIcon size={18} />
+                    )}
+                  </span>
                 </div>
               )}
             </div>
           )}
+
+          {/* Location - Lake name only, no coords for privacy */}
+          <div className="catch-location-row">
+            <LocationIcon size={14} />
+            <span className="catch-loc-name">{entry.lakeName}</span>
+          </div>
+
+          {/* Brand Footer - Minimal */}
+          <div className="catch-brand-footer">
+            <div className="brand-logo-row">
+              <span className="brand-text">BASS CLARITY</span>
+              <span className="brand-pro">PRO</span>
+            </div>
+            <span className="brand-url">bassclarity.com</span>
+          </div>
         </div>
       </div>
 
-      {/* 2. CONTENT BODY - Pulled up tighter */}
-      <div className="catch-body">
-        {/* Header Grid */}
-        <div className="catch-primary-header">
-          <div className="catch-title-block">
-            <h2 className="catch-lure-title">{formatLureName(entry.lure)}</h2>
-            <div className="catch-subtitle">
-              {formatCatchDate(entry.caughtAt)}
-              <span className="separator">•</span>
-              {formatCatchTime(entry.caughtAt)}
-            </div>
-          </div>
-          {entry.weight && (
-            <div className="catch-stat-stack">
-              {isPB && (
-                <div className="catch-pb-badge-mini">
-                  <TrophyIcon size={10} /> <span>PB</span>
-                </div>
-              )}
-              <div className="catch-stat-block">
-                <span className="catch-stat-value">{entry.weight}</span>
-                <span className="catch-stat-unit">LBS</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Tags / Chips */}
-        <div className="catch-tags-row">
-          {entry.species && (
-            <span className="catch-chip species">
-              {getSpeciesLabel(entry.species)}
-            </span>
-          )}
-          {entry.length && (
-            <span className="catch-chip stat">{entry.length}" Length</span>
-          )}
-          {entry.color && (
-            <span className="catch-chip color">
-              {formatLureName(entry.color)}
-            </span>
-          )}
-        </div>
-
-        {/* NEW: WEATHER SUMMARY CARD */}
-        {(entry.temp || entry.windSpeed || entry.pressure) && (
-          <div className="catch-section">
-            <div className="catch-weather-card">
-              <div className="weather-row">
-                <div className="weather-item">
-                  <ThermometerIcon size={16} className="weather-icon" />
-                  <span>
-                    {entry.temp ? `${Math.round(entry.temp)}°` : "--"}
-                  </span>
-                </div>
-                <div className="weather-item">
-                  <WindIcon size={16} className="weather-icon" />
-                  <span>
-                    {entry.windSpeed
-                      ? `${Math.round(entry.windSpeed)}mph`
-                      : "--"}{" "}
-                    {entry.windDir || ""}
-                  </span>
-                </div>
-                <div className="weather-item">
-                  <ActivityIcon size={16} className="weather-icon" />
-                  <span>
-                    {entry.pressure ? `${Math.round(entry.pressure)}mb` : "--"}
-                  </span>
-                </div>
-              </div>
-              {entry.skyCondition && (
-                <div className="weather-condition">
-                  {entry.skyCondition.includes("Rain") ? (
-                    <DropletsIcon size={14} />
-                  ) : entry.skyCondition.includes("Cloud") ? (
-                    <CloudIcon size={14} />
-                  ) : (
-                    <SunIcon size={14} />
-                  )}
-                  <span>{entry.skyCondition}</span>
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Share & Location Buttons - Outside shareable card */}
+      <div className="catch-actions-footer">
+        {(onLocationClick || onFlyToLocation) && (
+          <button
+            className="catch-action-btn secondary"
+            onClick={() => onLocationClick ? onLocationClick() : onFlyToLocation?.(entry.catchLat, entry.catchLng)}
+          >
+            <LocationIcon size={18} />
+            View on Map
+          </button>
         )}
-
-        <div className="catch-divider" />
-
-        {/* Location Card */}
-        <div className="catch-section">
-          <div className="catch-location-card">
-            <div className="catch-loc-icon-wrapper">
-              <LocationIcon size={18} />
-            </div>
-            <div className="catch-loc-details">
-              <div className="catch-loc-name">{entry.lakeName}</div>
-              <div className="catch-loc-coords">
-                {formatCoord(entry.catchLat, entry.catchLng)}
-              </div>
-            </div>
-            {(onLocationClick || onFlyToLocation) && (
-              <button
-                className="catch-map-btn"
-                onClick={() =>
-                  onLocationClick
-                    ? onLocationClick()
-                    : onFlyToLocation?.(entry.catchLat, entry.catchLng)
-                }
-              >
-                View
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Notes */}
-        {entry.notes && (
-          <div className="catch-section">
-            <h4 className="catch-section-label">Notes</h4>
-            <div className="catch-notes-box">
-              <p className="catch-notes-text">{entry.notes}</p>
-            </div>
-          </div>
-        )}
+        <button className="catch-action-btn primary" onClick={handleShare} disabled={isSharing}>
+          {isSharing ? (
+            <>Generating...</>
+          ) : (
+            <>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              Share Catch
+            </>
+          )}
+        </button>
       </div>
 
       <style>{`
-        /* ... (Keep existing detailed styles from previous file, they were good) ... */
-        .catch-detail-container { display: flex; flex-direction: column; height: 100%; background: #121218; overflow-y: auto; }
-        .catch-hero { position: relative; width: 100%; height: clamp(250px, 40vh, 350px); flex-shrink: 0; background: #000; overflow: hidden; }
-        .catch-hero img { width: 100%; height: 100%; object-fit: cover; }
-        .catch-hero-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, #121218 100%); z-index: 1; }
-        .catch-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%); color: rgba(255,255,255,0.15); }
-        .catch-hero-overlay-top { position: absolute; top: 0; left: 0; right: 0; padding: 16px; display: flex; justify-content: space-between; z-index: 20; }
-        .catch-icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: all 0.2s; }
-        .catch-icon-btn.glass { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15); }
-        .catch-icon-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
-        .catch-menu-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px; min-width: 140px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 2px; animation: fadeIn 0.1s ease-out; }
-        .catch-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; background: transparent; border: none; color: #fff; font-size: 0.9rem; font-weight: 500; text-align: left; border-radius: 8px; cursor: pointer; }
-        .catch-menu-item:hover { background: rgba(255,255,255,0.1); }
-        .catch-menu-item.danger { color: #f87171; }
-        .catch-menu-item.danger:hover { background: rgba(220, 38, 38, 0.15); }
-        .catch-body { padding: 0 24px 40px; position: relative; top: -40px; z-index: 2; }
-        .catch-primary-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
-        .catch-title-block { flex: 1; padding-right: 12px; }
-        .catch-lure-title { font-size: 2rem; font-weight: 800; color: #fff; margin: 0 0 6px 0; line-height: 1.1; letter-spacing: -0.02em; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-        .catch-subtitle { font-size: 0.9rem; color: rgba(255,255,255,0.8); font-weight: 500; display: flex; align-items: center; gap: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-        .separator { opacity: 0.5; }
-        .catch-stat-stack { display: flex; flex-direction: column; align-items: flex-end; justify-content: flex-end; min-width: 70px; }
-        .catch-pb-badge-mini { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #fff; padding: 3px 8px; border-radius: 8px; font-weight: 800; font-size: 0.6rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-        .catch-stat-value { display: block; font-size: 2.5rem; font-weight: 900; color: #fff; line-height: 1; letter-spacing: -0.03em; text-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-        .catch-stat-unit { font-size: 0.75rem; color: #60A5FA; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-        .catch-tags-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-        .catch-chip { padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.8); font-size: 0.8rem; font-weight: 600; }
-        .catch-chip.species { background: rgba(52, 211, 153, 0.15); color: #6ee7b7; border-color: rgba(52, 211, 153, 0.3); }
-        .catch-chip.stat { background: rgba(96, 165, 250, 0.15); color: #93c5fd; border-color: rgba(96, 165, 250, 0.3); }
-        .catch-chip.color { background: rgba(167, 139, 250, 0.15); color: #c4b5fd; border-color: rgba(167, 139, 250, 0.3); } /* Added missing style for color chip */
-        
-        /* WEATHER CARD */
-        .catch-weather-card {
-          background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px; margin-bottom: 20px;
-        }
-        .weather-row { display: flex; justify-content: space-around; margin-bottom: 8px; }
-        .weather-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.85rem; color: rgba(255,255,255,0.9); font-weight: 600; }
-        .weather-icon { color: #4A90E2; opacity: 0.9; }
-        .weather-condition { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; color: rgba(255,255,255,0.6); padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05); }
+        /* BRANDED CATCH CARD STYLES */
+        .catch-detail-container { display: flex; flex-direction: column; height: 100%; background: #0a0a0a; overflow-y: auto; }
 
-        .catch-divider { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 24px; }
-        .catch-location-card { display: flex; align-items: center; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
-        .catch-loc-icon-wrapper { color: #4A90E2; padding: 8px; background: rgba(74, 144, 226, 0.1); border-radius: 10px; margin-right: 12px; }
-        .catch-loc-details { flex: 1; }
-        .catch-loc-name { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
-        .catch-loc-coords { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-family: monospace; }
-        .catch-map-btn { padding: 6px 12px; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .catch-map-btn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
-        .catch-section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: rgba(255,255,255,0.4); margin-bottom: 10px; font-weight: 700; }
-        .catch-notes-box { background: rgba(255,255,255,0.02); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); }
-        .catch-notes-text { font-size: 0.9rem; line-height: 1.6; color: rgba(255,255,255,0.8); white-space: pre-wrap; margin: 0; }
+        /* Action Bar - Only back button (edit menu is via orb) */
+        .catch-action-bar { display: flex; justify-content: flex-start; padding: 12px 16px; background: transparent; position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
+        .catch-icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: all 0.2s; }
+        .catch-icon-btn.glass { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); }
+
+        /* Shareable Card Container */
+        .catch-share-card { position: relative; margin: 8px; border-radius: 16px; overflow: hidden; background: #0f0f12; }
+
+        /* Hero Image - Using background-image for proper html2canvas capture */
+        .catch-hero { position: relative; width: 100%; height: 340px; background: #000; }
+        .catch-hero-image { width: 100%; height: 100%; background-size: cover; background-position: center 20%; background-repeat: no-repeat; }
+        .catch-hero-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 0%, transparent 70%, #0f0f12 100%); pointer-events: none; }
+        .catch-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #0f0f12; color: rgba(255,255,255,0.1); }
+
+        /* Orb - Radar ping style watermark that doubles as edit menu */
+        .catch-orb-wrapper { position: absolute; top: 14px; left: 14px; z-index: 20; }
+        .catch-orb-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          position: relative;
+          padding: 0;
+          cursor: pointer;
+        }
+        .catch-orb-core {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: #4A90E2;
+          box-shadow: 0 0 12px rgba(74, 144, 226, 0.9), 0 0 4px rgba(74, 144, 226, 1);
+          z-index: 10;
+          position: relative;
+        }
+        /* Radar ping rings - expanding outward */
+        .catch-orb-ping {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          border: 1.5px solid rgba(74, 144, 226, 0.7);
+          background: transparent;
+          pointer-events: none;
+          animation: radar-ping 2.4s infinite cubic-bezier(0.2, 0, 0.4, 1);
+        }
+        .catch-orb-ping.ping-1 { animation-delay: 0s; }
+        .catch-orb-ping.ping-2 { animation-delay: 0.8s; }
+        .catch-orb-ping.ping-3 { animation-delay: 1.6s; }
+        @keyframes radar-ping {
+          0% {
+            width: 16px;
+            height: 16px;
+            opacity: 0.8;
+            border-color: rgba(74, 144, 226, 0.8);
+          }
+          100% {
+            width: 44px;
+            height: 44px;
+            opacity: 0;
+            border-color: rgba(74, 144, 226, 0);
+          }
+        }
+        .catch-orb-dropdown { position: absolute; top: 100%; left: 0; margin-top: 8px; background: rgba(15,15,18,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 4px; min-width: 100px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .orb-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; background: transparent; border: none; color: #fff; font-size: 0.85rem; font-weight: 500; text-align: left; border-radius: 8px; cursor: pointer; }
+        .orb-menu-item:hover { background: rgba(255,255,255,0.1); }
+        .orb-menu-item.danger { color: #f87171; }
+
+        .catch-pb-overlay { position: absolute; top: 12px; right: 12px; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #fff; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 0.7rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.4); z-index: 10; }
+
+        /* Info Container - Compact padding */
+        .catch-info-container { padding: 8px 14px 8px; position: relative; margin-top: -30px; z-index: 5; }
+
+        /* Primary Row - Species/Lure + Weight */
+        .catch-primary-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+        .catch-species-lure { display: flex; flex-direction: column; gap: 1px; flex: 1; padding-right: 10px; }
+        .catch-species { font-size: 0.75rem; font-weight: 700; color: #4A90E2; text-transform: uppercase; letter-spacing: 0.05em; }
+        .catch-lure { font-size: 1rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .catch-weight-block { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+        .catch-weight-value { font-size: 2.2rem; font-weight: 900; color: #fff; line-height: 1; letter-spacing: -0.02em; }
+        .catch-weight-unit { font-size: 0.65rem; color: #4A90E2; font-weight: 800; letter-spacing: 0.1em; }
+
+        /* Meta Row - Date & Season */
+        .catch-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+        .catch-season-badge { background: rgba(74, 144, 226, 0.15); color: #4A90E2; padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.03em; }
+
+        /* Conditions - Grid/Table format */
+        .catch-conditions-grid { display: flex; justify-content: space-around; margin-bottom: 6px; padding: 6px 0; }
+        .cond-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .cond-label { font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.05em; }
+        .cond-value { font-size: 0.95rem; font-weight: 700; color: #4A90E2; }
+        .cond-icon { color: #4A90E2; display: flex; align-items: center; }
+
+        /* Location Row - Lake name only */
+        .catch-location-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding: 6px 10px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .catch-location-row svg { color: #4A90E2; flex-shrink: 0; }
+        .catch-loc-name { font-size: 0.85rem; font-weight: 600; color: #fff; }
+
+        /* Brand Footer - Very Minimal */
+        .catch-brand-footer { text-align: center; padding-top: 6px; }
+        .brand-logo-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 1px; }
+        .brand-text { font-size: 0.75rem; font-weight: 800; color: rgba(255,255,255,0.7); letter-spacing: 0.05em; }
+        .brand-pro { background: rgba(74, 144, 226, 0.2); border: 1px solid rgba(74, 144, 226, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; font-weight: 700; color: #6bb8e8; letter-spacing: 0.06em; }
+        .brand-url { font-size: 0.6rem; color: rgba(255,255,255,0.25); font-weight: 500; }
+
+        /* Action Footer */
+        .catch-actions-footer { display: flex; gap: 10px; padding: 12px 16px 20px; }
+        .catch-action-btn { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 16px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
+        .catch-action-btn.primary { background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); color: #fff; box-shadow: 0 4px 16px rgba(74, 144, 226, 0.3); }
+        .catch-action-btn.primary:disabled { opacity: 0.6; cursor: not-allowed; }
+        .catch-action-btn.secondary { background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
+        .catch-action-btn:active:not(:disabled) { transform: scale(0.98); }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
