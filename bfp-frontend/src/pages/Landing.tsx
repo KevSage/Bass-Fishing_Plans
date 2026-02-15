@@ -352,31 +352,6 @@ export function Landing() {
             >
               Clarity on the Water.
             </h1>
-            <p
-              style={{
-                fontSize: "1.2rem",
-                lineHeight: 1.6,
-                opacity: 0.75,
-                maxWidth: "600px",
-                margin: "0 auto 32px",
-                color: "#fff",
-              }}
-            >
-              Bass Clarity is Open and Free for All Anglers while in Beta.
-            </p>
-            <p
-              style={{
-                fontSize: ".9rem",
-                lineHeight: 1.3,
-                opacity: 0.75,
-                maxWidth: "600px",
-                margin: "0 auto 32px",
-                color: "#fff",
-              }}
-            >
-              If you find value in the platform and want to support the
-              developer, there is an optional subscription{" "}
-            </p>
           </Reveal>
 
           <Reveal delay={200}>
