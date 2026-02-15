@@ -383,7 +383,7 @@ export function Landing() {
                   "0 10px 30px rgba(74, 144, 226, 0.3)";
               }}
             >
-              Full Access - Free
+              Sign Up
               <svg
                 width="20"
                 height="20"
