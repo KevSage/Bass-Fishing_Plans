@@ -643,10 +643,11 @@ def root():
 # 3. REGISTER ROUTES LAST
 # ========================================
 # Import routes AFTER stores are initialized to prevent circular import 500s
-from app.routes import clerk_webhooks, members, mobile_auth
+from app.routes import clerk_webhooks, members, mobile_auth, admin
 from app.routes import billing  # Cleaned up duplicate imports
 
 app.include_router(clerk_webhooks.router, tags=["clerk"])
 app.include_router(members.router, tags=["members"])
 app.include_router(billing.router, tags=["billing"])
 app.include_router(mobile_auth.router)  # Mobile auth (bypasses CORS)
+app.include_router(admin.router)  # Admin routes for subscriber management

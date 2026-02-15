@@ -410,3 +410,96 @@ class SubscriberStore:
     def is_active(self, email: str) -> bool:
         sub = self.get(email)
         return bool(sub and sub.active)
+
+    def list_all(self, limit: int = 100, offset: int = 0, search: Optional[str] = None) -> list[Subscriber]:
+        """List all subscribers with optional search."""
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                if search:
+                    search_term = f"%{search.lower()}%"
+                    rows = conn.execute(
+                        """
+                        SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
+                        FROM subscribers
+                        WHERE LOWER(email) LIKE %s OR LOWER(first_name) LIKE %s OR LOWER(last_name) LIKE %s
+                        ORDER BY email
+                        LIMIT %s OFFSET %s
+                        """,
+                        (search_term, search_term, search_term, limit, offset),
+                    ).fetchall()
+                else:
+                    rows = conn.execute(
+                        """
+                        SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
+                        FROM subscribers
+                        ORDER BY email
+                        LIMIT %s OFFSET %s
+                        """,
+                        (limit, offset),
+                    ).fetchall()
+        else:
+            with self._sqlite_conn() as conn:
+                if search:
+                    search_term = f"%{search.lower()}%"
+                    rows = conn.execute(
+                        """
+                        SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
+                        FROM subscribers
+                        WHERE LOWER(email) LIKE ? OR LOWER(first_name) LIKE ? OR LOWER(last_name) LIKE ?
+                        ORDER BY email
+                        LIMIT ? OFFSET ?
+                        """,
+                        (search_term, search_term, search_term, limit, offset),
+                    ).fetchall()
+                else:
+                    rows = conn.execute(
+                        """
+                        SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
+                        FROM subscribers
+                        ORDER BY email
+                        LIMIT ? OFFSET ?
+                        """,
+                        (limit, offset),
+                    ).fetchall()
+
+        return [
+            Subscriber(
+                email=row["email"],
+                active=bool(row["active"]),
+                stripe_customer_id=row["stripe_customer_id"],
+                stripe_subscription_id=row["stripe_subscription_id"],
+                apple_user_id=row["apple_user_id"],
+                first_name=row["first_name"],
+                last_name=row["last_name"],
+            )
+            for row in rows
+        ]
+
+    def set_active(self, email: str, active: bool) -> bool:
+        """Set a subscriber's active status. Returns True if found and updated."""
+        email_norm = email.lower().strip()
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    "UPDATE subscribers SET active = %s WHERE email = %s",
+                    (active, email_norm),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        else:
+            with self._sqlite_conn() as conn:
+                cursor = conn.execute(
+                    "UPDATE subscribers SET active = ? WHERE email = ?",
+                    (1 if active else 0, email_norm),
+                )
+                conn.commit()
+                return cursor.rowcount > 0
+
+    def add_manual(self, email: str, first_name: str = "", last_name: str = "", active: bool = True) -> None:
+        """Manually add a subscriber (admin function)."""
+        self.upsert_active(
+            email,
+            active=active,
+            first_name=first_name if first_name else None,
+            last_name=last_name if last_name else None,
+        )

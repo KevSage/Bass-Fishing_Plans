@@ -1138,11 +1138,6 @@ function CatchListView(props: CatchListViewProps) {
           <FishIcon size={20} /> <span>Catch Log</span>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
-          {hasOffline && onSync && (
-            <button onClick={onSync} className="catch-sync-btn">
-              <RefreshIcon size={16} /> <span>Sync</span>
-            </button>
-          )}
           <button onClick={onClose} className="catch-close-btn">
             <CloseIcon />
           </button>
@@ -1152,12 +1147,6 @@ function CatchListView(props: CatchListViewProps) {
         <div className="catch-lake-context">{activeLake.name}</div>
       )}
       <div className="catch-modal-body">
-        {hasOffline && (
-          <div className="catch-offline-banner">
-            <CloudOffIcon size={14} />{" "}
-            <span>Sync when you have reception.</span>
-          </div>
-        )}
         {!activeLake ? (
           <div className="catch-empty-state">
             <p>Select a lake to view catches</p>

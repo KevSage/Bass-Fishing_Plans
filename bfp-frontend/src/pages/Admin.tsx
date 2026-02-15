@@ -1,6 +1,6 @@
 // src/pages/Admin.tsx
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { LocationSearch } from "@/components/LocationSearch";
@@ -13,6 +13,7 @@ import existingLakesRaw from "@/data/lakes.json";
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const ADMIN_PASSWORD = "bass2025";
 const PROXIMITY_ALERT_MILES = 50; // Increased to catch large lakes
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 // --- TYPES ---
 interface Coordinate {
@@ -243,6 +244,8 @@ export function Admin() {
     }
   };
 
+  const [activeTab, setActiveTab] = useState<"lakes" | "subscribers">("subscribers");
+
   if (!authed) {
     return (
       <div
@@ -311,7 +314,77 @@ export function Admin() {
     );
   }
 
-  return <AdminWorkstation onLogout={() => setAuthed(false)} />;
+  return (
+    <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
+      {/* Tab Navigation */}
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          background: "rgba(10, 10, 10, 0.95)",
+          borderBottom: "1px solid rgba(255,255,255,0.1)",
+          padding: "12px 20px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setActiveTab("subscribers")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: activeTab === "subscribers" ? "#4A90E2" : "rgba(255,255,255,0.1)",
+              color: "#fff",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Subscribers
+          </button>
+          <button
+            onClick={() => setActiveTab("lakes")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: activeTab === "lakes" ? "#4A90E2" : "rgba(255,255,255,0.1)",
+              color: "#fff",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Lakes
+          </button>
+        </div>
+        <button
+          onClick={() => setAuthed(false)}
+          style={{
+            padding: "8px 16px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.2)",
+            background: "transparent",
+            color: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          Logout
+        </button>
+      </div>
+
+      {/* Content */}
+      <div style={{ paddingTop: 60 }}>
+        {activeTab === "subscribers" && <SubscriberManager password={password} />}
+        {activeTab === "lakes" && <AdminWorkstation onLogout={() => setAuthed(false)} />}
+      </div>
+      <StyleBlock />
+    </div>
+  );
 }
 
 // ==========================================
