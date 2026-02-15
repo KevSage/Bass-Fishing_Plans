@@ -950,13 +950,54 @@ export function Members() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataVersion, nativeAuth.userEmail]);
 
+  // Validate viewingFavoriteId against member status - redirect locked users to home lake
+  useEffect(() => {
+    if (!viewingFavoriteId || favorites.length === 0 || statusLoading) return;
+
+    const currentIndex = favorites.findIndex((f) => f.id === viewingFavoriteId);
+    const isLocked = !isActive && currentIndex > 0;
+
+    if (isLocked && favorites[0]) {
+      // User is viewing a locked lake - redirect to home lake
+      const homeLake = favorites[0];
+      setWaterName(homeLake.name);
+      setViewingFavoriteId(homeLake.id);
+      setLocationDetails({ city: homeLake.city, state: homeLake.state });
+      setSelectedCoords({ lat: homeLake.lat, lng: homeLake.lng });
+    }
+  }, [isActive, statusLoading, viewingFavoriteId, favorites]);
+
   // Handle pending lake selection after returning from LakeBuilder
   useEffect(() => {
     if (!pendingLakeSelectRef.current) return;
     if (favorites.length === 0) return;
     const targetId = pendingLakeSelectRef.current;
-    const lake = favorites.find((f) => f.id === targetId);
+    const lakeIndex = favorites.findIndex((f) => f.id === targetId);
+    const lake = lakeIndex >= 0 ? favorites[lakeIndex] : null;
     if (lake) {
+      // Check if lake is locked (non-pro user accessing beyond home lake)
+      const isLocked = !isActive && lakeIndex > 0;
+      if (isLocked) {
+        // Fall back to home lake instead
+        const homeLake = favorites[0];
+        if (homeLake) {
+          setWaterName(homeLake.name);
+          setViewingFavoriteId(homeLake.id);
+          setLocationDetails({ city: homeLake.city, state: homeLake.state });
+          setSelectedCoords({ lat: homeLake.lat, lng: homeLake.lng });
+          setTimeout(() => {
+            if (mapRef.current) {
+              mapRef.current.flyTo({
+                center: [homeLake.lng, homeLake.lat],
+                zoom: getZoomForLake(homeLake.acres),
+                duration: 2000,
+              });
+            }
+          }, 300);
+        }
+        pendingLakeSelectRef.current = null;
+        return;
+      }
       setWaterName(lake.name);
       setViewingFavoriteId(lake.id);
       setLocationDetails({ city: lake.city, state: lake.state });
@@ -972,7 +1013,7 @@ export function Members() {
       }, 300);
       pendingLakeSelectRef.current = null;
     }
-  }, [favorites, dataVersion]);
+  }, [favorites, dataVersion, isActive]);
 
   // --- DERIVED STATE ---
   const isCurrentLocationSaved = useMemo(() => {
@@ -2442,13 +2483,21 @@ export function Members() {
                     </div>
                     <span>Scout New</span>
                   </div>
-                  {favorites.map((lake) => {
+                  {favorites.map((lake, index) => {
                     const isActiveFav = lake.id === viewingFavoriteId;
+                    // Non-pro users can only access their first (Home) lake
+                    const isLocked = !isActive && index > 0;
                     return (
                       <div
                         key={`${lake.lake_type}:${lake.id}`}
-                        className={`nav-fav-card ${isActiveFav ? "active" : ""}`}
+                        className={`nav-fav-card ${isActiveFav ? "active" : ""} ${isLocked ? "locked" : ""}`}
                         onClick={() => {
+                          if (isLocked) {
+                            triggerUpgrade(
+                              "Free users can access 1 Home Lake. Upgrade to unlock all your saved waters."
+                            );
+                            return;
+                          }
                           setWaterName(lake.name);
                           setViewingFavoriteId(lake.id);
                           setLocationDetails({
@@ -2473,6 +2522,14 @@ export function Members() {
                         }}
                       >
                         <div className="nav-fav-card-gradient" />
+                        {isLocked && (
+                          <div className="nav-fav-card-lock">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </div>
+                        )}
                         <div className="nav-fav-card-content">
                           <div className="nav-fav-card-name">{lake.name}</div>
                           {lake.city && lake.state && (
@@ -3119,6 +3176,9 @@ export function Members() {
         .nav-fav-card { flex: 0 0 110px; height: 90px; border-radius: 14px; background: rgba(30, 30, 40, 0.6); position: relative; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; transition: all 0.2s; }
         .nav-fav-card:hover { border-color: rgba(255,255,255,0.2); }
         .nav-fav-card.active { border-color: #4A90E2; box-shadow: 0 0 12px rgba(74,144,226,0.3); }
+        .nav-fav-card.locked { opacity: 0.5; }
+        .nav-fav-card.locked::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 3; }
+        .nav-fav-card-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.8); }
         .nav-fav-card-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.85) 100%); }
         .nav-fav-card-content { position: relative; z-index: 2; }
         .nav-fav-card-name { font-size: 0.8rem; font-weight: 600; color: #fff; line-height: 1.15; max-height: 2.3em; overflow: hidden; }

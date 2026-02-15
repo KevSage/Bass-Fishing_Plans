@@ -34,7 +34,8 @@
       "Bash(grep:*)",
       "Bash(wc:*)",
       "Bash(curl:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "WebFetch(domain:gopro.github.io)"
     ]
   }
 }

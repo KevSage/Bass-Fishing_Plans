@@ -707,15 +707,15 @@ export function Admin() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0a0a0a" }}>
-      {/* Tab Navigation */}
+      {/* Tab Navigation - positioned below main nav */}
       <div
         style={{
           position: "fixed",
-          top: 0,
+          top: "calc(env(safe-area-inset-top, 0px) + 56px)",
           left: 0,
           right: 0,
           zIndex: 100,
-          background: "rgba(10, 10, 10, 0.95)",
+          background: "rgba(10, 10, 10, 0.98)",
           borderBottom: "1px solid rgba(255,255,255,0.1)",
           padding: "12px 20px",
           display: "flex",
@@ -770,12 +770,12 @@ export function Admin() {
 
       {/* Content */}
       {activeTab === "subscribers" && (
-        <div style={{ paddingTop: 60 }}>
+        <div style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 120px)" }}>
           <SubscriberManager password={password} />
         </div>
       )}
       {activeTab === "lakes" && (
-        <div style={{ position: "fixed", top: 52, left: 0, right: 0, bottom: 0 }}>
+        <div style={{ position: "fixed", top: "calc(env(safe-area-inset-top, 0px) + 110px)", left: 0, right: 0, bottom: 0 }}>
           <AdminWorkstation onLogout={() => setAuthed(false)} />
         </div>
       )}

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { usePlatformAuth } from "./usePlatformAuth";
-import { isNativePlatform } from "@/lib/platform";
+import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
+import { useNativeAuth } from "@/context/NativeAuthContext";
 
 export interface MemberStatus {
   email: string;
@@ -20,57 +21,26 @@ let globalCache: MemberStatus | null = null;
 
 export function useMemberStatus() {
   const { getToken, isSignedIn } = usePlatformAuth();
+  const nativeAuth = useNativeAuth();
 
   // 2. Initialize State with Cache (Instant Load)
-  // On native platforms, skip loading state entirely (FREE_MODE means all are members)
-  const [status, setStatus] = useState<MemberStatus | null>(() => {
-    if (isNativePlatform() && isSignedIn) {
-      return {
-        email: "mobile@user.local",
-        is_member: true,
-        has_subscription: true,
-        rate_limit_allowed: true,
-        rate_limit_seconds: 0,
-        stripe_customer_id: null,
-        stripe_subscription_id: null,
-      };
-    }
-    return globalCache;
-  });
+  const [status, setStatus] = useState<MemberStatus | null>(() => globalCache);
 
-  // 3. Smart Loading State:
-  // On native platforms, never show loading (already have mock status)
-  // On web: only show "loading" if signed in AND no cached data
+  // 3. Smart Loading State
   const [loading, setLoading] = useState(() => {
-    if (isNativePlatform()) return false;
-    return !globalCache && !!isSignedIn;
+    const signedIn = isNativePlatform() ? nativeAuth.isSignedIn : isSignedIn;
+    return !globalCache && !!signedIn;
   });
 
   const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = async () => {
-    if (!isSignedIn) {
+    const signedIn = isNativePlatform() ? nativeAuth.isSignedIn : isSignedIn;
+
+    if (!signedIn) {
       setLoading(false);
       globalCache = null; // Clear cache on logout
       setStatus(null);
-      return;
-    }
-
-    // On native platforms, return mock member status (FREE_MODE is enabled)
-    // This bypasses the Clerk JWT requirement for mobile
-    if (isNativePlatform()) {
-      const mockStatus: MemberStatus = {
-        email: "mobile@user.local",
-        is_member: true,
-        has_subscription: true,
-        rate_limit_allowed: true,
-        rate_limit_seconds: 0,
-        stripe_customer_id: null,
-        stripe_subscription_id: null,
-      };
-      globalCache = mockStatus;
-      setStatus(mockStatus);
-      setLoading(false);
       return;
     }
 
@@ -79,23 +49,51 @@ export function useMemberStatus() {
       if (!globalCache) setLoading(true);
       setError(null);
 
-      const token = await getToken();
-      const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/members/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      let data: MemberStatus;
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.statusText}`);
+      if (isNativePlatform()) {
+        // Native: Use mobile-auth endpoint with email/user_id
+        if (!nativeAuth.userEmail || !nativeAuth.userId) {
+          throw new Error("Missing native auth credentials");
+        }
+
+        const response = await fetch(
+          `${getApiBaseUrl()}/mobile-auth/status`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: nativeAuth.userEmail,
+              user_id: nativeAuth.userId,
+            }),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+
+        data = await response.json();
+      } else {
+        // Web: Use Clerk JWT
+        const token = await getToken();
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/members/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+
+        data = await response.json();
       }
 
-      const data = await response.json();
-
-      // 4. Update Cache & State
+      // Update Cache & State
       globalCache = data;
       setStatus(data);
     } catch (err) {
@@ -108,7 +106,7 @@ export function useMemberStatus() {
 
   useEffect(() => {
     fetchStatus();
-  }, [isSignedIn]);
+  }, [isSignedIn, nativeAuth.isSignedIn]);
 
   return {
     status,

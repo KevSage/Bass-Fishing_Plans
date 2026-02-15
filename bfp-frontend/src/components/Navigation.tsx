@@ -4,7 +4,8 @@ import { createPortal } from "react-dom";
 import { MapOrb } from "./MapOrb";
 import { SignedIn, SignedOut } from "./PlatformAuth";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
-import { isNativePlatform } from "@/lib/platform";
+import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
+import { useNativeAuth } from "@/context/NativeAuthContext";
 
 // Define API Base for status check
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
@@ -18,6 +19,7 @@ export function Navigation() {
   const location = useLocation();
   const { user } = usePlatformUser();
   const { getToken, isSignedIn, isLoaded, signOut } = usePlatformAuth();
+  const nativeAuth = useNativeAuth();
   const navigate = useNavigate();
 
   // --- CONTEXTUAL ORB LOGIC ---
@@ -42,14 +44,37 @@ export function Navigation() {
 
   // Check Pro Status on Mount
   useEffect(() => {
-    if (isSignedIn) {
-      // On native platforms, assume Pro status (FREE_MODE is enabled)
+    const checkStatus = async () => {
       if (isNativePlatform()) {
-        setIsPro(true);
-        return;
-      }
+        // Native: Check via mobile-auth endpoint
+        if (!nativeAuth.isSignedIn || !nativeAuth.userEmail || !nativeAuth.userId) {
+          setIsPro(false);
+          return;
+        }
 
-      const checkStatus = async () => {
+        try {
+          const res = await fetch(`${getApiBaseUrl()}/mobile-auth/status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: nativeAuth.userEmail,
+              user_id: nativeAuth.userId,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setIsPro(data.is_member);
+          }
+        } catch (e) {
+          console.error("Nav status check failed", e);
+        }
+      } else {
+        // Web: Check via Clerk JWT
+        if (!isSignedIn) {
+          setIsPro(false);
+          return;
+        }
+
         try {
           const token = await getToken();
           const res = await fetch(`${API_BASE}/members/status`, {
@@ -62,13 +87,12 @@ export function Navigation() {
         } catch (e) {
           console.error("Nav status check failed", e);
         }
-      };
-      checkStatus();
-    } else {
-      setIsPro(false);
-    }
+      }
+    };
+
+    checkStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn]);
+  }, [isSignedIn, nativeAuth.isSignedIn]);
 
   const publicLinks = useMemo(
     () => [
