@@ -51,8 +51,10 @@ const config: CapacitorConfig = {
     },
 
     // Status bar configuration
+    // 'DARK' style = light/white text (for dark app backgrounds)
+    // 'LIGHT' style = dark text (for light app backgrounds)
     StatusBar: {
-      style: 'light',
+      style: 'DARK',
       backgroundColor: '#0a0a0a',
     },
 

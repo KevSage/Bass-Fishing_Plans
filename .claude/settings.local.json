@@ -32,7 +32,8 @@
       "Bash(open:*)",
       "Bash(npm install:*)",
       "Bash(grep:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(curl:*)"
     ]
   }
 }

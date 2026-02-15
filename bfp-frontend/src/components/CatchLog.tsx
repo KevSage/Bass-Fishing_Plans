@@ -569,10 +569,25 @@ export function useCatchLog(
     }
     const cached = localStorage.getItem(API_CACHE_KEY);
     const offline = localStorage.getItem(OFFLINE_KEY);
-    const initialEntries = [
-      ...(offline ? JSON.parse(offline) : []),
-      ...(cached ? JSON.parse(cached) : []),
-    ];
+    const cachedEntries: CatchEntry[] = cached ? JSON.parse(cached) : [];
+    const offlineEntries: CatchEntry[] = offline ? JSON.parse(offline) : [];
+
+    // Deduplicate: filter out offline entries that exist in cached (synced) entries
+    const trulyOffline = offlineEntries.filter((offlineEntry) => {
+      const matchesCached = cachedEntries.some((cachedEntry) =>
+        cachedEntry.caughtAt === offlineEntry.caughtAt &&
+        cachedEntry.lakeName === offlineEntry.lakeName &&
+        cachedEntry.weight === offlineEntry.weight
+      );
+      return !matchesCached;
+    });
+
+    // Clean up localStorage if we found synced entries
+    if (trulyOffline.length !== offlineEntries.length) {
+      localStorage.setItem(OFFLINE_KEY, JSON.stringify(trulyOffline));
+    }
+
+    const initialEntries = [...trulyOffline, ...cachedEntries];
     if (initialEntries.length > 0) globalEntriesCache = initialEntries;
     return {
       isOpen: false,
@@ -601,7 +616,6 @@ export function useCatchLog(
     if (state.entries.length === 0) setIsLoading(true);
     setError(null);
     try {
-      const offline = getOfflineCatches();
       let apiEntries: CatchEntry[] = [];
 
       const isNative = isNativePlatform();
@@ -616,8 +630,6 @@ export function useCatchLog(
           const response = await listCatchesMobile(nativeAuth.userEmail!, nativeAuth.userId!, 500, 0);
           console.log('[CatchLog] Mobile response catches:', response.catches?.length);
           apiEntries = response.catches.map(apiRecordToEntry);
-          globalEntriesCache = [...offline, ...apiEntries];
-          localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
         } catch (apiErr) {
           console.warn("Mobile catch fetch failed:", apiErr);
         }
@@ -628,8 +640,6 @@ export function useCatchLog(
           try {
             const response = await listCatches(token, 500, 0);
             apiEntries = response.catches.map(apiRecordToEntry);
-            globalEntriesCache = [...offline, ...apiEntries];
-            localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
           } catch (apiErr) {
             console.warn("Background fetch failed:", apiErr);
           }
@@ -640,7 +650,28 @@ export function useCatchLog(
         setIsLoading(false);
         return;
       }
-      setState((s) => ({ ...s, entries: [...offline, ...apiEntries] }));
+
+      // Filter out offline catches that have been synced (exist on server)
+      // Match by caughtAt time + lake + weight to detect duplicates
+      const offline = getOfflineCatches();
+      const trulyOffline = offline.filter((offlineEntry) => {
+        const matchesServerEntry = apiEntries.some((apiEntry) =>
+          apiEntry.caughtAt === offlineEntry.caughtAt &&
+          apiEntry.lakeName === offlineEntry.lakeName &&
+          apiEntry.weight === offlineEntry.weight
+        );
+        return !matchesServerEntry; // Keep only if NOT on server
+      });
+
+      // Update offline storage with only truly offline catches
+      if (trulyOffline.length !== offline.length) {
+        console.log(`[CatchLog] Cleaned ${offline.length - trulyOffline.length} synced catches from offline storage`);
+        localStorage.setItem(OFFLINE_KEY, JSON.stringify(trulyOffline));
+      }
+
+      globalEntriesCache = [...trulyOffline, ...apiEntries];
+      localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
+      setState((s) => ({ ...s, entries: [...trulyOffline, ...apiEntries] }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -1266,6 +1297,11 @@ export function CatchDetailView({
         scale: 3, // 3x scale for high quality output
         useCORS: true,
         allowTaint: true,
+        onclone: (clonedDoc, clonedElement) => {
+          // Hide the orb in the shared version - it's only for in-app editing
+          const orb = clonedElement.querySelector('.catch-orb-wrapper') as HTMLElement;
+          if (orb) orb.style.display = 'none';
+        },
       });
 
       // Convert to PNG (lossless) for best quality

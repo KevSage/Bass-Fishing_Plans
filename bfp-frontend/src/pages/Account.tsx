@@ -427,7 +427,7 @@ export function Account() {
                 ))}
               </div>
 
-              <Link to="/subscribe" className="upgrade-btn">
+              <Link to="/upgrade" className="upgrade-btn">
                 Upgrade to Pro
               </Link>
               <p className="upsell-footer">Instant access. Cancel anytime.</p>

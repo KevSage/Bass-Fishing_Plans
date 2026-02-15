@@ -1,0 +1,708 @@
+// src/pages/Upgrade.tsx
+// Premium upgrade page designed to maximize conversions
+
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { usePlatformAuth } from "@/hooks/usePlatformAuth";
+
+// ============================================================================
+// ICONS
+// ============================================================================
+
+const CheckIcon = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const LightningIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+  </svg>
+);
+
+const MapIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const ChartIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18 20V10M12 20V4M6 20v-6" />
+  </svg>
+);
+
+const CameraIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
+
+const TrophyIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 22V8M14 22V8" />
+    <path d="M8 6a4 4 0 0 0 8 0V4H8v2z" />
+  </svg>
+);
+
+const SunIcon = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
+
+// ============================================================================
+// FEATURE DATA
+// ============================================================================
+
+const FEATURES = [
+  {
+    icon: LightningIcon,
+    title: "AI Fishing Plans",
+    description: "Get personalized strategies based on real-time weather, water temp, and seasonal patterns. Know exactly what to throw before you launch.",
+    highlight: true,
+  },
+  {
+    icon: MapIcon,
+    title: "Unlimited Lakes",
+    description: "Save and track unlimited waters. Free users get 1 Home Lake. Pro unlocks every lake you fish.",
+  },
+  {
+    icon: SunIcon,
+    title: "Live Conditions",
+    description: "Real-time weather, wind, pressure, and solar data overlaid on your map. See how conditions change throughout your trip.",
+  },
+  {
+    icon: CameraIcon,
+    title: "Catch Logging",
+    description: "Log catches with photos, GPS, weather, and lure data. Build your personal fishing intelligence over time.",
+  },
+  {
+    icon: ChartIcon,
+    title: "Pattern Insights",
+    description: "Analyze your catches by season, lake, technique, and conditions. Discover what actually works for you.",
+  },
+  {
+    icon: TrophyIcon,
+    title: "Journey & Badges",
+    description: "Level up your angling career. Earn badges, track mastery, and see your progression as an angler.",
+  },
+];
+
+const COMPARISON = [
+  { feature: "Interactive Lake Map", free: true, pro: true },
+  { feature: "Home Lake (1)", free: true, pro: true },
+  { feature: "Basic Weather Display", free: true, pro: true },
+  { feature: "AI Fishing Plans", free: false, pro: true },
+  { feature: "Unlimited Saved Lakes", free: false, pro: true },
+  { feature: "Real-Time Conditions", free: false, pro: true },
+  { feature: "Catch Logging + Photos", free: false, pro: true },
+  { feature: "Pattern Analytics", free: false, pro: true },
+  { feature: "Journey & Badges", free: false, pro: true },
+  { feature: "Lure Recommendations", free: false, pro: true },
+  { feature: "Custom Lake Mapping", free: false, pro: true },
+];
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+export function Upgrade() {
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+  const { isSignedIn } = usePlatformAuth();
+  const navigate = useNavigate();
+
+  const monthlyPrice = 9.99;
+  const annualPrice = 79.99;
+  const annualMonthly = (annualPrice / 12).toFixed(2);
+  const savings = Math.round(((monthlyPrice * 12 - annualPrice) / (monthlyPrice * 12)) * 100);
+
+  const handleUpgrade = () => {
+    if (isSignedIn) {
+      navigate("/subscribe");
+    } else {
+      navigate("/sign-up");
+    }
+  };
+
+  const handleViewSample = () => {
+    const PROD_SAMPLE_URL = "/plan?token=ByW0Xj_COI5ek3gimQnLQ6rsyrhkvGO9X7R8Aw6Rhus";
+    const DEV_SAMPLE_URL = "/plan?token=FSt4LZJLD62XHHTmYOL1ZoWua6V34U9c9TGVbKt1vEU";
+    navigate(import.meta.env.PROD ? PROD_SAMPLE_URL : DEV_SAMPLE_URL);
+  };
+
+  return (
+    <div className="upgrade-page">
+      {/* HERO SECTION */}
+      <section className="hero">
+        <div className="hero-badge">BASS CLARITY PRO</div>
+        <h1 className="hero-title">
+          Fish Smarter.<br />
+          <span className="gradient-text">Catch More.</span>
+        </h1>
+        <p className="hero-subtitle">
+          AI-powered fishing plans, real-time conditions, and pattern intelligence
+          that turns every trip into an opportunity.
+        </p>
+
+        {/* PRICING TOGGLE */}
+        <div className="pricing-toggle">
+          <button
+            className={`toggle-btn ${billingCycle === "monthly" ? "active" : ""}`}
+            onClick={() => setBillingCycle("monthly")}
+          >
+            Monthly
+          </button>
+          <button
+            className={`toggle-btn ${billingCycle === "annual" ? "active" : ""}`}
+            onClick={() => setBillingCycle("annual")}
+          >
+            Annual
+            <span className="save-badge">Save {savings}%</span>
+          </button>
+        </div>
+
+        {/* PRICE DISPLAY */}
+        <div className="price-display">
+          <div className="price-main">
+            <span className="currency">$</span>
+            <span className="amount">{billingCycle === "annual" ? annualMonthly : monthlyPrice}</span>
+            <span className="period">/mo</span>
+          </div>
+          {billingCycle === "annual" && (
+            <div className="price-detail">
+              Billed ${annualPrice}/year
+            </div>
+          )}
+        </div>
+
+        {/* CTA BUTTONS */}
+        <div className="hero-ctas">
+          <button className="cta-primary" onClick={handleUpgrade}>
+            {isSignedIn ? "Upgrade Now" : "Start Free Trial"}
+          </button>
+          <button className="cta-secondary" onClick={handleViewSample}>
+            View Sample Plan
+          </button>
+        </div>
+
+        <p className="guarantee">
+          Cancel anytime. No questions asked.
+        </p>
+      </section>
+
+      {/* FEATURES GRID */}
+      <section className="features-section">
+        <h2 className="section-title">Everything You Need to Dominate</h2>
+        <div className="features-grid">
+          {FEATURES.map((feature, i) => (
+            <div
+              key={feature.title}
+              className={`feature-card ${feature.highlight ? "highlight" : ""}`}
+              style={{ animationDelay: `${i * 0.1}s` }}
+            >
+              <div className="feature-icon">
+                <feature.icon size={24} />
+              </div>
+              <h3 className="feature-title">{feature.title}</h3>
+              <p className="feature-desc">{feature.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* COMPARISON TABLE */}
+      <section className="comparison-section">
+        <h2 className="section-title">Free vs Pro</h2>
+        <div className="comparison-table">
+          <div className="comparison-header">
+            <div className="col-feature">Feature</div>
+            <div className="col-free">Free</div>
+            <div className="col-pro">Pro</div>
+          </div>
+          {COMPARISON.map((row, i) => (
+            <div key={row.feature} className="comparison-row" style={{ animationDelay: `${i * 0.05}s` }}>
+              <div className="col-feature">{row.feature}</div>
+              <div className="col-free">
+                {row.free ? (
+                  <span className="check-muted"><CheckIcon size={16} /></span>
+                ) : (
+                  <span className="dash">—</span>
+                )}
+              </div>
+              <div className="col-pro">
+                {row.pro ? (
+                  <span className="check-pro"><CheckIcon size={16} /></span>
+                ) : (
+                  <span className="dash">—</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF */}
+      <section className="social-section">
+        <div className="stat-grid">
+          <div className="stat-card">
+            <div className="stat-value">10,000+</div>
+            <div className="stat-label">Plans Generated</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">500+</div>
+            <div className="stat-label">Lakes Mapped</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">4.9</div>
+            <div className="stat-label">App Store Rating</div>
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="final-cta">
+        <h2>Ready to Fish Smarter?</h2>
+        <p>Join thousands of anglers who've upgraded their game.</p>
+        <button className="cta-primary large" onClick={handleUpgrade}>
+          {isSignedIn ? "Upgrade to Pro" : "Get Started"}
+        </button>
+        <p className="guarantee">30-day money-back guarantee</p>
+      </section>
+
+      {/* STYLES */}
+      <style>{`
+        .upgrade-page {
+          min-height: 100vh;
+          background: linear-gradient(180deg, #0a0a0f 0%, #0f0f18 50%, #0a0a0f 100%);
+          color: #fff;
+          padding-bottom: 80px;
+        }
+
+        /* HERO */
+        .hero {
+          text-align: center;
+          padding: 60px 24px 80px;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .hero-badge {
+          display: inline-block;
+          padding: 6px 16px;
+          background: linear-gradient(135deg, rgba(74, 144, 226, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+          border: 1px solid rgba(74, 144, 226, 0.3);
+          border-radius: 100px;
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 0.15em;
+          color: #4A90E2;
+          margin-bottom: 24px;
+        }
+
+        .hero-title {
+          font-size: 2.5rem;
+          font-weight: 800;
+          line-height: 1.1;
+          margin: 0 0 20px;
+          letter-spacing: -0.03em;
+        }
+
+        .gradient-text {
+          background: linear-gradient(135deg, #4A90E2 0%, #8B5CF6 50%, #4A90E2 100%);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: gradient-shift 3s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+          0%, 100% { background-position: 0% center; }
+          50% { background-position: 100% center; }
+        }
+
+        .hero-subtitle {
+          font-size: 1.1rem;
+          line-height: 1.6;
+          color: rgba(255, 255, 255, 0.7);
+          margin: 0 0 32px;
+        }
+
+        /* PRICING TOGGLE */
+        .pricing-toggle {
+          display: inline-flex;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 100px;
+          padding: 4px;
+          margin-bottom: 24px;
+        }
+
+        .toggle-btn {
+          position: relative;
+          padding: 10px 20px;
+          background: transparent;
+          border: none;
+          border-radius: 100px;
+          color: rgba(255, 255, 255, 0.6);
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+        }
+
+        .save-badge {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          padding: 2px 6px;
+          background: #22c55e;
+          border-radius: 100px;
+          font-size: 0.6rem;
+          font-weight: 700;
+          color: #fff;
+        }
+
+        /* PRICE DISPLAY */
+        .price-display {
+          margin-bottom: 32px;
+        }
+
+        .price-main {
+          display: flex;
+          align-items: flex-start;
+          justify-content: center;
+          gap: 2px;
+        }
+
+        .currency {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.7);
+          margin-top: 8px;
+        }
+
+        .amount {
+          font-size: 4rem;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          line-height: 1;
+        }
+
+        .period {
+          font-size: 1.2rem;
+          color: rgba(255, 255, 255, 0.5);
+          align-self: flex-end;
+          margin-bottom: 8px;
+        }
+
+        .price-detail {
+          font-size: 0.9rem;
+          color: rgba(255, 255, 255, 0.4);
+          margin-top: 4px;
+        }
+
+        /* CTA BUTTONS */
+        .hero-ctas {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          max-width: 300px;
+          margin: 0 auto 16px;
+        }
+
+        .cta-primary {
+          padding: 16px 32px;
+          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+          border: none;
+          border-radius: 14px;
+          color: #fff;
+          font-size: 1.1rem;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 8px 24px rgba(74, 144, 226, 0.3);
+          transition: all 0.3s;
+        }
+
+        .cta-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 32px rgba(74, 144, 226, 0.4);
+        }
+
+        .cta-primary.large {
+          padding: 18px 40px;
+          font-size: 1.2rem;
+        }
+
+        .cta-secondary {
+          padding: 14px 32px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 14px;
+          color: #fff;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .cta-secondary:hover {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .guarantee {
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.4);
+          margin: 0;
+        }
+
+        /* FEATURES */
+        .features-section {
+          padding: 60px 24px;
+          max-width: 900px;
+          margin: 0 auto;
+        }
+
+        .section-title {
+          font-size: 1.75rem;
+          font-weight: 800;
+          text-align: center;
+          margin: 0 0 40px;
+          letter-spacing: -0.02em;
+        }
+
+        .features-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        @media (min-width: 600px) {
+          .features-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (min-width: 900px) {
+          .features-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+
+        .feature-card {
+          padding: 24px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 20px;
+          transition: all 0.3s;
+          animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .feature-card:hover {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: rgba(255, 255, 255, 0.1);
+          transform: translateY(-4px);
+        }
+
+        .feature-card.highlight {
+          background: linear-gradient(145deg, rgba(74, 144, 226, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+          border-color: rgba(74, 144, 226, 0.2);
+        }
+
+        .feature-icon {
+          width: 48px;
+          height: 48px;
+          background: rgba(74, 144, 226, 0.15);
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #4A90E2;
+          margin-bottom: 16px;
+        }
+
+        .feature-title {
+          font-size: 1.1rem;
+          font-weight: 700;
+          margin: 0 0 8px;
+        }
+
+        .feature-desc {
+          font-size: 0.9rem;
+          line-height: 1.5;
+          color: rgba(255, 255, 255, 0.6);
+          margin: 0;
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* COMPARISON */
+        .comparison-section {
+          padding: 60px 24px;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .comparison-table {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 20px;
+          overflow: hidden;
+        }
+
+        .comparison-header {
+          display: grid;
+          grid-template-columns: 1fr 60px 60px;
+          gap: 8px;
+          padding: 16px 20px;
+          background: rgba(255, 255, 255, 0.03);
+          font-size: 0.75rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .comparison-row {
+          display: grid;
+          grid-template-columns: 1fr 60px 60px;
+          gap: 8px;
+          padding: 14px 20px;
+          border-top: 1px solid rgba(255, 255, 255, 0.04);
+          font-size: 0.9rem;
+          animation: fadeInUp 0.4s ease-out backwards;
+        }
+
+        .col-free, .col-pro {
+          text-align: center;
+        }
+
+        .check-muted {
+          color: rgba(255, 255, 255, 0.3);
+        }
+
+        .check-pro {
+          color: #22c55e;
+        }
+
+        .dash {
+          color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* SOCIAL PROOF */
+        .social-section {
+          padding: 60px 24px;
+          max-width: 700px;
+          margin: 0 auto;
+        }
+
+        .stat-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+
+        .stat-card {
+          text-align: center;
+          padding: 24px 16px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 16px;
+        }
+
+        .stat-value {
+          font-size: 1.75rem;
+          font-weight: 800;
+          color: #4A90E2;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 0.75rem;
+          color: rgba(255, 255, 255, 0.5);
+          font-weight: 500;
+        }
+
+        /* FINAL CTA */
+        .final-cta {
+          text-align: center;
+          padding: 80px 24px;
+          background: linear-gradient(180deg, transparent 0%, rgba(74, 144, 226, 0.05) 50%, transparent 100%);
+        }
+
+        .final-cta h2 {
+          font-size: 2rem;
+          font-weight: 800;
+          margin: 0 0 12px;
+        }
+
+        .final-cta p {
+          font-size: 1rem;
+          color: rgba(255, 255, 255, 0.6);
+          margin: 0 0 32px;
+        }
+
+        .final-cta .guarantee {
+          margin-top: 16px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+          .hero-title {
+            font-size: 2rem;
+          }
+
+          .amount {
+            font-size: 3rem;
+          }
+
+          .stat-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+
+          .stat-card {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px;
+          }
+
+          .stat-value {
+            margin: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export default Upgrade;

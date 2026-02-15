@@ -81,6 +81,7 @@ export function Navigation() {
 
   const memberLinks = useMemo(
     () => [
+      { to: "/insights", label: "Insights" },
       { to: "/journey", label: "Journey" },
       { to: "/lure-library", label: "Lure Library" },
       { to: "/account", label: "Account" },
@@ -215,6 +216,30 @@ export function Navigation() {
               <span>{orbTitle}</span>
             </Link>
 
+            {/* Upgrade CTA for non-Pro members */}
+            {!isPro && (
+              <Link
+                to="/upgrade"
+                onClick={() => setIsOpen(false)}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "12px",
+                  marginTop: 12,
+                  borderRadius: 100,
+                  textDecoration: "none",
+                  background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                  color: "#fff",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  boxShadow: "0 4px 12px rgba(74, 144, 226, 0.3)",
+                }}
+              >
+                Upgrade to Pro
+              </Link>
+            )}
+
             <button
               onClick={handleSignOut}
               style={{
@@ -235,46 +260,49 @@ export function Navigation() {
             </button>
           </SignedIn>
 
-          <SignedOut>
-            <div style={{ height: 20 }} />
-            <Link
-              to="/subscribe"
-              onClick={() => setIsOpen(false)}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                padding: "12px",
-                borderRadius: 100,
-                textDecoration: "none",
-                background: "#fff",
-                color: "#000",
-                fontSize: "0.9rem",
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Sign Up
-            </Link>
-            <Link
-              to="/sign-in"
-              onClick={() => setIsOpen(false)}
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                padding: "12px",
-                marginTop: 12,
-                borderRadius: 100,
-                textDecoration: "none",
-                border: "1px solid rgba(255,255,255,0.15)",
-                color: "#fff",
-                fontSize: "0.9rem",
-                fontWeight: 600,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              Sign In
-            </Link>
-          </SignedOut>
+          {/* Web only: Show Sign Up/Sign In for signed out users */}
+          {!isNativePlatform() && (
+            <SignedOut>
+              <div style={{ height: 20 }} />
+              <Link
+                to="/subscribe"
+                onClick={() => setIsOpen(false)}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "12px",
+                  borderRadius: 100,
+                  textDecoration: "none",
+                  background: "#fff",
+                  color: "#000",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Sign Up
+              </Link>
+              <Link
+                to="/sign-in"
+                onClick={() => setIsOpen(false)}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  padding: "12px",
+                  marginTop: 12,
+                  borderRadius: 100,
+                  textDecoration: "none",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  color: "#fff",
+                  fontSize: "0.9rem",
+                  fontWeight: 600,
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Sign In
+              </Link>
+            </SignedOut>
+          )}
         </nav>
       </div>
     </div>
@@ -289,9 +317,10 @@ export function Navigation() {
           left: 0,
           right: 0,
           zIndex: 9999,
-          background: "rgba(10, 10, 10, 0.85)",
-          backdropFilter: "blur(12px)",
-          // No border - blends seamlessly with gradient below
+          background: "linear-gradient(to bottom, rgba(20, 20, 25, 0.95) 0%, rgba(15, 15, 18, 0.9) 100%)",
+          backdropFilter: "blur(16px)",
+          WebkitBackdropFilter: "blur(16px)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
           transition: "all 0.3s ease",
           // iOS safe area for notch
           paddingTop: "env(safe-area-inset-top, 0px)",
@@ -349,157 +378,10 @@ export function Navigation() {
             )}
           </Link>
 
-          {/* DESKTOP NAV */}
-          <nav
-            className="desktop-nav"
-            style={{ display: "none", gap: 32, alignItems: "center" }}
-          >
-            {publicLinks.slice(1).map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                style={{
-                  textDecoration: "none",
-                  color: isActive(link.to)
-                    ? "#fff"
-                    : "rgba(255, 255, 255, 0.6)",
-                  fontSize: "0.9rem",
-                  fontWeight: isActive(link.to) ? 600 : 500,
-                  letterSpacing: "0.01em",
-                  transition: "color 0.2s",
-                }}
-              >
-                {link.label}
-              </Link>
-            ))}
-
-            <SignedIn>
-              {memberLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  style={{
-                    textDecoration: "none",
-                    color: isActive(link.to)
-                      ? "#fff"
-                      : "rgba(255, 255, 255, 0.6)",
-                    fontSize: "0.9rem",
-                    fontWeight: isActive(link.to) ? 600 : 500,
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {link.label}
-                </Link>
-              ))}
-
-              <Link
-                to={orbDestination}
-                title={orbTitle}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#fff",
-                  textDecoration: "none",
-                }}
-              >
-                <MapOrb size={30} active={true} variant={orbVariant} />
-              </Link>
-
-              <div style={{ position: "relative" }}>
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: "50%",
-                    background: "rgba(255,255,255,0.08)",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    color: "#fff",
-                    cursor: "pointer",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {user?.firstName?.charAt(0) || "U"}
-                </button>
-                {userMenuOpen && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "130%",
-                      right: 0,
-                      background: "#0a0a0a",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: 12,
-                      padding: 6,
-                      minWidth: 140,
-                      boxShadow: "0 10px 40px rgba(0,0,0,0.6)",
-                    }}
-                  >
-                    <button
-                      onClick={handleSignOut}
-                      style={{
-                        width: "100%",
-                        padding: "10px",
-                        textAlign: "left",
-                        background: "transparent",
-                        border: "none",
-                        color: "#ef4444",
-                        fontSize: "0.85rem",
-                        fontWeight: 500,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </div>
-            </SignedIn>
-
-            {/* Show auth buttons if not loaded OR if signed out */}
-            {(!isLoaded || !isSignedIn) && (
-              <>
-                <Link
-                  to="/sign-in"
-                  style={{
-                    textDecoration: "none",
-                    color: "#fff",
-                    fontSize: "0.9rem",
-                    fontWeight: 500,
-                  }}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/subscribe"
-                  style={{
-                    textDecoration: "none",
-                    background: "#fff",
-                    color: "#000",
-                    padding: "8px 18px",
-                    borderRadius: 100,
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
-          </nav>
-
-          {/* MOBILE CONTROLS */}
-          <div
-            className="mobile-controls"
-            style={{ display: "flex", alignItems: "center", gap: 16 }}
-          >
-            {/* Show Sign In button if not loaded OR if signed out */}
-            {(!isLoaded || !isSignedIn) && (
+          {/* NAV CONTROLS - Orb + Avatar menu (unified for all screen sizes) */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            {/* Show Sign In button if not loaded OR if signed out (web only) */}
+            {!isNativePlatform() && (!isLoaded || !isSignedIn) && (
               <Link
                 to="/sign-in"
                 style={{
@@ -578,10 +460,6 @@ export function Navigation() {
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-5px); }
           to { opacity: 1; transform: translateY(0); }
-        }
-        @media (min-width: 768px) {
-          .mobile-controls { display: none !important; }
-          .desktop-nav { display: flex !important; }
         }
       `}</style>
     </>

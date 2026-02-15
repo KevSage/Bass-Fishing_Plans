@@ -262,69 +262,77 @@ export function LureLibrary() {
         <h1>Lure Library</h1>
       </header>
 
-      {/* Active Filters Cloud */}
-      {activeFilters.length > 0 && (
-        <div className="active-filters-section">
-          <div className="active-filters-header">
-            <span className="active-filters-label">Active Filters</span>
-            <button className="clear-all-btn" onClick={clearAllFilters}>
-              Clear All
-            </button>
+      {/* Two-column layout wrapper */}
+      <div className="lure-library-layout">
+        {/* Left Column: Filters */}
+        <aside className="lure-filters-column">
+          {/* Active Filters Cloud */}
+          {activeFilters.length > 0 && (
+            <div className="active-filters-section">
+              <div className="active-filters-header">
+                <span className="active-filters-label">Active Filters</span>
+                <button className="clear-all-btn" onClick={clearAllFilters}>
+                  Clear All
+                </button>
+              </div>
+              <div className="active-filters-cloud">
+                {activeFilters.map(({ group, value }) => (
+                  <button
+                    key={`${group}-${value}`}
+                    className="active-filter-chip"
+                    onClick={() => removeFilter(group, value)}
+                  >
+                    {value}
+                    <XIcon size={14} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Results Count */}
+          <div className="results-count">
+            Showing {filteredLures.length} of {LURES_ARRAY.length} lures
           </div>
-          <div className="active-filters-cloud">
-            {activeFilters.map(({ group, value }) => (
-              <button
-                key={`${group}-${value}`}
-                className="active-filter-chip"
-                onClick={() => removeFilter(group, value)}
-              >
-                {value}
-                <XIcon size={14} />
-              </button>
+
+          {/* Combined Filter Cloud */}
+          <div className="filter-cloud">
+            {FILTER_OPTIONS.season.map((s) => (
+              <FilterPill key={`s-${s}`} label={s} active={filters.season.includes(s)} onClick={() => toggleFilter("season", s)} />
             ))}
+            {FILTER_OPTIONS.clarity.map((c) => (
+              <FilterPill key={`cl-${c}`} label={c} active={filters.clarity.includes(c)} onClick={() => toggleFilter("clarity", c)} />
+            ))}
+            {FILTER_OPTIONS.conditions.map((c) => (
+              <FilterPill key={`co-${c}`} label={c} active={filters.conditions.includes(c)} onClick={() => toggleFilter("conditions", c)} />
+            ))}
+            {FILTER_OPTIONS.cover.map((c) => (
+              <FilterPill key={`cv-${c}`} label={c} active={filters.cover.includes(c)} onClick={() => toggleFilter("cover", c)} />
+            ))}
+            <FilterPill label="Finesse" active={filters.finesse === true} onClick={() => toggleFinesse(true)} />
+            <FilterPill label="Power" active={filters.finesse === false} onClick={() => toggleFinesse(false)} />
+          </div>
+        </aside>
+
+        {/* Right Column: Lure Grid */}
+        <div className="lure-grid-column">
+          <div className="lure-grid">
+            {filteredLures.length > 0 ? (
+              filteredLures.map((lure) => (
+                <LureCard
+                  key={lure.id}
+                  lure={lure}
+                  onClick={() => setSelectedLure(lure)}
+                />
+              ))
+            ) : (
+              <div className="no-results">
+                <p>No lures match these filters</p>
+                <button onClick={clearAllFilters}>Clear Filters</button>
+              </div>
+            )}
           </div>
         </div>
-      )}
-
-      {/* Results Count */}
-      <div className="results-count">
-        Showing {filteredLures.length} of {LURES_ARRAY.length} lures
-      </div>
-
-      {/* Combined Filter Cloud */}
-      <div className="filter-cloud">
-        {FILTER_OPTIONS.season.map((s) => (
-          <FilterPill key={`s-${s}`} label={s} active={filters.season.includes(s)} onClick={() => toggleFilter("season", s)} />
-        ))}
-        {FILTER_OPTIONS.clarity.map((c) => (
-          <FilterPill key={`cl-${c}`} label={c} active={filters.clarity.includes(c)} onClick={() => toggleFilter("clarity", c)} />
-        ))}
-        {FILTER_OPTIONS.conditions.map((c) => (
-          <FilterPill key={`co-${c}`} label={c} active={filters.conditions.includes(c)} onClick={() => toggleFilter("conditions", c)} />
-        ))}
-        {FILTER_OPTIONS.cover.map((c) => (
-          <FilterPill key={`cv-${c}`} label={c} active={filters.cover.includes(c)} onClick={() => toggleFilter("cover", c)} />
-        ))}
-        <FilterPill label="Finesse" active={filters.finesse === true} onClick={() => toggleFinesse(true)} />
-        <FilterPill label="Power" active={filters.finesse === false} onClick={() => toggleFinesse(false)} />
-      </div>
-
-      {/* Lure Grid */}
-      <div className="lure-grid">
-        {filteredLures.length > 0 ? (
-          filteredLures.map((lure) => (
-            <LureCard
-              key={lure.id}
-              lure={lure}
-              onClick={() => setSelectedLure(lure)}
-            />
-          ))
-        ) : (
-          <div className="no-results">
-            <p>No lures match these filters</p>
-            <button onClick={clearAllFilters}>Clear Filters</button>
-          </div>
-        )}
       </div>
 
       {/* Detail Modal */}
@@ -358,6 +366,65 @@ export function LureLibrary() {
           font-size: 1.25rem;
           font-weight: 700;
           color: #fff;
+        }
+
+        /* Two-column layout */
+        .lure-library-layout {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .lure-filters-column {
+          width: 100%;
+        }
+
+        .lure-grid-column {
+          width: 100%;
+        }
+
+        @media (min-width: 900px) {
+          .lure-library-layout {
+            flex-direction: row;
+            padding: 20px;
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+          }
+
+          .lure-filters-column {
+            width: 280px;
+            flex-shrink: 0;
+            position: sticky;
+            top: calc(68px + env(safe-area-inset-top, 0px));
+            align-self: flex-start;
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            padding-right: 8px;
+          }
+
+          .lure-grid-column {
+            flex: 1;
+          }
+
+          .lure-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+            padding: 0 !important;
+          }
+
+          .results-count {
+            padding: 0 0 12px !important;
+          }
+
+          .filter-cloud {
+            padding: 0 !important;
+          }
+
+          .active-filters-section {
+            margin: 0 0 16px !important;
+            padding: 12px !important;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 144, 226, 0.15) !important;
+          }
         }
 
         /* Active Filters Section */
@@ -459,15 +526,9 @@ export function LureLibrary() {
           padding: 0 20px 40px;
         }
 
-        @media (min-width: 600px) {
+        @media (min-width: 600px) and (max-width: 899px) {
           .lure-grid {
             grid-template-columns: repeat(3, 1fr);
-          }
-        }
-
-        @media (min-width: 900px) {
-          .lure-grid {
-            grid-template-columns: repeat(4, 1fr);
           }
         }
 

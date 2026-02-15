@@ -2,6 +2,7 @@
  * Platform detection utilities for Capacitor
  */
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 // API URLs
 const PRODUCTION_API_URL = 'https://bassclarity.onrender.com';
@@ -66,4 +67,25 @@ export function getApiBaseUrl(): string {
  */
 export function isUsingDevServer(): boolean {
   return isNativePlatform() && USE_DEV_SERVER;
+}
+
+/**
+ * Configure status bar for native platforms
+ * Sets light text (white) for dark backgrounds
+ */
+export async function configureStatusBar(): Promise<void> {
+  if (!isNativePlatform()) return;
+
+  try {
+    // Style.Dark = LIGHT/WHITE text (for dark backgrounds) - confusing naming!
+    // Style.Light = DARK/BLACK text (for light backgrounds)
+    await StatusBar.setStyle({ style: Style.Dark });
+
+    // On Android, set background color (iOS handles this via the app)
+    if (isAndroid()) {
+      await StatusBar.setBackgroundColor({ color: '#0a0a0a' });
+    }
+  } catch (err) {
+    console.warn('StatusBar configuration failed:', err);
+  }
 }

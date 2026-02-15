@@ -147,7 +147,7 @@ function UpgradeModal({
         </p>
 
         <button
-          onClick={() => navigate("/account")}
+          onClick={() => navigate("/upgrade")}
           style={{
             width: "100%",
             padding: "14px",

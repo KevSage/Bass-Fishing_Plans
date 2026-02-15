@@ -38,6 +38,7 @@ import { LocationSearch } from "@/components/LocationSearch";
 import { PlanGenerationLoader } from "@/components/PlanGenerationLoader";
 import { WeatherOverlay } from "@/components/WeatherOverlay";
 import { MapTargetCard } from "@/features/map/map_target_card";
+import { getWeatherSnapshot, hasWeatherChanged, type WeatherSnapshot } from "@/lib/map-target-logic";
 
 // --- CATCH LOG IMPORTS ---
 import {
@@ -326,7 +327,7 @@ function UpgradeModal({
           {message}
         </p>
         <button
-          onClick={() => navigate("/account")}
+          onClick={() => navigate("/upgrade")}
           style={{
             width: "100%",
             padding: "14px",
@@ -664,7 +665,7 @@ export function Members() {
       {
         data: any;
         timestamp: number;
-        tipReady: boolean;
+        snapshot: WeatherSnapshot | null; // For change detection
         tipSeen: boolean;
       }
     >
@@ -1132,6 +1133,7 @@ export function Members() {
   // --- WEATHER EFFECTS & CACHING ---
 
   // 1. COORDINATE CHANGE HANDLER (Immediate Cache Check)
+  // 1. CACHE CHECK ON LOCATION CHANGE
   useEffect(() => {
     if (!selectedCoords) {
       setWeatherData(null);
@@ -1146,7 +1148,7 @@ export function Members() {
     if (cached && now - cached.timestamp < CACHE_DURATION) {
       console.log("🌦️ Cache HIT - Restoring state for:", key);
       setWeatherData(cached.data);
-      setTipReady(cached.tipReady);
+      setTipReady(true); // Tips always ready instantly
       setTipSeen(cached.tipSeen);
     } else {
       console.log("🌦️ Cache MISS - Resetting state for:", key);
@@ -1156,12 +1158,10 @@ export function Members() {
     }
   }, [selectedCoords?.lat, selectedCoords?.lng]);
 
-  // 2. FETCH LOGIC (Using getApiBaseUrl for native platform support)
+  // 2. FETCH LOGIC - Tips load instantly, alerts only on weather change
   useEffect(() => {
     if (showWeather && selectedCoords && !weatherData) {
       const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
-
-      // Use getApiBaseUrl() which handles native vs web platforms correctly
       const baseUrl = getApiBaseUrl();
 
       fetch(
@@ -1172,37 +1172,34 @@ export function Members() {
           return res.json();
         })
         .then((data) => {
+          const newSnapshot = getWeatherSnapshot(data);
+          const cached = weatherCache.current[key];
+          const previousSnapshot = cached?.snapshot || null;
+
+          // Check if weather has changed significantly
+          const weatherChanged = hasWeatherChanged(previousSnapshot, newSnapshot);
+
           setWeatherData(data);
+          setTipReady(true); // Tips always ready instantly
+
+          // Only reset tipSeen if weather actually changed (triggers new alert)
+          if (weatherChanged && previousSnapshot) {
+            console.log("🌦️ Weather CHANGED - New alert triggered");
+            setTipSeen(false);
+          }
+
           weatherCache.current[key] = {
             data,
             timestamp: Date.now(),
-            tipReady: false,
-            tipSeen: false,
+            snapshot: newSnapshot,
+            tipSeen: weatherChanged ? false : (cached?.tipSeen || false),
           };
         })
         .catch((err) => console.error("Weather fetch failed:", err));
     }
   }, [showWeather, selectedCoords, weatherData]);
-  // 3. BACKGROUND TIMER LOGIC
-  useEffect(() => {
-    if (!showWeather && weatherData && !tipReady && selectedCoords) {
-      const key = getGeoKey(selectedCoords.lat, selectedCoords.lng);
-      console.log("⏳ Weather closed. Starting 10s analysis timer for:", key);
-      const timer = setTimeout(() => {
-        console.log("✅ Analysis complete. Tip Ready.");
-        const currentKey = getGeoKey(selectedCoords.lat, selectedCoords.lng);
-        if (currentKey === key) {
-          setTipReady(true);
-        }
-        if (weatherCache.current[key]) {
-          weatherCache.current[key].tipReady = true;
-        }
-      }, 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [showWeather, weatherData, tipReady, selectedCoords]);
 
-  // 4. MARK SEEN LOGIC
+  // 3. MARK SEEN LOGIC - When user opens weather overlay
   useEffect(() => {
     if (showWeather && tipReady && selectedCoords) {
       setTipSeen(true);
@@ -3075,7 +3072,7 @@ export function Members() {
 
       <style>{`
         .orb-marker-map { background-color: #4A90E2; border-radius: 50%; box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8); cursor: pointer; width: 24px; height: 24px; }
-        .top-gradient-bar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 56px); left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.7) 30%, rgba(0,0,0,0.4) 70%, transparent 100%); padding: 12px 20px 45px; padding-left: max(20px, env(safe-area-inset-left, 20px)); padding-right: max(20px, env(safe-area-inset-right, 20px)); display: flex; justify-content: center; pointer-events: none; }
+        .top-gradient-bar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 54px); left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.7) 30%, rgba(0,0,0,0.4) 70%, transparent 100%); padding: 12px 20px 45px; padding-left: max(20px, env(safe-area-inset-left, 20px)); padding-right: max(20px, env(safe-area-inset-right, 20px)); display: flex; justify-content: center; pointer-events: none; }
         .top-bar-card { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 280px; max-width: 400px; text-align: center; pointer-events: auto; padding-top: 4px; }
         .top-bar-card-empty { text-align: center; }
         .top-bar-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; color: #4A90E2; margin-bottom: 4px; }

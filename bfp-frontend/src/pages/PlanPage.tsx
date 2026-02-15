@@ -176,6 +176,8 @@ export function PlanPage() {
 
   return (
     <div className="container" style={{ paddingTop: 10, paddingBottom: 80 }}>
+      {/* Max-width wrapper for readable text on wider displays */}
+      <div style={{ maxWidth: 700, margin: "0 auto" }}>
       {/* Pass the cost-protection flag down */}
       <PlanScreen response={plan} enableLiveUpdates={enableLiveUpdates} />
 
@@ -369,6 +371,7 @@ export function PlanPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

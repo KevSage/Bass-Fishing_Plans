@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 import { SignedIn, SignedOut } from "./components/PlatformAuth";
-import { isNativePlatform } from "./lib/platform";
+import { isNativePlatform, configureStatusBar } from "./lib/platform";
 import { usePlatformAuth } from "./hooks/usePlatformAuth";
 import { Navigation } from "./components/Navigation";
 import { Landing } from "./pages/Landing";
@@ -24,6 +24,7 @@ import { VerifyEmail } from "./pages/VerifyEmail";
 import "./complete-styles.css";
 import { LakeBuilder } from "./pages/LakeBuilder";
 import { LureLibrary } from "./pages/LureLibrary";
+import { Upgrade } from "./pages/Upgrade";
 
 /**
  * Root route handler - redirects to sign-in on native platforms
@@ -107,6 +108,11 @@ function TopBar() {
 }
 
 export default function App() {
+  // Configure status bar on native platforms (light text for dark background)
+  React.useEffect(() => {
+    configureStatusBar();
+  }, []);
+
   return (
     <>
       <Navigation />
@@ -127,6 +133,7 @@ export default function App() {
 
         <Route path="/lake-builder" element={<LakeBuilder />} />
         <Route path="/lure-library" element={<LureLibrary />} />
+        <Route path="/upgrade" element={<Upgrade />} />
         <Route
           path="/members"
           element={

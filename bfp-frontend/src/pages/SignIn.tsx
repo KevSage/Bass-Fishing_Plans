@@ -93,7 +93,15 @@ export default function SignInPage() {
         setError("Sign in failed. Please try again.");
       }
     } catch (err: any) {
-      if (err.message === "Canceled" || err.message?.includes("cancel")) {
+      const errorMsg = err.message || "";
+      // User cancelled - error 1001 is Apple's "user canceled" code
+      const isCancelled =
+        errorMsg === "Canceled" ||
+        errorMsg.includes("cancel") ||
+        errorMsg.includes("1001") ||
+        errorMsg.includes("AuthorizationError");
+
+      if (isCancelled) {
         // User cancelled - don't show error
         console.log("[SignIn] Apple Sign-In cancelled by user");
       } else {

@@ -1,12 +1,13 @@
 // src/pages/Journey.tsx
 
 import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeftIcon, TrophyIcon, LockIcon } from "@/components/UnifiedIcons";
 // - Import the exact same hook and types
 import { useCatchLog, type ActiveLake } from "@/components/CatchLog";
 import { calculateJourney, Badge } from "@/lib/journeyUtils";
 import { InsightsLoadingScreen } from "@/components/InsightsLoadingScreen";
+import { useMemberStatus } from "@/hooks/useMemberStatus";
 
 // =============================================================================
 // SUB-COMPONENTS (Visuals)
@@ -263,6 +264,7 @@ const BadgeCard = ({
 
 export function Journey() {
   const navigate = useNavigate();
+  const { isActive } = useMemberStatus();
 
   // --- DATA FETCHING (REPLICATING INSIGHTS.TSX) ---
 
@@ -304,8 +306,38 @@ export function Journey() {
 
   return (
     <div className="journey-page">
+      {/* PRO GATE OVERLAY */}
+      {!isActive && (
+        <div className="journey-gate-overlay">
+          <div className="journey-gate-card">
+            <div className="gate-icon">
+              <LockIcon size={32} />
+            </div>
+            <h2>Unlock Your Journey</h2>
+            <p>
+              Track your angling progress, earn badges, and master techniques
+              with Bass Clarity Pro.
+            </p>
+            <ul className="gate-features">
+              <li>Level up with every catch logged</li>
+              <li>Earn badges for milestones</li>
+              <li>Track technique mastery</li>
+              <li>See seasonal patterns</li>
+            </ul>
+            <Link to="/upgrade" className="gate-cta">
+              Upgrade to Pro
+            </Link>
+            <button
+              onClick={() => navigate(-1)}
+              className="gate-back"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      )}
 
-      <div className={`j-content ${showContent ? "visible" : ""}`}>
+      <div className={`j-content ${showContent ? "visible" : ""} ${!isActive ? "j-blurred" : ""}`}>
         {/* HERO RING */}
         <LevelRing
           level={stats.level}
@@ -383,6 +415,121 @@ export function Journey() {
 
         .badge-grid {
           display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px 10px;
+        }
+
+        /* PRO GATE STYLES */
+        .j-blurred {
+          filter: blur(8px);
+          pointer-events: none;
+          user-select: none;
+        }
+
+        .journey-gate-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          padding-top: calc(env(safe-area-inset-top, 0px) + 80px);
+          background: rgba(0, 0, 0, 0.4);
+        }
+
+        .journey-gate-card {
+          background: linear-gradient(145deg, rgba(20, 20, 28, 0.98) 0%, rgba(10, 10, 14, 0.98) 100%);
+          border: 1px solid rgba(74, 144, 226, 0.3);
+          border-radius: 24px;
+          padding: 32px 28px;
+          max-width: 360px;
+          width: 100%;
+          text-align: center;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .gate-icon {
+          width: 64px;
+          height: 64px;
+          margin: 0 auto 20px;
+          background: rgba(74, 144, 226, 0.15);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #4A90E2;
+        }
+
+        .journey-gate-card h2 {
+          margin: 0 0 12px;
+          font-size: 1.4rem;
+          font-weight: 700;
+          color: #fff;
+        }
+
+        .journey-gate-card > p {
+          margin: 0 0 20px;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .gate-features {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 24px;
+          text-align: left;
+        }
+
+        .gate-features li {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 0;
+          font-size: 0.9rem;
+          color: rgba(255, 255, 255, 0.8);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .gate-features li::before {
+          content: '✓';
+          color: #4A90E2;
+          font-weight: 700;
+        }
+
+        .gate-cta {
+          display: block;
+          width: 100%;
+          padding: 14px;
+          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+          border: none;
+          border-radius: 14px;
+          color: #fff;
+          font-size: 1rem;
+          font-weight: 700;
+          text-decoration: none;
+          text-align: center;
+          cursor: pointer;
+          box-shadow: 0 8px 24px rgba(74, 144, 226, 0.3);
+          transition: transform 0.2s, filter 0.2s;
+        }
+
+        .gate-cta:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.1);
+        }
+
+        .gate-back {
+          background: none;
+          border: none;
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 0.9rem;
+          margin-top: 16px;
+          cursor: pointer;
+          padding: 8px 16px;
+        }
+
+        .gate-back:hover {
+          color: rgba(255, 255, 255, 0.7);
         }
       `}</style>
     </div>

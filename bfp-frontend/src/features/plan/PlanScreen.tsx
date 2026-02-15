@@ -55,7 +55,7 @@ function LureDetailModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           width: "85%",
-          maxWidth: 340,
+          maxWidth: 420,
           maxHeight: "70vh",
           background: "#121218",
           borderRadius: 20,
@@ -118,8 +118,8 @@ function LureDetailModal({
               src={lure.image}
               alt={lure.display_name}
               style={{
-                maxWidth: "80%",
-                maxHeight: 180,
+                maxWidth: "85%",
+                maxHeight: 240,
                 objectFit: "contain",
               }}
             />
@@ -510,13 +510,13 @@ function PatternView({
           background:
             "radial-gradient(circle at center, rgba(74, 144, 226, 0.08) 0%, transparent 70%)",
           borderRadius: 24,
-          padding: "20px 0",
+          padding: "32px 0",
           marginBottom: 32,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: 200,
+          minHeight: 280,
           cursor: onLureClick ? "pointer" : "default",
         }}
       >
@@ -526,7 +526,7 @@ function PatternView({
             alt={pattern.base_lure}
             style={{
               width: "90%",
-              maxWidth: 320,
+              maxWidth: 500,
               height: "auto",
               objectFit: "contain",
               filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.5))",
