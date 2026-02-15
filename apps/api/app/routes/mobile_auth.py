@@ -488,18 +488,44 @@ class MobileStatusRequest(BaseModel):
 async def mobile_member_status(request: MobileStatusRequest):
     """
     Get member status for mobile app using email instead of JWT.
-    During FREE_MODE beta, all authenticated mobile users are treated as members.
+    Checks FREE_MODE env var - if enabled, all users get full access.
+    Otherwise, checks the subscriber database for actual status.
     """
-    # For beta/FREE_MODE, return full member access
+    # Check FREE_MODE environment variable
+    free_mode = os.getenv("FREE_MODE", "false").lower() == "true"
+
+    if free_mode:
+        # FREE_MODE: All authenticated users get full member access
+        return {
+            "email": request.email,
+            "is_member": True,
+            "has_subscription": True,
+            "rate_limit_allowed": True,
+            "rate_limit_seconds": 0,
+            "stripe_customer_id": None,
+            "stripe_subscription_id": None,
+            "subscription_status": "active",
+            "next_billing_date": None,
+            "cancel_at_period_end": False,
+            "plan_interval": "month",
+            "plan_amount": 10,
+        }
+
+    # Normal mode: Check actual subscriber status from database
+    store = SubscriberStore()
+    subscriber = store.get(request.email)
+
+    is_member = bool(subscriber and subscriber.active)
+
     return {
         "email": request.email,
-        "is_member": True,
-        "has_subscription": True,
+        "is_member": is_member,
+        "has_subscription": subscriber is not None,
         "rate_limit_allowed": True,
         "rate_limit_seconds": 0,
-        "stripe_customer_id": None,
-        "stripe_subscription_id": None,
-        "subscription_status": "active",
+        "stripe_customer_id": subscriber.stripe_customer_id if subscriber else None,
+        "stripe_subscription_id": subscriber.stripe_subscription_id if subscriber else None,
+        "subscription_status": "active" if is_member else "inactive",
         "next_billing_date": None,
         "cancel_at_period_end": False,
         "plan_interval": "month",

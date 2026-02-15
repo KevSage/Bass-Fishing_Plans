@@ -769,10 +769,16 @@ export function Admin() {
       </div>
 
       {/* Content */}
-      <div style={{ paddingTop: 60 }}>
-        {activeTab === "subscribers" && <SubscriberManager password={password} />}
-        {activeTab === "lakes" && <AdminWorkstation onLogout={() => setAuthed(false)} />}
-      </div>
+      {activeTab === "subscribers" && (
+        <div style={{ paddingTop: 60 }}>
+          <SubscriberManager password={password} />
+        </div>
+      )}
+      {activeTab === "lakes" && (
+        <div style={{ position: "fixed", top: 52, left: 0, right: 0, bottom: 0 }}>
+          <AdminWorkstation onLogout={() => setAuthed(false)} />
+        </div>
+      )}
       <StyleBlock />
     </div>
   );
@@ -1128,8 +1134,8 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
     <div
       style={{
         position: "relative",
-        height: "100vh",
-        width: "100vw",
+        height: "100%",
+        width: "100%",
         background: "#0a0a0a",
       }}
     >
@@ -1150,17 +1156,6 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
           >
             Batch ({batchQueue.length})
           </span>
-        </button>
-      </div>
-
-      {/* --- TOP RIGHT: LOGOUT --- */}
-      <div style={{ position: "absolute", top: 20, right: 60, zIndex: 50 }}>
-        <button
-          onClick={onLogout}
-          className="glass-btn"
-          style={{ padding: "8px 16px" }}
-        >
-          Logout
         </button>
       </div>
 
