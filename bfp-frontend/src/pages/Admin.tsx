@@ -148,6 +148,397 @@ const TargetIcon = ({ size = 18 }) => (
   </svg>
 );
 
+// --- SUBSCRIBER TYPES ---
+interface Subscriber {
+  email: string;
+  active: boolean;
+  first_name: string | null;
+  last_name: string | null;
+  has_stripe: boolean;
+  has_apple: boolean;
+}
+
+// --- SUBSCRIBER MANAGER COMPONENT ---
+function SubscriberManager({ password }: { password: string }) {
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const fetchSubscribers = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const url = search
+        ? `${API_BASE}/admin/subscribers?search=${encodeURIComponent(search)}`
+        : `${API_BASE}/admin/subscribers`;
+      const res = await fetch(url, {
+        headers: { "X-Admin-Password": password },
+      });
+      if (!res.ok) throw new Error("Failed to fetch subscribers");
+      const data = await res.json();
+      setSubscribers(data.subscribers || []);
+    } catch (e: any) {
+      setError(e.message || "Failed to load subscribers");
+    } finally {
+      setLoading(false);
+    }
+  }, [password, search]);
+
+  useEffect(() => {
+    fetchSubscribers();
+  }, [fetchSubscribers]);
+
+  const handleToggle = async (email: string, currentActive: boolean) => {
+    setActionLoading(email);
+    try {
+      const res = await fetch(`${API_BASE}/admin/subscribers/toggle`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Password": password,
+        },
+        body: JSON.stringify({ email, active: !currentActive }),
+      });
+      if (!res.ok) throw new Error("Failed to toggle status");
+      // Update local state
+      setSubscribers((prev) =>
+        prev.map((s) => (s.email === email ? { ...s, active: !currentActive } : s))
+      );
+    } catch (e: any) {
+      alert(e.message || "Failed to toggle");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail) return;
+    setActionLoading("add");
+    try {
+      const res = await fetch(`${API_BASE}/admin/subscribers/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Password": password,
+        },
+        body: JSON.stringify({
+          email: newEmail,
+          first_name: newFirstName,
+          last_name: newLastName,
+          active: true,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to add subscriber");
+      setNewEmail("");
+      setNewFirstName("");
+      setNewLastName("");
+      setShowAddForm(false);
+      fetchSubscribers();
+    } catch (e: any) {
+      alert(e.message || "Failed to add");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  return (
+    <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 20,
+        }}
+      >
+        <h1 style={{ color: "#fff", fontSize: "1.5rem", fontWeight: 700, margin: 0 }}>
+          Subscriber Management
+        </h1>
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          style={{
+            padding: "10px 20px",
+            borderRadius: 10,
+            border: "none",
+            background: showAddForm ? "rgba(255,255,255,0.1)" : "#4A90E2",
+            color: "#fff",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          {showAddForm ? "Cancel" : "+ Add User"}
+        </button>
+      </div>
+
+      {/* Add Form */}
+      {showAddForm && (
+        <form
+          onSubmit={handleAdd}
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 12,
+            padding: 20,
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+            <div style={{ gridColumn: "span 2" }}>
+              <label style={{ display: "block", color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>
+                Email *
+              </label>
+              <input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="user@example.com"
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(0,0,0,0.3)",
+                  color: "#fff",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>
+                First Name
+              </label>
+              <input
+                type="text"
+                value={newFirstName}
+                onChange={(e) => setNewFirstName(e.target.value)}
+                placeholder="John"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(0,0,0,0.3)",
+                  color: "#fff",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", color: "#888", fontSize: "0.8rem", marginBottom: 4 }}>
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={newLastName}
+                onChange={(e) => setNewLastName(e.target.value)}
+                placeholder="Doe"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(0,0,0,0.3)",
+                  color: "#fff",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={actionLoading === "add"}
+            style={{
+              padding: "12px 24px",
+              borderRadius: 10,
+              border: "none",
+              background: "#22c55e",
+              color: "#fff",
+              fontWeight: 700,
+              cursor: actionLoading === "add" ? "not-allowed" : "pointer",
+              opacity: actionLoading === "add" ? 0.6 : 1,
+            }}
+          >
+            {actionLoading === "add" ? "Adding..." : "Add as Paid User"}
+          </button>
+        </form>
+      )}
+
+      {/* Search */}
+      <div style={{ marginBottom: 20 }}>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by email or name..."
+          style={{
+            width: "100%",
+            padding: "14px 16px",
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.1)",
+            background: "rgba(255,255,255,0.05)",
+            color: "#fff",
+            fontSize: "1rem",
+          }}
+        />
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div
+          style={{
+            background: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: 10,
+            padding: 16,
+            color: "#f87171",
+            marginBottom: 20,
+          }}
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Loading */}
+      {loading && (
+        <div style={{ textAlign: "center", color: "#888", padding: 40 }}>Loading...</div>
+      )}
+
+      {/* Subscriber List */}
+      {!loading && subscribers.length === 0 && (
+        <div style={{ textAlign: "center", color: "#666", padding: 40 }}>
+          {search ? "No subscribers match your search" : "No subscribers yet"}
+        </div>
+      )}
+
+      {!loading && subscribers.length > 0 && (
+        <div
+          style={{
+            background: "rgba(255,255,255,0.02)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 12,
+            overflow: "hidden",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "2fr 1fr 80px 100px",
+              gap: 12,
+              padding: "12px 16px",
+              background: "rgba(255,255,255,0.03)",
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              color: "#888",
+              fontSize: "0.75rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+            }}
+          >
+            <div>Email</div>
+            <div>Name</div>
+            <div>Source</div>
+            <div style={{ textAlign: "center" }}>Status</div>
+          </div>
+
+          {/* Rows */}
+          {subscribers.map((sub) => (
+            <div
+              key={sub.email}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "2fr 1fr 80px 100px",
+                gap: 12,
+                padding: "14px 16px",
+                borderBottom: "1px solid rgba(255,255,255,0.04)",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <div style={{ color: "#fff", fontSize: "0.9rem", wordBreak: "break-all" }}>
+                  {sub.email}
+                </div>
+              </div>
+              <div style={{ color: "#aaa", fontSize: "0.85rem" }}>
+                {sub.first_name || sub.last_name
+                  ? `${sub.first_name || ""} ${sub.last_name || ""}`.trim()
+                  : "(unknown)"}
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                {sub.has_apple && (
+                  <span
+                    style={{
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      background: "rgba(255,255,255,0.1)",
+                      color: "#fff",
+                      fontSize: "0.65rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Apple
+                  </span>
+                )}
+                {sub.has_stripe && (
+                  <span
+                    style={{
+                      padding: "2px 6px",
+                      borderRadius: 4,
+                      background: "rgba(99, 102, 241, 0.2)",
+                      color: "#818cf8",
+                      fontSize: "0.65rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Stripe
+                  </span>
+                )}
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <button
+                  onClick={() => handleToggle(sub.email, sub.active)}
+                  disabled={actionLoading === sub.email}
+                  style={{
+                    padding: "6px 14px",
+                    borderRadius: 6,
+                    border: "none",
+                    background: sub.active
+                      ? "rgba(34, 197, 94, 0.15)"
+                      : "rgba(239, 68, 68, 0.15)",
+                    color: sub.active ? "#4ade80" : "#f87171",
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    cursor: actionLoading === sub.email ? "not-allowed" : "pointer",
+                    opacity: actionLoading === sub.email ? 0.5 : 1,
+                    minWidth: 70,
+                  }}
+                >
+                  {actionLoading === sub.email
+                    ? "..."
+                    : sub.active
+                    ? "Active"
+                    : "Inactive"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: 20, color: "#666", fontSize: "0.8rem", textAlign: "center" }}>
+        Click status to toggle. Users must sign in first to appear here (or add manually).
+      </div>
+    </div>
+  );
+}
+
 // --- GEOMETRY HELPERS ---
 
 function generateTempId() {
