@@ -347,11 +347,28 @@ export function Landing() {
                 ...h1Style,
                 color: "#ffffff",
                 textShadow: "0 4px 24px rgba(0,0,0,0.6)",
-                marginBottom: 24,
+                marginBottom: 20,
               }}
             >
               Clarity on the Water.
             </h1>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <p
+              style={{
+                fontSize: "clamp(1rem, 2.2vw, 1.2rem)",
+                lineHeight: 1.6,
+                color: "rgba(255,255,255,0.9)",
+                textShadow: "0 2px 12px rgba(0,0,0,0.5)",
+                maxWidth: 640,
+                margin: "0 auto 32px",
+                fontWeight: 500,
+              }}
+            >
+              More than a fishing app. A way to understand your water,
+              preserve what you've learned, and fish with real intention.
+            </p>
           </Reveal>
 
           <Reveal delay={200}>
@@ -383,7 +400,7 @@ export function Landing() {
                   "0 10px 30px rgba(74, 144, 226, 0.3)";
               }}
             >
-              Sign Up
+              Get Started Free
               <svg
                 width="20"
                 height="20"
@@ -397,6 +414,20 @@ export function Landing() {
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             </Link>
+          </Reveal>
+
+          <Reveal delay={300}>
+            <p
+              style={{
+                fontSize: "0.9rem",
+                color: "rgba(255,255,255,0.55)",
+                marginTop: 24,
+                fontWeight: 500,
+                letterSpacing: "0.02em",
+              }}
+            >
+              Strategy grounded in tradition. Insight built from your own history.
+            </p>
           </Reveal>
         </div>
       </section>
@@ -415,7 +446,7 @@ export function Landing() {
                 marginBottom: 28,
               }}
             >
-              Your Water History.
+              Built Different.
             </h2>
             <p
               style={{
@@ -424,9 +455,12 @@ export function Landing() {
                 marginBottom: "clamp(44px, 8vw, 72px)",
               }}
             >
-              Bass Clarity helps anglers understand their water, capture their
-              fishing history, and generate clear, bass-specific strategy when
-              it matters.
+              Other apps give you data without direction. Charts without clarity.
+              Someone else's hot spots instead of your own understanding.
+              <br /><br />
+              Bass Clarity focuses on the individual angler. Your waters. Your catches.
+              Your patterns. We use AI to surface what worked, when, and why—so every
+              trip builds on the last.
             </p>
           </Reveal>
 
@@ -497,9 +531,9 @@ export function Landing() {
             </div>
             <h2 style={h2Style}>Your Living Record</h2>
             <p style={leadStyle}>
-              Every catch you log is stored with its location, building real
-              history over time. As your experience grows, patterns emerge
-              naturally through density and visual heat.
+              Every catch. Every spot. Every condition. Logged and mapped over
+              time, so patterns reveal themselves naturally—through your own
+              experience, not someone else's data.
             </p>
           </Reveal>
         </div>
@@ -599,8 +633,8 @@ export function Landing() {
                       desc: "What you learn on the water doesn’t disappear — it compounds.",
                     },
                     {
-                      title: "Your Past Counts, Too",
-                      desc: "Bring your existing catch history into the map and build from where you already are.",
+                      title: "Start Where You Are",
+                      desc: "Import past catches and see your water come to life immediately.",
                     },
                   ].map((x, i) => (
                     <li
@@ -652,10 +686,12 @@ export function Landing() {
               >
                 Insight Clarity
               </div>
-              <h2 style={h2Style}>Your Moments. Your Story.</h2>
+              <h2 style={h2Style}>Every Catch Tells You More.</h2>
               <p style={{ ...leadStyle, maxWidth: 980 }}>
-                Insights brings your catches, locations, and photos together —
-                creating a clear record of how you fish.
+                Every photo captures more than the moment. Location, date, time,
+                season, weather—automatically extracted and preserved. Add your
+                lure and color, and each catch becomes a data point that sharpens
+                your edge over time.
               </p>
             </div>
           </Reveal>
@@ -740,20 +776,20 @@ export function Landing() {
                     }}
                   >
                     <Bullet
-                      title="Your Best Waters"
-                      desc="See which lakes and spots have produced over time — not just once."
+                      title="Automatic Context"
+                      desc="Location, weather, and time pulled from every photo—no manual entry required."
                     />
                     <Bullet
-                      title="What Actually Works"
-                      desc="Understand which techniques, baits, and conditions have led to success."
+                      title="The Details That Matter"
+                      desc="Log your lure, color, and technique. Build a record of what actually worked."
                     />
                     <Bullet
-                      title="Moments That Matter"
-                      desc="Relive your best catches and personal milestones through photos and stats."
+                      title="Patterns Over Time"
+                      desc="See which conditions, baits, and spots produce—across seasons, not just single trips."
                     />
                     <Bullet
-                      title="Your Story, From Day One"
-                      desc="Upload past catch photos and Bass Clarity places them by location and time."
+                      title="Know Your Strengths"
+                      desc="Your catch history, organized and visualized. See which baits you've got dialed in, which lakes produce for you, and where you might want to spend more time."
                     />
                   </ul>
                 </div>
@@ -776,10 +812,11 @@ export function Landing() {
               >
                 Your Journey
               </div>
-              <h2 style={h2Style}>Track Your Growth.</h2>
+              <h2 style={h2Style}>Grow With Every Trip.</h2>
               <p style={{ ...leadStyle, maxWidth: 980 }}>
-                Level up as you fish. Track your technique mastery, unlock
-                achievements, and watch your angling skills evolve over time.
+                See how far you've come. Track the techniques you're developing,
+                celebrate real milestones, and watch your skills sharpen—season
+                after season.
               </p>
             </div>
           </Reveal>
@@ -864,20 +901,20 @@ export function Landing() {
                     }}
                   >
                     <Bullet
-                      title="Level Progression"
-                      desc="Earn XP with every catch and level up as your experience grows."
+                      title="Skill Development"
+                      desc="See which techniques you're sharpening and where there's room to grow."
                     />
                     <Bullet
-                      title="Technique Mastery"
-                      desc="See which techniques you've dialed in and where you're still developing."
+                      title="Milestones That Matter"
+                      desc="Achievements tied to real moments—your first double-digit bass, back-to-back catches, joining the 100 club."
                     />
                     <Bullet
-                      title="Seasonal Stats"
-                      desc="Track your performance across seasons — top patterns, best lakes, and catch counts."
+                      title="Seasonal Reflection"
+                      desc="Look back on each season—what worked, what clicked, and how you've improved."
                     />
                     <Bullet
-                      title="Trophy Case"
-                      desc="Unlock achievements and badges as you hit milestones on your fishing journey."
+                      title="Growth You Can See"
+                      desc="Watch your progress unfold over time, not just in numbers—but in skill and confidence."
                     />
                   </ul>
                 </div>
@@ -902,11 +939,13 @@ export function Landing() {
             >
               Data Clarity
             </div>
-            <h2 style={h2Style}>A Disciplined Decision Engine</h2>
+            <h2 style={h2Style}>AI-Enhanced. Angler-Driven.</h2>
             <p style={leadStyle}>
-              Bass Clarity quietly interprets today’s conditions and turns them
-              into a focused fishing strategy — without noise, dashboards, or
-              guesswork.
+              We process the same data other apps dump on your screen—but we
+              interpret it. Live conditions, seasonal bass behavior, and proven
+              strategy come together into a clear, actionable plan. Use our
+              suggestions, or bring your confidence baits and let the engine
+              build around what you already trust.
             </p>
           </Reveal>
         </div>
@@ -980,7 +1019,7 @@ export function Landing() {
                     color: "rgba(255,255,255,0.68)",
                   }}
                 >
-                  Real Time Data-Analysis
+                  Strategy, Built Around You
                 </div>
                 <div style={{ height: 14 }} />
                 <ul
@@ -994,20 +1033,20 @@ export function Landing() {
                 >
                   {[
                     {
-                      title: "Season & Region Context",
-                      desc: "Fishing in January means different things in Georgia than it does in Florida — Bass Clarity accounts for that automatically.",
+                      title: "Grounded in Real Strategy",
+                      desc: "Lures, colors, and targets based on how bass actually behave—not generic lists.",
                     },
                     {
-                      title: "Your Local Conditions",
-                      desc: "Temperature trends, wind behavior, pressure movement, and sky conditions are interpreted as a single snapshot.",
+                      title: "Your Conditions, Interpreted",
+                      desc: "Season, region, weather, and water—processed into a plan, not a dashboard.",
                     },
                     {
-                      title: "Stability & Change",
-                      desc: "The system weighs what’s changing and what’s holding steady to avoid overreacting to short-term swings.",
+                      title: "Use What You Trust",
+                      desc: "Bring your confidence baits. The AI builds strategy around what you want to throw.",
                     },
                     {
-                      title: "Outcome-Driven Logic",
-                      desc: "Every signal feeds directly into presentation choice, targets, and execution — nothing is shown unless it influences the plan.",
+                      title: "Show, Don't Tell",
+                      desc: "No charts to decode. No data to interpret yourself. Just clear direction for your day.",
                     },
                   ].map((x, i) => (
                     <li
@@ -1059,10 +1098,10 @@ export function Landing() {
               >
                 Weather Clarity
               </div>
-              <h2 style={h2Style}>Your Weather, Simplified</h2>
+              <h2 style={h2Style}>Your Weather, In Context.</h2>
               <p style={{ ...leadStyle, maxWidth: 980 }}>
-                No Dashboards. No Charts. No Overlays. Only important data
-                visible.
+                We don't just show you the weather—we tell you what it means
+                for your day on the water.
               </p>
               <div
                 style={{
@@ -1178,20 +1217,20 @@ export function Landing() {
                   >
                     {[
                       {
-                        title: "Live Weather Updates",
-                        desc: "Temperature, Wind, Pressure, and Sky/Precip — the core signals that shape the day.",
+                        title: "Tap for Insight",
+                        desc: "Every weather card opens into a deeper explanation of what that metric means for bass.",
                       },
                       {
-                        title: "Bass Mood Indicator",
-                        desc: "Shows you how active the fish are expected to be due to present conditions.",
+                        title: "Context, Not Just Numbers",
+                        desc: "68°F means something different in March than it does in July. We account for that.",
                       },
                       {
-                        title: "Solunar Chart",
-                        desc: "An overview of your day from daybreak to last cast",
+                        title: "Your Location, Your Conditions",
+                        desc: "Localized data interpreted for where you're fishing—not generic regional forecasts.",
                       },
                       {
-                        title: "Conditions & Outlook",
-                        desc: "Your Weather outlook explains your day ahead and how it may effect bass behavior.",
+                        title: "Bass Mood, Explained",
+                        desc: "See how active fish are likely to be and understand why—based on what's happening right now.",
                       },
                     ].map((x, i) => (
                       <li
@@ -1244,10 +1283,11 @@ export function Landing() {
               >
                 Strategic Clarity
               </div>
-              <h2 style={h2Style}>Full Day Progression.</h2>
+              <h2 style={h2Style}>Your Plan, All Day Long.</h2>
               <p style={{ ...leadStyle, maxWidth: 980 }}>
-                Know where to start, transition and adjust. Clear actionable
-                guidance, from daybreak to last cast.
+                Clear, actionable guidance from daybreak to last cast. Every
+                transition pulls directly from your plan—same lures, same
+                targets, adapted for how the day unfolds.
               </p>
             </div>
           </Reveal>
@@ -1332,16 +1372,16 @@ export function Landing() {
                     }}
                   >
                     <Bullet
-                      title="Customized Day Progression"
-                      desc="Morning, Midday, and Evening guidance is generated directly from your personalized plan"
+                      title="Plan-Connected Guidance"
+                      desc="Morning, midday, and evening advice references your AI-generated strategy directly—nothing disconnected."
                     />
                     <Bullet
-                      title="Plan Consistent"
-                      desc="Each phase of the day reflects the exact lures, targets, and strategy selected for your conditions."
+                      title="Transitions That Make Sense"
+                      desc="Know when to shift spots, adjust retrieves, or change depth—tied to how the day progresses."
                     />
                     <Bullet
-                      title="Guidance that Evolves"
-                      desc="As light, activity, and positioning change, your strategy adapts without losing direction."
+                      title="Specificity You Can Use"
+                      desc="Not vague tips. Real direction for each phase of your day on the water."
                     />
                   </ul>
                 </div>
@@ -1364,10 +1404,12 @@ export function Landing() {
               >
                 Technique / Presentation Clarity
               </div>
-              <h1 style={h1Style}>Complementary Approaches.</h1>
+              <h1 style={h1Style}>Two Techniques. Dialed In.</h1>
               <p style={{ ...leadStyle, maxWidth: 980 }}>
-                Fish with Confidence. No Decision Paralysis. Figuring out which
-                presentation best suits your conditions is no longer a struggle.
+                Two techniques that make sense for your conditions—a primary to
+                anchor your approach and a pivot for when bass are positioned
+                differently. Fish with confidence knowing what to lean on,
+                especially when the bite gets tough.
               </p>
             </div>
           </Reveal>
@@ -1452,24 +1494,24 @@ export function Landing() {
                     }}
                   >
                     <Bullet
-                      title="Primary - Anchors Your Day"
-                      desc="Meant to serve as the best starting point, based on your current weather, season and conditions"
+                      title="Primary - Your Foundation"
+                      desc="The technique that makes the most sense for your conditions. Start here."
                     />
                     <Bullet
-                      title="Pivot - A Powerful Alternate"
-                      desc="A strategic complement to the primary pattern."
+                      title="Pivot - Your Backup With Purpose"
+                      desc="For when bass are positioned differently. Not random—strategically paired with your primary."
                     />
                     <Bullet
-                      title="Pattern Summary"
-                      desc="We explain why we chose this presentation and why it makes sense."
+                      title="Confidence When It Counts"
+                      desc="Know exactly what to lean on when the bite slows down. No second-guessing."
                     />
                     <Bullet
-                      title="Real Intelligence"
-                      desc="The pivot references the primary pattern and explains in plain language its role and relation to the first."
+                      title="The Why, Explained"
+                      desc="We tell you why each technique was chosen and how they work together."
                     />
                     <Bullet
-                      title="All things Considered"
-                      desc="Trailer guidance based on season. Color suggestions based on water clarity and light. Gear for execution"
+                      title="Details That Matter"
+                      desc="Trailer, color, and gear suggestions—all matched to your water and light conditions."
                     />
                   </ul>
                 </div>
@@ -1593,7 +1635,7 @@ export function Landing() {
                     />
                     <Bullet
                       title="Retrieve Guidance"
-                      desc="More than 130+ lure specific retrieves that adjusts for targets and conditions"
+                      desc="130+ lure-specific retrieves, adjusted for your targets and conditions."
                     />
                   </ul>
                 </div>
@@ -1733,7 +1775,7 @@ export function Landing() {
                   margin: 0,
                 }}
               >
-                Clear fishing decisions. Without the guesswork.
+                Modern tools. Timeless approach.
               </p>
             </div>
             <div>
