@@ -245,12 +245,18 @@ class SubscribeRequest(BaseModel):
 
 
 # ========================================
-# SYNC STRIPE MEMBERS
+# SYNC STRIPE MEMBERS (DISABLED)
 # ========================================
-@app.on_event("startup")
-async def startup_event():
-    # This runs every time Render deploys or restarts your API
-    await sync_members_from_stripe()
+# IMPORTANT: This was causing issues by resetting manually-set inactive accounts
+# back to active on every deploy. Stripe webhooks handle subscription changes,
+# so this automatic sync is not needed and can override manual test/admin changes.
+#
+# @app.on_event("startup")
+# async def startup_event():
+#     # This runs every time Render deploys or restarts your API
+#     await sync_members_from_stripe()
+#
+# To manually sync if needed, call the admin endpoint or run sync_members.py directly.
 
 
 # ========================================
