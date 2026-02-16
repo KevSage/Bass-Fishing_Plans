@@ -59,9 +59,11 @@ const config: CapacitorConfig = {
     },
 
     // Keyboard configuration
+    // 'none' prevents WebView resize when keyboard appears (avoids content jumping)
+    // We handle scroll-into-view manually for focused inputs
     Keyboard: {
-      resize: 'native',
-      resizeOnFullScreen: true,
+      resize: 'none',
+      resizeOnFullScreen: false,
     },
 
     // Splash screen configuration

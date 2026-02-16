@@ -59,6 +59,7 @@ import {
   capturePhoto,
   type CapturedPhoto,
 } from "@/lib/capacitor-camera";
+import { Keyboard } from "@capacitor/keyboard";
 import { getApiBaseUrl } from "@/lib/platform";
 // IMPORT LOCATION SEARCH FOR LAKE AUTOCOMPLETE
 import { LocationSearch } from "@/components/LocationSearch";
@@ -2376,17 +2377,24 @@ export function CatchFormView({
                   manualDate,
                   manualTime,
                 });
-                // Navigate to LakeBuilder for pin drop on known lake
-                navigate("/lake-builder", {
-                  state: {
-                    mode: "catch_upload",
-                    knownLake: true, // Flag to skip boundary drawing
-                    suggestedName: location.name,
-                    lat: location.latitude,
-                    lng: location.longitude,
-                    returnTo: "/insights",
-                  },
-                });
+                // Dismiss keyboard before navigation to prevent black space
+                if (isNativePlatform()) {
+                  Keyboard.hide().catch(() => {});
+                }
+                // Small delay to let keyboard dismiss complete
+                setTimeout(() => {
+                  // Navigate to LakeBuilder for pin drop on known lake
+                  navigate("/lake-builder", {
+                    state: {
+                      mode: "catch_upload",
+                      knownLake: true, // Flag to skip boundary drawing
+                      suggestedName: location.name,
+                      lat: location.latitude,
+                      lng: location.longitude,
+                      returnTo: "/insights",
+                    },
+                  });
+                }, 100);
               }}
               onNotFound={(query) => {
                 setPendingLakeQuery(query);
@@ -2704,16 +2712,23 @@ export function CatchFormView({
                       pendingLakeQuery,
                     });
                     setShowUpgradeModal(false);
-                    // Navigate to LakeBuilder with catch_upload mode
-                    navigate("/lake-builder", {
-                      state: {
-                        mode: "catch_upload",
-                        suggestedName: pendingLakeQuery,
-                        returnTo: "/insights",
-                        lat: 0, // Will be set by user pin drop
-                        lng: 0,
-                      },
-                    });
+                    // Dismiss keyboard before navigation to prevent black space
+                    if (isNativePlatform()) {
+                      Keyboard.hide().catch(() => {});
+                    }
+                    // Small delay to let keyboard dismiss complete
+                    setTimeout(() => {
+                      // Navigate to LakeBuilder with catch_upload mode
+                      navigate("/lake-builder", {
+                        state: {
+                          mode: "catch_upload",
+                          suggestedName: pendingLakeQuery,
+                          returnTo: "/insights",
+                          lat: 0, // Will be set by user pin drop
+                          lng: 0,
+                        },
+                      });
+                    }, 100);
                   }}
                   style={{
                     width: "100%",

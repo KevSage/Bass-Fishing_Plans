@@ -30,6 +30,7 @@ export function LocationSearch({
   const [searchCompleted, setSearchCompleted] = useState(false);
   const { results, loading, error, search, clear } = useMapboxSearch({ lakesOnly });
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Debounced search
   useEffect(() => {
@@ -106,19 +107,26 @@ export function LocationSearch({
 
     setInputValue(feature.text); // Just the lake name, not full place_name with city/state
     setShowResults(false);
+    // Blur input to dismiss keyboard on mobile
+    inputRef.current?.blur();
   };
 
   return (
     <div ref={wrapperRef} style={{ position: "relative" }}>
       <input
+        ref={inputRef}
         type="text"
         className="input"
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
-        onFocus={() => {
+        onFocus={(e) => {
           if (results.length > 0) {
             setShowResults(true);
           }
+          // Scroll input into view for iOS keyboard
+          setTimeout(() => {
+            e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 300);
         }}
         placeholder={placeholder}
         autoComplete="off"

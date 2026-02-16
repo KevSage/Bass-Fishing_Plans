@@ -204,7 +204,7 @@ export function Upgrade() {
 
       {/* FEATURES GRID */}
       <section className="features-section">
-        <h2 className="section-title">Everything You Need to Dominate</h2>
+        <h2 className="section-title">Fish Smarter with Pro</h2>
         <div className="features-grid">
           {FEATURES.map((feature, i) => (
             <div
