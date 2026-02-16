@@ -270,6 +270,28 @@ export async function updateCatch(
   );
 }
 
+/**
+ * Update a catch for mobile app using email instead of JWT.
+ */
+export async function updateCatchMobile(
+  catchId: string,
+  data: CreateCatchInput,
+  email: string,
+  userId: string,
+): Promise<{ success: boolean; catch_id?: string; error?: string }> {
+  const response = await fetch(`${getApiBase()}/mobile-auth/update-catch`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...data, catch_id: catchId, email, user_id: userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update catch: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // =============================================================================
 // CUSTOM LAKES API
 // =============================================================================

@@ -38,6 +38,7 @@ import {
   deleteCatch as deleteCatchApi,
   deleteCatchMobile,
   updateCatch as updateCatchApi,
+  updateCatchMobile,
   resolveLake,
   resolveLakeMobile,
   type CatchRecord,
@@ -896,14 +897,22 @@ export function useCatchLog(
         isEditing: false,
       }));
       try {
-        const token = await getToken();
-        if (token) {
-          const currentEntry = state.entries.find((e) => e.id === id);
-          if (currentEntry) {
-            const merged = { ...currentEntry, ...updates };
-            const apiInput = entryToApiInput(merged, activeLake);
-            await updateCatchApi(id, apiInput, token);
+        const currentEntry = state.entries.find((e) => e.id === id);
+        if (currentEntry) {
+          const merged = { ...currentEntry, ...updates };
+          const apiInput = entryToApiInput(merged, activeLake);
+
+          // Use mobile endpoint on native platforms
+          if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+            console.log("[CatchLog] Updating via mobile endpoint:", id);
+            await updateCatchMobile(id, apiInput, nativeAuth.userEmail, nativeAuth.userId);
             fetchCatches();
+          } else {
+            const token = await getToken();
+            if (token) {
+              await updateCatchApi(id, apiInput, token);
+              fetchCatches();
+            }
           }
         }
       } catch (err) {
@@ -2036,12 +2045,26 @@ export function CatchFormView({
         } else if (foundTime) {
           setExifStatus("found-time");
         } else {
+          // No EXIF data - show manual date/time pickers (match web flow)
           setExifStatus("none");
+          setShowManualDateTime(true);
+          const now = new Date();
+          setManualDate(now.toISOString().split('T')[0]);
+          setManualTime(now.toTimeString().slice(0, 5));
+          setCaughtAt(now.toISOString());
         }
       } catch (err) {
         console.warn("EXIF extraction failed:", err);
         setExifStatus("none");
+        setShowManualDateTime(true);
+        const now = new Date();
+        setManualDate(now.toISOString().split('T')[0]);
+        setManualTime(now.toTimeString().slice(0, 5));
+        setCaughtAt(now.toISOString());
       }
+
+      // Small delay to let UI render before starting heavy compression
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Compress and upload (same as web flow)
       let fileToUpload = file;
@@ -2767,8 +2790,9 @@ export function CatchFormView({
         .catch-cancel-btn { border: none; background: transparent; color: rgba(255,255,255,0.65); font-weight: 600; font-size: 0.85rem; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
         .catch-cancel-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
         .catch-form-title { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.2px; color: #fff; }
-        .catch-form-body { padding: 14px 16px 18px; overflow: auto; }
-        .catch-form-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+        .catch-form-body { padding: 14px 16px 18px; overflow: auto; min-height: 400px; }
+        .catch-form-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; animation: fadeInField 0.2s ease-out; }
+        @keyframes fadeInField { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
         .catch-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .catch-form-label { font-size: 0.78rem; font-weight: 700; color: rgba(255,255,255,0.6); letter-spacing: 0.2px; }
         .catch-form-input, .catch-form-select, .catch-form-textarea { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 12px; color: #fff; outline: none; font-size: 0.9rem; transition: all 0.2s; }

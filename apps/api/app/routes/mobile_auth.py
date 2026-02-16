@@ -1277,6 +1277,92 @@ async def mobile_delete_catch(request: MobileDeleteCatchRequest):
 
 
 # =============================================================================
+# MOBILE UPDATE CATCH ENDPOINT
+# =============================================================================
+
+class MobileUpdateCatchRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    catch_id: str
+    # Catch data fields
+    date: str
+    time: Optional[str] = None
+    species: Optional[str] = None
+    weight: Optional[float] = None
+    length: Optional[float] = None
+    lure: Optional[str] = None
+    color: Optional[str] = None
+    notes: Optional[str] = None
+    photo_url: Optional[str] = None
+    lat: float
+    lng: float
+    lake_id: Optional[str] = None
+    lake_type: Optional[str] = None
+    lake_name: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    source: Optional[str] = None
+    # Weather fields
+    temp: Optional[float] = None
+    wind_speed: Optional[float] = None
+    wind_direction: Optional[str] = None
+    pressure: Optional[float] = None
+    sky_condition: Optional[str] = None
+
+
+@router.post("/update-catch")
+async def mobile_update_catch(request: MobileUpdateCatchRequest):
+    """
+    Update a catch for mobile app using email instead of JWT.
+    """
+    from app.services.catches import CatchStore
+
+    catch_store = CatchStore()
+
+    try:
+        # Check if catch exists and belongs to user
+        existing = catch_store.get(request.catch_id, request.email)
+        if not existing:
+            return {"success": False, "error": "Catch not found or not owned by user"}
+
+        # Perform update
+        updated_catch = catch_store.update(
+            catch_id=request.catch_id,
+            email=request.email,
+            date=request.date,
+            time=request.time,
+            species=request.species,
+            weight=request.weight,
+            length=request.length,
+            lure=request.lure,
+            color=request.color,
+            notes=request.notes,
+            photo_url=request.photo_url,
+            lat=request.lat,
+            lng=request.lng,
+            lake_id=request.lake_id,
+            lake_type=request.lake_type,
+            lake_name=request.lake_name,
+            city=request.city,
+            state=request.state,
+            source=request.source,
+            temp=request.temp,
+            wind_speed=request.wind_speed,
+            wind_direction=request.wind_direction,
+            pressure=request.pressure,
+            sky_condition=request.sky_condition,
+        )
+
+        if not updated_catch:
+            return {"success": False, "error": "Failed to update catch"}
+
+        return {"success": True, "catch_id": request.catch_id}
+    except Exception as e:
+        print(f"[mobile_auth] update catch error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
 # MOBILE PRESIGNED UPLOAD URL ENDPOINT
 # =============================================================================
 
