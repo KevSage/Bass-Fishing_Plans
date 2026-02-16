@@ -1,7 +1,7 @@
 // src/pages/Insights.tsx
 
 import React, { useMemo, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { InsightsLoadingScreen } from "@/components/InsightsLoadingScreen";
 import {
   ArrowLeftIcon,
@@ -619,6 +619,19 @@ export function Insights() {
     updateCatch: hookUpdateCatch,
     deleteCatch: hookDeleteCatch,
   } = catchLog;
+
+  // Handle return from LakeBuilder with catch data
+  const routeLocation = useLocation();
+  useEffect(() => {
+    const navState = routeLocation.state as any;
+    if (navState?.fromLakeBuilder) {
+      // Open the catch form - it will restore from localStorage draft
+      // and merge the coordinates from navigation state
+      setTimeout(() => {
+        catchLog.showForm();
+      }, 100); // Small delay to ensure component is mounted
+    }
+  }, [routeLocation.state]);
 
   const stats = useMemo(() => calculateStats(entries), [entries]);
   const animatedTotal = useCountUp(stats.totalCount, 2500, 600);

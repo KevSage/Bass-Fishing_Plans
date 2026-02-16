@@ -35,7 +35,8 @@
       "Bash(wc:*)",
       "Bash(curl:*)",
       "Bash(python:*)",
-      "WebFetch(domain:gopro.github.io)"
+      "WebFetch(domain:gopro.github.io)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

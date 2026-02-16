@@ -16,8 +16,22 @@ import { MapOrb } from "../components/MapOrb";
 
 // --- API ---
 // We will call the backend to update geometry if it's a regular user save
-import { updateCustomLakeGeometry, updateCustomLakeGeometryMobile } from "@/lib/catches-api";
+import { updateCustomLakeGeometry, updateCustomLakeGeometryMobile, createCustomLake, createCustomLakeMobile } from "@/lib/catches-api";
 import { useNativeAuth } from "@/context/NativeAuthContext";
+
+// Icon for catch pin
+const MapPinIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+
+const PolygonIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 19 21 12 17 5 21 12 2"/>
+  </svg>
+);
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -114,12 +128,21 @@ export function LakeBuilder() {
   const { getToken } = usePlatformAuth();
   const nativeAuth = useNativeAuth();
 
+  // Support for catch_upload mode (from CatchLog)
+  const mode = state?.mode || "standard"; // "standard" | "catch_upload"
+  const isCatchUploadMode = mode === "catch_upload";
+  const isKnownLake = state?.knownLake === true; // Skip boundary for known lakes
+  const returnTo = state?.returnTo || "/members";
+
   // Redirect if no state (direct URL access)
+  // For catch_upload mode, we allow lat/lng to be 0 (user will drop pin to set anchor)
   useEffect(() => {
-    if (!state || !state.lat || !state.lng) {
+    if (!state) {
+      navigate("/members");
+    } else if (!isCatchUploadMode && (!state.lat || !state.lng)) {
       navigate("/members");
     }
-  }, [state, navigate]);
+  }, [state, navigate, isCatchUploadMode]);
 
   const anchorLat = state?.lat || 0;
   const anchorLng = state?.lng || 0;
@@ -131,11 +154,17 @@ export function LakeBuilder() {
   const [isLeashWarning, setIsLeashWarning] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Catch upload mode state
+  const [catchUploadStep, setCatchUploadStep] = useState<"pin" | "boundary">("pin");
+  const [catchPinLocation, setCatchPinLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [newLakeName, setNewLakeName] = useState(lakeName);
+
   // Refs
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const anchorMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const catchPinMarkerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Admin Check
   const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
@@ -165,27 +194,64 @@ export function LakeBuilder() {
 
     // Click to Add Pin
     m.on("click", (e) => {
-      // Leash check
-      const dist = getDistance(
-        anchorLat,
-        anchorLng,
-        e.lngLat.lat,
-        e.lngLat.lng,
-      );
-      if (dist > LEASH_DISTANCE_KM) {
-        setIsLeashWarning(true);
-        setTimeout(() => setIsLeashWarning(false), 3000);
+      // In catch_upload mode, first click sets catch pin
+      if (isCatchUploadMode && catchUploadStep === "pin") {
+        setCatchPinLocation({ lat: e.lngLat.lat, lng: e.lngLat.lng });
         return;
       }
 
-      setPins((prev) => {
-        if (prev.length >= MAX_PINS) return prev;
-        return [...prev, { lat: e.lngLat.lat, lng: e.lngLat.lng }];
-      });
+      // Leash check (only in standard mode or boundary step)
+      if (!isCatchUploadMode || catchUploadStep === "boundary") {
+        const checkLat = isCatchUploadMode && catchPinLocation ? catchPinLocation.lat : anchorLat;
+        const checkLng = isCatchUploadMode && catchPinLocation ? catchPinLocation.lng : anchorLng;
+
+        const dist = getDistance(
+          checkLat,
+          checkLng,
+          e.lngLat.lat,
+          e.lngLat.lng,
+        );
+        if (dist > LEASH_DISTANCE_KM) {
+          setIsLeashWarning(true);
+          setTimeout(() => setIsLeashWarning(false), 3000);
+          return;
+        }
+
+        setPins((prev) => {
+          if (prev.length >= MAX_PINS) return prev;
+          return [...prev, { lat: e.lngLat.lat, lng: e.lngLat.lng }];
+        });
+      }
     });
 
     return () => m.remove();
-  }, [anchorLat, anchorLng]);
+  }, [anchorLat, anchorLng, isCatchUploadMode]);
+
+  // --- RENDER CATCH PIN (catch_upload mode) ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isCatchUploadMode) return;
+
+    // Remove existing catch pin marker
+    if (catchPinMarkerRef.current) {
+      catchPinMarkerRef.current.remove();
+      catchPinMarkerRef.current = null;
+    }
+
+    if (!catchPinLocation) return;
+
+    // Create catch pin marker
+    const el = document.createElement("div");
+    el.className = "catch-pin-marker";
+    el.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="#4A90E2" stroke="#fff" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3" fill="#fff"/></svg>`;
+
+    catchPinMarkerRef.current = new mapboxgl.Marker({ element: el })
+      .setLngLat([catchPinLocation.lng, catchPinLocation.lat])
+      .addTo(map);
+
+    // Center map on the pin
+    map.flyTo({ center: [catchPinLocation.lng, catchPinLocation.lat], zoom: 14 });
+  }, [catchPinLocation, isCatchUploadMode]);
 
   // --- RENDER PINS & LINES ---
   useEffect(() => {
@@ -274,6 +340,71 @@ export function LakeBuilder() {
     if (pins.length < MIN_PINS) return;
     setSaving(true);
 
+    // CATCH UPLOAD MODE: Create lake, save geometry, return with coords
+    if (isCatchUploadMode) {
+      try {
+        const acres = calculateAcres(pins);
+        const catchLat = catchPinLocation?.lat || pins[0].lat;
+        const catchLng = catchPinLocation?.lng || pins[0].lng;
+
+        let newLakeId: string;
+
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          // Create lake via mobile endpoint
+          const result = await createCustomLakeMobile(
+            nativeAuth.userEmail,
+            nativeAuth.userId,
+            {
+              name: newLakeName,
+              lat: catchLat,
+              lng: catchLng,
+              anchors: pins,
+            }
+          );
+          if (!result.success) throw new Error("Failed to create lake");
+          newLakeId = result.lake_id;
+          // Save geometry
+          await updateCustomLakeGeometryMobile(
+            nativeAuth.userEmail,
+            nativeAuth.userId,
+            newLakeId,
+            pins,
+            acres
+          );
+        } else {
+          // Web: use Clerk JWT
+          const token = await getToken();
+          if (!token) throw new Error("No auth token");
+          const result = await createCustomLake({
+            name: newLakeName,
+            lat: catchLat,
+            lng: catchLng,
+            anchors: pins,
+          }, token);
+          if (!('lake_id' in result)) throw new Error("Failed to create lake");
+          newLakeId = result.lake_id;
+          await updateCustomLakeGeometry(newLakeId, pins, token, acres);
+        }
+
+        // Return to catch form with all data
+        navigate(returnTo, {
+          state: {
+            fromLakeBuilder: true,
+            lakeId: newLakeId,
+            lakeName: newLakeName,
+            catchLat,
+            catchLng,
+          },
+        });
+      } catch (err) {
+        console.error("Catch upload save failed:", err);
+        alert("Failed to save lake. Please try again.");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     // ADMIN MODE: Export JSON
     if (isAdmin) {
       const exportData = {
@@ -353,12 +484,20 @@ export function LakeBuilder() {
     >
       {/* HEADER */}
       <div className="builder-header">
-        <button onClick={() => navigate("/members")} className="header-btn">
+        <button onClick={() => navigate(isCatchUploadMode ? "/insights" : "/members")} className="header-btn">
           <ChevronLeftIcon /> Cancel
         </button>
         <div className="header-title">
-          <div className="title-label">Outlining</div>
-          <div className="title-name">{lakeName}</div>
+          <div className="title-label">
+            {isCatchUploadMode
+              ? isKnownLake
+                ? "Mark Catch Location"
+                : catchUploadStep === "pin" ? "Step 1 of 2" : "Step 2 of 2"
+              : "Outlining"}
+          </div>
+          <div className="title-name">
+            {isCatchUploadMode ? newLakeName : lakeName}
+          </div>
         </div>
         <button
           onClick={handleSave}
@@ -370,40 +509,88 @@ export function LakeBuilder() {
         </button>
       </div>
 
+      {/* CATCH UPLOAD PROMPTS */}
+      {isCatchUploadMode && (
+        <div className="catch-upload-prompt">
+          {catchUploadStep === "pin" ? (
+            <>
+              <div className="prompt-icon"><MapPinIcon size={28} /></div>
+              <h3>Drop a Pin</h3>
+              <p>Tap the map to mark where you caught this fish</p>
+            </>
+          ) : (
+            <>
+              <div className="prompt-icon"><PolygonIcon size={28} /></div>
+              <h3>Outline the Lake</h3>
+              <p>Tap around the shoreline to draw the boundary</p>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* CATCH PIN CONFIRM BUTTON */}
+      {isCatchUploadMode && catchUploadStep === "pin" && catchPinLocation && (
+        <div className="catch-pin-confirm">
+          <button
+            className="confirm-pin-btn"
+            onClick={() => {
+              if (isKnownLake) {
+                // Known lake - just return with coordinates, no boundary needed
+                navigate(returnTo, {
+                  state: {
+                    fromLakeBuilder: true,
+                    lakeName: newLakeName,
+                    catchLat: catchPinLocation.lat,
+                    catchLng: catchPinLocation.lng,
+                  },
+                });
+              } else {
+                // Unknown lake - proceed to boundary step
+                setCatchUploadStep("boundary");
+              }
+            }}
+          >
+            Confirm Location
+          </button>
+        </div>
+      )}
+
       {/* MAP */}
-      <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
+      <div ref={mapContainer} style={{ position: "absolute", inset: 0 }} />
 
       {/* WARNING TOAST */}
       {isLeashWarning && (
         <div className="leash-warning">Keep outline near the center marker</div>
       )}
 
-      {/* FOOTER CONTROLS */}
-      <div className={`builder-footer ${isNativePlatform() ? "native-ios" : ""}`}>
-        <div className="pin-counter">
-          <span style={{ color: pins.length >= MAX_PINS ? "#EF4444" : "#fff" }}>
-            {pins.length}
-          </span>
-          <span style={{ opacity: 0.5 }}>/{MAX_PINS} pts</span>
-        </div>
+      {/* FOOTER CONTROLS - Only show during boundary drawing, not during pin drop */}
+      {!(isCatchUploadMode && catchUploadStep === "pin") && (
+        <div className={`builder-footer ${isNativePlatform() ? "native-ios" : ""}`}>
+          <div className="pin-counter">
+            <span style={{ color: pins.length >= MAX_PINS ? "#EF4444" : "#fff" }}>
+              {pins.length}
+            </span>
+            <span style={{ opacity: 0.5 }}>/{MAX_PINS} pts</span>
+          </div>
 
-        <div className="footer-actions">
-          <button
-            onClick={handleUndo}
-            disabled={pins.length === 0}
-            className="action-btn"
-          >
-            <UndoIcon /> Undo
-          </button>
-          <button
-            onClick={handleClear}
-            disabled={pins.length === 0}
-            className="action-btn"
-          >
-            <TrashIcon /> Clear
-          </button>
+          <div className="footer-actions">
+            <button
+              onClick={handleUndo}
+              disabled={pins.length === 0}
+              className="action-btn"
+            >
+              <UndoIcon /> Undo
+            </button>
+            <button
+              onClick={handleClear}
+              disabled={pins.length === 0}
+              className="action-btn"
+            >
+              <TrashIcon /> Clear
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <style>{`
         .builder-header {
@@ -485,6 +672,68 @@ export function LakeBuilder() {
           z-index: 10; animation: fade-in 0.3s;
         }
         @keyframes fade-in { from { opacity: 0; transform: translate(-50%, -10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+        /* Catch Upload Mode Styles */
+        .catch-upload-prompt {
+          position: absolute;
+          top: calc(env(safe-area-inset-top, 0px) + 80px);
+          left: 20px;
+          right: 20px;
+          background: rgba(10, 10, 10, 0.9);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px;
+          padding: 20px;
+          text-align: center;
+          z-index: 10;
+          color: #fff;
+        }
+        .catch-upload-prompt .prompt-icon {
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          background: rgba(74, 144, 226, 0.15);
+          color: #4A90E2;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 12px;
+        }
+        .catch-upload-prompt h3 {
+          margin: 0 0 6px;
+          font-size: 1.1rem;
+          font-weight: 700;
+        }
+        .catch-upload-prompt p {
+          margin: 0;
+          font-size: 0.9rem;
+          opacity: 0.7;
+        }
+
+        .catch-pin-confirm {
+          position: absolute;
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
+          left: 20px;
+          right: 20px;
+          z-index: 10;
+        }
+        .confirm-pin-btn {
+          width: 100%;
+          padding: 16px;
+          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+          border: none;
+          border-radius: 14px;
+          color: #fff;
+          font-weight: 700;
+          font-size: 1rem;
+          cursor: pointer;
+          box-shadow: 0 8px 24px rgba(74, 144, 226, 0.3);
+        }
+
+        .catch-pin-marker {
+          cursor: pointer;
+          filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
       `}</style>
     </div>
   );

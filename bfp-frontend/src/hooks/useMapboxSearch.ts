@@ -33,13 +33,10 @@ const LAKES: Lake[] = LAKES_DATA as Lake[];
 console.log(`🎣 Lakes database loaded: ${LAKES.length} lakes`);
 
 /**
- * Simple fuzzy match - checks if all query words appear in target
+ * Exact substring match - the target must contain the exact query sequence
  */
-function fuzzyMatch(query: string, target: string): boolean {
-  const queryWords = query.toLowerCase().split(/\s+/);
-  const targetLower = target.toLowerCase();
-
-  return queryWords.every((word) => targetLower.includes(word));
+function exactSubstringMatch(query: string, target: string): boolean {
+  return target.toLowerCase().includes(query.toLowerCase());
 }
 
 /**
@@ -51,7 +48,7 @@ function searchLakesDatabase(query: string): MapboxFeature[] {
   for (const lake of LAKES) {
     const searchText = `${lake.name} ${lake.city || ""} ${lake.state}`;
 
-    if (fuzzyMatch(query, searchText)) {
+    if (exactSubstringMatch(query, searchText)) {
       // Calculate relevance score
       let score = 0;
 
@@ -99,10 +96,11 @@ function searchLakesDatabase(query: string): MapboxFeature[] {
   }));
 }
 
-export function useMapboxSearch() {
+export function useMapboxSearch(options?: { lakesOnly?: boolean }) {
   const [results, setResults] = useState<MapboxFeature[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const lakesOnly = options?.lakesOnly ?? false;
 
   const search = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
@@ -117,10 +115,10 @@ export function useMapboxSearch() {
       // Search local lakes database first
       const lakeResults = searchLakesDatabase(query);
 
-      // Also search Mapbox for cities/places (for navigation)
+      // Also search Mapbox for cities/places (for navigation) - skip if lakesOnly
       let placeResults: MapboxFeature[] = [];
 
-      if (MAPBOX_ACCESS_TOKEN) {
+      if (!lakesOnly && MAPBOX_ACCESS_TOKEN) {
         const params = new URLSearchParams({
           access_token: MAPBOX_ACCESS_TOKEN,
           types: "place",
@@ -138,11 +136,10 @@ export function useMapboxSearch() {
         }
       }
 
-      // Combine: lakes first (up to 6), then cities (up to 2)
-      const combined = [...lakeResults, ...placeResults.slice(0, 2)].slice(
-        0,
-        8
-      );
+      // Combine: lakes first (up to 6), then cities (up to 2) if not lakesOnly
+      const combined = lakesOnly
+        ? lakeResults.slice(0, 8)
+        : [...lakeResults, ...placeResults.slice(0, 2)].slice(0, 8);
 
       setResults(combined);
     } catch (err) {
@@ -152,7 +149,7 @@ export function useMapboxSearch() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [lakesOnly]);
 
   const clear = useCallback(() => {
     setResults([]);

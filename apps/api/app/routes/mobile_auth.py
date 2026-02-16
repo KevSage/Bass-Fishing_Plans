@@ -1247,6 +1247,36 @@ async def mobile_create_catch(request: MobileCreateCatchRequest):
 
 
 # =============================================================================
+# MOBILE DELETE CATCH ENDPOINT
+# =============================================================================
+
+class MobileDeleteCatchRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    catch_id: str
+
+
+@router.post("/delete-catch")
+async def mobile_delete_catch(request: MobileDeleteCatchRequest):
+    """
+    Delete a catch for mobile app using email instead of JWT.
+    """
+    from app.services.catches import CatchStore
+
+    catch_store = CatchStore()
+
+    try:
+        deleted = catch_store.delete(request.catch_id, request.email)
+        if deleted:
+            return {"success": True, "deleted_id": request.catch_id}
+        else:
+            return {"success": False, "error": "Catch not found or not owned by user"}
+    except Exception as e:
+        print(f"[mobile_auth] delete catch error: {e}")
+        return {"success": False, "error": str(e)}
+
+
+# =============================================================================
 # MOBILE PRESIGNED UPLOAD URL ENDPOINT
 # =============================================================================
 

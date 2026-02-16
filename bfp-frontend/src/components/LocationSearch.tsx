@@ -11,34 +11,55 @@ type LocationSearchProps = {
     city?: string;
     state?: string;
   }) => void;
+  onNotFound?: (query: string) => void;
   placeholder?: string;
   initialValue?: string;
+  lakesOnly?: boolean; // Only search known lakes database, no Mapbox places
 };
 
 export function LocationSearch({
   onSelect,
+  onNotFound,
   placeholder = "Search for a lake or reservoir...",
   initialValue = "",
+  lakesOnly = false,
 }: LocationSearchProps) {
   const [inputValue, setInputValue] = useState(initialValue);
   const [showResults, setShowResults] = useState(false);
-  const { results, loading, error, search, clear } = useMapboxSearch();
+  const [showNotFound, setShowNotFound] = useState(false);
+  const [searchCompleted, setSearchCompleted] = useState(false);
+  const { results, loading, error, search, clear } = useMapboxSearch({ lakesOnly });
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (inputValue.length >= 3) {
+        setSearchCompleted(false);
+        setShowNotFound(false);
         search(inputValue);
         setShowResults(true);
       } else {
         clear();
         setShowResults(false);
+        setShowNotFound(false);
       }
     }, 300);
 
     return () => clearTimeout(timer);
   }, [inputValue, search, clear]);
+
+  // Detect when search completes with no results
+  useEffect(() => {
+    if (!loading && inputValue.length >= 3) {
+      setSearchCompleted(true);
+      if (results.length === 0) {
+        setShowNotFound(true);
+      } else {
+        setShowNotFound(false);
+      }
+    }
+  }, [loading, results, inputValue]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -83,7 +104,7 @@ export function LocationSearch({
       state,
     });
 
-    setInputValue(feature.place_name);
+    setInputValue(feature.text); // Just the lake name, not full place_name with city/state
     setShowResults(false);
   };
 
@@ -191,6 +212,48 @@ export function LocationSearch({
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Not Found Prompt */}
+      {showNotFound && searchCompleted && onNotFound && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 4px)",
+            left: 0,
+            right: 0,
+            background: "rgba(20, 20, 25, 0.95)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 12,
+            padding: 16,
+            zIndex: 1000,
+            boxShadow: "0 10px 40px rgba(0,0,0,0.5)",
+            textAlign: "center",
+          }}
+        >
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.9rem", margin: "0 0 12px" }}>
+            No lakes found matching "{inputValue}"
+          </p>
+          <button
+            onClick={() => {
+              onNotFound(inputValue);
+              setShowNotFound(false);
+            }}
+            style={{
+              background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+              border: "none",
+              borderRadius: 8,
+              color: "#fff",
+              padding: "10px 20px",
+              fontWeight: 600,
+              fontSize: "0.9rem",
+              cursor: "pointer",
+            }}
+          >
+            + Add this lake
+          </button>
         </div>
       )}
     </div>

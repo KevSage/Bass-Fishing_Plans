@@ -1437,6 +1437,20 @@ export function Members() {
             state: nearbyLake.state,
           });
         } else {
+          // Unknown water body - gate for free users
+          if (!isActive) {
+            // Free user clicked unknown water - show upgrade modal and don't select
+            if (markerRef.current) markerRef.current.remove();
+            if (markerElementRef.current) markerElementRef.current.remove();
+            markerRef.current = null;
+            markerElementRef.current = null;
+            setSelectedCoords(null);
+            setWaterName("");
+            setManualWaterName("");
+            triggerUpgrade("Upgrade to Pro to explore any water body");
+            return;
+          }
+          // Pro user - allow selecting unknown water
           setWaterName(vectorName || "Dropped Pin Location");
         }
 

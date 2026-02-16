@@ -36,6 +36,7 @@ import {
   listCatches,
   listCatchesMobile,
   deleteCatch as deleteCatchApi,
+  deleteCatchMobile,
   updateCatch as updateCatchApi,
   resolveLake,
   resolveLakeMobile,
@@ -58,6 +59,14 @@ import {
   type CapturedPhoto,
 } from "@/lib/capacitor-camera";
 import { getApiBaseUrl } from "@/lib/platform";
+// IMPORT LOCATION SEARCH FOR LAKE AUTOCOMPLETE
+import { LocationSearch } from "@/components/LocationSearch";
+// IMPORT MEMBER STATUS FOR PRO CHECK
+import { useMemberStatus } from "@/hooks/useMemberStatus";
+// IMPORT FORM DRAFT UTILITIES
+import { saveCatchFormDraft, loadCatchFormDraft, loadCatchFormDraftAsync, clearCatchFormDraft } from "@/lib/form-draft";
+// IMPORT NAVIGATION
+import { useNavigate, useLocation } from "react-router-dom";
 
 // =============================================================================
 // ICONS (Offline & Sync)
@@ -919,11 +928,19 @@ export function useCatchLog(
         isEditing: false,
       }));
       try {
-        const token = await getToken();
-        if (token) {
-          await deleteCatchApi(id, token);
+        // Use mobile endpoint on native platforms
+        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+          console.log("[CatchLog] Deleting via mobile endpoint:", id);
+          await deleteCatchMobile(id, nativeAuth.userEmail, nativeAuth.userId);
           const apiOnly = remaining.filter((c) => !c.isOffline);
           localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnly));
+        } else {
+          const token = await getToken();
+          if (token) {
+            await deleteCatchApi(id, token);
+            const apiOnly = remaining.filter((c) => !c.isOffline);
+            localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnly));
+          }
         }
       } catch (err) {
         if (id.startsWith("offline-")) {
@@ -1107,7 +1124,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
           )}
         </div>
       </div>
-      <style>{` .catch-modal-overlay { position: fixed; inset: 0; z-index: 2500; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; } .catch-modal { width: 100%; max-width: 380px; max-height: 86vh; border-radius: 24px; background: rgba(18, 18, 24, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; overflow: hidden; color: white; } `}</style>
+      <style>{` .catch-modal-overlay { position: fixed; inset: 0; z-index: 2500; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: flex; align-items: flex-end; justify-content: center; padding: 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 70px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); } .catch-modal { width: 100%; max-width: 380px; max-height: 80vh; border-radius: 24px; background: rgba(18, 18, 24, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; overflow: hidden; color: white; } `}</style>
     </>
   );
 }
@@ -1659,9 +1676,16 @@ export function CatchFormView({
 }: CatchFormViewProps) {
   const { getToken } = usePlatformAuth();
   const nativeAuth = useNativeAuth();
+  const { isActive: isPro } = useMemberStatus();
+  const navigate = useNavigate();
+  const routeLocation = useLocation();
   const [isResolving, setIsResolving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isAutoResolving, setIsAutoResolving] = useState(false);
+
+  // Upgrade modal state for lake not found
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [pendingLakeQuery, setPendingLakeQuery] = useState("");
 
   // Weather Fetching State
   const [isFetchingWeather, setIsFetchingWeather] = useState(false);
@@ -1715,6 +1739,17 @@ export function CatchFormView({
   >("idle");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Manual date/time pickers - shown when no EXIF data
+  const [showManualDateTime, setShowManualDateTime] = useState(false);
+  const [manualDate, setManualDate] = useState(() => {
+    const d = initialDateTime || (entry?.caughtAt ? new Date(entry.caughtAt) : new Date());
+    return d.toISOString().split('T')[0]; // YYYY-MM-DD
+  });
+  const [manualTime, setManualTime] = useState(() => {
+    const d = initialDateTime || (entry?.caughtAt ? new Date(entry.caughtAt) : new Date());
+    return d.toTimeString().slice(0, 5); // HH:MM
+  });
+
   // Auto-Fetch Weather Logic
   const autoFetchWeather = async (lat: number, lng: number, time: string) => {
     setIsFetchingWeather(true);
@@ -1737,6 +1772,76 @@ export function CatchFormView({
       autoFetchWeather(catchLat, catchLng, caughtAt);
     }
   }, [initialCoords]); // Only run once on mount if coords exist
+
+  // Restore form draft if returning from LakeBuilder
+  useEffect(() => {
+    const navState = routeLocation.state as any;
+    console.log("[CatchForm] useEffect navState:", navState);
+    if (navState?.fromLakeBuilder && !isEditing) {
+      console.log("[CatchForm] Returning from LakeBuilder, loading draft...");
+
+      // First try sync (memory) draft
+      let draft = loadCatchFormDraft();
+      console.log("[CatchForm] Sync draft loaded:", draft ? "yes" : "no");
+
+      if (draft) {
+        restoreDraft(draft);
+      } else {
+        // Try async (Capacitor Preferences) draft
+        loadCatchFormDraftAsync().then((asyncDraft) => {
+          console.log("[CatchForm] Async draft loaded:", asyncDraft ? "yes" : "no");
+          if (asyncDraft) {
+            restoreDraft(asyncDraft);
+          }
+        });
+      }
+
+      // Set location from LakeBuilder return data (always do this)
+      if (navState.catchLat && navState.catchLng) {
+        setCatchLat(navState.catchLat);
+        setCatchLng(navState.catchLng);
+        setLocationStatus("success");
+      }
+      if (navState.lakeName) {
+        setLakeName(navState.lakeName);
+      }
+    }
+
+    function restoreDraft(draft: any) {
+      console.log("[CatchForm] Restoring fields:", {
+        hasPhotoUrl: !!draft.photoUrl,
+        hasPhotoPreview: !!draft.photoPreview,
+      });
+      if (draft.lure) setLure(draft.lure);
+      if (draft.color) setColor(draft.color);
+      if (draft.species) setSpecies(draft.species as any);
+      if (draft.weight) setWeight(draft.weight);
+      if (draft.length) setLength(draft.length);
+      if (draft.notes) setNotes(draft.notes);
+      if (draft.photoUrl) setPhotoUrl(draft.photoUrl);
+      // Use photoPreview if available, otherwise fall back to photoUrl for display
+      if (draft.photoPreview) {
+        setPhotoPreview(draft.photoPreview);
+      } else if (draft.photoUrl) {
+        setPhotoPreview(draft.photoUrl);
+      }
+      if (draft.caughtAt) setCaughtAt(draft.caughtAt);
+      if (draft.source) setSource(draft.source as any);
+      if (draft.temp) setTemp(draft.temp);
+      if (draft.windSpeed) setWindSpeed(draft.windSpeed);
+      if (draft.pressure) setPressure(draft.pressure);
+      if (draft.sky) setSky(draft.sky);
+      if (draft.manualDate) setManualDate(draft.manualDate);
+      if (draft.manualTime) setManualTime(draft.manualTime);
+      // If we have manual date/time, show the pickers and set exif status
+      if (draft.manualDate && draft.manualTime) {
+        setShowManualDateTime(true);
+        setExifStatus("none");
+      }
+      // Clear the draft
+      clearCatchFormDraft();
+    }
+  }, [routeLocation.state, isEditing]);
 
   const checkLakeMatch = async (lat: number, lng: number) => {
     try {
@@ -1810,6 +1915,7 @@ export function CatchFormView({
       }
       if (foundLoc && foundTime) {
         setExifStatus("found-all");
+        setShowManualDateTime(false);
         // Fetch historical weather for this specific time/location
         autoFetchWeather(
           exif.latitude!,
@@ -1818,11 +1924,18 @@ export function CatchFormView({
         );
       } else if (foundLoc) {
         setExifStatus("found-all");
-        // Fetch current weather for location? No, keep it manual if time unknown
+        setShowManualDateTime(true); // Show time picker - has location but no time
       } else if (foundTime) {
         setExifStatus("found-time");
+        setShowManualDateTime(false); // Has time, just needs location
       } else {
         setExifStatus("none");
+        setShowManualDateTime(true); // Show date/time pickers - no EXIF data
+        // Reset to current date/time
+        const now = new Date();
+        setManualDate(now.toISOString().split('T')[0]);
+        setManualTime(now.toTimeString().slice(0, 5));
+        setCaughtAt(now.toISOString());
       }
     } catch (err) {
       console.warn("EXIF extraction failed:", err);
@@ -1972,10 +2085,18 @@ export function CatchFormView({
           public_url = result.public_url;
         }
 
+        console.log("[Upload] Starting R2 upload, size:", (fileToUpload.size / 1024).toFixed(1), "KB");
         await uploadFileToR2(upload_url, fileToUpload);
+        console.log("[Upload] R2 upload success, public_url:", public_url);
         setPhotoUrl(public_url);
-      } catch (err) {
-        console.error("Upload failed:", err);
+      } catch (err: any) {
+        console.error("[Upload] Failed:", err?.message || err?.toString?.() || JSON.stringify(err));
+        console.error("[Upload] Error details:", {
+          name: err?.name,
+          message: err?.message,
+          status: err?.status,
+          stack: err?.stack?.slice(0, 200),
+        });
       } finally {
         setIsUploading(false);
       }
@@ -2106,21 +2227,7 @@ export function CatchFormView({
         <div style={{ width: 60 }} />
       </div>
       <div className="catch-form-body">
-        {/* ... (Keep existing Photo & Name fields) ... */}
-        <div className="catch-form-field">
-          <label className="catch-form-label">Location Name</label>
-          <input
-            type="text"
-            value={lakeName}
-            onChange={(e) => setLakeName(e.target.value)}
-            className="catch-form-input"
-            placeholder={
-              isAutoResolving
-                ? "Checking location..."
-                : "Name this location (e.g., My Secret Pond)"
-            }
-          />
-        </div>
+        {/* PHOTO FIELD - First so user uploads image before entering details */}
         <div className="catch-form-field">
           <label className="catch-form-label">Photo</label>
           <input
@@ -2186,7 +2293,105 @@ export function CatchFormView({
           )}
         </div>
 
-        {/* ... (Keep existing Lure/Species/Color fields) ... */}
+        {/* DATE/TIME PICKERS - Show when no EXIF time data */}
+        {showManualDateTime && (
+          <div className="catch-form-field">
+            <label className="catch-form-label">When did you catch this?</label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <input
+                type="date"
+                value={manualDate}
+                onChange={(e) => {
+                  setManualDate(e.target.value);
+                  const combined = new Date(`${e.target.value}T${manualTime}:00`);
+                  setCaughtAt(combined.toISOString());
+                }}
+                className="catch-form-input"
+                style={{ colorScheme: 'dark' }}
+              />
+              <input
+                type="time"
+                value={manualTime}
+                onChange={(e) => {
+                  setManualTime(e.target.value);
+                  const combined = new Date(`${manualDate}T${e.target.value}:00`);
+                  setCaughtAt(combined.toISOString());
+                }}
+                className="catch-form-input"
+                style={{ colorScheme: 'dark' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* LOCATION NAME - Show search when no location set yet */}
+        <div className="catch-form-field">
+          <label className="catch-form-label">Location Name</label>
+          {locationStatus !== "success" && (exifStatus === "none" || locationStatus === "idle") ? (
+            <LocationSearch
+              initialValue={lakeName}
+              placeholder={isAutoResolving ? "Checking location..." : "Search for a lake..."}
+              lakesOnly={true}
+              onSelect={(location) => {
+                // Save form draft before navigating to pin drop
+                saveCatchFormDraft({
+                  lakeName: location.name,
+                  lure,
+                  color,
+                  species,
+                  weight,
+                  length,
+                  notes,
+                  photoUrl,
+                  photoPreview,
+                  caughtAt,
+                  source,
+                  temp,
+                  windSpeed,
+                  pressure,
+                  sky,
+                  manualDate,
+                  manualTime,
+                });
+                // Navigate to LakeBuilder for pin drop on known lake
+                navigate("/lake-builder", {
+                  state: {
+                    mode: "catch_upload",
+                    knownLake: true, // Flag to skip boundary drawing
+                    suggestedName: location.name,
+                    lat: location.latitude,
+                    lng: location.longitude,
+                    returnTo: "/insights",
+                  },
+                });
+              }}
+              onNotFound={(query) => {
+                setPendingLakeQuery(query);
+                if (isPro) {
+                  // Pro users: prompt to add lake (will redirect to LakeBuilder)
+                  setShowUpgradeModal(true);
+                } else {
+                  // Free users: show upgrade modal
+                  setShowUpgradeModal(true);
+                }
+              }}
+            />
+          ) : (
+            <input
+              type="text"
+              value={lakeName}
+              onChange={(e) => setLakeName(e.target.value)}
+              className="catch-form-input"
+              placeholder={
+                isAutoResolving
+                  ? "Checking location..."
+                  : "Name this location (e.g., My Secret Pond)"
+              }
+            />
+          )}
+        </div>
+
+        {/* LURE/SPECIES/COLOR FIELDS */}
         <div className="catch-form-field">
           <label className="catch-form-label">Lure *</label>
           <select
@@ -2396,6 +2601,167 @@ export function CatchFormView({
                 : "Save Catch"}
         </button>
       </div>
+
+      {/* UPGRADE MODAL - Lake Not Found */}
+      {showUpgradeModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowUpgradeModal(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(8px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 320,
+              padding: 32,
+              textAlign: "center",
+              borderRadius: 24,
+              background: "rgba(15, 15, 20, 0.95)",
+              backdropFilter: "blur(24px)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
+            }}
+          >
+            <div
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: "50%",
+                background: "rgba(74, 144, 226, 0.15)",
+                color: "#4A90E2",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 20px",
+              }}
+            >
+              <LocationIcon size={30} />
+            </div>
+            <h3 style={{ margin: "0 0 10px", fontSize: "1.25rem", fontWeight: 700, color: "#fff" }}>
+              {isPro ? "Add New Lake?" : "Pro Feature"}
+            </h3>
+            <p style={{ margin: "0 0 24px", opacity: 0.7, lineHeight: 1.5, fontSize: "0.95rem", color: "#fff" }}>
+              {isPro
+                ? `"${pendingLakeQuery}" isn't in our database. Add it from the map?`
+                : "Upgrade to Pro to log catches on any water body"}
+            </p>
+            {isPro ? (
+              <>
+                <button
+                  onClick={() => {
+                    // Save form draft before navigating
+                    saveCatchFormDraft({
+                      lakeName,
+                      lure,
+                      color,
+                      species,
+                      weight,
+                      length,
+                      notes,
+                      photoUrl,
+                      photoPreview,
+                      caughtAt,
+                      source,
+                      temp,
+                      windSpeed,
+                      pressure,
+                      sky,
+                      manualDate,
+                      manualTime,
+                      pendingLakeQuery,
+                    });
+                    setShowUpgradeModal(false);
+                    // Navigate to LakeBuilder with catch_upload mode
+                    navigate("/lake-builder", {
+                      state: {
+                        mode: "catch_upload",
+                        suggestedName: pendingLakeQuery,
+                        returnTo: "/insights",
+                        lat: 0, // Will be set by user pin drop
+                        lng: 0,
+                      },
+                    });
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: 14,
+                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    border: "none",
+                    borderRadius: 16,
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 20px rgba(74, 144, 226, 0.3)",
+                  }}
+                >
+                  Add Lake from Map
+                </button>
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "rgba(255,255,255,0.4)",
+                    marginTop: 16,
+                    fontSize: "0.9rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    window.location.href = "/upgrade";
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: 14,
+                    background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
+                    border: "none",
+                    borderRadius: 16,
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    cursor: "pointer",
+                    boxShadow: "0 8px 20px rgba(74, 144, 226, 0.3)",
+                  }}
+                >
+                  Upgrade to Unlock
+                </button>
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "rgba(255,255,255,0.4)",
+                    marginTop: 16,
+                    fontSize: "0.9rem",
+                    cursor: "pointer",
+                  }}
+                >
+                  Not Now
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <style>{` 
         .catch-form-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(18,18,24,0.92); }
         .catch-cancel-btn { border: none; background: transparent; color: rgba(255,255,255,0.65); font-weight: 600; font-size: 0.85rem; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
