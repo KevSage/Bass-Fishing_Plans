@@ -5,6 +5,200 @@ import { LURES_ARRAY, FILTER_OPTIONS, type LureData } from "@/data/lures";
 import { ArrowLeftIcon, XIcon } from "@/components/UnifiedIcons";
 
 // =============================================================================
+// GEAR SPECS (from plan_enrichment.py)
+// =============================================================================
+
+const GEAR_SPECS: Record<string, { rod: string; reel: string; line: string; note: string }> = {
+  "shallow crankbait": {
+    rod: '7\'0" Medium, Moderate-Fast (Glass/Composite)',
+    reel: "6.3:1 - 7.1:1 Baitcaster",
+    line: "12-15lb Fluorocarbon",
+    note: "Moderate action prevents tearing hooks out during deflection."
+  },
+  "mid crankbait": {
+    rod: '7\'2" Medium-Heavy, Moderate (Glass/Composite)',
+    reel: "6.3:1 Baitcaster",
+    line: "10-12lb Fluorocarbon",
+    note: "Lighter line helps the bait dive deeper."
+  },
+  "deep crankbait": {
+    rod: '7\'6" - 7\'10" Medium-Heavy, Moderate',
+    reel: "5.4:1 - 6.3:1 Baitcaster",
+    line: "10-12lb Fluorocarbon",
+    note: "Long rod required for casting distance to achieve max depth."
+  },
+  "lipless crankbait": {
+    rod: '7\'0" - 7\'3" Medium-Heavy, Moderate-Fast',
+    reel: "7.1:1 - 7.5:1 Baitcaster",
+    line: "15-17lb Fluorocarbon or 30lb Braid",
+    note: "Need enough tip to rip it free from grass, but give for trebles."
+  },
+  "flat-sided crankbait": {
+    rod: '7\'0" Medium, Moderate',
+    reel: "6.3:1 Baitcaster",
+    line: "10-12lb Fluorocarbon",
+    note: "Light line essential for cold water action."
+  },
+  "jerkbait": {
+    rod: '6\'10" - 7\'0" Medium, Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "10-12lb Fluorocarbon",
+    note: "Shorter rod prevents hitting water during downward snaps."
+  },
+  "chatterbait": {
+    rod: '7\'2" - 7\'4" Medium-Heavy, Moderate-Fast (Glass Hybrid)',
+    reel: "6.3:1 - 7.1:1 Baitcaster",
+    line: "15-17lb Fluorocarbon",
+    note: "Delay the hookset; let the rod load up before swinging."
+  },
+  "spinnerbait": {
+    rod: '7\'0" - 7\'3" Medium-Heavy, Fast',
+    reel: "7.1:1 Baitcaster",
+    line: "15-17lb Fluorocarbon",
+    note: "Fast action needed to drive single hook home at distance."
+  },
+  "swim jig": {
+    rod: '7\'2" Medium-Heavy, Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "30-50lb Braid or 17-20lb Fluorocarbon",
+    note: "Braid helps cut through vegetation stems on the hookset."
+  },
+  "underspin": {
+    rod: '7\'0" Medium, Fast',
+    reel: "7.1:1 Baitcaster or 2500 Spinning",
+    line: "12lb Fluorocarbon",
+    note: "Lighter tip ensures you don't pull the bait away on light bites."
+  },
+  "paddle tail swimbait": {
+    rod: '7\'3" Medium-Heavy, Fast',
+    reel: "6.3:1 - 7.1:1 Baitcaster",
+    line: "15lb Fluorocarbon",
+    note: "Steady retrieve; rod should have backbone for the hookset."
+  },
+  "blade bait": {
+    rod: '7\'0" Medium, Fast (Spinning or Casting)',
+    reel: "High Speed",
+    line: "12-15lb Fluorocarbon or 20lb Braid",
+    note: "Short snaps; heavier line prevents fouling on the fall."
+  },
+  "jighead minnow": {
+    rod: '6\'10" - 7\'2" Medium-Light, Extra Fast (Spinning)',
+    reel: "2500-3000 Spinning",
+    line: "8-10lb Braid to 6-8lb Fluoro Leader",
+    note: "Visual fishing; sensitivity is paramount."
+  },
+  "football jig": {
+    rod: '7\'3" - 7\'6" Heavy, Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "15-20lb Fluorocarbon",
+    note: "Long rod moves more line on the sweep set in deep water."
+  },
+  "casting jig": {
+    rod: '7\'2" - 7\'4" Heavy, Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "17-20lb Fluorocarbon",
+    note: "Heavy power required to extract fish from wood/docks."
+  },
+  "texas rig": {
+    rod: '7\'0" - 7\'3" Medium-Heavy, Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "15-17lb Fluorocarbon",
+    note: "The 'do-everything' setup."
+  },
+  "carolina rig": {
+    rod: '7\'6" Heavy, Moderate-Fast',
+    reel: "7.1:1 Baitcaster",
+    line: "Main: 20lb / Leader: 12-15lb Fluorocarbon",
+    note: "Long rod sweeps line to set hook past the heavy weight."
+  },
+  "shaky head": {
+    rod: '7\'0" Medium, Fast (Spinning)',
+    reel: "2500-3000 Spinning",
+    line: "10-15lb Braid to 8-10lb Fluoro Leader",
+    note: "Spinning gear allows better skip-casting into docks."
+  },
+  "ned rig": {
+    rod: '6\'10" - 7\'0" Medium-Light, Extra Fast (Spinning)',
+    reel: "2500 Spinning",
+    line: "8-10lb Braid to 6lb Fluoro Leader",
+    note: "Extra fast tip helps sense the 'mushy' pressure bite."
+  },
+  "dropshot": {
+    rod: '6\'10" - 7\'2" Medium-Light, Extra Fast (Spinning)',
+    reel: "2500 Spinning",
+    line: "10lb Braid to 6-8lb Fluoro Leader",
+    note: "Softer tip prevents fish from feeling resistance on the inhale."
+  },
+  "neko rig": {
+    rod: '7\'0" - 7\'2" Medium, Fast (Spinning)',
+    reel: "2500-3000 Spinning",
+    line: "10-15lb Braid to 8-10lb Fluoro Leader",
+    note: "Need slightly more backbone than a dropshot rod for the hookset."
+  },
+  "wacky rig": {
+    rod: '6\'10" - 7\'0" Medium, Fast (Spinning)',
+    reel: "2500 Spinning",
+    line: "10-15lb Braid to 10lb Fluoro Leader",
+    note: "Short rod improves skipping accuracy under docks."
+  },
+  "soft jerkbait": {
+    rod: '7\'0" Medium, Fast (Spinning or Casting)',
+    reel: "High Speed",
+    line: "10-15lb Braid (Spin) or 12lb Fluoro (Cast)",
+    note: "Work it quickly; high speed reel picks up slack after twitches."
+  },
+  "hollow body frog": {
+    rod: '7\'3" - 7\'6" Heavy, Extra Fast',
+    reel: "8.1:1 Baitcaster",
+    line: "50-65lb Braid (Direct)",
+    note: "Zero stretch essential for driving hooks and extracting from mats."
+  },
+  "popping frog": {
+    rod: '7\'0" - 7\'3" Heavy, Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "40-50lb Braid",
+    note: "Slightly shorter rod helps with 'walking' cadence."
+  },
+  "walking bait": {
+    rod: '7\'0" - 7\'2" Medium-Heavy, Moderate-Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "30lb Braid (with mono leader) or 15lb Monofilament",
+    note: "Mono/Braid floats; Fluoro sinks and kills the action."
+  },
+  "whopper plopper": {
+    rod: '7\'3" - 7\'6" Medium-Heavy, Moderate-Fast',
+    reel: "7.1:1 Baitcaster",
+    line: "40-50lb Braid or 17lb Monofilament",
+    note: "Parabolic flex prevents tearing hooks out on the strike."
+  },
+  "buzzbait": {
+    rod: '7\'0" - 7\'3" Medium-Heavy, Fast',
+    reel: "7.1:1 - 8.1:1 Baitcaster",
+    line: "40-50lb Braid or 17lb Monofilament",
+    note: "High speed reel essential to get bait on plane instantly."
+  },
+  "popper": {
+    rod: '6\'8" - 7\'0" Medium, Fast',
+    reel: "7.1:1 Baitcaster",
+    line: "12-15lb Monofilament",
+    note: "Short rod improves target accuracy; mono keeps nose up."
+  },
+  "wake bait": {
+    rod: '7\'0" Medium-Heavy, Moderate-Fast',
+    reel: "6.3:1 Baitcaster",
+    line: "15-17lb Monofilament or Braid",
+    note: "Slower reel prevents overworking the wake action."
+  }
+};
+
+// Helper to get gear for a lure ID
+function getGearForLure(lureId: string) {
+  // Convert underscore ID to space-separated key (e.g., "shallow_crankbait" -> "shallow crankbait")
+  const key = lureId.replace(/_/g, " ").replace("sided", "-sided"); // Handle "flat_sided" -> "flat-sided"
+  return GEAR_SPECS[key] || null;
+}
+
+// =============================================================================
 // FILTER STATE TYPE
 // =============================================================================
 
@@ -81,6 +275,32 @@ function LureDetailModal({
         </div>
 
         <p className="lure-modal-description">{lure.description}</p>
+
+        {/* Gear Recommendations */}
+        {(() => {
+          const gear = getGearForLure(lure.id);
+          if (!gear) return null;
+          return (
+            <div className="lure-modal-gear">
+              <div className="lure-modal-gear-header">Gear Recommendations</div>
+              <div className="lure-modal-gear-grid">
+                <div className="gear-item">
+                  <span className="gear-label">Rod</span>
+                  <span className="gear-value">{gear.rod}</span>
+                </div>
+                <div className="gear-item">
+                  <span className="gear-label">Reel</span>
+                  <span className="gear-value">{gear.reel}</span>
+                </div>
+                <div className="gear-item">
+                  <span className="gear-label">Line</span>
+                  <span className="gear-value">{gear.line}</span>
+                </div>
+              </div>
+              <div className="gear-note">{gear.note}</div>
+            </div>
+          );
+        })()}
 
         <div className="lure-modal-tags">
           <div className="lure-modal-tag-group">
@@ -710,6 +930,60 @@ export function LureLibrary() {
           line-height: 1.6;
           color: rgba(255, 255, 255, 0.75);
           margin: 0;
+        }
+
+        /* Gear Recommendations */
+        .lure-modal-gear {
+          margin: 0 20px 16px;
+          padding: 16px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 12px;
+        }
+
+        .lure-modal-gear-header {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.4);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 12px;
+        }
+
+        .lure-modal-gear-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .gear-item {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .gear-label {
+          font-size: 0.7rem;
+          font-weight: 600;
+          color: #4A90E2;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+        }
+
+        .gear-value {
+          font-size: 0.9rem;
+          color: rgba(255, 255, 255, 0.9);
+          line-height: 1.3;
+        }
+
+        .gear-note {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.5);
+          font-style: italic;
+          line-height: 1.4;
         }
 
         .lure-modal-tags {
