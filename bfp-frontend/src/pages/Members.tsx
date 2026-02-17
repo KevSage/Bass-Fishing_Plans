@@ -650,6 +650,7 @@ export function Members() {
   const navigate = useNavigate();
   const location = useLocation();
   const [dataVersion, setDataVersion] = useState(0);
+  const [mapKey, setMapKey] = useState(0); // For forcing map re-init after navigation
   const [searchParams] = useSearchParams();
 
   // --- WEATHER STATE & CACHING ---
@@ -1550,7 +1551,22 @@ export function Members() {
       initialized.current = false;
       m.remove();
     };
-  }, [isActive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, mapKey]);
+
+  // --- MAP RECOVERY: Re-initialize if map was destroyed but container exists ---
+  useEffect(() => {
+    // Check if map needs recovery after navigation
+    if (!mapRef.current && mapContainer.current && !initialized.current && MAPBOX_TOKEN) {
+      // Force re-run of map init by incrementing key
+      const timer = setTimeout(() => {
+        if (!mapRef.current && mapContainer.current && !initialized.current) {
+          setMapKey(k => k + 1);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [mapKey]);
 
   // --- AUTO-DETECTION: Detect lake based on map center and zoom ---
   useEffect(() => {
