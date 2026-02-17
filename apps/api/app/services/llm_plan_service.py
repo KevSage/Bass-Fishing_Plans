@@ -1891,15 +1891,19 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
     # AUTO-CORRECTION: Fix LLM field confusion before validation
     # ============================================================================
 
-    # If LLM set soft_plastic for a jig/bladed bait, move it to trailer field
+    # If LLM set soft_plastic for a jig/bladed bait, handle it
     if base_lure in TRAILER_BUCKET_BY_LURE:
-        if pattern.get("soft_plastic") and not pattern.get("trailer"):
-            # LLM set wrong field - auto-correct
-            pattern["trailer"] = pattern["soft_plastic"]
-            pattern["trailer_why"] = pattern.get("soft_plastic_why", "")
+        if pattern.get("soft_plastic"):
+            if not pattern.get("trailer"):
+                # LLM set wrong field - move to trailer
+                pattern["trailer"] = pattern["soft_plastic"]
+                pattern["trailer_why"] = pattern.get("soft_plastic_why", "")
+                print(f"AUTO-CORRECTED {pattern_name}: Moved soft_plastic='{pattern['trailer']}' to trailer field for {base_lure}")
+            else:
+                # LLM set BOTH fields - just clear soft_plastic since trailer is correct field
+                print(f"AUTO-CORRECTED {pattern_name}: Cleared invalid soft_plastic='{pattern['soft_plastic']}' (trailer already set) for {base_lure}")
             pattern["soft_plastic"] = None
             pattern["soft_plastic_why"] = None
-            print(f"AUTO-CORRECTED {pattern_name}: Moved soft_plastic='{pattern['trailer']}' to trailer field for {base_lure}")
     
     # If LLM set trailer for terminal tackle, move it to soft_plastic field  
     if base_lure in TERMINAL_PLASTIC_MAP:
