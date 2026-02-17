@@ -1357,7 +1357,7 @@ async def call_openai_plan(
     current_temperature = 0.6
     
     if recent_primary_lures or recent_secondary_lures:
-        current_temperature = 0.75
+        current_temperature = 0.65  # Lower temp to reduce hallucinations while still encouraging variety
         
         if not regen_context:
             regen_context = { "last_lake_name": None, "minutes_since_last_gen": None, "last_combination": None }
@@ -1876,6 +1876,24 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
     # ============================================================================
     # AUTO-CORRECTION: Fix LLM field confusion before validation
     # ============================================================================
+
+    # Auto-correct presentation to match LURE_TO_PRESENTATION mapping
+    # This is the most common LLM hallucination - it invents presentations
+    if base_lure and "presentation" in pattern:
+        expected_pres = LURE_TO_PRESENTATION.get(base_lure)
+        current_pres = pattern.get("presentation")
+        if expected_pres and current_pres:
+            # Handle both single presentation and list of allowed presentations
+            if isinstance(expected_pres, list):
+                if current_pres not in expected_pres:
+                    # Use first allowed presentation as default
+                    print(f"AUTO-CORRECTED {pattern_name}: presentation '{current_pres}' -> '{expected_pres[0]}' for {base_lure}")
+                    pattern["presentation"] = expected_pres[0]
+            else:
+                if current_pres != expected_pres:
+                    print(f"AUTO-CORRECTED {pattern_name}: presentation '{current_pres}' -> '{expected_pres}' for {base_lure}")
+                    pattern["presentation"] = expected_pres
+
     # If LLM set soft_plastic for a jig/bladed bait, move it to trailer field
     if base_lure in TRAILER_BUCKET_BY_LURE:
         if pattern.get("soft_plastic") and not pattern.get("trailer"):
