@@ -1730,6 +1730,13 @@ export function Members() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       const imageData = ev.target?.result as string;
+
+      // Set selectedCoords and waterName so activeLake is populated for the catch form
+      if (latitude && longitude) {
+        setSelectedCoords({ lat: latitude, lng: longitude });
+        setWaterName(lakeName);
+      }
+
       const newDraft = {
         caughtAt: new Date().toISOString(),
         lakeName: lakeName,
