@@ -173,7 +173,14 @@ export async function createCatchMobile(
     throw new Error(`Failed to create catch: ${response.status}`);
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // Server returns 200 OK even on errors, so check success flag
+  if (!result.success) {
+    throw new Error(result.error || "Server error creating catch");
+  }
+
+  return result;
 }
 
 export async function listCatches(

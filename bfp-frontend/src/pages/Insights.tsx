@@ -11,6 +11,7 @@ import {
   XIcon,
   MapPinIcon,
   ClockIcon,
+  PlusIcon,
 } from "@/components/UnifiedIcons";
 
 import { useMemberStatus } from "@/hooks/useMemberStatus";
@@ -620,6 +621,30 @@ export function Insights() {
     deleteCatch: hookDeleteCatch,
   } = catchLog;
 
+  // Debug: Log localStorage catch data on mount
+  useEffect(() => {
+    const apiCache = localStorage.getItem("catchlog_api_cache");
+    const offlineCache = localStorage.getItem("offline_catches");
+    const apiEntries = apiCache ? JSON.parse(apiCache) : [];
+    const offlineEntries = offlineCache ? JSON.parse(offlineCache) : [];
+    console.log("[Insights DEBUG] localStorage catchlog_api_cache:", apiEntries.length, "entries");
+    console.log("[Insights DEBUG] localStorage offline_catches:", offlineEntries.length, "entries");
+    console.log("[Insights DEBUG] useCatchLog entries:", entries.length, "entries");
+    if (offlineEntries.length > 0) {
+      console.log("[Insights DEBUG] Offline catch IDs:", offlineEntries.map((e: any) => e.id));
+    }
+  }, [entries.length]);
+
+  // Debug: Clear catch caches
+  const handleClearCache = () => {
+    if (confirm("Clear all catch caches? This will remove local data and reload from server.")) {
+      localStorage.removeItem("catchlog_api_cache");
+      localStorage.removeItem("offline_catches");
+      // @ts-ignore - clear the module-level cache
+      window.location.reload();
+    }
+  };
+
   // Handle return from LakeBuilder with catch data
   const routeLocation = useLocation();
   useEffect(() => {
@@ -634,7 +659,19 @@ export function Insights() {
   }, [routeLocation.state]);
 
   const stats = useMemo(() => calculateStats(entries), [entries]);
-  const animatedTotal = useCountUp(stats.totalCount, 2500, 600);
+  const animatedTotal = useCountUp(stats.totalCount, 2000, 400);
+
+  // Additional summary stats with animations
+  const lakeCount = stats.lakes.length;
+  const lureCount = stats.topLures.length;
+  const tripCount = useMemo(() => {
+    const uniqueDates = new Set(entries.map(e => e.caughtAt.split('T')[0]));
+    return uniqueDates.size;
+  }, [entries]);
+
+  const animatedLakes = useCountUp(lakeCount, 1800, 500);
+  const animatedTrips = useCountUp(tripCount, 1800, 600);
+  const animatedLures = useCountUp(lureCount, 1800, 700);
 
   // --- ACTIONS ---
 
@@ -760,6 +797,25 @@ export function Insights() {
         message={upgradeMessage}
       />
 
+      {/* DEBUG: Clear Cache Button - remove after debugging */}
+      <button
+        onClick={handleClearCache}
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          padding: "4px 8px",
+          fontSize: "10px",
+          background: "rgba(255,0,0,0.2)",
+          border: "1px solid rgba(255,0,0,0.3)",
+          borderRadius: 4,
+          color: "#ff6b6b",
+          zIndex: 100,
+        }}
+      >
+        Clear Cache
+      </button>
+
       {/* PILLS */}
       <div className="pills-scroll">
         {[
@@ -789,19 +845,19 @@ export function Insights() {
       <div
         className={`stats-hero ${activeView === "pbs" ? "hero-no-border" : ""}`}
       >
-        {/* TOTAL */}
+        {/* TOTAL - Centered stats */}
         {activeView === "total" && (
-          <div className="hero-center">
-            <div className="hero-big-number">{animatedTotal}</div>
-            <div className="hero-label">Total Catches Logged</div>
-            <div className="hero-upload-section">
-              <p className="hero-upload-text">
-                Upload photos from your gallery to log past catches
-              </p>
-              <button className="hero-upload-btn" onClick={handleUploadClick}>
-                <UploadImageIcon size={20} />
-                <span>Upload Photos</span>
-              </button>
+          <div className="hero-total-centered">
+            <div className="hero-total-primary">
+              <div className="hero-total-number">{animatedTotal}</div>
+              <div className="hero-total-label">Catches</div>
+            </div>
+            <div className="hero-total-secondary">
+              <span>{animatedLakes} Lakes</span>
+              <span className="stat-divider">•</span>
+              <span>{animatedTrips} Trips</span>
+              <span className="stat-divider">•</span>
+              <span>{animatedLures} Lures</span>
             </div>
           </div>
         )}
@@ -1088,9 +1144,14 @@ export function Insights() {
         </div>
       )}
 
+      {/* FLOATING ACTION BUTTON */}
+      <button className="insights-fab" onClick={handleUploadClick}>
+        <PlusIcon size={24} />
+      </button>
+
       {/* STYLES */}
       <style>{`
-        .stats-page { background: #0a0a0a; min-height: 100vh; color: white; padding-bottom: 40px; }
+        .stats-page { background: #0a0a0a; min-height: 100vh; color: white; padding-bottom: 100px; }
         .insights-container { padding: 20px; max-width: 600px; margin: 0 auto; }
         .stats-header { padding: 12px; display: flex; align-items: center; gap: 16px; }
         .stats-header h1 { margin: 0; font-size: 1rem; font-weight: 600; }
@@ -1101,11 +1162,25 @@ export function Insights() {
         .pill { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); padding: 8px 16px; border-radius: 20px; white-space: nowrap; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
         .pill.active { background: #fff; color: #000; border-color: #fff; font-weight: 700; }
 
-        .stats-hero { min-height: 200px; margin: 0 20px 30px; background: rgba(20,20,25,0.5); border-radius: 24px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; position: relative; }
+        .stats-hero { margin: 0 20px 20px; background: rgba(20,20,25,0.5); border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; position: relative; }
+        .stats-hero:has(.hero-total-compact) { min-height: auto; }
         .hero-no-border { border: none; background: transparent; margin: 0 20px 10px; }
 
         .hero-center { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 40px 36px; text-align: center; }
         .hero-big-number { font-size: 5rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
+
+        /* Centered Total Stats */
+        .hero-total-centered { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .hero-total-primary { display: flex; align-items: baseline; gap: 12px; justify-content: center; }
+        .hero-total-number { font-size: 4rem; font-weight: 800; background: linear-gradient(135deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
+        .hero-total-label { font-size: 1.4rem; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.05em; }
+        .hero-total-secondary { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.1rem; color: rgba(255,255,255,0.5); font-weight: 500; margin-top: 8px; }
+        .hero-total-secondary .stat-divider { opacity: 0.4; }
+
+        /* Floating Action Button */
+        .insights-fab { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); right: 24px; width: 56px; height: 56px; border-radius: 16px; border: none; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4); transition: all 0.2s; z-index: 100; }
+        .insights-fab:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(74, 144, 226, 0.5); }
+        .insights-fab:active { transform: scale(0.95); }
         .hero-label { font-size: 0.9rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 12px; }
 
         .hero-upload-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
@@ -1183,7 +1258,7 @@ export function Insights() {
         .wall-empty { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); grid-column: span 3; display: flex; flex-direction: column; align-items: center; gap: 12px; }
         .wall-empty-clear { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 
-        .stats-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 12px; padding-top: calc(env(safe-area-inset-top, 0px) + 64px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
+        .stats-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: flex-start; justify-content: center; padding: 12px; padding-top: calc(env(safe-area-inset-top, 0px) + 64px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); }
         .stats-modal-content { width: 100%; max-width: 360px; max-height: 90vh; background: #0a0a0a; border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; display: flex; flex-direction: column; }
       `}</style>
     </div>

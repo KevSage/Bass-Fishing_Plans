@@ -24,6 +24,7 @@ import {
   CloudIcon,
   SunIcon,
   DropletsIcon,
+  MoreVerticalIcon,
 } from "@/components/UnifiedIcons";
 
 // API and EXIF imports
@@ -570,7 +571,10 @@ export function useCatchLog(
   const OFFLINE_KEY = "offline_catches";
 
   const [state, setState] = useState<CatchLogState>(() => {
-    if (globalEntriesCache) {
+    // Load from globalEntriesCache if available (preserves data across component remounts)
+    // Otherwise load from localStorage
+    if (globalEntriesCache && globalEntriesCache.length > 0) {
+      console.log('[CatchLog] INIT - source: globalEntriesCache, entries:', globalEntriesCache.length);
       return {
         isOpen: false,
         view: "list",
@@ -580,28 +584,22 @@ export function useCatchLog(
         visibleCount: ENTRIES_PER_PAGE,
       };
     }
+
+    // No cache - load from localStorage
     const cached = localStorage.getItem(API_CACHE_KEY);
     const offline = localStorage.getItem(OFFLINE_KEY);
     const cachedEntries: CatchEntry[] = cached ? JSON.parse(cached) : [];
     const offlineEntries: CatchEntry[] = offline ? JSON.parse(offline) : [];
 
-    // Deduplicate: filter out offline entries that exist in cached (synced) entries
-    const trulyOffline = offlineEntries.filter((offlineEntry) => {
-      const matchesCached = cachedEntries.some((cachedEntry) =>
-        cachedEntry.caughtAt === offlineEntry.caughtAt &&
-        cachedEntry.lakeName === offlineEntry.lakeName &&
-        cachedEntry.weight === offlineEntry.weight
-      );
-      return !matchesCached;
-    });
+    // Merge offline + cached, keeping offline entries that aren't already in cache
+    const offlineIds = new Set(offlineEntries.map(e => e.id));
+    const uniqueCached = cachedEntries.filter(e => !offlineIds.has(e.id));
+    const initialEntries = [...offlineEntries, ...uniqueCached];
 
-    // Clean up localStorage if we found synced entries
-    if (trulyOffline.length !== offlineEntries.length) {
-      localStorage.setItem(OFFLINE_KEY, JSON.stringify(trulyOffline));
-    }
+    console.log('[CatchLog] INIT - source: localStorage, cached:', cachedEntries.length, 'offline:', offlineEntries.length, 'merged:', initialEntries.length);
 
-    const initialEntries = [...trulyOffline, ...cachedEntries];
     if (initialEntries.length > 0) globalEntriesCache = initialEntries;
+
     return {
       isOpen: false,
       view: "list",
@@ -682,9 +680,26 @@ export function useCatchLog(
         localStorage.setItem(OFFLINE_KEY, JSON.stringify(trulyOffline));
       }
 
-      globalEntriesCache = [...trulyOffline, ...apiEntries];
+      // Also preserve any local-only entries from current state that aren't in API
+      // (these might be entries that were created but not yet synced)
+      const apiIds = new Set(apiEntries.map(e => e.id));
+      const offlineIds = new Set(trulyOffline.map(e => e.id));
+      const localOnlyEntries = state.entries.filter(e =>
+        !apiIds.has(e.id) && !offlineIds.has(e.id) && e.id.startsWith('offline-')
+      );
+
+      // If we found local-only entries, add them to offline storage
+      if (localOnlyEntries.length > 0) {
+        console.log('[CatchLog] Found', localOnlyEntries.length, 'local-only entries, preserving them');
+        const updatedOffline = [...localOnlyEntries, ...trulyOffline];
+        localStorage.setItem(OFFLINE_KEY, JSON.stringify(updatedOffline));
+      }
+
+      const mergedEntries = [...localOnlyEntries, ...trulyOffline, ...apiEntries];
+      console.log('[CatchLog] FETCH COMPLETE - apiEntries:', apiEntries.length, 'trulyOffline:', trulyOffline.length, 'localOnly:', localOnlyEntries.length, 'merged:', mergedEntries.length);
+      globalEntriesCache = mergedEntries;
       localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
-      setState((s) => ({ ...s, entries: [...trulyOffline, ...apiEntries] }));
+      setState((s) => ({ ...s, entries: mergedEntries }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -693,35 +708,63 @@ export function useCatchLog(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getOfflineCatches, state.entries.length, nativeAuth.userEmail, nativeAuth.userId]);
 
+  // Track which auth credentials we've fetched for
+  const lastFetchedAuthRef = useRef<string | null>(null);
+
   useEffect(() => {
-    // On native, also check that we have the email/userId before fetching
-    if (isNativePlatform()) {
-      if (isSignedIn && nativeAuth.userEmail && nativeAuth.userId) {
-        fetchCatches();
-      }
-    } else {
-      if (isSignedIn) fetchCatches();
-    }
+    const isNative = isNativePlatform();
+    const authKey = isNative
+      ? `${nativeAuth.userEmail}:${nativeAuth.userId}`
+      : isSignedIn ? "web-signed-in" : null;
+
+    // Skip if no auth available
+    if (!authKey || authKey.includes("undefined")) return;
+
+    // Skip if we already fetched for this auth
+    if (lastFetchedAuthRef.current === authKey) return;
+
+    // Fetch and mark as fetched
+    lastFetchedAuthRef.current = authKey;
+    fetchCatches();
   }, [fetchCatches, isSignedIn, nativeAuth.userEmail, nativeAuth.userId]);
 
   const syncOfflineCatches = useCallback(async () => {
     const offline = getOfflineCatches();
     if (offline.length === 0) return;
     setIsLoading(true);
-    const token = await getToken();
-    if (!token) {
+
+    const isNative = isNativePlatform();
+    const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
+
+    // On native, use mobile endpoint; on web, use JWT
+    if (isNative && !hasNativeAuth) {
+      console.log('[CatchLog] syncOfflineCatches: No native auth, skipping');
       setIsLoading(false);
       return;
     }
+
+    const token = isNative ? null : await getToken();
+    if (!isNative && !token) {
+      console.log('[CatchLog] syncOfflineCatches: No web token, skipping');
+      setIsLoading(false);
+      return;
+    }
+
     const remaining: CatchEntry[] = [];
     let syncedCount = 0;
     for (const entry of offline) {
       try {
         const input = entryToApiInput(entry, activeLake);
         input.source = entry.source || "manual";
-        await createCatch(input, token);
+
+        if (isNative && hasNativeAuth) {
+          await createCatchMobile(input, nativeAuth.userEmail!, nativeAuth.userId!);
+        } else {
+          await createCatch(input, token!);
+        }
         syncedCount++;
       } catch (e) {
+        console.error('[CatchLog] Failed to sync catch:', e);
         remaining.push(entry);
       }
     }
@@ -730,7 +773,7 @@ export function useCatchLog(
     if (syncedCount > 0) alert(`Synced ${syncedCount} catches.`);
     setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeLake, fetchCatches, getOfflineCatches]);
+  }, [activeLake, fetchCatches, getOfflineCatches, nativeAuth.userEmail, nativeAuth.userId]);
 
   const lakeCatches = useMemo(() => {
     if (!activeLake) return [];
@@ -849,7 +892,11 @@ export function useCatchLog(
           isOpen: options?.disableListView ? false : s.isOpen,
         }));
         return savedEntry;
-      } catch (err) {
+      } catch (err: any) {
+        // LOG THE ERROR so we know why uploads fail
+        console.error('[CatchLog] Upload failed:', err?.message || err);
+        console.error('[CatchLog] Saving to offline storage');
+
         const offlineEntry = { ...newEntry, isOffline: true };
         try {
           const currentOffline = getOfflineCatches();
@@ -1184,6 +1231,15 @@ function CatchListView(props: CatchListViewProps) {
       {activeLake && (
         <div className="catch-lake-context">{activeLake.name}</div>
       )}
+      {hasOffline && onSync && (
+        <div className="catch-offline-banner">
+          <CloudOffIcon size={14} />
+          <span>You have offline catches waiting to sync</span>
+          <button className="catch-sync-btn" onClick={onSync} style={{ marginLeft: "auto" }}>
+            <RefreshIcon size={14} /> Sync Now
+          </button>
+        </div>
+      )}
       <div className="catch-modal-body">
         {!activeLake ? (
           <div className="catch-empty-state">
@@ -1324,10 +1380,8 @@ export function CatchDetailView({
         scale: 3, // 3x scale for high quality output
         useCORS: true,
         allowTaint: true,
-        onclone: (clonedDoc, clonedElement) => {
-          // Hide the orb in the shared version - it's only for in-app editing
-          const orb = clonedElement.querySelector('.catch-orb-wrapper') as HTMLElement;
-          if (orb) orb.style.display = 'none';
+        onclone: () => {
+          // No longer need to hide orb - it's been removed from the hero
         },
       });
 
@@ -1368,11 +1422,35 @@ export function CatchDetailView({
 
   return (
     <div className="catch-detail-container">
-      {/* Action bar - outside shareable area (only back button, edit is via orb) */}
+      {/* Action bar - outside shareable area */}
       <div className="catch-action-bar">
         <button onClick={onBack} className="catch-icon-btn glass">
           {readOnly ? <CloseIcon size={20} /> : <BackIcon size={20} />}
         </button>
+        {!readOnly && (onEdit || onDelete) && (
+          <div className="catch-menu-wrapper">
+            <button
+              className="catch-icon-btn glass"
+              onClick={() => setShowMenu(!showMenu)}
+            >
+              <MoreVerticalIcon size={20} />
+            </button>
+            {showMenu && (
+              <div className="catch-menu-dropdown">
+                {onEdit && (
+                  <button onClick={() => { onEdit(); setShowMenu(false); }} className="catch-menu-item">
+                    <EditIcon size={16} /> Edit
+                  </button>
+                )}
+                {onDelete && (
+                  <button onClick={() => { onDelete(); setShowMenu(false); }} className="catch-menu-item danger">
+                    <TrashIcon size={16} /> Delete
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* SHAREABLE CARD - This gets captured for sharing */}
@@ -1390,41 +1468,6 @@ export function CatchDetailView({
             </div>
           )}
           <div className="catch-hero-gradient" />
-          {/* Orb - radar ping style watermark that doubles as edit menu */}
-          <div className="catch-orb-wrapper">
-            <button
-              className="catch-orb-btn"
-              onClick={() => !readOnly && (onEdit || onDelete) && setShowMenu(!showMenu)}
-              style={{ cursor: (!readOnly && (onEdit || onDelete)) ? 'pointer' : 'default' }}
-            >
-              {/* Radar ping rings - staggered animation */}
-              <div className="catch-orb-ping ping-1" />
-              <div className="catch-orb-ping ping-2" />
-              <div className="catch-orb-ping ping-3" />
-              {/* Core orb */}
-              <div className="catch-orb-core" />
-            </button>
-            {showMenu && !readOnly && (
-              <div className="catch-orb-dropdown">
-                {onEdit && (
-                  <button onClick={() => { onEdit(); setShowMenu(false); }} className="orb-menu-item">
-                    <EditIcon size={14} /> Edit
-                  </button>
-                )}
-                {onDelete && (
-                  <button onClick={() => { onDelete(); setShowMenu(false); }} className="orb-menu-item danger">
-                    <TrashIcon size={14} /> Delete
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          {/* PB Badge on image */}
-          {isPB && (
-            <div className="catch-pb-overlay">
-              <TrophyIcon size={12} /> PB
-            </div>
-          )}
         </div>
 
         {/* Catch Info Container - Compact */}
@@ -1437,6 +1480,11 @@ export function CatchDetailView({
             </div>
             {entry.weight && (
               <div className="catch-weight-block">
+                {isPB && (
+                  <div className="catch-pb-badge">
+                    <TrophyIcon size={12} /> PB
+                  </div>
+                )}
                 <span className="catch-weight-value">{entry.weight}</span>
                 <span className="catch-weight-unit">LBS</span>
               </div>
@@ -1532,18 +1580,26 @@ export function CatchDetailView({
 
       <style>{`
         /* BRANDED CATCH CARD STYLES */
-        .catch-detail-container { display: flex; flex-direction: column; height: 100%; background: #0a0a0a; overflow-y: auto; }
+        .catch-detail-container { position: relative; display: flex; flex-direction: column; height: 100%; background: #0a0a0a; overflow-y: auto; }
 
-        /* Action Bar - Only back button (edit menu is via orb) */
-        .catch-action-bar { display: flex; justify-content: flex-start; padding: 12px 16px; background: transparent; position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
+        /* Action Bar */
+        .catch-action-bar { display: flex; justify-content: space-between; padding: 12px 16px; background: transparent; position: absolute; top: 0; left: 0; right: 0; z-index: 30; }
         .catch-icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: all 0.2s; }
         .catch-icon-btn.glass { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); }
 
+        /* Menu dropdown */
+        .catch-menu-wrapper { position: relative; }
+        .catch-menu-dropdown { position: absolute; top: 100%; right: 0; margin-top: 8px; background: rgba(15,15,18,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 4px; min-width: 120px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .catch-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; border: none; background: transparent; color: #fff; font-size: 0.9rem; cursor: pointer; border-radius: 8px; transition: background 0.15s; }
+        .catch-menu-item:hover { background: rgba(255,255,255,0.08); }
+        .catch-menu-item.danger { color: #ef4444; }
+        .catch-menu-item.danger:hover { background: rgba(239, 68, 68, 0.15); }
+
         /* Shareable Card Container */
-        .catch-share-card { position: relative; margin: 8px; border-radius: 16px; overflow: hidden; background: #0f0f12; }
+        .catch-share-card { position: relative; margin: 0 8px 8px 8px; border-radius: 16px; overflow: hidden; background: #0f0f12; }
 
         /* Hero Image - Using background-image for proper html2canvas capture */
-        .catch-hero { position: relative; width: 100%; height: 340px; background: #000; }
+        .catch-hero { position: relative; width: 100%; height: 380px; background: #000; }
         .catch-hero-image { width: 100%; height: 100%; background-size: cover; background-position: center 20%; background-repeat: no-repeat; }
         .catch-hero-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 0%, transparent 70%, #0f0f12 100%); pointer-events: none; }
         .catch-hero-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #0f0f12; color: rgba(255,255,255,0.1); }
@@ -1619,6 +1675,7 @@ export function CatchDetailView({
         .catch-species { font-size: 0.75rem; font-weight: 700; color: #4A90E2; text-transform: uppercase; letter-spacing: 0.05em; }
         .catch-lure { font-size: 1rem; font-weight: 700; color: #fff; line-height: 1.2; }
         .catch-weight-block { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+        .catch-pb-badge { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #fff; padding: 3px 8px; border-radius: 12px; font-weight: 800; font-size: 0.65rem; letter-spacing: 0.05em; display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
         .catch-weight-value { font-size: 2.2rem; font-weight: 900; color: #fff; line-height: 1; letter-spacing: -0.02em; }
         .catch-weight-unit { font-size: 0.65rem; color: #4A90E2; font-weight: 800; letter-spacing: 0.1em; }
 

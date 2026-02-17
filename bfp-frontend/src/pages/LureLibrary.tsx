@@ -55,9 +55,11 @@ function LureCard({
 function LureDetailModal({
   lure,
   onClose,
+  onTagClick,
 }: {
   lure: LureData;
   onClose: () => void;
+  onTagClick: (group: "season" | "clarity" | "conditions" | "cover" | "finesse", value: string) => void;
 }) {
   return (
     <div className="lure-modal-overlay" onClick={onClose}>
@@ -85,7 +87,7 @@ function LureDetailModal({
             <span className="lure-modal-tag-label">Season</span>
             <div className="lure-modal-tag-pills">
               {lure.season_affinity.map((s) => (
-                <span key={s} className="lure-tag season">{s}</span>
+                <button key={s} className="lure-tag season clickable" onClick={() => onTagClick("season", s)}>{s}</button>
               ))}
             </div>
           </div>
@@ -94,7 +96,7 @@ function LureDetailModal({
             <span className="lure-modal-tag-label">Water Clarity</span>
             <div className="lure-modal-tag-pills">
               {lure.water_clarity.map((c) => (
-                <span key={c} className="lure-tag clarity">{c}</span>
+                <button key={c} className="lure-tag clarity clickable" onClick={() => onTagClick("clarity", c)}>{c}</button>
               ))}
             </div>
           </div>
@@ -103,7 +105,7 @@ function LureDetailModal({
             <span className="lure-modal-tag-label">Conditions</span>
             <div className="lure-modal-tag-pills">
               {lure.conditions.map((c) => (
-                <span key={c} className="lure-tag conditions">{c}</span>
+                <button key={c} className="lure-tag conditions clickable" onClick={() => onTagClick("conditions", c)}>{c}</button>
               ))}
             </div>
           </div>
@@ -112,7 +114,7 @@ function LureDetailModal({
             <span className="lure-modal-tag-label">Cover</span>
             <div className="lure-modal-tag-pills">
               {lure.cover_type.map((c) => (
-                <span key={c} className="lure-tag cover">{c}</span>
+                <button key={c} className="lure-tag cover clickable" onClick={() => onTagClick("cover", c)}>{c}</button>
               ))}
             </div>
           </div>
@@ -121,7 +123,7 @@ function LureDetailModal({
           <div className="lure-modal-tag-group">
             <span className="lure-modal-tag-label">Style</span>
             <div className="lure-modal-tag-pills">
-              <span className="lure-tag finesse">Finesse</span>
+              <button className="lure-tag finesse clickable" onClick={() => onTagClick("finesse", "true")}>Finesse</button>
             </div>
           </div>
           )}
@@ -340,6 +342,16 @@ export function LureLibrary() {
         <LureDetailModal
           lure={selectedLure}
           onClose={() => setSelectedLure(null)}
+          onTagClick={(group, value) => {
+            // Clear all filters first, then set the clicked one
+            if (group === "finesse") {
+              setFilters({ ...EMPTY_FILTERS, finesse: true });
+            } else {
+              setFilters({ ...EMPTY_FILTERS, [group]: [value] });
+            }
+            // Close the modal
+            setSelectedLure(null);
+          }}
         />
       )}
 
@@ -729,6 +741,18 @@ export function LureLibrary() {
           border-radius: 100px;
           font-size: 0.75rem;
           font-weight: 500;
+          border: none;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .lure-tag.clickable:hover {
+          transform: scale(1.05);
+          filter: brightness(1.2);
+        }
+
+        .lure-tag.clickable:active {
+          transform: scale(0.98);
         }
 
         .lure-tag.season {

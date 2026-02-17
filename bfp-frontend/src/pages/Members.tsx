@@ -816,6 +816,7 @@ export function Members() {
   const favoritesRef = useRef(favorites);
   const customLakesRef = useRef(customLakes);
   const pendingLakeSelectRef = useRef<string | null>(null);
+  const initialSessionRestoreRef = useRef(false);
 
   useEffect(() => {
     showModalRef.current = showModal;
@@ -1014,6 +1015,52 @@ export function Members() {
       pendingLakeSelectRef.current = null;
     }
   }, [favorites, dataVersion, isActive]);
+
+  // Restore stored lake view when returning from another page
+  useEffect(() => {
+    // Only run once after favorites load
+    if (initialSessionRestoreRef.current) return;
+    if (favorites.length === 0) return;
+    if (!mapRef.current) return;
+
+    // Check if there's a stored viewingFavoriteId from sessionStorage
+    const storedLakeId = viewingFavoriteId;
+    if (!storedLakeId) return;
+
+    // Don't restore if we have URL params (those take priority)
+    const urlLat = searchParams.get("lat");
+    const urlLng = searchParams.get("lng");
+    if (urlLat && urlLng) {
+      initialSessionRestoreRef.current = true;
+      return;
+    }
+
+    // Find the stored lake in favorites
+    const lake = favorites.find((f) => f.id === storedLakeId);
+    if (!lake) {
+      // Lake not found, clear the stored ID
+      setViewingFavoriteId(null);
+      initialSessionRestoreRef.current = true;
+      return;
+    }
+
+    // Restore the lake view
+    initialSessionRestoreRef.current = true;
+    setWaterName(lake.name);
+    setLocationDetails({ city: lake.city, state: lake.state });
+    setSelectedCoords({ lat: lake.lat, lng: lake.lng });
+
+    // Fly to the stored lake
+    setTimeout(() => {
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [lake.lng, lake.lat],
+          zoom: getZoomForLake(lake.acres),
+          duration: 1500,
+        });
+      }
+    }, 500);
+  }, [favorites, viewingFavoriteId, searchParams]);
 
   // --- DERIVED STATE ---
   const isCurrentLocationSaved = useMemo(() => {
@@ -1500,6 +1547,7 @@ export function Members() {
     m.on("click", onClick);
     return () => {
       isMountedRef.current = false;
+      initialized.current = false;
       m.remove();
     };
   }, [isActive]);
