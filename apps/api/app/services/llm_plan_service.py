@@ -747,7 +747,18 @@ Common Hallucinations to AVOID:
 1. Selected "chatterbait" → Look up LURE_COLOR_POOL_MAP["chatterbait"] = "BLADED_SKIRTED_COLORS"
 2. Find BLADED_SKIRTED_COLORS: ["white", "shad", "chartreuse/white", "chartreuse", "black/blue", ...]
 3. Choose from this list only: e.g., ["chartreuse/white", "black/blue"]
-🚨 CRITICAL VALIDATION RULE #1 - ONLY ONE BOTTOM CONTACT PRESENTATION PER PLAN:
+🚨 CRITICAL VALIDATION RULE #1 - ONLY ONE BOTTOM CONTACT LURE PER PLAN:
+
+⚠️ LURE FAMILY QUICK REFERENCE (memorize this):
+BOTTOM_CONTACT_LURES = ["football jig", "casting jig", "texas rig", "carolina rig", "shaky head", "ned rig"]
+HORIZONTAL_LURES = ["chatterbait", "spinnerbait", "swim jig", "shallow crankbait", "mid crankbait", "deep crankbait", "lipless crankbait", "flat-sided crankbait", "underspin", "paddle tail swimbait"]
+VERTICAL_LURES = ["jerkbait", "blade bait", "jighead minnow"]
+FINESSE_LURES = ["dropshot", "neko rig", "wacky rig", "soft jerkbait"]
+TOPWATER_LURES = ["walking bait", "buzzbait", "whopper plopper", "wake bait", "hollow body frog", "popping frog", "popper"]
+
+🛑 RULE: Primary and secondary MUST be from DIFFERENT families above.
+🛑 If you pick football jig (BOTTOM_CONTACT), secondary CANNOT be ned rig, shaky head, texas rig, etc.
+🛑 If you pick ned rig (BOTTOM_CONTACT), secondary CANNOT be football jig, casting jig, carolina rig, etc.
 
 Bottom Contact presentations are:
   • "Bottom Contact - Dragging"
