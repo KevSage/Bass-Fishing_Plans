@@ -1,0 +1,1974 @@
+
+=== Generated 100 Demo Catches for Lake Lanier ===
+
+Cluster breakdown:
+  Hotspot 1: 15 catches - HOT (red)
+  Hotspot 2: 12 catches - HOT (red)
+  Hotspot 3: 8 catches - MODERATE (orange)
+  Hotspot 4: 7 catches - MODERATE (orange)
+  Hotspot 5: 6 catches - MODERATE (orange)
+  Hotspot 6: 5 catches - MODERATE (orange)
+  Hotspot 7: 3 catches - SPARSE (yellow)
+  Hotspot 8: 3 catches - SPARSE (yellow)
+  Hotspot 9: 3 catches - SPARSE (yellow)
+  Hotspot 10: 2 catches - SPARSE (yellow)
+  Hotspot 11: 1 catches - SPARSE (yellow)
+  Hotspot 12: 1 catches - SPARSE (yellow)
+  Hotspot 13: 1 catches - SPARSE (yellow)
+  Hotspot 14: 1 catches - SPARSE (yellow)
+  Hotspot 15: 1 catches - SPARSE (yellow)
+  Hotspot 16: 1 catches - SPARSE (yellow)
+  Hotspot 17: 1 catches - SPARSE (yellow)
+  Hotspot 18: 1 catches - SPARSE (yellow)
+  Hotspot 19: 1 catches - SPARSE (yellow)
+  Hotspot 20: 1 catches - SPARSE (yellow)
+  Hotspot 21: 1 catches - SPARSE (yellow)
+  Hotspot 22: 1 catches - SPARSE (yellow)
+  Hotspot 23: 1 catches - SPARSE (yellow)
+  Hotspot 24: 1 catches - SPARSE (yellow)
+  Hotspot 25: 1 catches - SPARSE (yellow)
+  Hotspot 26: 1 catches - SPARSE (yellow)
+  Hotspot 27: 1 catches - SPARSE (yellow)
+  Hotspot 28: 1 catches - SPARSE (yellow)
+  Hotspot 29: 1 catches - SPARSE (yellow)
+  Hotspot 30: 1 catches - SPARSE (yellow)
+  Hotspot 31: 1 catches - SPARSE (yellow)
+  Hotspot 32: 1 catches - SPARSE (yellow)
+  Hotspot 33: 1 catches - SPARSE (yellow)
+  Hotspot 34: 1 catches - SPARSE (yellow)
+  Hotspot 35: 1 catches - SPARSE (yellow)
+  Hotspot 36: 1 catches - SPARSE (yellow)
+  Hotspot 37: 1 catches - SPARSE (yellow)
+  Hotspot 38: 1 catches - SPARSE (yellow)
+  Hotspot 39: 1 catches - SPARSE (yellow)
+  Hotspot 40: 1 catches - SPARSE (yellow)
+  Hotspot 41: 1 catches - SPARSE (yellow)
+  Hotspot 42: 1 catches - SPARSE (yellow)
+  Hotspot 43: 1 catches - SPARSE (yellow)
+  Hotspot 44: 1 catches - SPARSE (yellow)
+  Hotspot 45: 1 catches - SPARSE (yellow)
+  Hotspot 46: 1 catches - SPARSE (yellow)
+
+=== COPY THE CODE BELOW AND PASTE IN BROWSER CONSOLE ===
+
+
+// Demo catches for iOS App Store screenshots
+const demoCatches = [
+  {
+    "id": "9fd4d1bd-5adb-46e4-ace8-b6508a6f67d8",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Swimjig",
+    "color": "Chartreuse",
+    "weight": "2.09",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-15T03:10:31.926Z",
+    "catchLat": 34.18545174975407,
+    "catchLng": -84.02036218734453,
+    "source": "demo",
+    "weather": {
+      "temp": 67,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "d75613f0-3d45-44fb-bc9c-55ac092bccda",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Squarebill",
+    "color": "Green Pumpkin",
+    "weight": "4.04",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-15T12:53:42.011Z",
+    "catchLat": 34.18548815517128,
+    "catchLng": -84.02037841962637,
+    "source": "demo",
+    "weather": {
+      "temp": 58,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "999bbf37-7feb-4233-8e4d-d324e8c354c3",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Squarebill",
+    "color": "Pearl White",
+    "weight": "2.71",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-30T02:05:11.703Z",
+    "catchLat": 34.18543167167816,
+    "catchLng": -84.02033530381064,
+    "source": "demo",
+    "weather": {
+      "temp": 80,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "aa713a86-43d8-4663-9b9f-98155fe7754a",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Drop Shot",
+    "color": "Watermelon Red",
+    "weight": "4.08",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-21T02:31:53.614Z",
+    "catchLat": 34.18462999464849,
+    "catchLng": -84.01993948444358,
+    "source": "demo",
+    "weather": {
+      "temp": 58,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "eb86bb9b-792c-4320-bf71-b680990589dd",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Swimjig",
+    "color": "Black/Blue",
+    "weight": "3.90",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-25T09:32:15.789Z",
+    "catchLat": 34.184934098284664,
+    "catchLng": -84.01942259561959,
+    "source": "demo",
+    "weather": {
+      "temp": 56,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "4a556976-e31a-4390-8abc-71c9515ef58c",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Chatterbait",
+    "color": "Watermelon Red",
+    "weight": "4.44",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-08T01:51:19.304Z",
+    "catchLat": 34.18542331379052,
+    "catchLng": -84.02037707669218,
+    "source": "demo",
+    "weather": {
+      "temp": 79,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "c842b953-45e0-4bce-af98-889e3d0d67f2",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Texas Rig",
+    "color": "Watermelon Red",
+    "weight": "2.09",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-18T09:31:48.874Z",
+    "catchLat": 34.18529580413917,
+    "catchLng": -84.02058346150868,
+    "source": "demo",
+    "weather": {
+      "temp": 55,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "6d9c99d3-4343-4408-8352-0a3453da04c4",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Drop Shot",
+    "color": "Bluegill",
+    "weight": "4.30",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-28T08:12:39.066Z",
+    "catchLat": 34.18503892492995,
+    "catchLng": -84.02032129250952,
+    "source": "demo",
+    "weather": {
+      "temp": 80,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "ba75adc1-408f-42fe-84a8-f3df526f499b",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Spinnerbait",
+    "color": "Pearl White",
+    "weight": "8.41",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-02T21:07:45.984Z",
+    "catchLat": 34.18494239361673,
+    "catchLng": -84.02040329473147,
+    "source": "demo",
+    "weather": {
+      "temp": 77,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "c9a65fdc-d6df-4e75-9274-a3c97fbc6161",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Squarebill",
+    "color": "Pearl White",
+    "weight": "2.66",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-18T01:05:38.953Z",
+    "catchLat": 34.18452139676984,
+    "catchLng": -84.01982375120615,
+    "source": "demo",
+    "weather": {
+      "temp": 78,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "ce6d6b6f-bb21-474a-863b-d3ee716d33f8",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Chatterbait",
+    "color": "Black/Blue",
+    "weight": "4.12",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-20T10:52:03.763Z",
+    "catchLat": 34.184656714428925,
+    "catchLng": -84.02001919094792,
+    "source": "demo",
+    "weather": {
+      "temp": 56,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "61283c6d-aa5f-4073-b038-40070fb75e0a",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Senko",
+    "color": "Green Pumpkin",
+    "weight": "2.06",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-28T06:17:43.314Z",
+    "catchLat": 34.18495596907079,
+    "catchLng": -84.01968252427872,
+    "source": "demo",
+    "weather": {
+      "temp": 79,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "24d9fb82-4f41-434e-a1c9-08124aa15fbb",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Squarebill",
+    "color": "Chartreuse",
+    "weight": "4.34",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-03T11:04:36.193Z",
+    "catchLat": 34.18562621423011,
+    "catchLng": -84.02001995679322,
+    "source": "demo",
+    "weather": {
+      "temp": 71,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "93e49e8d-14ca-4ec7-8472-87566bf20f22",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Crankbait",
+    "color": "Black/Blue",
+    "weight": "2.17",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-07T03:09:59.412Z",
+    "catchLat": 34.184691261375,
+    "catchLng": -84.02016465564886,
+    "source": "demo",
+    "weather": {
+      "temp": 65,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "6c673f2b-b4a8-4c97-8dfe-1de253212e8d",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Senko",
+    "color": "Green Pumpkin",
+    "weight": "4.81",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-15T01:12:44.720Z",
+    "catchLat": 34.184737833515335,
+    "catchLng": -84.01976605112415,
+    "source": "demo",
+    "weather": {
+      "temp": 83,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "7f80a60f-c1e6-451c-b0e4-f37867b593ba",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Swimjig",
+    "color": "Black/Blue",
+    "weight": "5.69",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-03T15:58:41.166Z",
+    "catchLat": 34.37942250798305,
+    "catchLng": -83.84998378808213,
+    "source": "demo",
+    "weather": {
+      "temp": 74,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "db8c347f-508e-4dac-beb3-949ef4b2410e",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Jig",
+    "color": "Watermelon Red",
+    "weight": "2.76",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-19T00:58:31.401Z",
+    "catchLat": 34.37994426021369,
+    "catchLng": -83.85037786603671,
+    "source": "demo",
+    "weather": {
+      "temp": 57,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "e15fb152-8733-4390-9357-34df57c06630",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Swimjig",
+    "color": "Green Pumpkin",
+    "weight": "2.91",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-30T21:55:01.340Z",
+    "catchLat": 34.37966605352445,
+    "catchLng": -83.85025762300843,
+    "source": "demo",
+    "weather": {
+      "temp": 76,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "1e7a7826-c8d2-45a1-a122-b9f7fdd86e7b",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Spinnerbait",
+    "color": "Black/Blue",
+    "weight": "3.72",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-18T17:01:59.751Z",
+    "catchLat": 34.37941964979961,
+    "catchLng": -83.85016050827015,
+    "source": "demo",
+    "weather": {
+      "temp": 68,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "2fdc5aa4-1da3-484d-b664-5e1adf044bec",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Chatterbait",
+    "color": "Green Pumpkin",
+    "weight": "3.21",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-15T22:08:25.871Z",
+    "catchLat": 34.3798358635698,
+    "catchLng": -83.84964952193089,
+    "source": "demo",
+    "weather": {
+      "temp": 76,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "201bd8f1-f609-4f10-ab59-c81b519e6ba0",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Squarebill",
+    "color": "Bluegill",
+    "weight": "3.32",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-20T16:28:13.153Z",
+    "catchLat": 34.380387254405406,
+    "catchLng": -83.85048417916418,
+    "source": "demo",
+    "weather": {
+      "temp": 62,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "c6debc12-db07-4c33-bfc8-a60528895efa",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Senko",
+    "color": "Crawfish",
+    "weight": "4.51",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-14T08:40:43.188Z",
+    "catchLat": 34.37979053572511,
+    "catchLng": -83.8494257744931,
+    "source": "demo",
+    "weather": {
+      "temp": 57,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "41dc81c7-0cce-46d6-9923-4bfa184bf223",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Senko",
+    "color": "Shad",
+    "weight": "2.36",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-17T01:57:31.657Z",
+    "catchLat": 34.37970877987471,
+    "catchLng": -83.85017842515727,
+    "source": "demo",
+    "weather": {
+      "temp": 66,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "687efb5a-1358-4089-b778-5de77b82acee",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Topwater Frog",
+    "color": "Watermelon Red",
+    "weight": "2.31",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-15T19:05:30.102Z",
+    "catchLat": 34.3804038277378,
+    "catchLng": -83.84992061862907,
+    "source": "demo",
+    "weather": {
+      "temp": 67,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "b894ca91-d5c9-469d-8bb8-d9997d23c111",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Topwater Frog",
+    "color": "Chartreuse",
+    "weight": "2.03",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-09T05:21:00.882Z",
+    "catchLat": 34.379424697079905,
+    "catchLng": -83.85002428488585,
+    "source": "demo",
+    "weather": {
+      "temp": 57,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "1ff58fd4-f9fd-40b0-81c0-ef85c53c33d6",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Senko",
+    "color": "Chartreuse",
+    "weight": "8.54",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-12T06:31:39.832Z",
+    "catchLat": 34.37955104733551,
+    "catchLng": -83.84961623478557,
+    "source": "demo",
+    "weather": {
+      "temp": 61,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "de49af81-1d81-4ee2-83d0-ddd3d99f3461",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Drop Shot",
+    "color": "Watermelon Red",
+    "weight": "5.19",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-22T17:09:41.628Z",
+    "catchLat": 34.38022883906044,
+    "catchLng": -83.8497057772904,
+    "source": "demo",
+    "weather": {
+      "temp": 68,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "9ff400ef-ea15-4108-a1b7-20266846a3c6",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Drop Shot",
+    "color": "Black/Blue",
+    "weight": "4.33",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-24T11:22:53.032Z",
+    "catchLat": 34.28040497803075,
+    "catchLng": -83.94950146120568,
+    "source": "demo",
+    "weather": {
+      "temp": 72,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "1dd8a3b3-d89d-4278-9849-e9746f41ae62",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Chatterbait",
+    "color": "Green Pumpkin",
+    "weight": "3.35",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-24T08:37:55.984Z",
+    "catchLat": 34.28029885191858,
+    "catchLng": -83.94970357739223,
+    "source": "demo",
+    "weather": {
+      "temp": 59,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "34c61c6e-8b3c-4df7-b731-29bbd47cb193",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Swimjig",
+    "color": "Chartreuse",
+    "weight": "5.35",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-04T21:53:11.235Z",
+    "catchLat": 34.27940389495998,
+    "catchLng": -83.95024241437694,
+    "source": "demo",
+    "weather": {
+      "temp": 79,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "59091663-d903-4763-81ce-6129f562c359",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Texas Rig",
+    "color": "Watermelon Red",
+    "weight": "3.51",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-19T04:52:03.268Z",
+    "catchLat": 34.27976981769397,
+    "catchLng": -83.94975388437697,
+    "source": "demo",
+    "weather": {
+      "temp": 74,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "b02f9a61-d4eb-461e-89b7-157cc2868399",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Swimjig",
+    "color": "Watermelon Red",
+    "weight": "4.50",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-02T06:34:17.260Z",
+    "catchLat": 34.28039957592304,
+    "catchLng": -83.95046301088047,
+    "source": "demo",
+    "weather": {
+      "temp": 57,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "48fe2c41-7584-4286-b43c-4ef8087e2acb",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Texas Rig",
+    "color": "Shad",
+    "weight": "2.76",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-02T14:22:21.297Z",
+    "catchLat": 34.27956530037765,
+    "catchLng": -83.95024810059071,
+    "source": "demo",
+    "weather": {
+      "temp": 72,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "d57f3aad-32c5-4439-b3bc-2982674fd628",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Crankbait",
+    "color": "Shad",
+    "weight": "3.08",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-09T20:03:54.795Z",
+    "catchLat": 34.2797471411094,
+    "catchLng": -83.94943054978991,
+    "source": "demo",
+    "weather": {
+      "temp": 71,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "5565162d-e7f1-4322-a088-5e4ea05a95a8",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Crankbait",
+    "color": "Crawfish",
+    "weight": "4.17",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-02T17:12:35.489Z",
+    "catchLat": 34.27960227445385,
+    "catchLng": -83.94945850802935,
+    "source": "demo",
+    "weather": {
+      "temp": 70,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "e62920ce-db05-4364-b4b7-237dca996a42",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Jig",
+    "color": "Shad",
+    "weight": "3.38",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-25T18:36:59.706Z",
+    "catchLat": 34.349591981311505,
+    "catchLng": -83.88006799462777,
+    "source": "demo",
+    "weather": {
+      "temp": 69,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "3b754ab9-2957-4ff5-9217-b748266fd06c",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Drop Shot",
+    "color": "Shad",
+    "weight": "2.84",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-19T23:08:09.832Z",
+    "catchLat": 34.35019790828119,
+    "catchLng": -83.87948358741438,
+    "source": "demo",
+    "weather": {
+      "temp": 58,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "9d0f0b05-9454-4b33-8325-51295b53892c",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Chatterbait",
+    "color": "Crawfish",
+    "weight": "7.19",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-04T22:08:33.355Z",
+    "catchLat": 34.35026400154063,
+    "catchLng": -83.88015099383989,
+    "source": "demo",
+    "weather": {
+      "temp": 68,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "88857911-f000-4f40-ba89-461614eb87b6",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Swimjig",
+    "color": "Black/Blue",
+    "weight": "8.89",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-17T22:11:01.149Z",
+    "catchLat": 34.34997455974517,
+    "catchLng": -83.87931206670174,
+    "source": "demo",
+    "weather": {
+      "temp": 76,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "4cde50c7-c754-4dfe-b957-98744e60e52e",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Spinnerbait",
+    "color": "Chartreuse",
+    "weight": "4.69",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-03T06:35:54.081Z",
+    "catchLat": 34.34935909438861,
+    "catchLng": -83.88021636397092,
+    "source": "demo",
+    "weather": {
+      "temp": 63,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "c8775453-6a87-4f68-ae7a-b7e8aeb8ce2b",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Jig",
+    "color": "Crawfish",
+    "weight": "3.27",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-28T21:08:21.156Z",
+    "catchLat": 34.35059811032487,
+    "catchLng": -83.8800029863269,
+    "source": "demo",
+    "weather": {
+      "temp": 79,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "e0a8e3d9-3106-4d5a-b659-65fffa9dd9dc",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Swimjig",
+    "color": "Green Pumpkin",
+    "weight": "3.69",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-08-26T13:00:45.402Z",
+    "catchLat": 34.34963443361176,
+    "catchLng": -83.88058402521855,
+    "source": "demo",
+    "weather": {
+      "temp": 57,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "a8c8483e-2ddf-4047-8d3e-4314eb5aef42",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Jig",
+    "color": "Green Pumpkin",
+    "weight": "4.76",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-21T07:42:07.437Z",
+    "catchLat": 34.220131718237525,
+    "catchLng": -83.97940981576016,
+    "source": "demo",
+    "weather": {
+      "temp": 84,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "fd3cf1a9-851f-429e-8cc3-db2dd3be1b38",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Squarebill",
+    "color": "Watermelon Red",
+    "weight": "8.73",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-08T06:04:37.582Z",
+    "catchLat": 34.220531723705356,
+    "catchLng": -83.97972855608639,
+    "source": "demo",
+    "weather": {
+      "temp": 63,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "89ed738a-5f81-4a17-a5eb-06938d236fcc",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Texas Rig",
+    "color": "Black/Blue",
+    "weight": "5.36",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-17T19:26:17.004Z",
+    "catchLat": 34.220324936618155,
+    "catchLng": -83.98018792316783,
+    "source": "demo",
+    "weather": {
+      "temp": 64,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "2f4a33ab-e9a4-4ca1-a60d-c7fc5595b243",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Drop Shot",
+    "color": "Black/Blue",
+    "weight": "2.18",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-03T21:04:56.366Z",
+    "catchLat": 34.21993579590076,
+    "catchLng": -83.9804320450064,
+    "source": "demo",
+    "weather": {
+      "temp": 58,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "1fa5c18b-d357-44c9-8fe9-c1a9428d937f",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Crankbait",
+    "color": "Chartreuse",
+    "weight": "2.48",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-03T05:21:00.778Z",
+    "catchLat": 34.2196498620691,
+    "catchLng": -83.98000053827538,
+    "source": "demo",
+    "weather": {
+      "temp": 78,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "d2256404-71dc-4dcc-b346-b4b66a63a6bf",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Chatterbait",
+    "color": "Watermelon Red",
+    "weight": "3.87",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-04T01:50:25.254Z",
+    "catchLat": 34.21940117420851,
+    "catchLng": -83.97979708422584,
+    "source": "demo",
+    "weather": {
+      "temp": 66,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "c2d7c487-6cbd-45ab-a2bd-4db297211034",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Drop Shot",
+    "color": "Chartreuse",
+    "weight": "4.58",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-24T09:58:03.091Z",
+    "catchLat": 34.30047521812485,
+    "catchLng": -83.99995862209565,
+    "source": "demo",
+    "weather": {
+      "temp": 62,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "ac9688d7-c40a-498e-a6f8-b9638f112e20",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Drop Shot",
+    "color": "Watermelon Red",
+    "weight": "4.96",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-15T15:54:24.170Z",
+    "catchLat": 34.30029275785578,
+    "catchLng": -83.99968290230834,
+    "source": "demo",
+    "weather": {
+      "temp": 60,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "4da4b178-3fbf-453d-993c-5a7c3bcdd418",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Squarebill",
+    "color": "Crawfish",
+    "weight": "4.50",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-21T08:18:02.618Z",
+    "catchLat": 34.29971066915091,
+    "catchLng": -83.99986524762801,
+    "source": "demo",
+    "weather": {
+      "temp": 64,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "fee85ac5-197b-4153-b085-ef68229f96c2",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Drop Shot",
+    "color": "Chartreuse",
+    "weight": "5.43",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-21T19:17:49.343Z",
+    "catchLat": 34.30027670224256,
+    "catchLng": -83.99982436338455,
+    "source": "demo",
+    "weather": {
+      "temp": 78,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "121797bd-7389-40e4-bb75-bf484f0b9367",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Crankbait",
+    "color": "Watermelon Red",
+    "weight": "3.39",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-16T21:24:44.746Z",
+    "catchLat": 34.29983617870102,
+    "catchLng": -84.00031897047732,
+    "source": "demo",
+    "weather": {
+      "temp": 67,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "5d932230-ace0-4e11-bde1-2358edf760b9",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Drop Shot",
+    "color": "Chartreuse",
+    "weight": "3.73",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-15T15:13:59.716Z",
+    "catchLat": 34.350035750189946,
+    "catchLng": -83.81966608626314,
+    "source": "demo",
+    "weather": {
+      "temp": 80,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "c2a5b6e7-4733-4dbd-b48a-051faf49ff0d",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Texas Rig",
+    "color": "Chartreuse",
+    "weight": "2.60",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-19T01:42:17.281Z",
+    "catchLat": 34.349487258302794,
+    "catchLng": -83.82001539469071,
+    "source": "demo",
+    "weather": {
+      "temp": 84,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "c14da033-debf-49a3-8ce1-0cb6df3bb5a3",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Spinnerbait",
+    "color": "Green Pumpkin",
+    "weight": "3.80",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-08T00:24:53.518Z",
+    "catchLat": 34.34994256553605,
+    "catchLng": -83.8205801865231,
+    "source": "demo",
+    "weather": {
+      "temp": 73,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "6e0aca81-276f-44e9-9fad-2723d0b004db",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Texas Rig",
+    "color": "Shad",
+    "weight": "3.61",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-01T11:40:49.102Z",
+    "catchLat": 34.40015943716388,
+    "catchLng": -83.87041853266204,
+    "source": "demo",
+    "weather": {
+      "temp": 67,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "2a200123-bc05-4350-8f78-31b29570cba5",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Chatterbait",
+    "color": "Watermelon Red",
+    "weight": "5.17",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-19T06:54:36.983Z",
+    "catchLat": 34.400016773193,
+    "catchLng": -83.87032950473721,
+    "source": "demo",
+    "weather": {
+      "temp": 62,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "81a4ff30-96fb-4014-ad52-a2ab5b6c7e01",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Swimjig",
+    "color": "Chartreuse",
+    "weight": "5.50",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-24T13:30:26.962Z",
+    "catchLat": 34.40017775126797,
+    "catchLng": -83.86934403719681,
+    "source": "demo",
+    "weather": {
+      "temp": 66,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "285e6acf-3518-4780-903c-1c2f39531669",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Texas Rig",
+    "color": "Pearl White",
+    "weight": "3.65",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-14T19:34:40.503Z",
+    "catchLat": 34.250204464091915,
+    "catchLng": -84.08033057309814,
+    "source": "demo",
+    "weather": {
+      "temp": 61,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "11284f5c-aa3e-4543-89f3-aa299b8c5836",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Senko",
+    "color": "Black/Blue",
+    "weight": "3.09",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-21T13:12:46.283Z",
+    "catchLat": 34.24938918351034,
+    "catchLng": -84.0800293478531,
+    "source": "demo",
+    "weather": {
+      "temp": 72,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "73f9c1b7-14c0-40b0-9cdc-8636a4ff8edb",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Chatterbait",
+    "color": "Chartreuse",
+    "weight": "3.63",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-20T06:02:53.384Z",
+    "catchLat": 34.24962477257014,
+    "catchLng": -84.07983623202028,
+    "source": "demo",
+    "weather": {
+      "temp": 84,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "fcec307d-1c34-49b8-88ff-9c9084103630",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Chatterbait",
+    "color": "Black/Blue",
+    "weight": "5.51",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-28T07:56:04.050Z",
+    "catchLat": 34.31964472262472,
+    "catchLng": -83.92014258736009,
+    "source": "demo",
+    "weather": {
+      "temp": 66,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "70ff8cba-9599-4c74-9f65-a2a4b7d00e85",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Texas Rig",
+    "color": "Black/Blue",
+    "weight": "5.11",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-10T08:39:41.390Z",
+    "catchLat": 34.319709590948655,
+    "catchLng": -83.92048529145266,
+    "source": "demo",
+    "weather": {
+      "temp": 78,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "a6bad5f4-e098-41ba-8b25-f7bde4e2ce60",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Texas Rig",
+    "color": "Black/Blue",
+    "weight": "3.41",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-04T09:37:22.168Z",
+    "catchLat": 34.17034427406842,
+    "catchLng": -84.00015182111656,
+    "source": "demo",
+    "weather": {
+      "temp": 60,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "e10b0557-2241-4543-a753-9f2587270e6a",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Chatterbait",
+    "color": "Pearl White",
+    "weight": "5.74",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-17T01:26:02.360Z",
+    "catchLat": 34.200445862271465,
+    "catchLng": -83.92032292227925,
+    "source": "demo",
+    "weather": {
+      "temp": 82,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "8ec4c9f7-d1a9-4806-b017-a6969fa64256",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Topwater Frog",
+    "color": "Shad",
+    "weight": "2.83",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-02T08:56:30.215Z",
+    "catchLat": 34.24055297603671,
+    "catchLng": -84.0203619226893,
+    "source": "demo",
+    "weather": {
+      "temp": 60,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "70bba1e2-56c2-4e7e-a8c9-bd4b301eae60",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Drop Shot",
+    "color": "Watermelon Red",
+    "weight": "5.86",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-15T01:42:15.686Z",
+    "catchLat": 34.26994325065093,
+    "catchLng": -83.87956147096233,
+    "source": "demo",
+    "weather": {
+      "temp": 76,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "559e578a-1244-482f-83ca-6ede0d54403a",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Squarebill",
+    "color": "Green Pumpkin",
+    "weight": "3.29",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-07T23:44:16.525Z",
+    "catchLat": 34.310426667231276,
+    "catchLng": -83.85007959819647,
+    "source": "demo",
+    "weather": {
+      "temp": 58,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "ed6142dd-bee3-407f-9dcb-f539f2c4ec4a",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Topwater Frog",
+    "color": "Shad",
+    "weight": "4.17",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-21T18:45:40.324Z",
+    "catchLat": 34.34023646337186,
+    "catchLng": -83.95040354342373,
+    "source": "demo",
+    "weather": {
+      "temp": 60,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "6098d8b2-a1d9-4496-815a-b689c7640d7b",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Squarebill",
+    "color": "Green Pumpkin",
+    "weight": "6.65",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-29T06:38:06.182Z",
+    "catchLat": 34.3696184663481,
+    "catchLng": -83.92021419934426,
+    "source": "demo",
+    "weather": {
+      "temp": 83,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "9fa69b01-ed52-4d9e-9292-55ba3994400c",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Jig",
+    "color": "Shad",
+    "weight": "3.24",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-11T14:35:00.968Z",
+    "catchLat": 34.390287263582636,
+    "catchLng": -83.82056537072322,
+    "source": "demo",
+    "weather": {
+      "temp": 75,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "3703b1a1-308d-416b-881e-28738c39b3d0",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Squarebill",
+    "color": "Chartreuse",
+    "weight": "8.72",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-16T04:44:39.406Z",
+    "catchLat": 34.41974874952007,
+    "catchLng": -83.89954511649763,
+    "source": "demo",
+    "weather": {
+      "temp": 72,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "211cc428-d1dc-4cc9-9e67-1d93b93228f0",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Chatterbait",
+    "color": "Watermelon Red",
+    "weight": "2.55",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-20T15:37:44.827Z",
+    "catchLat": 34.32963566198827,
+    "catchLng": -84.00992250165997,
+    "source": "demo",
+    "weather": {
+      "temp": 71,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "f8085a86-6fac-4389-9fcd-df808ccfe2df",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Jig",
+    "color": "Chartreuse",
+    "weight": "2.81",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-10T14:06:51.927Z",
+    "catchLat": 34.289662999585886,
+    "catchLng": -84.02942134831514,
+    "source": "demo",
+    "weather": {
+      "temp": 67,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "47242b35-a696-48ff-ada8-ae3a8d049ed3",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Senko",
+    "color": "Black/Blue",
+    "weight": "3.21",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-24T04:12:00.561Z",
+    "catchLat": 34.25937155042491,
+    "catchLng": -83.94023801978425,
+    "source": "demo",
+    "weather": {
+      "temp": 55,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "4459ee2e-5e84-47de-a685-6265042d5a27",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Chatterbait",
+    "color": "Pearl White",
+    "weight": "5.54",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-03T21:59:53.109Z",
+    "catchLat": 34.230453147702015,
+    "catchLng": -83.89987573098819,
+    "source": "demo",
+    "weather": {
+      "temp": 77,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "264bacb2-1f5d-4b0d-9616-7bc557ff3122",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Swimjig",
+    "color": "Black/Blue",
+    "weight": "5.14",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-23T17:26:52.397Z",
+    "catchLat": 34.19041562426653,
+    "catchLng": -83.95971285559584,
+    "source": "demo",
+    "weather": {
+      "temp": 72,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "62c4c31b-90cb-496c-b8d4-fa75a0372683",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Texas Rig",
+    "color": "Crawfish",
+    "weight": "3.28",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-29T07:53:50.555Z",
+    "catchLat": 34.16045786017766,
+    "catchLng": -84.03991091360345,
+    "source": "demo",
+    "weather": {
+      "temp": 71,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "d0cde255-ed06-4c17-9805-e8d27ff21d24",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Drop Shot",
+    "color": "Chartreuse",
+    "weight": "4.16",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-31T02:10:32.538Z",
+    "catchLat": 34.2098207516884,
+    "catchLng": -84.07028700229236,
+    "source": "demo",
+    "weather": {
+      "temp": 60,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "77912a35-f6ac-4fbf-85dc-54cf56522560",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Spinnerbait",
+    "color": "Shad",
+    "weight": "5.65",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-17T03:26:24.540Z",
+    "catchLat": 34.35948887599265,
+    "catchLng": -83.97977208958369,
+    "source": "demo",
+    "weather": {
+      "temp": 64,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "ed863ed7-ab10-4907-b628-baa844a1b5e4",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Texas Rig",
+    "color": "Black/Blue",
+    "weight": "2.37",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-10T23:41:16.531Z",
+    "catchLat": 34.40963403987352,
+    "catchLng": -83.84015207026343,
+    "source": "demo",
+    "weather": {
+      "temp": 65,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "106ab107-de09-4c4e-8f3b-4fa50928befd",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Spinnerbait",
+    "color": "Crawfish",
+    "weight": "4.06",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-13T22:18:44.103Z",
+    "catchLat": 34.279917646222394,
+    "catchLng": -83.86039683618677,
+    "source": "demo",
+    "weather": {
+      "temp": 63,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "d3c8a0e3-25c2-44e6-93eb-b49bdcc8b11e",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Drop Shot",
+    "color": "Black/Blue",
+    "weight": "2.59",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-17T06:47:44.902Z",
+    "catchLat": 34.32064039611123,
+    "catchLng": -83.89022279879491,
+    "source": "demo",
+    "weather": {
+      "temp": 76,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "c0cd48a0-1f9e-4dc9-974a-b771f2164346",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Senko",
+    "color": "Pearl White",
+    "weight": "4.13",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-07T17:39:46.720Z",
+    "catchLat": 34.18037459188706,
+    "catchLng": -83.93994844543187,
+    "source": "demo",
+    "weather": {
+      "temp": 76,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "54ee8f5b-abd1-4963-87ce-90ce4af9238d",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Spinnerbait",
+    "color": "Black/Blue",
+    "weight": "2.70",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-01-27T08:48:45.121Z",
+    "catchLat": 34.200005798751256,
+    "catchLng": -84.05030505758556,
+    "source": "demo",
+    "weather": {
+      "temp": 69,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "a2c8ebe2-f91e-45d8-a80f-16e1a0b5bea4",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Jig",
+    "color": "Pearl White",
+    "weight": "4.49",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-11-22T13:49:53.546Z",
+    "catchLat": 34.21963346831808,
+    "catchLng": -83.87978425584308,
+    "source": "demo",
+    "weather": {
+      "temp": 84,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "bec851a4-2cce-4830-aeb5-0e1040d1c29d",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Crankbait",
+    "color": "Chartreuse",
+    "weight": "5.64",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-04T17:22:58.549Z",
+    "catchLat": 34.24939529313808,
+    "catchLng": -83.92023990633018,
+    "source": "demo",
+    "weather": {
+      "temp": 82,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "188c7daa-283e-46f7-809c-cda721193d2e",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Drop Shot",
+    "color": "Pearl White",
+    "weight": "3.89",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-18T11:28:31.611Z",
+    "catchLat": 34.26947651543106,
+    "catchLng": -84.0601676798615,
+    "source": "demo",
+    "weather": {
+      "temp": 73,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "26b9849f-fc99-46a5-9c3d-d3bcb51cc682",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Chatterbait",
+    "color": "Chartreuse",
+    "weight": "3.17",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-07T01:20:40.875Z",
+    "catchLat": 34.29971509480754,
+    "catchLng": -83.86981339836672,
+    "source": "demo",
+    "weather": {
+      "temp": 77,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "0e1d5a26-2793-45d1-8de2-aecfe0e635d8",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Chatterbait",
+    "color": "Black/Blue",
+    "weight": "5.66",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-01T03:44:45.690Z",
+    "catchLat": 34.32969276330857,
+    "catchLng": -83.83951351460716,
+    "source": "demo",
+    "weather": {
+      "temp": 56,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "2733897b-82cd-4198-bd88-8cbd6f3bd199",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Senko",
+    "color": "Crawfish",
+    "weight": "3.30",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-29T08:49:30.213Z",
+    "catchLat": 34.35031690027614,
+    "catchLng": -84.00033777954599,
+    "source": "demo",
+    "weather": {
+      "temp": 59,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "bd2501ea-6f79-4ea0-ab97-7d177f711018",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Jig",
+    "color": "Pearl White",
+    "weight": "3.25",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-07T05:53:39.445Z",
+    "catchLat": 34.38023910183733,
+    "catchLng": -83.93966586286435,
+    "source": "demo",
+    "weather": {
+      "temp": 78,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "4716cebd-6c70-4f20-9db3-39c07ec72a8e",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Spinnerbait",
+    "color": "Shad",
+    "weight": "2.66",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-12-12T05:33:04.534Z",
+    "catchLat": 34.399812353137555,
+    "catchLng": -83.82026019400399,
+    "source": "demo",
+    "weather": {
+      "temp": 84,
+      "conditions": "Overcast"
+    }
+  },
+  {
+    "id": "d3161b56-cb77-4718-a7f7-951abf98df2f",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Texas Rig",
+    "color": "Chartreuse",
+    "weight": "4.17",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-20T05:58:37.110Z",
+    "catchLat": 34.15025368190506,
+    "catchLng": -84.05973078816831,
+    "source": "demo",
+    "weather": {
+      "temp": 68,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "0f247003-3bd9-4f78-a7c5-f8107c3be5ff",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Jig",
+    "color": "Watermelon Red",
+    "weight": "3.43",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-17T18:38:58.108Z",
+    "catchLat": 34.19047548875661,
+    "catchLng": -84.07969207950828,
+    "source": "demo",
+    "weather": {
+      "temp": 55,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "f7dafbc4-4157-41fc-a243-8d4375582231",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Crankbait",
+    "color": "Pearl White",
+    "weight": "8.30",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2026-02-13T06:54:47.225Z",
+    "catchLat": 34.239630019779675,
+    "catchLng": -83.85003994210498,
+    "source": "demo",
+    "weather": {
+      "temp": 56,
+      "conditions": "Partly Cloudy"
+    }
+  },
+  {
+    "id": "8f629228-b519-41a8-835a-cf4a81b997fc",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "largemouth",
+    "lure": "Jig",
+    "color": "Pearl White",
+    "weight": "3.77",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-13T05:15:43.485Z",
+    "catchLat": 34.28994490661862,
+    "catchLng": -83.90042871080537,
+    "source": "demo",
+    "weather": {
+      "temp": 78,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "2708bc9f-43b4-48a8-af4e-387ffdac9cbf",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "smallmouth",
+    "lure": "Drop Shot",
+    "color": "Shad",
+    "weight": "5.06",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-09-17T03:58:28.301Z",
+    "catchLat": 34.34051519275653,
+    "catchLng": -83.85965884857407,
+    "source": "demo",
+    "weather": {
+      "temp": 58,
+      "conditions": "Clear"
+    }
+  },
+  {
+    "id": "2573ac9a-3e9d-48ad-a829-5aca1364386a",
+    "lakeName": "Lake Lanier",
+    "lakeId": "lake-lanier-ga",
+    "species": "spotted",
+    "lure": "Topwater Frog",
+    "color": "Bluegill",
+    "weight": "5.30",
+    "notes": "",
+    "photoUrl": null,
+    "caughtAt": "2025-10-05T05:54:52.824Z",
+    "catchLat": 34.36957650588318,
+    "catchLng": -83.80037567163671,
+    "source": "demo",
+    "weather": {
+      "temp": 77,
+      "conditions": "Partly Cloudy"
+    }
+  }
+];
+
+// Get existing catches or initialize
+const existingKey = "catchlog_api_cache";
+const existing = JSON.parse(localStorage.getItem(existingKey) || "{}");
+
+// Add demo catches to Lake Lanier
+existing["lake-lanier-ga"] = demoCatches;
+
+// Save back
+localStorage.setItem(existingKey, JSON.stringify(existing));
+
+console.log("✅ Added " + demoCatches.length + " demo catches to Lake Lanier!");
+console.log("Navigate to Lake Lanier on the map to see the pins.");
+
+
+=== END OF CODE ===
+

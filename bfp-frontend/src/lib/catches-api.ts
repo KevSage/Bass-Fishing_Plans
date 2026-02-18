@@ -12,7 +12,7 @@ const getApiBase = () => getApiBaseUrl();
 // TYPES
 // =============================================================================
 
-export type CatchSource = "camera" | "library" | "manual";
+export type CatchSource = "camera" | "library" | "manual" | "demo";
 export type LakeType = "known" | "custom" | "unresolved";
 export type BassSpecies = "largemouth" | "smallmouth" | "spotted";
 

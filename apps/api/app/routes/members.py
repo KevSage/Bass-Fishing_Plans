@@ -227,6 +227,8 @@ async def member_status(authorization: Optional[str] = Header(None)) -> Dict:
         "cancel_at_period_end": None,
         "plan_interval": None,
         "plan_amount": None,
+        # Free tier plan tracking
+        "plans_generated": subscriber.plans_generated if subscriber else 0,
     }
     
     # Fetch real Stripe subscription data if user has subscription

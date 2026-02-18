@@ -20,6 +20,8 @@ class Subscriber:
     apple_user_id: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
+    # Free tier plan tracking
+    plans_generated: int = 0
 
 
 class SubscriberStore:
@@ -76,6 +78,12 @@ class SubscriberStore:
                 );
                 """
             )
+            # Add plans_generated column if it doesn't exist
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS plans_generated INTEGER DEFAULT 0;
+                """
+            )
             conn.commit()
 
     def _pg_upsert(
@@ -115,7 +123,7 @@ class SubscriberStore:
         with self._pg_conn() as conn:
             row = conn.execute(
                 """
-                SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
+                SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name, COALESCE(plans_generated, 0) as plans_generated
                 FROM subscribers
                 WHERE email = %s
                 """,
@@ -133,13 +141,14 @@ class SubscriberStore:
             apple_user_id=row["apple_user_id"],
             first_name=row["first_name"],
             last_name=row["last_name"],
+            plans_generated=row["plans_generated"] or 0,
         )
 
     def _pg_get_by_apple_id(self, apple_user_id: str) -> Optional[Subscriber]:
         with self._pg_conn() as conn:
             row = conn.execute(
                 """
-                SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name
+                SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name, COALESCE(plans_generated, 0) as plans_generated
                 FROM subscribers
                 WHERE apple_user_id = %s
                 """,
@@ -157,6 +166,7 @@ class SubscriberStore:
             apple_user_id=row["apple_user_id"],
             first_name=row["first_name"],
             last_name=row["last_name"],
+            plans_generated=row["plans_generated"] or 0,
         )
 
     # -------------------------
@@ -189,6 +199,11 @@ class SubscriberStore:
                 );
                 """
             )
+            # Add plans_generated column if it doesn't exist (SQLite migration)
+            try:
+                conn.execute("ALTER TABLE subscribers ADD COLUMN plans_generated INTEGER DEFAULT 0;")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             conn.commit()
 
     # -------------------------
@@ -369,7 +384,7 @@ class SubscriberStore:
         email_norm = email.lower().strip()
         with self._sqlite_conn() as conn:
             row = conn.execute(
-                "SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name FROM subscribers WHERE email=?",
+                "SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name, COALESCE(plans_generated, 0) as plans_generated FROM subscribers WHERE email=?",
                 (email_norm,),
             ).fetchone()
             if not row:
@@ -382,6 +397,7 @@ class SubscriberStore:
                 apple_user_id=row["apple_user_id"],
                 first_name=row["first_name"],
                 last_name=row["last_name"],
+                plans_generated=row["plans_generated"] or 0,
             )
 
     def get_by_apple_id(self, apple_user_id: str) -> Optional[Subscriber]:
@@ -392,7 +408,7 @@ class SubscriberStore:
         # SQLite fallback
         with self._sqlite_conn() as conn:
             row = conn.execute(
-                "SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name FROM subscribers WHERE apple_user_id=?",
+                "SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name, COALESCE(plans_generated, 0) as plans_generated FROM subscribers WHERE apple_user_id=?",
                 (apple_user_id,),
             ).fetchone()
             if not row:
@@ -405,7 +421,67 @@ class SubscriberStore:
                 apple_user_id=row["apple_user_id"],
                 first_name=row["first_name"],
                 last_name=row["last_name"],
+                plans_generated=row["plans_generated"] or 0,
             )
+
+    def increment_plans_generated(self, email: str) -> int:
+        """Increment plans_generated for a user (free tier tracking). Returns new count."""
+        email_norm = email.lower().strip()
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                # First ensure user exists with default 0 if not
+                conn.execute(
+                    """
+                    INSERT INTO subscribers (email, active, plans_generated)
+                    VALUES (%s, FALSE, 0)
+                    ON CONFLICT (email) DO NOTHING;
+                    """,
+                    (email_norm,)
+                )
+                # Then increment
+                row = conn.execute(
+                    """
+                    UPDATE subscribers
+                    SET plans_generated = COALESCE(plans_generated, 0) + 1
+                    WHERE email = %s
+                    RETURNING plans_generated;
+                    """,
+                    (email_norm,)
+                ).fetchone()
+                conn.commit()
+                return row["plans_generated"] if row else 1
+        else:
+            with self._sqlite_conn() as conn:
+                # Ensure user exists
+                conn.execute(
+                    """
+                    INSERT INTO subscribers (email, active, plans_generated)
+                    VALUES (?, 0, 0)
+                    ON CONFLICT(email) DO NOTHING;
+                    """,
+                    (email_norm,)
+                )
+                # Increment
+                conn.execute(
+                    """
+                    UPDATE subscribers
+                    SET plans_generated = COALESCE(plans_generated, 0) + 1
+                    WHERE email = ?;
+                    """,
+                    (email_norm,)
+                )
+                conn.commit()
+                # Fetch new value
+                row = conn.execute(
+                    "SELECT plans_generated FROM subscribers WHERE email = ?",
+                    (email_norm,)
+                ).fetchone()
+                return row["plans_generated"] if row else 1
+
+    def get_plans_generated(self, email: str) -> int:
+        """Get plans_generated count for a user."""
+        sub = self.get(email)
+        return sub.plans_generated if sub else 0
 
     def is_active(self, email: str) -> bool:
         sub = self.get(email)

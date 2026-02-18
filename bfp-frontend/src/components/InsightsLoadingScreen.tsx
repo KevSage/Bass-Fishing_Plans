@@ -27,12 +27,14 @@ export function InsightsLoadingScreen() {
   return (
     <div
       style={{
-        padding: 60,
+        position: "fixed",
+        inset: 0,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         opacity: 0.8,
+        paddingBottom: 80, // Account for bottom nav
       }}
     >
       <div className="data-wave">

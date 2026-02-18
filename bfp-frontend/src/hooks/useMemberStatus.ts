@@ -13,6 +13,7 @@ export interface MemberStatus {
   rate_limit_seconds: number;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  plans_generated?: number; // Free tier: 5 plan limit
 }
 
 // 1. GLOBAL CACHE (Exists outside the hook)
@@ -108,6 +109,10 @@ export function useMemberStatus() {
     fetchStatus();
   }, [isSignedIn, nativeAuth.isSignedIn]);
 
+  const plansGenerated = status?.plans_generated ?? 0;
+  const FREE_PLAN_LIMIT = 5;
+  const plansRemaining = Math.max(0, FREE_PLAN_LIMIT - plansGenerated);
+
   return {
     status,
     loading,
@@ -115,5 +120,8 @@ export function useMemberStatus() {
     refetch: fetchStatus,
     isActive: status?.is_member && status?.has_subscription,
     isLoading: loading,
+    plansGenerated,
+    plansRemaining,
+    FREE_PLAN_LIMIT,
   };
 }

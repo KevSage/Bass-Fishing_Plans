@@ -512,7 +512,10 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
     
     if is_member:
         rate_limits.increment_daily_count(email)
-    
+    else:
+        # Free tier: increment lifetime plans_generated counter
+        subs.increment_plans_generated(email)
+
     return {
         "plan_url": plan_url,
         "token": token,

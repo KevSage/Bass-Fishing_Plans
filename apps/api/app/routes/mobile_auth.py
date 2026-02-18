@@ -496,6 +496,9 @@ async def mobile_member_status(request: MobileStatusRequest):
 
     if free_mode:
         # FREE_MODE: All authenticated users get full member access
+        # Still return plans_generated for tracking
+        store = SubscriberStore()
+        subscriber = store.get(request.email)
         return {
             "email": request.email,
             "is_member": True,
@@ -509,6 +512,7 @@ async def mobile_member_status(request: MobileStatusRequest):
             "cancel_at_period_end": False,
             "plan_interval": "month",
             "plan_amount": 10,
+            "plans_generated": subscriber.plans_generated if subscriber else 0,
         }
 
     # Normal mode: Check actual subscriber status from database
@@ -530,6 +534,7 @@ async def mobile_member_status(request: MobileStatusRequest):
         "cancel_at_period_end": False,
         "plan_interval": "month",
         "plan_amount": 10,
+        "plans_generated": subscriber.plans_generated if subscriber else 0,
     }
 
 

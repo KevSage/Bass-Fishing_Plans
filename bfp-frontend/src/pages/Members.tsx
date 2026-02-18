@@ -12,6 +12,7 @@ import { useNativeAuth } from "@/context/NativeAuthContext";
 import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import "@/styles/members.css";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import polylabel from "polylabel";
 import { MapLoadingScreen } from "@/components/MapLoadingScreen";
@@ -46,7 +47,10 @@ import {
   useCatchLog,
   createCatchMarkers,
   removeCatchMarkers,
+  onEntriesUpdate,
+  getGlobalEntries,
   type ActiveLake,
+  type CatchEntry,
 } from "@/components/CatchLog";
 
 // --- IMAGE UTILS ---
@@ -646,11 +650,12 @@ export function Members() {
   const { user } = usePlatformUser();
   const { getToken } = usePlatformAuth();
   const nativeAuth = useNativeAuth();
-  const { isActive, isLoading: statusLoading } = useMemberStatus();
+  const { isActive, isLoading: statusLoading, plansRemaining } = useMemberStatus();
   const navigate = useNavigate();
   const location = useLocation();
   const [dataVersion, setDataVersion] = useState(0);
   const [mapKey, setMapKey] = useState(0); // For forcing map re-init after navigation
+  const [mapReady, setMapReady] = useState(false); // Triggers catch marker re-render when map loads
   const [searchParams] = useSearchParams();
 
   // --- WEATHER STATE & CACHING ---
@@ -690,6 +695,58 @@ export function Members() {
     setUpgradeMessage(msg);
     setShowUpgradeModal(true);
   };
+
+  // Lake Context Menu State
+  const [lakeContextMenu, setLakeContextMenu] = useState<{
+    lake: FavoriteLake;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  // Home Lake ID (stored in localStorage, first position in switcher)
+  const HOME_LAKE_KEY = "bc_home_lake_id";
+  const [homeLakeId, setHomeLakeId] = useState<string | null>(() => {
+    return localStorage.getItem(HOME_LAKE_KEY);
+  });
+
+  // Sort favorites to put home lake first
+  const sortedFavorites = useMemo(() => {
+    if (!homeLakeId) return favorites;
+    const home = favorites.find(f => f.id === homeLakeId);
+    if (!home) return favorites;
+    return [home, ...favorites.filter(f => f.id !== homeLakeId)];
+  }, [favorites, homeLakeId]);
+
+  const setAsHomeLake = useCallback((lakeId: string) => {
+    localStorage.setItem(HOME_LAKE_KEY, lakeId);
+    setHomeLakeId(lakeId);
+    setLakeContextMenu(null);
+  }, []);
+
+  // Long-press handlers for lake options menu
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTriggeredRef = useRef(false);
+
+  const handleLongPressStart = useCallback((lake: FavoriteLake) => {
+    longPressTriggeredRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true;
+      // Haptic feedback on iOS via Capacitor
+      try {
+        import('@capacitor/haptics').then(({ Haptics, ImpactStyle }) => {
+          Haptics.impact({ style: ImpactStyle.Medium });
+        }).catch(() => {});
+      } catch (err) {}
+      setLakeContextMenu({ lake, x: 0, y: 0 }); // x,y not used now (centered)
+    }, 500);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
 
   // Derived suggestion data
   const lakeSuggestionsData = useMemo(() => {
@@ -739,12 +796,16 @@ export function Members() {
   // Favorites Panel State
   const [showFavorites, setShowFavorites] = useState(false);
 
+  // Theme detection based on map style
+  const mapStyle = localStorage.getItem("bc_mapbox_style") || "mapbox://styles/mapbox/dark-v11";
+  const isLightTheme = mapStyle.includes("light-v11");
+
   // Plan State
   const [lastPlanUrl, setLastPlanUrl] = useState<string | null>(() =>
-    sessionStorage.getItem("aiq_last_plan_url"),
+    localStorage.getItem("aiq_last_plan_url"),
   );
   const [lastPlanLake, setLastPlanLake] = useState<string | null>(() =>
-    sessionStorage.getItem("aiq_last_plan_lake"),
+    localStorage.getItem("aiq_last_plan_lake"),
   );
 
   // Strategy/Generate Modals
@@ -1063,6 +1124,67 @@ export function Members() {
     }, 500);
   }, [favorites, viewingFavoriteId, searchParams]);
 
+  // Navigate to Home Lake on initial app load
+  const initialHomeLakeNavigatedRef = useRef(false);
+  useEffect(() => {
+    // Only run once
+    if (initialHomeLakeNavigatedRef.current) return;
+    // Wait for map to be ready and favorites to load
+    if (!mapReady || favorites.length === 0) return;
+
+    // Don't navigate if we have URL params (those take priority)
+    const urlLat = searchParams.get("lat");
+    const urlLng = searchParams.get("lng");
+    if (urlLat && urlLng) {
+      initialHomeLakeNavigatedRef.current = true;
+      return;
+    }
+
+    initialHomeLakeNavigatedRef.current = true;
+
+    // If there's a viewingFavoriteId from session, fly to that lake
+    if (viewingFavoriteId) {
+      const sessionLake = favorites.find((f) => f.id === viewingFavoriteId);
+      if (sessionLake && mapRef.current) {
+        console.log("[Members] Restoring session lake:", sessionLake.name);
+        // Also set the state in case it wasn't fully restored
+        setWaterName(sessionLake.name);
+        setLocationDetails({ city: sessionLake.city, state: sessionLake.state });
+        setSelectedCoords({ lat: sessionLake.lat, lng: sessionLake.lng });
+        mapRef.current.flyTo({
+          center: [sessionLake.lng, sessionLake.lat],
+          zoom: getZoomForLake(sessionLake.acres),
+          duration: 1500,
+        });
+      }
+      return;
+    }
+
+    // No session - find home lake: either stored homeLakeId or first favorite
+    const homeId = localStorage.getItem(HOME_LAKE_KEY);
+    const homeLake = homeId
+      ? favorites.find((f) => f.id === homeId) || favorites[0]
+      : favorites[0];
+
+    if (!homeLake) return;
+
+    // Navigate to home lake
+    console.log("[Members] Initial navigation to home lake:", homeLake.name);
+    setWaterName(homeLake.name);
+    setViewingFavoriteId(homeLake.id);
+    setLocationDetails({ city: homeLake.city, state: homeLake.state });
+    setSelectedCoords({ lat: homeLake.lat, lng: homeLake.lng });
+
+    // Fly to home lake - map is ready so we can fly immediately
+    if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [homeLake.lng, homeLake.lat],
+        zoom: getZoomForLake(homeLake.acres),
+        duration: 1500,
+      });
+    }
+  }, [mapReady, favorites, viewingFavoriteId, searchParams]);
+
   // --- DERIVED STATE ---
   const isCurrentLocationSaved = useMemo(() => {
     if (!selectedCoords) return false;
@@ -1154,15 +1276,41 @@ export function Members() {
   }, [catchLog.isOpen]);
 
   useEffect(() => {
+    console.log("[LiveCamera] draftEntry useEffect triggered", {
+      hasDraft: !!draftEntry,
+      activeLake: activeLake?.name || "null",
+      catchLogIsOpen: catchLog.isOpen,
+    });
+
+    // If no draft, reset tracking
     if (!draftEntry) {
       lastDraftOpenedRef.current = null;
       return;
     }
+
+    // Wait for activeLake to be ready - it updates from the same state changes
+    if (!activeLake) {
+      console.log("[LiveCamera] Waiting for activeLake to be set");
+      return;
+    }
+
+    // Don't open if already open
+    if (catchLog.isOpen) {
+      console.log("[LiveCamera] CatchLog already open, skipping");
+      return;
+    }
+
     const key = `${draftEntry.caughtAt ?? ""}|${draftEntry.lakeName ?? ""}`;
-    if (lastDraftOpenedRef.current === key) return;
+    console.log("[LiveCamera] Draft key:", key, "lastKey:", lastDraftOpenedRef.current);
+    if (lastDraftOpenedRef.current === key) {
+      console.log("[LiveCamera] Skipping - same key");
+      return;
+    }
     lastDraftOpenedRef.current = key;
+    console.log("[LiveCamera] Calling catchLog.showForm with draftEntry");
     catchLog.showForm(draftEntry as any);
-  }, [draftEntry, catchLog]);
+    console.log("[LiveCamera] After showForm - checking state");
+  }, [draftEntry, activeLake, catchLog.isOpen, catchLog.showForm]);
 
   const lakeLabelData = useMemo(() => {
     if (!selectedCoords) return null;
@@ -1204,20 +1352,60 @@ export function Members() {
     };
   }, [selectedCoords, waterName, locationDetails, favorites, currentFavorite]);
 
+  // Force update trigger for when entries are loaded
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  // Register callback to be notified when entries are updated (handles race condition)
+  useEffect(() => {
+    const unsubscribe = onEntriesUpdate(() => {
+      console.log('[Members] Entries updated callback - forcing marker refresh');
+      setForceUpdate((v) => v + 1);
+    });
+    return unsubscribe;
+  }, []);
+
+  // Helper to filter catches for active lake (bypasses React state timing issues)
+  const getFilteredCatches = useCallback((): CatchEntry[] => {
+    if (!activeLake) return [];
+
+    // Read directly from global cache to bypass React state timing
+    const allEntries = getGlobalEntries();
+
+    return allEntries.filter(
+      (c) =>
+        c.lakeName === activeLake.name ||
+        (Math.abs(c.lakeLat - activeLake.lat) < 0.01 &&
+          Math.abs(c.lakeLng - activeLake.lng) < 0.01)
+    );
+  }, [activeLake]);
+
+  // Create catch markers when map is ready, lake changes, or entries update
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady) return;
+
+    // Use direct global cache read instead of React state
+    const catches = getFilteredCatches();
+
+    console.log('[Members] Creating catch markers:', {
+      catchesFromGlobalCache: catches.length,
+      catchesFromHook: catchLog.lakeCatches.length,
+      activeLake: activeLake?.name,
+      forceUpdate,
+    });
+
     removeCatchMarkers(catchMarkersRef.current);
     catchMarkersRef.current = [];
     catchMarkersRef.current = createCatchMarkers(
       map,
-      catchLog.lakeCatches,
+      catches,
       (entry) => catchLog.showDetail(entry),
     );
+
     return () => {
       removeCatchMarkers(catchMarkersRef.current);
     };
-  }, [catchLog.lakeCatches, mapRef.current]);
+  }, [getFilteredCatches, catchLog.lakeCatches, mapReady, activeLake, forceUpdate]);
 
   // --- WEATHER EFFECTS & CACHING ---
 
@@ -1302,6 +1490,7 @@ export function Members() {
   // --- MAP INIT ---
   useEffect(() => {
     isMountedRef.current = true;
+    setMapReady(false); // Reset until new map loads
     if (initialized.current || !mapContainer.current || !MAPBOX_TOKEN) return;
     initialized.current = true;
     mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -1317,9 +1506,23 @@ export function Members() {
       initialZoom = 12;
     }
 
+    // Get saved map style or use default (Dark theme matches app UI)
+    // Reset to default if saved style is no longer available (e.g., Light was removed)
+    const validStyles = [
+      "mapbox://styles/mapbox/dark-v11",
+      "mapbox://styles/mapbox/outdoors-v12",
+      "mapbox://styles/mapbox/satellite-v9",
+    ];
+    const defaultStyle = "mapbox://styles/mapbox/dark-v11";
+    let savedMapStyle = localStorage.getItem("bc_mapbox_style");
+    if (!savedMapStyle || !validStyles.includes(savedMapStyle)) {
+      savedMapStyle = defaultStyle;
+      localStorage.setItem("bc_mapbox_style", defaultStyle);
+    }
+
     const m = new mapboxgl.Map({
       container: mapContainer.current,
-      style: "mapbox://styles/mapbox/outdoors-v12",
+      style: savedMapStyle,
       center: startCenter,
       zoom: initialZoom,
       pitch: 0,
@@ -1330,6 +1533,9 @@ export function Members() {
     mapRef.current = m;
     m.dragRotate.disable();
     m.touchZoomRotate.disableRotation();
+
+    // Signal map is ready for catch markers
+    m.on("load", () => setMapReady(true));
 
     const navControl = new mapboxgl.NavigationControl({ showCompass: false });
     const geoControl = new mapboxgl.GeolocateControl({
@@ -1691,47 +1897,152 @@ export function Members() {
   };
 
   const handleLiveCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("[LiveCamera] handleLiveCapture triggered");
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log("[LiveCamera] No file selected");
+      return;
+    }
+    console.log("[LiveCamera] File selected:", file.name, file.size);
+    console.log("[LiveCamera] Current activeLake:", activeLake?.name || "null");
+
+    // Compress image
+    console.log("[LiveCamera] Starting image compression...");
     let compressedFile = file;
     try {
       compressedFile = await compressImage(file);
+      console.log("[LiveCamera] Compression complete, size:", compressedFile.size);
     } catch (err) {
-      console.warn("Compression failed, using original", err);
+      console.warn("[LiveCamera] Compression failed, using original", err);
     }
-    const getPosition = () => {
-      return new Promise<GeolocationPosition>((resolve, reject) => {
-        if (!navigator.geolocation) return reject("No Geo");
+
+    // Get GPS position with manual timeout (navigator timeout is unreliable in WebView)
+    console.log("[LiveCamera] Getting GPS position...");
+    let latitude = 0;
+    let longitude = 0;
+    let lakeName = waterName || activeLake?.name || "Unknown Water";
+    let useGps = false;
+
+    // Helper to calculate distance in km between two coordinates
+    const getDistanceKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+      const R = 6371; // Earth's radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLng = (lng2 - lng1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng/2) * Math.sin(dLng/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    };
+
+    // Get the current lake's anchors (boundary) if available
+    const currentFav = favorites.find(f => f.name === lakeName);
+    const lakeAnchors = currentFav?.anchors;
+    console.log("[LiveCamera] Lake anchors available:", !!lakeAnchors, lakeAnchors?.length || 0, "points");
+
+    // Try to get real-time GPS first
+    try {
+      const gpsPromise = new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!navigator.geolocation) {
+          console.log("[LiveCamera] No geolocation API");
+          return reject("No Geo");
+        }
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 5000,
+          enableHighAccuracy: true, // we want precise location for hot spots
+          timeout: 3000,
           maximumAge: 10000,
         });
       });
-    };
-    let latitude = 0;
-    let longitude = 0;
-    let lakeName = "Unknown Water";
-    try {
-      const pos = await getPosition();
-      latitude = pos.coords.latitude;
-      longitude = pos.coords.longitude;
-      const fav = findNearestFavorite(latitude, longitude, favorites);
-      const db = findNearestLake(latitude, longitude);
-      if (fav) lakeName = fav.name;
-      else if (db) lakeName = db.name;
-    } catch (gpsErr) {
-      console.warn("GPS failed or timed out", gpsErr);
+
+      // Manual timeout that actually works in WebView
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("GPS timeout")), 3000);
+      });
+
+      const pos = await Promise.race([gpsPromise, timeoutPromise]);
+      const gpsLat = pos.coords.latitude;
+      const gpsLng = pos.coords.longitude;
+      console.log("[LiveCamera] GPS success:", gpsLat, gpsLng);
+
+      // Check if GPS is within vicinity of the active lake (10km radius)
       if (selectedCoords) {
+        const distanceKm = getDistanceKm(gpsLat, gpsLng, selectedCoords.lat, selectedCoords.lng);
+        console.log("[LiveCamera] Distance from lake center:", distanceKm.toFixed(2), "km");
+
+        if (distanceKm <= 10) {
+          // User is near the lake - check if GPS point is actually on water
+          if (lakeAnchors && lakeAnchors.length >= 3) {
+            const isOnWater = pointInPolygon({ lat: gpsLat, lng: gpsLng }, lakeAnchors);
+            console.log("[LiveCamera] GPS point in lake boundary:", isOnWater);
+
+            if (isOnWater) {
+              // GPS is confirmed on water - use it for precise hot spot
+              latitude = gpsLat;
+              longitude = gpsLng;
+              useGps = true;
+              console.log("[LiveCamera] Using real GPS - confirmed on water");
+            } else {
+              // GPS is near lake but not on water (on shore?) - snap to lake center
+              const waterCenter = findWaterCenter(currentFav as any);
+              latitude = waterCenter.lat;
+              longitude = waterCenter.lng;
+              console.log("[LiveCamera] GPS near lake but not on water - using visual center:", latitude, longitude);
+            }
+          } else {
+            // No boundary data - use GPS since we're within 10km
+            latitude = gpsLat;
+            longitude = gpsLng;
+            useGps = true;
+            console.log("[LiveCamera] No lake boundary - using GPS within vicinity");
+          }
+        } else {
+          // User is far from lake (testing from home?) - use lake coordinates
+          if (lakeAnchors && lakeAnchors.length >= 3 && currentFav) {
+            const waterCenter = findWaterCenter(currentFav as any);
+            latitude = waterCenter.lat;
+            longitude = waterCenter.lng;
+            console.log("[LiveCamera] GPS too far - using lake visual center:", latitude, longitude);
+          } else {
+            latitude = selectedCoords.lat;
+            longitude = selectedCoords.lng;
+            console.log("[LiveCamera] GPS too far - using lake center:", latitude, longitude);
+          }
+        }
+      } else {
+        // No selected coords, use GPS and try to find nearest lake
+        latitude = gpsLat;
+        longitude = gpsLng;
+        useGps = true;
+        const fav = findNearestFavorite(latitude, longitude, favorites);
+        const db = findNearestLake(latitude, longitude);
+        if (fav) lakeName = fav.name;
+        else if (db) lakeName = db.name;
+        console.log("[LiveCamera] No active lake, resolved from GPS:", lakeName);
+      }
+    } catch (gpsErr) {
+      console.warn("[LiveCamera] GPS failed or timed out:", gpsErr);
+      // Fall back to lake visual center (guaranteed on water) or lake center
+      if (currentFav && lakeAnchors && lakeAnchors.length >= 3) {
+        const waterCenter = findWaterCenter(currentFav as any);
+        latitude = waterCenter.lat;
+        longitude = waterCenter.lng;
+        console.log("[LiveCamera] GPS failed - using lake visual center:", latitude, longitude);
+      } else if (selectedCoords) {
         latitude = selectedCoords.lat;
         longitude = selectedCoords.lng;
+        console.log("[LiveCamera] GPS failed - using lake center:", latitude, longitude);
       }
     }
+
+    console.log("[LiveCamera] Final location:", { latitude, longitude, lakeName, useGps });
     const reader = new FileReader();
     reader.onload = (ev) => {
+      console.log("[LiveCamera] FileReader onload triggered");
       const imageData = ev.target?.result as string;
+      console.log("[LiveCamera] Image data length:", imageData?.length || 0);
 
       // Set selectedCoords and waterName so activeLake is populated for the catch form
+      console.log("[LiveCamera] Setting coords:", { latitude, longitude, lakeName });
       if (latitude && longitude) {
         setSelectedCoords({ lat: latitude, lng: longitude });
         setWaterName(lakeName);
@@ -1750,9 +2061,17 @@ export function Members() {
         species: "Largemouth Bass",
         source: "camera",
       };
+      console.log("[LiveCamera] Setting draftEntry - useEffect will handle showForm");
       setDraftEntry(newDraft);
+      // Don't call showForm here - let the useEffect handle it after state updates
+      // This avoids stale closure issues with catchLog
+    };
+    console.log("[LiveCamera] Setting up FileReader for file size:", compressedFile.size);
+    reader.onerror = (err) => {
+      console.error("[LiveCamera] FileReader error:", err);
     };
     reader.readAsDataURL(compressedFile);
+    console.log("[LiveCamera] Started FileReader.readAsDataURL");
   };
 
   const handleCloseScoutModal = (e?: React.MouseEvent) => {
@@ -1847,8 +2166,8 @@ export function Members() {
           : {}),
       });
       const tokenUrl = `/plan?token=${response.token}&owner=1`;
-      sessionStorage.setItem("aiq_last_plan_url", tokenUrl);
-      sessionStorage.setItem("aiq_last_plan_lake", targetName || "");
+      localStorage.setItem("aiq_last_plan_url", tokenUrl);
+      localStorage.setItem("aiq_last_plan_lake", targetName || "");
       setLastPlanUrl(tokenUrl);
       setLastPlanLake(targetName || "");
       navigate(tokenUrl, { state: { planResponse: response } });
@@ -1869,12 +2188,31 @@ export function Members() {
     (e?: React.MouseEvent) => {
       e?.preventDefault();
       e?.stopPropagation();
+
+      // Free user checks
       if (!isActive) {
-        triggerUpgrade(
-          "Generate AI fishing plans based on real-time conditions with Pro.",
+        // Check if at home lake (first saved lake)
+        const homeLake = favorites.length > 0 ? favorites[0] : null;
+        const isAtHomeLake = homeLake && (
+          currentFavorite?.id === homeLake.id ||
+          (activeLake?.id === homeLake.id)
         );
-        return;
+
+        if (!isAtHomeLake) {
+          triggerUpgrade(
+            "Free users can generate plans for their Home Lake. Upgrade to plan any water.",
+          );
+          return;
+        }
+
+        if (plansRemaining <= 0) {
+          triggerUpgrade(
+            "You've used your 5 free plans. Upgrade to unlock unlimited AI plans.",
+          );
+          return;
+        }
       }
+
       const targetName = currentFavorite ? currentFavorite.name : waterName;
       if (!targetName && !activeLake) return;
       const hasPlan = !!lastPlanUrl;
@@ -1901,6 +2239,7 @@ export function Members() {
       currentFavorite,
       lastPlanUrl,
       lastPlanLake,
+      plansRemaining,
     ],
   );
 
@@ -2184,7 +2523,8 @@ export function Members() {
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "#0a0a0a", overflow: "hidden" }}
+      className={isLightTheme ? "theme-light" : "theme-dark"}
+      style={{ position: "fixed", inset: 0, background: isLightTheme ? "#f5f5f5" : "#0a0a0a", overflow: "hidden" }}
     >
       <input
         type="file"
@@ -2452,9 +2792,18 @@ export function Members() {
                         <StarIcon size={24} filled={isCurrentLocationSaved} />
                       </button>
                       {lakeLabelData.isKnown ? (
-                        <h2 className="top-bar-lake-name">
-                          {lakeLabelData.name}
-                        </h2>
+                        <>
+                          <h2 className="top-bar-lake-name">
+                            {lakeLabelData.name}
+                          </h2>
+                          {viewingFavoriteId === homeLakeId && homeLakeId && (
+                            <span className="top-bar-home-badge" title="Home Lake">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 3L4 9v12h5v-7h6v7h5V9l-8-6z" />
+                              </svg>
+                            </span>
+                          )}
+                        </>
                       ) : (
                         <>
                           <input
@@ -2568,7 +2917,7 @@ export function Members() {
                     </div>
                     <span>Scout New</span>
                   </div>
-                  {favorites.map((lake, index) => {
+                  {sortedFavorites.map((lake, index) => {
                     const isActiveFav = lake.id === viewingFavoriteId;
                     // Non-pro users can only access their first (Home) lake
                     const isLocked = !isActive && index > 0;
@@ -2577,6 +2926,8 @@ export function Members() {
                         key={`${lake.lake_type}:${lake.id}`}
                         className={`nav-fav-card ${isActiveFav ? "active" : ""} ${isLocked ? "locked" : ""}`}
                         onClick={() => {
+                          // Don't navigate if long-press triggered or context menu is open
+                          if (longPressTriggeredRef.current || lakeContextMenu) return;
                           if (isLocked) {
                             triggerUpgrade(
                               "Free users can access 1 Home Lake. Upgrade to unlock all your saved waters."
@@ -2598,12 +2949,22 @@ export function Members() {
                             });
                           setShowFavorites(false);
                         }}
+                        onTouchStart={(e) => {
+                          e.preventDefault(); // Prevent iOS native context menu
+                          handleLongPressStart(lake);
+                        }}
+                        onTouchEnd={handleLongPressEnd}
+                        onTouchMove={handleLongPressEnd}
+                        onTouchCancel={handleLongPressEnd}
                         style={{
                           backgroundImage: lake.image
                             ? `url(${lake.image})`
                             : undefined,
                           backgroundSize: "cover",
                           backgroundPosition: "center",
+                          WebkitTouchCallout: "none",
+                          WebkitUserSelect: "none",
+                          userSelect: "none",
                         }}
                       >
                         <div className="nav-fav-card-gradient" />
@@ -2623,33 +2984,14 @@ export function Members() {
                             </div>
                           )}
                         </div>
-                        <button
-                          className="nav-fav-card-delete"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Remove ${lake.name} from favorites?`)) {
-                              handleRemoveSpecificLake(lake);
-                            }
-                          }}
-                        >
-                          <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          </svg>
-                        </button>
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
+
+{/* Lake Context Menu - Rendered at root level for proper z-index */}
 
             <div className="nav-icons-row">
               <div className="nav-cluster nav-cluster-left">
@@ -2757,12 +3099,17 @@ export function Members() {
           >
             <LightningIcon size={40} />
             <h3 style={{ marginTop: 15, marginBottom: 5 }}>Generate Plan</h3>
-            <p style={{ opacity: 0.6, fontSize: "0.9rem", marginBottom: 20 }}>
+            <p style={{ opacity: 0.6, fontSize: "0.9rem", marginBottom: !isActive ? 8 : 20 }}>
               Create a bass fishing plan for <br />
               <strong style={{ color: "#4A90E2" }}>
                 {currentFavorite?.name || waterName}
               </strong>
             </p>
+            {!isActive && (
+              <p style={{ opacity: 0.4, fontSize: "0.75rem", marginBottom: 16 }}>
+                {plansRemaining} of 5 free plans remaining
+              </p>
+            )}
 
             {/* Lure Selection Mode */}
             <div style={{ width: "100%", marginBottom: 20, textAlign: "left" }}>
@@ -3212,108 +3559,54 @@ export function Members() {
         </div>
       )}
 
-      <style>{`
-        .orb-marker-map { background-color: #4A90E2; border-radius: 50%; box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8); cursor: pointer; width: 24px; height: 24px; }
-        .top-gradient-bar { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 54px); left: 0; right: 0; z-index: 800; background: linear-gradient(to bottom, rgba(10,10,10,0.85) 0%, rgba(10,10,10,0.7) 30%, rgba(0,0,0,0.4) 70%, transparent 100%); padding: 12px 20px 45px; padding-left: max(20px, env(safe-area-inset-left, 20px)); padding-right: max(20px, env(safe-area-inset-right, 20px)); display: flex; justify-content: center; pointer-events: none; }
-        .top-bar-card { display: flex; flex-direction: column; align-items: center; position: relative; min-width: 280px; max-width: 400px; text-align: center; pointer-events: auto; padding-top: 4px; }
-        .top-bar-card-empty { text-align: center; }
-        .top-bar-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em; color: #4A90E2; margin-bottom: 4px; }
-        .top-bar-title { margin: 0; font-size: 1.5rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
-        .top-bar-subtitle { margin: 4px 0 0 0; font-size: 0.8rem; color: rgba(255,255,255,0.5); }
-        .top-bar-close { position: absolute; top: 0; right: 0; background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: color 0.2s; pointer-events: auto; }
-        .top-bar-close:hover { color: rgba(255,255,255,0.8); }
-        .top-bar-content-centered { display: flex; flex-direction: column; align-items: center; margin-top: 10px; padding-right: 40px; padding-left: 40px; }
-        .top-bar-name-row { display: flex; align-items: center; gap: 12px; justify-content: center; }
-        .top-bar-star-btn { background: transparent; border: none; color: rgba(255,255,255,0.3); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .top-bar-star-btn:hover { color: rgba(255,255,255,0.6); transform: scale(1.1); }
-        .top-bar-star-btn.saved { color: #F59E0B; filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.4)); }
-        .top-bar-lake-name { margin: 0; font-size: 1.5rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .top-bar-name-input { flex: 1; background: transparent; border: none; border-bottom: 1px dashed rgba(255,255,255,0.3); color: #fff; font-size: 1.25rem; font-weight: 700; padding: 4px 0; outline: none; letter-spacing: -0.02em; min-width: 0; text-align: center; }
-        .top-bar-name-input:focus { border-bottom-color: #4A90E2; }
-        .top-bar-name-input::placeholder { color: rgba(255,255,255,0.35); font-style: italic; font-weight: 500; }
-        .top-bar-save-btn { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4); }
-        .top-bar-save-btn:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 6px 16px rgba(74, 144, 226, 0.5); }
-        .top-bar-save-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-        .top-bar-location { display: flex; align-items: center; gap: 5px; color: rgba(255,255,255,0.6); font-size: 0.85rem; margin-top: 4px; font-weight: 500; }
-        .top-bar-edit-boundary { display: flex; align-items: center; gap: 4px; padding: 2px 8px; background: rgba(74, 144, 226, 0.15); border: 1px solid rgba(74, 144, 226, 0.3); border-radius: 12px; color: #4A90E2; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .top-bar-edit-boundary:hover { background: rgba(74, 144, 226, 0.25); }
-        .top-bar-suggestion { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 8px 12px; background: rgba(74, 144, 226, 0.15); border: 1px solid rgba(74, 144, 226, 0.3); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
-        .top-bar-suggestion:hover { background: rgba(74, 144, 226, 0.25); border-color: rgba(74, 144, 226, 0.5); }
-        .top-bar-suggestion .suggestion-label { font-size: 0.7rem; color: rgba(255,255,255,0.5); font-weight: 500; }
-        .top-bar-suggestion .suggestion-name { font-size: 0.85rem; color: #4A90E2; font-weight: 600; }
-        .mapboxgl-ctrl-recenter { width: 29px; height: 29px; display: flex; align-items: center; justify-content: center; background: #fff; border: none; cursor: pointer; border-radius: 4px; }
-        .mapboxgl-ctrl-recenter:hover { background: #f0f0f0; }
-        .mapboxgl-ctrl-recenter svg { color: #333; }
-        .members-navigation-container { position: fixed; bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); left: 50%; transform: translateX(-50%); z-index: 1000; width: 92%; max-width: 480px; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        .members-navigation-container.expanded { bottom: calc(env(safe-area-inset-bottom, 0px) + 30px); }
-        .members-navigation-container.native-ios { bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
-        .members-navigation-container.native-ios.expanded { bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
-        .glass-deck { display: flex; flex-direction: column; justify-content: flex-end; padding: 8px 12px; background: rgba(18, 18, 18, 0.92); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); transition: all 0.3s ease; position: relative; overflow: visible; }
-        .nav-icons-row { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 64px; }
-        .nav-favorites-section { padding: 12px 8px 8px; border-bottom: 1px solid rgba(255,255,255,0.08); animation: nav-fav-slide-down 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes nav-fav-slide-down { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-favorites-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 10px; }
-        .nav-favorites-title { display: flex; align-items: baseline; gap: 8px; }
-        .nav-favorites-title > span:first-child { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .nav-favorites-count { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
-        .nav-favorites-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-        .nav-favorites-scroll::-webkit-scrollbar { display: none; }
-        .nav-fav-card { flex: 0 0 110px; height: 90px; border-radius: 14px; background: rgba(30, 30, 40, 0.6); position: relative; overflow: hidden; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; padding: 10px; transition: all 0.2s; }
-        .nav-fav-card:hover { border-color: rgba(255,255,255,0.2); }
-        .nav-fav-card.active { border-color: #4A90E2; box-shadow: 0 0 12px rgba(74,144,226,0.3); }
-        .nav-fav-card.locked { opacity: 0.5; }
-        .nav-fav-card.locked::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0.4); z-index: 3; }
-        .nav-fav-card-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.8); }
-        .nav-fav-card-gradient { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 20%, rgba(0,0,0,0.85) 100%); }
-        .nav-fav-card-content { position: relative; z-index: 2; }
-        .nav-fav-card-name { font-size: 0.8rem; font-weight: 600; color: #fff; line-height: 1.15; max-height: 2.3em; overflow: hidden; }
-        .nav-fav-card-location { font-size: 0.65rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
-        .nav-fav-card-add { background: rgba(255,255,255,0.03); align-items: center; justify-content: center; flex-direction: column; gap: 4px; }
-        .nav-fav-card-add span { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 600; }
-        .nav-fav-add-icon { color: rgba(255,255,255,0.4); }
-        .nav-fav-card-delete { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; padding: 0; background: rgba(0,0,0,0.5); border-radius: 6px; border: none; color: rgba(255,255,255,0.7); opacity: 0; z-index: 10; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; }
-        .nav-fav-card:hover .nav-fav-card-delete { opacity: 1; }
-        .nav-fav-card-delete:hover { background: rgba(239, 68, 68, 0.8); color: #fff; }
-        .nav-cluster { flex: 1; display: flex; gap: 20px; align-items: center; }
-        .nav-cluster-left { justify-content: center; }
-        .nav-cluster-right { justify-content: center; }
-        .nav-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; border-radius: 12px; transition: all 0.2s; color: rgba(255, 255, 255, 0.5); }
-        .nav-btn:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,0.08); }
-        .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        .nav-btn-icon { padding: 8px; }
-        .nav-btn-primary { color: #4A90E2; background: rgba(74, 144, 226, 0.1); }
-        .nav-btn-primary:hover:not(:disabled) { background: rgba(74, 144, 226, 0.25); color: #fff; box-shadow: 0 0 15px rgba(74, 144, 226, 0.3); }
-        .nav-btn-danger { color: #F87171; }
-        .nav-btn-danger:hover { background: rgba(248,113,113,0.15); color: #FCA5A5; }
-        .orb-nav-cluster { display: flex; align-items: center; justify-content: center; margin-top: -10px; }
-        .orb-wrapper { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; position: relative; }
-        .orb-glow-ring { position: absolute; inset: 4px; border-radius: 50%; background: linear-gradient(180deg, rgba(74, 144, 226, 0.6), transparent); opacity: 0.2; z-index: -1; animation: orb-pulse 3s infinite; }
-        .nav-center-orb { position: relative; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .nav-center-orb-core { width: 24px; height: 24px; border-radius: 50%; background: #4A90E2; box-shadow: 0 0 12px rgba(74, 144, 226, 0.8); z-index: 2; transition: all 0.3s ease; }
-        .nav-center-orb:hover .nav-center-orb-core { transform: scale(1.1); background: #60a5fa; box-shadow: 0 0 20px rgba(74, 144, 226, 1); }
-        .nav-center-orb-glow { position: absolute; inset: 0; margin: auto; width: 100%; height: 100%; border-radius: 50%; animation: nav-orb-pulse 3s infinite ease-in-out; pointer-events: none; }
-        @keyframes nav-orb-pulse { 0% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(74, 144, 226, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 144, 226, 0); } }
-        .modal-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
-        .modal-content { width: 100%; max-width: 420px; border-radius: 24px; background: rgba(15, 15, 20, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 60px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
-        .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; color: white; }
-        .close-btn { background: rgba(255,255,255,0.05); border: none; border-radius: 100%; width: 36px; height: 36px; color: rgba(255,255,255,0.6); font-size: 1.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; color: white; }
-        .glass-input { width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 1rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); color: #fff; outline: none; }
-        .glass-segment { display: flex; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 4px; gap: 4px; border: 1px solid rgba(255,255,255,0.05); }
-        .segment-btn { flex: 1; padding: 12px; border-radius: 10px; border: none; background: transparent; color: rgba(255,255,255,0.5); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .segment-btn.active { background: rgba(74, 144, 226, 0.2); color: #fff; }
-        .coords-display { padding: 14px 16px; background: rgba(0,0,0,0.3); border-radius: 14px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
-        .modal-label { display: block; font-size: 0.7rem; font-weight: 700; opacity: 0.5; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
-        .modal-btn { flex: 1; padding: 14px; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
-        .modal-btn.active { background: rgba(74, 144, 226, 0.15); border-color: rgba(74, 144, 226, 0.4); color: #fff; }
-        .generate-btn { flex: 1; padding: 18px; color: #fff; border: none; border-radius: 16px; font-weight: 700; font-size: 1.05rem; cursor: pointer; box-shadow: 0 8px 24px rgba(74, 144, 226, 0.25); }
-        .save-fav-btn { width: 60px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; color: #fff; cursor: pointer; }
-        .save-fav-btn.remove { border-color: rgba(255, 107, 107, 0.4); background: rgba(255, 107, 107, 0.1); }
-        .menu-item-btn { width: 100%; padding: 10px; text-align: left; background: transparent; border: none; font-weight: 600; cursor: pointer; }
-        .menu-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 2px 0; }
-        @keyframes slide-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse-dot { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
-      `}</style>
+      {/* Lake Context Menu - At root level for proper z-index */}
+      {lakeContextMenu && (
+        <div
+          className="lake-context-overlay"
+          onClick={() => setLakeContextMenu(null)}
+        >
+          <div
+            className="lake-context-menu"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="lake-context-header">
+              {lakeContextMenu.lake.name}
+            </div>
+            <button
+              className="lake-context-item"
+              onClick={() => {
+                setAsHomeLake(lakeContextMenu.lake.id);
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span>Set as Home Lake</span>
+              {lakeContextMenu.lake.id === homeLakeId && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="3" style={{ marginLeft: "auto" }}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
+            <button
+              className="lake-context-item lake-context-delete"
+              onClick={() => {
+                if (confirm(`Remove ${lakeContextMenu.lake.name} from favorites?`)) {
+                  handleRemoveSpecificLake(lakeContextMenu.lake);
+                  setLakeContextMenu(null);
+                }
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+              <span>Remove from Saved</span>
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

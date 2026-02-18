@@ -13,12 +13,33 @@ export async function compressImage(
     const img = new Image();
     const reader = new FileReader();
 
+    // Timeout to prevent hanging forever
+    const timeout = setTimeout(() => {
+      console.warn("[compressImage] Timeout - returning original file");
+      resolve(file);
+    }, 10000);
+
     reader.onload = (e) => {
+      console.log("[compressImage] FileReader loaded, setting img.src");
       img.src = e.target?.result as string;
     };
-    reader.onerror = (err) => reject(err);
+    reader.onerror = (err) => {
+      clearTimeout(timeout);
+      console.error("[compressImage] FileReader error:", err);
+      reject(err);
+    };
+
+    img.onerror = (err) => {
+      clearTimeout(timeout);
+      console.error("[compressImage] Image load error:", err);
+      // Return original file instead of failing
+      resolve(file);
+    };
 
     img.onload = () => {
+      console.log("[compressImage] Image loaded:", img.width, "x", img.height);
+      clearTimeout(timeout);
+
       const canvas = document.createElement("canvas");
       let width = img.width;
       let height = img.height;
@@ -34,7 +55,8 @@ export async function compressImage(
 
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        reject(new Error("Could not get canvas context"));
+        console.error("[compressImage] Could not get canvas context");
+        resolve(file); // Return original instead of failing
         return;
       }
 
@@ -44,7 +66,8 @@ export async function compressImage(
       canvas.toBlob(
         (blob) => {
           if (!blob) {
-            reject(new Error("Compression failed"));
+            console.error("[compressImage] toBlob returned null");
+            resolve(file); // Return original instead of failing
             return;
           }
           // Recreate a File object with the same name/type
@@ -52,6 +75,7 @@ export async function compressImage(
             type: "image/jpeg",
             lastModified: Date.now(),
           });
+          console.log("[compressImage] Compression success:", file.size, "->", compressedFile.size);
           resolve(compressedFile);
         },
         "image/jpeg",

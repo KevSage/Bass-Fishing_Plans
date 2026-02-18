@@ -7,6 +7,10 @@ import "./complete-styles.css";
 import { BrowserRouter, HashRouter } from "react-router-dom";
 import { isNativePlatform } from "./lib/platform";
 import { NativeAuthProvider } from "./context/NativeAuthContext";
+import { injectDemoCatches } from "./lib/demo-catches";
+
+// Inject demo catches BEFORE React mounts (for App Store screenshots)
+injectDemoCatches();
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 

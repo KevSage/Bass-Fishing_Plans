@@ -71,6 +71,8 @@ import { saveCatchFormDraft, loadCatchFormDraft, loadCatchFormDraftAsync, clearC
 // IMPORT NAVIGATION
 import { useNavigate, useLocation } from "react-router-dom";
 
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
 // =============================================================================
 // ICONS (Offline & Sync)
 // =============================================================================
@@ -146,7 +148,7 @@ export type CatchEntry = {
   imageData?: string;
   caughtAt: string;
   createdAt: string;
-  source: "camera" | "library" | "manual";
+  source: "camera" | "library" | "manual" | "demo";
   isOffline?: boolean;
 
   // Weather Fields
@@ -440,9 +442,9 @@ export const SPECIES_OPTIONS: { value: BassSpecies; label: string }[] = [
   { value: "spotted", label: "Spotted" },
 ];
 const DENSITY_CONFIG = {
-  sparse: { min: 1, max: 3, color: "#F59E0B", pulseSpeed: 3 },
-  moderate: { min: 4, max: 9, color: "#F97316", pulseSpeed: 2 },
-  hot: { min: 10, max: Infinity, color: "#EF4444", pulseSpeed: 1.2 },
+  sparse: { min: 1, max: 3, color: "#F59E0B", pulseSpeed: 0, glowRadius: 5 }, // No pulse for sparse
+  moderate: { min: 4, max: 9, color: "#F97316", pulseSpeed: 2.2, glowRadius: 7 },
+  hot: { min: 10, max: Infinity, color: "#E25555", pulseSpeed: 1.8, glowRadius: 10 }, // Warmer ember red
 };
 const DENSITY_RADIUS_METERS = 100;
 const ENTRIES_PER_PAGE = 10;
@@ -558,6 +560,19 @@ function getSpeciesLabel(species?: BassSpecies): string {
 let globalEntriesCache: CatchEntry[] | null = null;
 const API_CACHE_KEY = "bc_api_catches_cache";
 
+// Global callback for when entries are updated (helps with race conditions)
+let globalEntriesUpdateCallback: (() => void) | null = null;
+
+export function onEntriesUpdate(callback: () => void): () => void {
+  globalEntriesUpdateCallback = callback;
+  return () => { globalEntriesUpdateCallback = null; };
+}
+
+// Direct access to global cache - bypasses React state for marker rendering
+export function getGlobalEntries(): CatchEntry[] {
+  return globalEntriesCache || [];
+}
+
 // =============================================================================
 // CUSTOM HOOK: useCatchLog
 // =============================================================================
@@ -612,6 +627,9 @@ export function useCatchLog(
 
   const [isLoading, setIsLoading] = useState(state.entries.length === 0);
   const [error, setError] = useState<string | null>(null);
+
+  // Version counter to signal when entries change (helps trigger re-renders in consumers)
+  const [entriesVersion, setEntriesVersion] = useState(0);
 
   const getOfflineCatches = useCallback((): CatchEntry[] => {
     try {
@@ -688,6 +706,9 @@ export function useCatchLog(
         !apiIds.has(e.id) && !offlineIds.has(e.id) && e.id.startsWith('offline-')
       );
 
+      // Preserve demo catches (source: "demo") - these are for App Store screenshots
+      const demoEntries = state.entries.filter(e => e.source === "demo");
+
       // If we found local-only entries, add them to offline storage
       if (localOnlyEntries.length > 0) {
         console.log('[CatchLog] Found', localOnlyEntries.length, 'local-only entries, preserving them');
@@ -695,11 +716,20 @@ export function useCatchLog(
         localStorage.setItem(OFFLINE_KEY, JSON.stringify(updatedOffline));
       }
 
-      const mergedEntries = [...localOnlyEntries, ...trulyOffline, ...apiEntries];
-      console.log('[CatchLog] FETCH COMPLETE - apiEntries:', apiEntries.length, 'trulyOffline:', trulyOffline.length, 'localOnly:', localOnlyEntries.length, 'merged:', mergedEntries.length);
+      const mergedEntries = [...demoEntries, ...localOnlyEntries, ...trulyOffline, ...apiEntries];
+      console.log('[CatchLog] FETCH COMPLETE - apiEntries:', apiEntries.length, 'trulyOffline:', trulyOffline.length, 'localOnly:', localOnlyEntries.length, 'demo:', demoEntries.length, 'merged:', mergedEntries.length);
       globalEntriesCache = mergedEntries;
       localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
       setState((s) => ({ ...s, entries: mergedEntries }));
+      setEntriesVersion((v) => {
+        console.log('[CatchLog] Incrementing entriesVersion to:', v + 1);
+        return v + 1;
+      });
+      // Notify any listeners that entries have been updated
+      if (globalEntriesUpdateCallback) {
+        console.log('[CatchLog] Calling globalEntriesUpdateCallback');
+        setTimeout(() => globalEntriesUpdateCallback?.(), 50);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -835,15 +865,20 @@ export function useCatchLog(
     [],
   );
   const showForm = useCallback(
-    (entry?: CatchEntry) =>
-      setState((s) => ({
-        ...s,
-        isOpen: true,
-        view: "form",
-        selectedEntry: entry || null,
-        isEditing: !!entry?.id,
-      })),
-    [],
+    (entry?: CatchEntry) => {
+      console.log("[CatchLog] showForm called, entry:", entry ? "has entry" : "no entry", "activeLake:", activeLake?.name || "null");
+      setState((s) => {
+        console.log("[CatchLog] showForm setState, prev isOpen:", s.isOpen, "-> new isOpen: true");
+        return {
+          ...s,
+          isOpen: true,
+          view: "form",
+          selectedEntry: entry || null,
+          isEditing: !!entry?.id,
+        };
+      });
+    },
+    [activeLake],
   );
   const loadMore = useCallback(
     () =>
@@ -1023,6 +1058,7 @@ export function useCatchLog(
     isEditing: state.isEditing,
     entries: state.entries,
     lakeCatches,
+    entriesVersion, // Version counter to detect when entries update
     visibleCatches: todayCatches.slice(0, state.visibleCount),
     hasMore: todayCatches.length > state.visibleCount,
     activeLake,
@@ -1771,7 +1807,8 @@ export function CatchFormView({
   const [length, setLength] = useState(entry?.length?.toString() || "");
   const [notes, setNotes] = useState(entry?.notes || "");
   const [source, setSource] = useState<"camera" | "library" | "manual">(
-    entry?.source || initialSource,
+    // Demo entries default to "manual" in the form
+    entry?.source === "demo" ? "manual" : (entry?.source || initialSource),
   );
   const [catchLat, setCatchLat] = useState(
     initialCoords?.lat || entry?.catchLat || activeLake?.lat || 0,
@@ -1816,6 +1853,12 @@ export function CatchFormView({
     const d = initialDateTime || (entry?.caughtAt ? new Date(entry.caughtAt) : new Date());
     return d.toTimeString().slice(0, 5); // HH:MM
   });
+
+  // Inline map picker for editing location
+  const [showMapPicker, setShowMapPicker] = useState(false);
+  const mapPickerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<mapboxgl.Map | null>(null);
+  const markerRef = useRef<mapboxgl.Marker | null>(null);
 
   // Auto-Fetch Weather Logic
   const autoFetchWeather = async (lat: number, lng: number, time: string) => {
@@ -1958,6 +2001,77 @@ export function CatchFormView({
       () => setLocationStatus("error"),
       { enableHighAccuracy: true },
     );
+  };
+
+  // Initialize map picker when shown
+  useEffect(() => {
+    if (!showMapPicker || !mapPickerRef.current || !MAPBOX_TOKEN) return;
+
+    // Clean up existing map
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+
+    // Set token
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    // Center on current coords or default to US center
+    const centerLat = catchLat || 32.5;
+    const centerLng = catchLng || -96.8;
+
+    // Use saved map style or default to dark
+    const savedStyle = localStorage.getItem("bc_mapbox_style") || "mapbox://styles/mapbox/dark-v11";
+
+    const map = new mapboxgl.Map({
+      container: mapPickerRef.current,
+      style: savedStyle,
+      center: [centerLng, centerLat],
+      zoom: catchLat ? 14 : 5,
+    });
+
+    mapInstanceRef.current = map;
+
+    // Add draggable marker
+    const marker = new mapboxgl.Marker({
+      draggable: true,
+      color: "#4A90E2",
+    })
+      .setLngLat([centerLng, centerLat])
+      .addTo(map);
+
+    markerRef.current = marker;
+
+    // Update coords when marker is dragged
+    marker.on("dragend", () => {
+      const lngLat = marker.getLngLat();
+      setCatchLat(lngLat.lat);
+      setCatchLng(lngLat.lng);
+    });
+
+    // Allow clicking on map to move marker
+    map.on("click", (e) => {
+      marker.setLngLat(e.lngLat);
+      setCatchLat(e.lngLat.lat);
+      setCatchLng(e.lngLat.lng);
+    });
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [showMapPicker]);
+
+  // Handle confirming the pin drop location
+  const handleConfirmLocation = () => {
+    setShowMapPicker(false);
+    setLocationStatus("success");
+    // Check for lake match at new coordinates
+    checkLakeMatch(catchLat, catchLng);
+    // Fetch weather for the new location
+    autoFetchWeather(catchLat, catchLng, caughtAt);
   };
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2612,29 +2726,57 @@ export function CatchFormView({
         {/* ... (Keep Location & Time fields) ... */}
         <div className="catch-form-field">
           <label className="catch-form-label">Catch Location</label>
-          {locationStatus === "exif" ? (
-            <div className="catch-location-display exif">
-              <LocationIcon size={16} />
-              <span>{formatCoord(catchLat, catchLng)}</span>
-              <span className="catch-location-source">From photo</span>
+          {showMapPicker ? (
+            <div className="catch-map-picker">
+              <div
+                ref={mapPickerRef}
+                style={{
+                  width: "100%",
+                  height: 200,
+                  borderRadius: 12,
+                  overflow: "hidden",
+                }}
+              />
+              <p className="catch-map-picker-hint">
+                Tap map or drag pin to set location
+              </p>
+              <div className="catch-map-picker-actions">
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(false)}
+                  className="catch-map-picker-cancel"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmLocation}
+                  className="catch-map-picker-confirm"
+                >
+                  Confirm Location
+                </button>
+              </div>
             </div>
-          ) : locationStatus === "success" ||
+          ) : locationStatus === "exif" || locationStatus === "success" ||
             (catchLat !== 0 && catchLng !== 0) ? (
             <div className="catch-location-display">
               <LocationIcon size={16} />
               <span>{formatCoord(catchLat, catchLng)}</span>
+              {locationStatus === "exif" && (
+                <span className="catch-location-source">From photo</span>
+              )}
               <button
                 type="button"
-                onClick={handleGetLocation}
-                className="catch-location-refresh"
+                onClick={() => setShowMapPicker(true)}
+                className="catch-location-edit"
               >
-                Refresh
+                Edit
               </button>
             </div>
           ) : (
             <button
               type="button"
-              onClick={handleGetLocation}
+              onClick={() => setShowMapPicker(true)}
               className="catch-location-btn"
               disabled={locationStatus === "loading"}
             >
@@ -2643,8 +2785,8 @@ export function CatchFormView({
                 {locationStatus === "loading"
                   ? "Getting location..."
                   : locationStatus === "error"
-                    ? "Retry Location"
-                    : "Get Current Location"}
+                    ? "Set Location"
+                    : "Set Location"}
               </span>
             </button>
           )}
@@ -2888,6 +3030,12 @@ export function CatchFormView({
         .catch-location-display.exif { border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.1); }
         .catch-location-source { margin-left: auto; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.6); }
         .catch-location-refresh { margin-left: auto; font-size: 0.75rem; color: #4A90E2; background: transparent; border: none; cursor: pointer; text-decoration: underline; }
+        .catch-location-edit { margin-left: auto; font-size: 0.75rem; color: #4A90E2; background: transparent; border: none; cursor: pointer; text-decoration: underline; }
+        .catch-map-picker { display: flex; flex-direction: column; gap: 12px; }
+        .catch-map-picker-hint { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-align: center; margin: 0; }
+        .catch-map-picker-actions { display: flex; gap: 10px; }
+        .catch-map-picker-cancel { flex: 1; padding: 10px; border-radius: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); font-weight: 600; cursor: pointer; }
+        .catch-map-picker-confirm { flex: 1; padding: 10px; border-radius: 10px; background: rgba(74,144,226,0.2); border: 1px solid rgba(74,144,226,0.4); color: #4A90E2; font-weight: 700; cursor: pointer; }
         .catch-location-btn { width: 100%; padding: 12px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: rgba(255, 255, 255, 0.8); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
         .catch-location-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
         .catch-time-display { padding: 12px 14px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.6); font-size: 0.9rem; }
@@ -2920,40 +3068,52 @@ export function createCatchMarker(
   // 1. CONTAINER: Managed by Mapbox for positioning ONLY.
   const container = document.createElement("div");
   container.className = `catch-pin-container catch-pin-${tier}`;
-  container.style.width = "14px";
-  container.style.height = "14px";
+  container.style.width = "12px";
+  container.style.height = "12px";
   container.style.cursor = "pointer";
+  container.style.overflow = "visible"; // Allow pulse to expand beyond container
 
   // 2. INNER VISUAL: Managed by us for scaling/styling.
   const visual = document.createElement("div");
   visual.className = "catch-pin-visual";
+  visual.style.position = "relative"; // Required for absolute-positioned pulse child
+  visual.style.overflow = "visible"; // Allow pulse to expand beyond visual
   visual.style.width = "100%";
   visual.style.height = "100%";
   visual.style.background = `radial-gradient(circle at 30% 30%, ${config.color}, ${config.color}dd)`;
   visual.style.borderRadius = "50%";
-  visual.style.boxShadow = `0 0 8px ${config.color}80`;
-  visual.style.border = "2px solid rgba(255, 255, 255, 0.6)";
+  visual.style.boxShadow = `0 0 ${config.glowRadius}px ${config.color}80`;
+  visual.style.border = "1.5px solid rgba(255, 255, 255, 0.6)";
 
   visual.style.transition =
     "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease";
   visual.style.transformOrigin = "center center";
 
-  // Pulse animation
-  const pulse = document.createElement("div");
-  pulse.style.cssText = `
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px solid ${config.color};
-    animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out;
-    pointer-events: none;
-  `;
+  // Pulse animation - only for moderate/hot clusters, not sparse singles
+  if (tier !== "sparse" && config.pulseSpeed > 0) {
+    const pulse = document.createElement("div");
+    pulse.className = "catch-pin-pulse";
+    // Random delay 0-400ms for organic "breathing" effect
+    const randomDelay = Math.random() * 0.4;
+    pulse.style.cssText = `
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid ${config.color};
+      box-shadow: 0 0 4px ${config.color}60;
+      -webkit-animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out;
+      animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out;
+      -webkit-animation-delay: ${randomDelay}s;
+      animation-delay: ${randomDelay}s;
+      pointer-events: none;
+    `;
+    visual.appendChild(pulse);
+  }
 
-  visual.appendChild(pulse);
   container.appendChild(visual);
 
   container.addEventListener("click", (e) => {
@@ -2971,17 +3131,21 @@ export function injectCatchPinStyles(): void {
   const style = document.createElement("style");
   style.id = styleId;
   style.textContent = `
-    @keyframes catch-pin-pulse-sparse {
-      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+    @-webkit-keyframes catch-pin-pulse-moderate {
+      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+      100% { -webkit-transform: translate(-50%, -50%) scale(1.8); transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
     }
     @keyframes catch-pin-pulse-moderate {
-      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
+      100% { -webkit-transform: translate(-50%, -50%) scale(1.8); transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+    }
+    @-webkit-keyframes catch-pin-pulse-hot {
+      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+      100% { -webkit-transform: translate(-50%, -50%) scale(2.0); transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
     }
     @keyframes catch-pin-pulse-hot {
-      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.8; }
-      100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
+      100% { -webkit-transform: translate(-50%, -50%) scale(2.0); transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
     }
   `;
   document.head.appendChild(style);

@@ -164,6 +164,18 @@ interface MemberStatus {
   plan_amount: number | null;
 }
 
+// Mapbox style options (curated for fishing - no road-heavy styles)
+// Note: Light theme CSS is ready in members.css but removed from options until
+// we generate light-themed favorite thumbnails, PlanPage map, and lure images
+const MAPBOX_STYLES = [
+  { value: "mapbox://styles/mapbox/dark-v11", label: "Dark", description: "Clean, matches app UI" },
+  { value: "mapbox://styles/mapbox/outdoors-v12", label: "Outdoors", description: "Topographic detail" },
+  { value: "mapbox://styles/mapbox/satellite-v9", label: "Satellite", description: "Aerial imagery" },
+];
+
+const MAPBOX_STYLE_KEY = "bc_mapbox_style";
+const DEFAULT_MAP_STYLE = "mapbox://styles/mapbox/dark-v11";
+
 export function Account() {
   const { user, isLoaded } = usePlatformUser();
   const { signOut, getToken } = usePlatformAuth();
@@ -175,6 +187,23 @@ export function Account() {
   const [memberStatus, setMemberStatus] = useState<MemberStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Map style preference - reset to default if saved style is no longer available
+  const [mapStyle, setMapStyle] = useState(() => {
+    const saved = localStorage.getItem(MAPBOX_STYLE_KEY);
+    const isValidStyle = MAPBOX_STYLES.some(s => s.value === saved);
+    if (saved && !isValidStyle) {
+      localStorage.setItem(MAPBOX_STYLE_KEY, DEFAULT_MAP_STYLE);
+      return DEFAULT_MAP_STYLE;
+    }
+    return saved || DEFAULT_MAP_STYLE;
+  });
+
+  const handleMapStyleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStyle = e.target.value;
+    setMapStyle(newStyle);
+    localStorage.setItem(MAPBOX_STYLE_KEY, newStyle);
+  };
 
   useEffect(() => {
     const fetchSubscription = async () => {
@@ -498,6 +527,29 @@ export function Account() {
           </Link>
         </nav>
 
+        {/* PREFERENCES SECTION */}
+        <section className="glass-card preferences-card">
+          <h2 className="preferences-title">Preferences</h2>
+
+          <div className="preference-row">
+            <div className="preference-label">
+              <span className="preference-name">Map Style</span>
+              <span className="preference-desc">Choose your preferred map appearance</span>
+            </div>
+            <select
+              value={mapStyle}
+              onChange={handleMapStyleChange}
+              className="preference-select"
+            >
+              {MAPBOX_STYLES.map((style) => (
+                <option key={style.value} value={style.value}>
+                  {style.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
+
         {/* FOOTER ACTIONS */}
         <footer className="account-footer">
           <button onClick={handleSignOut} className="sign-out-btn">
@@ -582,7 +634,32 @@ export function Account() {
         .support-text a { color: inherit; text-decoration: underline; }
 
         .error-banner { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 12px 16px; margin-bottom: 24px; color: #f87171; font-size: 0.85rem; }
-        
+
+        .preferences-card { padding: 24px; margin-top: 24px; }
+        .preferences-title { font-size: 1rem; font-weight: 700; margin: 0 0 20px; color: rgba(255,255,255,0.9); }
+        .preference-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+        .preference-label { display: flex; flex-direction: column; gap: 2px; }
+        .preference-name { font-size: 0.9rem; font-weight: 600; color: rgba(255,255,255,0.85); }
+        .preference-desc { font-size: 0.75rem; color: rgba(255,255,255,0.4); }
+        .preference-select {
+          padding: 10px 14px;
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 10px;
+          color: #fff;
+          font-size: 0.85rem;
+          font-weight: 500;
+          cursor: pointer;
+          min-width: 140px;
+          appearance: none;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 12px center;
+          padding-right: 36px;
+        }
+        .preference-select:focus { outline: none; border-color: rgba(74,144,226,0.5); }
+        .preference-select option { background: #1a1a1f; color: #fff; }
+
         @media (max-width: 600px) {
           .account-page { padding: 20px 20px 40px; }
           .header-title { font-size: 1.5rem; }

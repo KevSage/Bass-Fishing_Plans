@@ -36,7 +36,8 @@
       "Bash(curl:*)",
       "Bash(python:*)",
       "WebFetch(domain:gopro.github.io)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(node scripts/generate-demo-catches.js:*)"
     ]
   }
 }

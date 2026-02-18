@@ -621,30 +621,6 @@ export function Insights() {
     deleteCatch: hookDeleteCatch,
   } = catchLog;
 
-  // Debug: Log localStorage catch data on mount
-  useEffect(() => {
-    const apiCache = localStorage.getItem("catchlog_api_cache");
-    const offlineCache = localStorage.getItem("offline_catches");
-    const apiEntries = apiCache ? JSON.parse(apiCache) : [];
-    const offlineEntries = offlineCache ? JSON.parse(offlineCache) : [];
-    console.log("[Insights DEBUG] localStorage catchlog_api_cache:", apiEntries.length, "entries");
-    console.log("[Insights DEBUG] localStorage offline_catches:", offlineEntries.length, "entries");
-    console.log("[Insights DEBUG] useCatchLog entries:", entries.length, "entries");
-    if (offlineEntries.length > 0) {
-      console.log("[Insights DEBUG] Offline catch IDs:", offlineEntries.map((e: any) => e.id));
-    }
-  }, [entries.length]);
-
-  // Debug: Clear catch caches
-  const handleClearCache = () => {
-    if (confirm("Clear all catch caches? This will remove local data and reload from server.")) {
-      localStorage.removeItem("catchlog_api_cache");
-      localStorage.removeItem("offline_catches");
-      // @ts-ignore - clear the module-level cache
-      window.location.reload();
-    }
-  };
-
   // Handle return from LakeBuilder with catch data
   const routeLocation = useLocation();
   useEffect(() => {
@@ -796,25 +772,6 @@ export function Insights() {
         onClose={() => setShowUpgradeModal(false)}
         message={upgradeMessage}
       />
-
-      {/* DEBUG: Clear Cache Button - remove after debugging */}
-      <button
-        onClick={handleClearCache}
-        style={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          padding: "4px 8px",
-          fontSize: "10px",
-          background: "rgba(255,0,0,0.2)",
-          border: "1px solid rgba(255,0,0,0.3)",
-          borderRadius: 4,
-          color: "#ff6b6b",
-          zIndex: 100,
-        }}
-      >
-        Clear Cache
-      </button>
 
       {/* PILLS */}
       <div className="pills-scroll">
