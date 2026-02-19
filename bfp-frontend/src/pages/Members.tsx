@@ -414,7 +414,18 @@ type FavoriteLake = {
 };
 
 function isWaterFeature(f: mapboxgl.MapboxGeoJSONFeature): boolean {
-  return f.source === "composite" && f.sourceLayer === "water";
+  // Classic styles (dark-v11, outdoors-v12, etc.)
+  if (f.source === "composite" && f.sourceLayer === "water") return true;
+
+  // Mapbox Standard-based styles use different layer structure
+  const layerId = (f.layer?.id || "").toLowerCase();
+  if (layerId.includes("water")) return true;
+
+  // Check source layer for water variants
+  const sourceLayer = (f.sourceLayer || "").toLowerCase();
+  if (sourceLayer.includes("water")) return true;
+
+  return false;
 }
 
 const createOrbMarker = () => {
@@ -1520,7 +1531,7 @@ export function Members() {
       "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn",
       "mapbox://styles/mapbox/dark-v11", // Keep old dark as fallback
       "mapbox://styles/mapbox/outdoors-v12",
-      "mapbox://styles/mapbox/satellite-v9",
+      "mapbox://styles/mapbox/satellite-streets-v12",
     ];
     const defaultStyle = "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn";
     let savedMapStyle = localStorage.getItem("bc_mapbox_style");

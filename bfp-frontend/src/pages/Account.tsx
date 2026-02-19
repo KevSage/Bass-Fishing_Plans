@@ -170,7 +170,7 @@ interface MemberStatus {
 const MAPBOX_STYLES = [
   { value: "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn", label: "Dark", description: "Clean, matches app UI" },
   { value: "mapbox://styles/mapbox/outdoors-v12", label: "Outdoors", description: "Topographic detail" },
-  { value: "mapbox://styles/mapbox/satellite-v9", label: "Satellite", description: "Aerial imagery" },
+  { value: "mapbox://styles/mapbox/satellite-streets-v12", label: "Satellite", description: "Aerial imagery" },
 ];
 
 const MAPBOX_STYLE_KEY = "bc_mapbox_style";
