@@ -1034,20 +1034,21 @@ export function Members() {
 
   // Validate viewingFavoriteId against member status - redirect locked users to home lake
   useEffect(() => {
-    if (!viewingFavoriteId || favorites.length === 0 || statusLoading) return;
+    if (!viewingFavoriteId || sortedFavorites.length === 0 || statusLoading) return;
 
-    const currentIndex = favorites.findIndex((f) => f.id === viewingFavoriteId);
-    const isLocked = !isActive && currentIndex > 0;
+    // Check if user is viewing a non-home lake (locked for free users)
+    const homeLake = sortedFavorites[0];
+    const isViewingHomeLake = viewingFavoriteId === homeLake?.id;
+    const isLocked = !isActive && !isViewingHomeLake;
 
-    if (isLocked && favorites[0]) {
+    if (isLocked && homeLake) {
       // User is viewing a locked lake - redirect to home lake
-      const homeLake = favorites[0];
       setWaterName(homeLake.name);
       setViewingFavoriteId(homeLake.id);
       setLocationDetails({ city: homeLake.city, state: homeLake.state });
       setSelectedCoords({ lat: homeLake.lat, lng: homeLake.lng });
     }
-  }, [isActive, statusLoading, viewingFavoriteId, favorites]);
+  }, [isActive, statusLoading, viewingFavoriteId, sortedFavorites]);
 
   // Handle pending lake selection after returning from LakeBuilder
   useEffect(() => {
@@ -1057,11 +1058,12 @@ export function Members() {
     const lakeIndex = favorites.findIndex((f) => f.id === targetId);
     const lake = lakeIndex >= 0 ? favorites[lakeIndex] : null;
     if (lake) {
-      // Check if lake is locked (non-pro user accessing beyond home lake)
-      const isLocked = !isActive && lakeIndex > 0;
+      // Check if lake is locked (non-pro user accessing non-home lake)
+      const isHomeLake = homeLakeId ? lake.id === homeLakeId : lakeIndex === 0;
+      const isLocked = !isActive && !isHomeLake;
       if (isLocked) {
         // Fall back to home lake instead
-        const homeLake = favorites[0];
+        const homeLake = sortedFavorites[0];
         if (homeLake) {
           setWaterName(homeLake.name);
           setViewingFavoriteId(homeLake.id);
@@ -1095,7 +1097,7 @@ export function Members() {
       }, 300);
       pendingLakeSelectRef.current = null;
     }
-  }, [favorites, dataVersion, isActive]);
+  }, [favorites, sortedFavorites, homeLakeId, dataVersion, isActive]);
 
   // Restore stored lake view when returning from another page
   useEffect(() => {
@@ -2236,8 +2238,8 @@ export function Members() {
 
       // Free user checks
       if (!isActive) {
-        // Check if at home lake (first saved lake)
-        const homeLake = favorites.length > 0 ? favorites[0] : null;
+        // Check if at home lake (user-set home lake, or first favorite as fallback)
+        const homeLake = sortedFavorites.length > 0 ? sortedFavorites[0] : null;
         const isAtHomeLake = homeLake && (
           currentFavorite?.id === homeLake.id ||
           (activeLake?.id === homeLake.id)
@@ -2278,7 +2280,7 @@ export function Members() {
     },
     [
       isActive,
-      favorites,
+      sortedFavorites,
       activeLake,
       waterName,
       currentFavorite,
@@ -2289,16 +2291,16 @@ export function Members() {
   );
 
   const handleWeatherClick = useCallback(() => {
-    const isHomeLake =
-      isActive || (favorites.length > 0 && activeLake?.id === favorites[0].id);
-    if (!isActive && !isHomeLake) {
+    const homeLake = sortedFavorites.length > 0 ? sortedFavorites[0] : null;
+    const isAtHomeLake = isActive || (homeLake && activeLake?.id === homeLake.id);
+    if (!isActive && !isAtHomeLake) {
       triggerUpgrade(
         "Unlock real-time weather and intelligent planning for unlimited lakes. Free users get access to 1 Home Lake.",
       );
       return;
     }
     setShowWeather((prev) => !prev);
-  }, [isActive, favorites, activeLake]);
+  }, [isActive, sortedFavorites, activeLake]);
 
   const handleRemoveSpecificLake = useCallback(
     async (lake: FavoriteLake) => {

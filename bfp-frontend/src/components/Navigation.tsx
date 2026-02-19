@@ -164,7 +164,8 @@ export function Navigation() {
         onClick={(e) => e.stopPropagation()}
       >
         <nav style={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-          {publicLinks.map((link) => (
+          {/* Public links (Home, About, FAQ) - Web only */}
+          {!isNativePlatform() && publicLinks.map((link) => (
             <Link
               key={link.to}
               to={link.to}

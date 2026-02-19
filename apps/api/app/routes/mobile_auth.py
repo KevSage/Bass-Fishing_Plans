@@ -196,15 +196,15 @@ async def mobile_apple_sign_in(request: AppleSignInRequest):
                 _subs_store.update_apple_user_id(user_email, apple_user_id)
                 print(f"[Apple Sign-In] Linked Apple ID to existing user: {user_email}")
             else:
-                # New user - create account
+                # New user - create account (starts as free tier, Stripe webhook sets active=True on payment)
                 _subs_store.create(
                     email=user_email,
                     first_name=request.first_name,
                     last_name=request.last_name,
                     apple_user_id=apple_user_id,
-                    active=True
+                    active=False
                 )
-                print(f"[Apple Sign-In] Created new user: {user_email}")
+                print(f"[Apple Sign-In] Created new user (free tier): {user_email}")
         else:
             # No email and user not found by Apple ID
             # This happens if user deleted app data after first sign-in
@@ -668,14 +668,29 @@ class MobileAddFavoriteRequest(BaseModel):
 async def mobile_add_favorite(request: MobileAddFavoriteRequest):
     """
     Add a lake to favorites for mobile app using email instead of JWT.
+    Free users limited to 1 favorite (home lake).
     """
     from app.services.user_lakes import UserLakeStore
     from app.services.custom_lakes import CustomLakeStore
+    from app.services.subscribers import SubscriberStore
 
     if request.lake_type not in ("known", "custom"):
         return {"success": False, "error": "lake_type must be 'known' or 'custom'"}
 
     user_lake_store = UserLakeStore()
+
+    # Check free tier limit: 1 favorite max for non-Pro users
+    subscriber_store = SubscriberStore()
+    subscriber = subscriber_store.get(request.email)
+    is_pro = bool(subscriber and subscriber.active)
+
+    if not is_pro:
+        current_favorites = user_lake_store.list(request.email)
+        if len(current_favorites) >= 1:
+            return {
+                "success": False,
+                "error": "Free users can save 1 lake. Upgrade to Pro for unlimited saved lakes."
+            }
 
     # Verify custom lake exists
     if request.lake_type == "custom":

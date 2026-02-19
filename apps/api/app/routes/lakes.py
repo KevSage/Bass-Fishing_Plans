@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from app.routes.members import verify_clerk_session
 from app.services.custom_lakes import CustomLakeStore
 from app.services.user_lakes import UserLakeStore
+from app.services.subscribers import SubscriberStore
 
 router = APIRouter()
 custom_lake_store = CustomLakeStore()
@@ -386,12 +387,26 @@ async def add_favorite(
 ) -> Dict:
     """
     Add a lake to user's favorites (plan rotation).
+    Free users limited to 1 favorite (home lake).
     """
     email = await verify_clerk_session(authorization)
-    
+
     if request.lake_type not in ("known", "custom"):
         raise HTTPException(status_code=400, detail="lake_type must be 'known' or 'custom'")
-    
+
+    # Check free tier limit: 1 favorite max for non-Pro users
+    subscriber_store = SubscriberStore()
+    subscriber = subscriber_store.get(email)
+    is_pro = bool(subscriber and subscriber.active)
+
+    if not is_pro:
+        current_favorites = user_lake_store.list(email)
+        if len(current_favorites) >= 1:
+            raise HTTPException(
+                status_code=403,
+                detail="Free users can save 1 lake. Upgrade to Pro for unlimited saved lakes."
+            )
+
     # Verify lake exists
     if request.lake_type == "custom":
         lake = custom_lake_store.get(request.lake_id, email)
@@ -399,7 +414,7 @@ async def add_favorite(
             raise HTTPException(status_code=404, detail="Custom lake not found")
     # Known lakes: no validation needed. lakes.json lives in the frontend only.
     # The frontend already verified the lake exists via hydrateLakeData before sending.
-    
+
     added = user_lake_store.add(email, request.lake_id, request.lake_type)
     
     return {
