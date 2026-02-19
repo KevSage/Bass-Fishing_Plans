@@ -1555,7 +1555,32 @@ export function Members() {
     m.touchZoomRotate.disableRotation();
 
     // Signal map is ready for catch markers
-    m.on("load", () => setMapReady(true));
+    m.on("load", () => {
+      setMapReady(true);
+
+      // Hide road/highway layers for satellite style (cleaner look)
+      if (savedMapStyle?.includes("satellite")) {
+        const style = m.getStyle();
+        if (style?.layers) {
+          style.layers.forEach((layer) => {
+            const id = layer.id.toLowerCase();
+            // Hide roads, highways, motorways, and their labels
+            if (
+              id.includes("road") ||
+              id.includes("highway") ||
+              id.includes("motorway") ||
+              id.includes("trunk") ||
+              id.includes("street") ||
+              id.includes("bridge") ||
+              id.includes("tunnel") ||
+              (id.includes("label") && (id.includes("road") || id.includes("path")))
+            ) {
+              m.setLayoutProperty(layer.id, "visibility", "none");
+            }
+          });
+        }
+      }
+    });
 
     const navControl = new mapboxgl.NavigationControl({ showCompass: false });
     const geoControl = new mapboxgl.GeolocateControl({

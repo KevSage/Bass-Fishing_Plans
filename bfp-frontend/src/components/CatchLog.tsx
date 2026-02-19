@@ -442,9 +442,9 @@ export const SPECIES_OPTIONS: { value: BassSpecies; label: string }[] = [
   { value: "spotted", label: "Spotted" },
 ];
 const DENSITY_CONFIG = {
-  sparse: { min: 1, max: 3, color: "#F59E0B", pulseSpeed: 0, glowRadius: 5 }, // No pulse for sparse
-  moderate: { min: 4, max: 9, color: "#F97316", pulseSpeed: 2.2, glowRadius: 7 },
-  hot: { min: 10, max: Infinity, color: "#E25555", pulseSpeed: 1.8, glowRadius: 10 }, // Warmer ember red
+  sparse: { min: 1, max: 3, color: "#F59E0B", pingSpeed: 3.0, pingCount: 1, glowRadius: 6 },
+  moderate: { min: 4, max: 9, color: "#F97316", pingSpeed: 2.2, pingCount: 2, glowRadius: 8 },
+  hot: { min: 10, max: Infinity, color: "#E25555", pingSpeed: 1.6, pingCount: 3, glowRadius: 12 },
 };
 const DENSITY_RADIUS_METERS = 100;
 const ENTRIES_PER_PAGE = 10;
@@ -3076,45 +3076,47 @@ export function createCatchMarker(
   container.style.alignItems = "center";
   container.style.justifyContent = "center";
 
-  // 2. INNER VISUAL: The actual pin (14px centered in 44px touch target).
+  // 2. INNER VISUAL: The actual pin (16px centered in 44px touch target).
   const visual = document.createElement("div");
   visual.className = "catch-pin-visual";
   visual.style.position = "relative";
   visual.style.overflow = "visible";
-  visual.style.width = "14px";
-  visual.style.height = "14px";
-  visual.style.background = `radial-gradient(circle at 30% 30%, ${config.color}, ${config.color}dd)`;
+  visual.style.width = "16px";
+  visual.style.height = "16px";
+  visual.style.background = `radial-gradient(circle at 35% 35%, ${config.color}ff, ${config.color}cc 60%, ${config.color}99)`;
   visual.style.borderRadius = "50%";
-  visual.style.boxShadow = `0 0 ${config.glowRadius}px ${config.color}80`;
-  visual.style.border = "1.5px solid rgba(255, 255, 255, 0.6)";
+  visual.style.boxShadow = `0 0 ${config.glowRadius}px ${config.color}, 0 0 ${config.glowRadius * 2}px ${config.color}60`;
+  visual.style.border = "2px solid rgba(255, 255, 255, 0.85)";
 
   visual.style.transition =
     "transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease";
   visual.style.transformOrigin = "center center";
 
-  // Pulse animation - only for moderate/hot clusters, not sparse singles
-  if (tier !== "sparse" && config.pulseSpeed > 0) {
-    const pulse = document.createElement("div");
-    pulse.className = "catch-pin-pulse";
-    // Random delay 0-400ms for organic "breathing" effect
-    const randomDelay = Math.random() * 0.4;
-    pulse.style.cssText = `
+  // Radar ping animation - multiple rings for higher density
+  // sparse: 1 ring, moderate: 2 rings, hot: 3 rings
+  const baseDelay = Math.random() * 1.5; // Stagger between pins
+  for (let i = 0; i < config.pingCount; i++) {
+    const ping = document.createElement("div");
+    ping.className = "catch-pin-ping";
+    // Stagger each ring within the same pin
+    const ringDelay = baseDelay + (i * config.pingSpeed / config.pingCount);
+    ping.style.cssText = `
       position: absolute;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(0.5);
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      border: 2px solid ${config.color};
-      box-shadow: 0 0 4px ${config.color}60;
-      -webkit-animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out;
-      animation: catch-pin-pulse-${tier} ${config.pulseSpeed}s infinite ease-out;
-      -webkit-animation-delay: ${randomDelay}s;
-      animation-delay: ${randomDelay}s;
+      border: ${tier === "hot" ? "2.5px" : "2px"} solid ${config.color};
+      box-shadow: 0 0 8px ${config.color}90, inset 0 0 4px ${config.color}40;
+      -webkit-animation: catch-ping-${tier} ${config.pingSpeed}s infinite cubic-bezier(0, 0.5, 0.5, 1);
+      animation: catch-ping-${tier} ${config.pingSpeed}s infinite cubic-bezier(0, 0.5, 0.5, 1);
+      -webkit-animation-delay: ${ringDelay}s;
+      animation-delay: ${ringDelay}s;
       pointer-events: none;
     `;
-    visual.appendChild(pulse);
+    visual.appendChild(ping);
   }
 
   container.appendChild(visual);
@@ -3139,21 +3141,38 @@ export function injectCatchPinStyles(): void {
   const style = document.createElement("style");
   style.id = styleId;
   style.textContent = `
-    @-webkit-keyframes catch-pin-pulse-moderate {
-      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
-      100% { -webkit-transform: translate(-50%, -50%) scale(1.8); transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+    /* Sparse: Single sharp ping - amber ring */
+    @-webkit-keyframes catch-ping-sparse {
+      0% { -webkit-transform: translate(-50%, -50%) scale(0.5); transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; }
+      20% { opacity: 0.8; }
+      100% { -webkit-transform: translate(-50%, -50%) scale(3.0); transform: translate(-50%, -50%) scale(3.0); opacity: 0; }
     }
-    @keyframes catch-pin-pulse-moderate {
-      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.6; }
-      100% { -webkit-transform: translate(-50%, -50%) scale(1.8); transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+    @keyframes catch-ping-sparse {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.9; }
+      20% { opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(3.0); opacity: 0; }
     }
-    @-webkit-keyframes catch-pin-pulse-hot {
-      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
-      100% { -webkit-transform: translate(-50%, -50%) scale(2.0); transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
+    /* Moderate: Double ping - orange rings */
+    @-webkit-keyframes catch-ping-moderate {
+      0% { -webkit-transform: translate(-50%, -50%) scale(0.5); transform: translate(-50%, -50%) scale(0.5); opacity: 0.95; }
+      15% { opacity: 0.85; }
+      100% { -webkit-transform: translate(-50%, -50%) scale(3.5); transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
     }
-    @keyframes catch-pin-pulse-hot {
-      0% { -webkit-transform: translate(-50%, -50%) scale(0.9); transform: translate(-50%, -50%) scale(0.9); opacity: 0.7; }
-      100% { -webkit-transform: translate(-50%, -50%) scale(2.0); transform: translate(-50%, -50%) scale(2.0); opacity: 0; }
+    @keyframes catch-ping-moderate {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.95; }
+      15% { opacity: 0.85; }
+      100% { transform: translate(-50%, -50%) scale(3.5); opacity: 0; }
+    }
+    /* Hot: Triple ping - red rings, maximum visibility */
+    @-webkit-keyframes catch-ping-hot {
+      0% { -webkit-transform: translate(-50%, -50%) scale(0.5); transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      10% { opacity: 0.9; }
+      100% { -webkit-transform: translate(-50%, -50%) scale(4.0); transform: translate(-50%, -50%) scale(4.0); opacity: 0; }
+    }
+    @keyframes catch-ping-hot {
+      0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+      10% { opacity: 0.9; }
+      100% { transform: translate(-50%, -50%) scale(4.0); opacity: 0; }
     }
   `;
   document.head.appendChild(style);
