@@ -797,8 +797,16 @@ export function Members() {
   const [showFavorites, setShowFavorites] = useState(false);
 
   // Theme detection based on map style
-  const mapStyle = localStorage.getItem("bc_mapbox_style") || "mapbox://styles/mapbox/dark-v11";
+  const mapStyle = localStorage.getItem("bc_mapbox_style") || "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn";
   const isLightTheme = mapStyle.includes("light-v11");
+
+  // Get static-compatible style for thumbnails (custom styles don't work with Static API)
+  const getStaticStyle = () => {
+    if (mapStyle.includes("satellite")) return "mapbox/satellite-v9";
+    if (mapStyle.includes("outdoors")) return "mapbox/outdoors-v12";
+    return "mapbox/dark-v11"; // Default for custom dark or dark-v11
+  };
+  const staticStyle = getStaticStyle();
 
   // Plan State
   const [lastPlanUrl, setLastPlanUrl] = useState<string | null>(() =>
@@ -950,7 +958,7 @@ export function Members() {
                   acres: acres,
                   tier: lakeData.tier,
                   zoom: imageZoom,
-                  image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lakeData.longitude},${lakeData.latitude},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
+                  image: `https://api.mapbox.com/styles/v1/${staticStyle}/static/${lakeData.longitude},${lakeData.latitude},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
                 } as FavoriteLake;
               }
               return null;
@@ -969,7 +977,7 @@ export function Members() {
               acres: acres,
               tier: f.tier,
               zoom: imageZoom,
-              image: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${f.lng},${f.lat},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
+              image: `https://api.mapbox.com/styles/v1/${staticStyle}/static/${f.lng},${f.lat},${imageZoom},0/600x400?access_token=${MAPBOX_TOKEN}`,
             } as FavoriteLake;
           }).filter((f): f is FavoriteLake => f !== null);
           setFavorites(mapped);
@@ -1509,11 +1517,12 @@ export function Members() {
     // Get saved map style or use default (Dark theme matches app UI)
     // Reset to default if saved style is no longer available (e.g., Light was removed)
     const validStyles = [
-      "mapbox://styles/mapbox/dark-v11",
+      "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn",
+      "mapbox://styles/mapbox/dark-v11", // Keep old dark as fallback
       "mapbox://styles/mapbox/outdoors-v12",
       "mapbox://styles/mapbox/satellite-v9",
     ];
-    const defaultStyle = "mapbox://styles/mapbox/dark-v11";
+    const defaultStyle = "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn";
     let savedMapStyle = localStorage.getItem("bc_mapbox_style");
     if (!savedMapStyle || !validStyles.includes(savedMapStyle)) {
       savedMapStyle = defaultStyle;

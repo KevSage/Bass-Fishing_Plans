@@ -168,13 +168,13 @@ interface MemberStatus {
 // Note: Light theme CSS is ready in members.css but removed from options until
 // we generate light-themed favorite thumbnails, PlanPage map, and lure images
 const MAPBOX_STYLES = [
-  { value: "mapbox://styles/mapbox/dark-v11", label: "Dark", description: "Clean, matches app UI" },
+  { value: "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn", label: "Dark", description: "Clean, matches app UI" },
   { value: "mapbox://styles/mapbox/outdoors-v12", label: "Outdoors", description: "Topographic detail" },
   { value: "mapbox://styles/mapbox/satellite-v9", label: "Satellite", description: "Aerial imagery" },
 ];
 
 const MAPBOX_STYLE_KEY = "bc_mapbox_style";
-const DEFAULT_MAP_STYLE = "mapbox://styles/mapbox/dark-v11";
+const DEFAULT_MAP_STYLE = "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn";
 
 export function Account() {
   const { user, isLoaded } = usePlatformUser();

@@ -2021,7 +2021,7 @@ export function CatchFormView({
     const centerLng = catchLng || -96.8;
 
     // Use saved map style or default to dark
-    const savedStyle = localStorage.getItem("bc_mapbox_style") || "mapbox://styles/mapbox/dark-v11";
+    const savedStyle = localStorage.getItem("bc_mapbox_style") || "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn";
 
     const map = new mapboxgl.Map({
       container: mapPickerRef.current,
@@ -3065,21 +3065,24 @@ export function createCatchMarker(
   const tier = getDensityTier(entry, allCatches);
   const config = DENSITY_CONFIG[tier];
 
-  // 1. CONTAINER: Managed by Mapbox for positioning ONLY.
+  // 1. CONTAINER: Large touch target (44x44 minimum for iOS).
   const container = document.createElement("div");
   container.className = `catch-pin-container catch-pin-${tier}`;
-  container.style.width = "12px";
-  container.style.height = "12px";
+  container.style.width = "44px";
+  container.style.height = "44px";
   container.style.cursor = "pointer";
-  container.style.overflow = "visible"; // Allow pulse to expand beyond container
+  container.style.overflow = "visible";
+  container.style.display = "flex";
+  container.style.alignItems = "center";
+  container.style.justifyContent = "center";
 
-  // 2. INNER VISUAL: Managed by us for scaling/styling.
+  // 2. INNER VISUAL: The actual pin (14px centered in 44px touch target).
   const visual = document.createElement("div");
   visual.className = "catch-pin-visual";
-  visual.style.position = "relative"; // Required for absolute-positioned pulse child
-  visual.style.overflow = "visible"; // Allow pulse to expand beyond visual
-  visual.style.width = "100%";
-  visual.style.height = "100%";
+  visual.style.position = "relative";
+  visual.style.overflow = "visible";
+  visual.style.width = "14px";
+  visual.style.height = "14px";
   visual.style.background = `radial-gradient(circle at 30% 30%, ${config.color}, ${config.color}dd)`;
   visual.style.borderRadius = "50%";
   visual.style.boxShadow = `0 0 ${config.glowRadius}px ${config.color}80`;
@@ -3116,10 +3119,15 @@ export function createCatchMarker(
 
   container.appendChild(visual);
 
-  container.addEventListener("click", (e) => {
+  // Handle both click and touch for better mobile response
+  const handleTap = (e: Event) => {
     e.stopPropagation();
+    e.preventDefault();
     onClick(entry);
-  });
+  };
+
+  container.addEventListener("click", handleTap);
+  container.addEventListener("touchend", handleTap, { passive: false });
 
   return container;
 }
