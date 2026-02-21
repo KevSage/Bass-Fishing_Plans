@@ -16,12 +16,21 @@ class Subscriber:
     active: bool
     stripe_customer_id: Optional[str]
     stripe_subscription_id: Optional[str]
-    # NEW: Apple Sign-In fields
+    # Apple Sign-In fields
     apple_user_id: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     # Free tier plan tracking
     plans_generated: int = 0
+    # StoreKit subscription fields (production-grade)
+    subscription_expires_at: Optional[str] = None  # ISO timestamp from Apple
+    entitlement_source: Optional[str] = None  # "manual" | "apple" | "web" | "free_mode"
+    apple_transaction_id: Optional[str] = None
+    apple_original_transaction_id: Optional[str] = None
+    apple_product_id: Optional[str] = None
+    apple_last_verified_at: Optional[str] = None  # ISO timestamp
+    apple_revoked_at: Optional[str] = None  # ISO timestamp if revoked
+    apple_environment: Optional[str] = None  # "Sandbox" | "Production"
 
 
 class SubscriberStore:
@@ -82,6 +91,67 @@ class SubscriberStore:
             conn.execute(
                 """
                 ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS plans_generated INTEGER DEFAULT 0;
+                """
+            )
+            # Add subscription_expires_at column for StoreKit subscriptions
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP;
+                """
+            )
+            # Add entitlement tracking columns (production-grade StoreKit)
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS entitlement_source TEXT;
+                """
+            )
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS apple_transaction_id TEXT;
+                """
+            )
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS apple_original_transaction_id TEXT;
+                """
+            )
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS apple_product_id TEXT;
+                """
+            )
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS apple_last_verified_at TIMESTAMP;
+                """
+            )
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS apple_revoked_at TIMESTAMP;
+                """
+            )
+            conn.execute(
+                """
+                ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS apple_environment TEXT;
+                """
+            )
+            # StoreKit transactions table (idempotency + audit)
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS storekit_transactions (
+                    id SERIAL PRIMARY KEY,
+                    transaction_id TEXT UNIQUE NOT NULL,
+                    original_transaction_id TEXT,
+                    product_id TEXT NOT NULL,
+                    bundle_id TEXT,
+                    purchase_date TIMESTAMP,
+                    expiration_date TIMESTAMP,
+                    revocation_date TIMESTAMP,
+                    environment TEXT,
+                    email TEXT,
+                    user_id TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
                 """
             )
             conn.commit()
@@ -551,31 +621,289 @@ class SubscriberStore:
             for row in rows
         ]
 
-    def set_active(self, email: str, active: bool) -> bool:
-        """Set a subscriber's active status. Returns True if found and updated."""
+    def set_active(self, email: str, active: bool, expires_at: Optional[str] = None) -> bool:
+        """Set a subscriber's active status. Returns True if found and updated.
+
+        Args:
+            email: User email
+            active: Whether subscription is active
+            expires_at: Optional ISO timestamp when subscription expires (for StoreKit)
+        """
         email_norm = email.lower().strip()
         if self._use_pg:
             with self._pg_conn() as conn:
-                result = conn.execute(
-                    "UPDATE subscribers SET active = %s WHERE email = %s",
-                    (active, email_norm),
-                )
+                if expires_at:
+                    result = conn.execute(
+                        "UPDATE subscribers SET active = %s, subscription_expires_at = %s WHERE email = %s",
+                        (active, expires_at, email_norm),
+                    )
+                else:
+                    result = conn.execute(
+                        "UPDATE subscribers SET active = %s WHERE email = %s",
+                        (active, email_norm),
+                    )
                 conn.commit()
                 return result.rowcount > 0
         else:
             with self._sqlite_conn() as conn:
-                cursor = conn.execute(
-                    "UPDATE subscribers SET active = ? WHERE email = ?",
-                    (1 if active else 0, email_norm),
-                )
+                if expires_at:
+                    cursor = conn.execute(
+                        "UPDATE subscribers SET active = ?, subscription_expires_at = ? WHERE email = ?",
+                        (1 if active else 0, expires_at, email_norm),
+                    )
+                else:
+                    cursor = conn.execute(
+                        "UPDATE subscribers SET active = ? WHERE email = ?",
+                        (1 if active else 0, email_norm),
+                    )
                 conn.commit()
                 return cursor.rowcount > 0
 
+    def is_subscription_expired(self, email: str) -> bool:
+        """Check if a user's StoreKit subscription has expired."""
+        email_norm = email.lower().strip()
+        from datetime import datetime
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                row = conn.execute(
+                    "SELECT subscription_expires_at FROM subscribers WHERE email = %s",
+                    (email_norm,),
+                ).fetchone()
+                if not row or not row.get("subscription_expires_at"):
+                    return False  # No expiration set = not expired (Stripe or FREE_MODE)
+                expires_at = row["subscription_expires_at"]
+                if isinstance(expires_at, str):
+                    expires_at = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                return datetime.utcnow() > expires_at.replace(tzinfo=None)
+        else:
+            with self._sqlite_conn() as conn:
+                row = conn.execute(
+                    "SELECT subscription_expires_at FROM subscribers WHERE email = ?",
+                    (email_norm,),
+                ).fetchone()
+                if not row or not row[0]:
+                    return False
+                expires_at = datetime.fromisoformat(row[0].replace("Z", "+00:00"))
+                return datetime.utcnow() > expires_at.replace(tzinfo=None)
+
     def add_manual(self, email: str, first_name: str = "", last_name: str = "", active: bool = True) -> None:
-        """Manually add a subscriber (admin function)."""
+        """Manually add a subscriber (admin function). Sets entitlement_source to 'manual'."""
         self.upsert_active(
             email,
             active=active,
             first_name=first_name if first_name else None,
             last_name=last_name if last_name else None,
         )
+        # Set entitlement_source to manual
+        email_norm = email.lower().strip()
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                conn.execute(
+                    "UPDATE subscribers SET entitlement_source = 'manual' WHERE email = %s",
+                    (email_norm,),
+                )
+                conn.commit()
+
+    # -------------------------
+    # StoreKit Transaction Methods (Production-Grade)
+    # -------------------------
+
+    def transaction_exists(self, transaction_id: str) -> bool:
+        """Check if a StoreKit transaction already exists (for idempotency)."""
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                row = conn.execute(
+                    "SELECT 1 FROM storekit_transactions WHERE transaction_id = %s",
+                    (transaction_id,),
+                ).fetchone()
+                return row is not None
+        return False  # SQLite fallback - always process
+
+    def record_transaction(
+        self,
+        transaction_id: str,
+        original_transaction_id: str,
+        product_id: str,
+        bundle_id: str,
+        purchase_date: str,
+        expiration_date: Optional[str],
+        revocation_date: Optional[str],
+        environment: str,
+        email: str,
+        user_id: Optional[str] = None,
+    ) -> bool:
+        """
+        Record a StoreKit transaction (idempotent).
+        Returns True if newly inserted, False if already existed.
+        """
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                try:
+                    conn.execute(
+                        """
+                        INSERT INTO storekit_transactions
+                        (transaction_id, original_transaction_id, product_id, bundle_id,
+                         purchase_date, expiration_date, revocation_date, environment, email, user_id)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        ON CONFLICT (transaction_id) DO NOTHING
+                        """,
+                        (
+                            transaction_id,
+                            original_transaction_id,
+                            product_id,
+                            bundle_id,
+                            purchase_date,
+                            expiration_date,
+                            revocation_date,
+                            environment,
+                            email.lower().strip(),
+                            user_id,
+                        ),
+                    )
+                    conn.commit()
+                    return True
+                except Exception:
+                    return False
+        return True  # SQLite fallback
+
+    def activate_apple_subscription(
+        self,
+        email: str,
+        transaction_id: str,
+        original_transaction_id: str,
+        product_id: str,
+        expiration_date: str,
+        environment: str,
+    ) -> bool:
+        """
+        Activate a subscriber's Pro status from a verified Apple transaction.
+        Uses Apple's real expiration date, not a guessed TTL.
+        """
+        email_norm = email.lower().strip()
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    """
+                    UPDATE subscribers SET
+                        active = TRUE,
+                        subscription_expires_at = %s,
+                        entitlement_source = 'apple',
+                        apple_transaction_id = %s,
+                        apple_original_transaction_id = %s,
+                        apple_product_id = %s,
+                        apple_last_verified_at = %s,
+                        apple_revoked_at = NULL,
+                        apple_environment = %s
+                    WHERE email = %s
+                    """,
+                    (
+                        expiration_date,
+                        transaction_id,
+                        original_transaction_id,
+                        product_id,
+                        now,
+                        environment,
+                        email_norm,
+                    ),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        return False
+
+    def revoke_apple_subscription(self, email: str, revocation_date: str) -> bool:
+        """Mark a subscription as revoked (refunded/cancelled by Apple)."""
+        email_norm = email.lower().strip()
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    """
+                    UPDATE subscribers SET
+                        active = FALSE,
+                        apple_revoked_at = %s
+                    WHERE email = %s AND entitlement_source = 'apple'
+                    """,
+                    (revocation_date, email_norm),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        return False
+
+    def update_apple_expiration(self, email: str, expiration_date: str) -> bool:
+        """Update expiration date (for renewals via server notifications)."""
+        email_norm = email.lower().strip()
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    """
+                    UPDATE subscribers SET
+                        active = TRUE,
+                        subscription_expires_at = %s,
+                        apple_last_verified_at = %s,
+                        apple_revoked_at = NULL
+                    WHERE email = %s AND entitlement_source = 'apple'
+                    """,
+                    (expiration_date, now, email_norm),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        return False
+
+    def get_apple_subscription_status(self, email: str) -> dict:
+        """Get detailed Apple subscription status for a user."""
+        email_norm = email.lower().strip()
+        from datetime import datetime, timezone
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                row = conn.execute(
+                    """
+                    SELECT active, subscription_expires_at, entitlement_source,
+                           apple_transaction_id, apple_revoked_at, apple_environment
+                    FROM subscribers WHERE email = %s
+                    """,
+                    (email_norm,),
+                ).fetchone()
+
+                if not row:
+                    return {"exists": False}
+
+                now = datetime.now(timezone.utc)
+                expires_at = row.get("subscription_expires_at")
+                revoked_at = row.get("apple_revoked_at")
+                source = row.get("entitlement_source")
+
+                # Determine actual membership status
+                is_member = False
+                if source == "manual":
+                    is_member = bool(row.get("active"))
+                elif source == "apple":
+                    is_active = bool(row.get("active"))
+                    is_not_revoked = revoked_at is None
+                    is_not_expired = True
+                    if expires_at:
+                        if isinstance(expires_at, str):
+                            exp_dt = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+                        else:
+                            exp_dt = expires_at.replace(tzinfo=timezone.utc) if expires_at.tzinfo is None else expires_at
+                        is_not_expired = exp_dt > now
+                    is_member = is_active and is_not_revoked and is_not_expired
+                elif source == "web":
+                    is_member = bool(row.get("active"))
+
+                return {
+                    "exists": True,
+                    "is_member": is_member,
+                    "entitlement_source": source,
+                    "subscription_expires_at": str(expires_at) if expires_at else None,
+                    "apple_revoked_at": str(revoked_at) if revoked_at else None,
+                    "apple_environment": row.get("apple_environment"),
+                }
+
+        return {"exists": False}

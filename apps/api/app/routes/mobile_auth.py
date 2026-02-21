@@ -196,7 +196,7 @@ async def mobile_apple_sign_in(request: AppleSignInRequest):
                 _subs_store.update_apple_user_id(user_email, apple_user_id)
                 print(f"[Apple Sign-In] Linked Apple ID to existing user: {user_email}")
             else:
-                # New user - create account (starts as free tier, Stripe webhook sets active=True on payment)
+                # New user - create account (free tier, must purchase via StoreKit for Pro)
                 _subs_store.create(
                     email=user_email,
                     first_name=request.first_name,
@@ -488,17 +488,21 @@ class MobileStatusRequest(BaseModel):
 async def mobile_member_status(request: MobileStatusRequest):
     """
     Get member status for mobile app using email instead of JWT.
-    Checks FREE_MODE env var - if enabled, all users get full access.
-    Otherwise, checks the subscriber database for actual status.
+
+    Entitlement logic (production-grade):
+    1. FREE_MODE=true → is_member=true (source=free_mode)
+    2. entitlement_source="manual" → honor active flag (ignore expiry)
+    3. entitlement_source="apple" → active AND expires_at > now AND revoked_at is null
+    4. entitlement_source="web" → honor active flag (Stripe handles expiry)
     """
     # Check FREE_MODE environment variable
     free_mode = os.getenv("FREE_MODE", "false").lower() == "true"
 
+    store = SubscriberStore()
+    subscriber = store.get(request.email)
+
     if free_mode:
         # FREE_MODE: All authenticated users get full member access
-        # Still return plans_generated for tracking
-        store = SubscriberStore()
-        subscriber = store.get(request.email)
         return {
             "email": request.email,
             "is_member": True,
@@ -513,28 +517,63 @@ async def mobile_member_status(request: MobileStatusRequest):
             "plan_interval": "month",
             "plan_amount": 10,
             "plans_generated": subscriber.plans_generated if subscriber else 0,
+            "entitlement_source": "free_mode",
         }
 
-    # Normal mode: Check actual subscriber status from database
-    store = SubscriberStore()
-    subscriber = store.get(request.email)
+    # Normal mode: Check entitlement based on source
+    if not subscriber:
+        return {
+            "email": request.email,
+            "is_member": False,
+            "has_subscription": False,
+            "rate_limit_allowed": True,
+            "rate_limit_seconds": 0,
+            "stripe_customer_id": None,
+            "stripe_subscription_id": None,
+            "subscription_status": "inactive",
+            "next_billing_date": None,
+            "cancel_at_period_end": False,
+            "plan_interval": "month",
+            "plan_amount": 10,
+            "plans_generated": 0,
+            "entitlement_source": None,
+        }
 
-    is_member = bool(subscriber and subscriber.active)
+    # Get detailed Apple subscription status (handles expiration/revocation correctly)
+    apple_status = store.get_apple_subscription_status(request.email)
+    entitlement_source = subscriber.entitlement_source
+
+    # Determine is_member based on entitlement_source
+    if entitlement_source == "manual":
+        # Manual grants: honor active flag, ignore expiration
+        is_member = bool(subscriber.active)
+    elif entitlement_source == "apple":
+        # Apple: use the detailed status check (active AND not expired AND not revoked)
+        is_member = apple_status.get("is_member", False)
+    elif entitlement_source == "web":
+        # Web/Stripe: honor active flag (Stripe webhooks handle expiration)
+        is_member = bool(subscriber.active)
+    else:
+        # No source set or unknown: fall back to active flag
+        is_member = bool(subscriber.active)
 
     return {
         "email": request.email,
         "is_member": is_member,
-        "has_subscription": subscriber is not None,
+        "has_subscription": True,
         "rate_limit_allowed": True,
         "rate_limit_seconds": 0,
-        "stripe_customer_id": subscriber.stripe_customer_id if subscriber else None,
-        "stripe_subscription_id": subscriber.stripe_subscription_id if subscriber else None,
+        "stripe_customer_id": subscriber.stripe_customer_id,
+        "stripe_subscription_id": subscriber.stripe_subscription_id,
         "subscription_status": "active" if is_member else "inactive",
         "next_billing_date": None,
         "cancel_at_period_end": False,
         "plan_interval": "month",
         "plan_amount": 10,
-        "plans_generated": subscriber.plans_generated if subscriber else 0,
+        "plans_generated": subscriber.plans_generated,
+        "subscription_expires_at": subscriber.subscription_expires_at,
+        "entitlement_source": entitlement_source,
+        "apple_environment": apple_status.get("apple_environment") if entitlement_source == "apple" else None,
     }
 
 
@@ -1110,6 +1149,148 @@ async def mobile_checkout(request: MobileCheckoutRequest):
     except Exception as e:
         print(f"[mobile_auth] checkout error: {e}")
         return {"success": False, "error": str(e)}
+
+
+# =============================================================================
+# STOREKIT IN-APP PURCHASE ACTIVATION (Production-Grade with JWS Verification)
+# =============================================================================
+
+from app.services.apple_storekit_jws import (
+    verify_and_validate_jws,
+    JWSVerificationError,
+)
+
+
+class StoreKitPurchaseRequest(BaseModel):
+    email: EmailStr
+    user_id: Optional[str] = None
+    product_id: str
+    transaction_id: str
+    jws: str  # StoreKit 2 signed transaction (jwsRepresentation)
+
+
+@router.post("/activate-storekit-purchase")
+async def activate_storekit_purchase(request: StoreKitPurchaseRequest):
+    """
+    Activate Pro subscription after successful StoreKit purchase.
+
+    PRODUCTION-GRADE:
+    1. Cryptographically verifies the JWS against Apple's certificate chain
+    2. Validates bundleId, productId, expiration, and revocation status
+    3. Uses Apple's REAL expiration date (not a guessed TTL)
+    4. Records transaction for idempotency (prevents replay attacks)
+
+    SECURITY: Idempotency check uses verified_tx.transaction_id (from JWS payload),
+    NOT the untrusted request.transaction_id from the client.
+    """
+    try:
+        print(f"[StoreKit] Activation request for {request.email}")
+
+        # 1. Verify subscriber exists
+        subscriber = _subs_store.get(request.email)
+        if not subscriber:
+            return {
+                "success": False,
+                "error": "User not found. Please sign in first."
+            }
+
+        # 2. Cryptographically verify and validate the JWS FIRST
+        # SECURITY: Must verify before checking idempotency to prevent spoofed transaction IDs
+        verified_tx, error = verify_and_validate_jws(request.jws)
+
+        if error:
+            print(f"[StoreKit] JWS verification failed: {error}")
+            return {
+                "success": False,
+                "error": f"Transaction verification failed: {error}"
+            }
+
+        # 3. Verify client transaction_id matches verified payload (defense in depth)
+        if request.transaction_id != verified_tx.transaction_id:
+            print(f"[StoreKit] Transaction ID mismatch: client={request.transaction_id}, verified={verified_tx.transaction_id}")
+            return {
+                "success": False,
+                "error": "Transaction ID mismatch"
+            }
+
+        # 4. Check idempotency using VERIFIED transaction ID (not client-provided)
+        if _subs_store.transaction_exists(verified_tx.transaction_id):
+            print(f"[StoreKit] Transaction {verified_tx.transaction_id} already processed (idempotent)")
+            # Get current status and return
+            status = _subs_store.get_apple_subscription_status(request.email)
+            return {
+                "success": True,
+                "message": "Transaction already processed",
+                "is_member": status.get("is_member", False),
+                "expires_at": status.get("subscription_expires_at"),
+                "already_processed": True,
+            }
+
+        # 6. Record transaction (idempotency + audit)
+        _subs_store.record_transaction(
+            transaction_id=verified_tx.transaction_id,
+            original_transaction_id=verified_tx.original_transaction_id,
+            product_id=verified_tx.product_id,
+            bundle_id=verified_tx.bundle_id,
+            purchase_date=verified_tx.purchase_date.isoformat() if verified_tx.purchase_date else None,
+            expiration_date=verified_tx.expiration_date.isoformat() if verified_tx.expiration_date else None,
+            revocation_date=verified_tx.revocation_date.isoformat() if verified_tx.revocation_date else None,
+            environment=verified_tx.environment,
+            email=request.email,
+            user_id=request.user_id,
+        )
+
+        # 7. Activate subscriber with Apple's real expiration date
+        expiration_iso = verified_tx.expiration_date.isoformat() if verified_tx.expiration_date else None
+
+        _subs_store.activate_apple_subscription(
+            email=request.email,
+            transaction_id=verified_tx.transaction_id,
+            original_transaction_id=verified_tx.original_transaction_id,
+            product_id=verified_tx.product_id,
+            expiration_date=expiration_iso,
+            environment=verified_tx.environment,
+        )
+
+        print(f"[StoreKit] Pro activated for {request.email}")
+        print(f"[StoreKit] Environment: {verified_tx.environment}")
+        print(f"[StoreKit] Expires: {expiration_iso}")
+
+        return {
+            "success": True,
+            "message": "Pro subscription activated",
+            "is_member": True,
+            "expires_at": expiration_iso,
+            "environment": verified_tx.environment,
+        }
+
+    except JWSVerificationError as e:
+        print(f"[StoreKit] JWS error: {e}")
+        return {"success": False, "error": str(e)}
+    except Exception as e:
+        print(f"[StoreKit] Activation error: {e}")
+        return {"success": False, "error": "Activation failed. Please try again."}
+
+
+@router.post("/check-storekit-status")
+async def check_storekit_status(request: MobileStatusRequest):
+    """
+    Check if user has active StoreKit subscription.
+    Used to restore purchases on app reinstall.
+    """
+    try:
+        subscriber = _subs_store.get(request.email)
+        if not subscriber:
+            return {"has_active_subscription": False}
+
+        return {
+            "has_active_subscription": subscriber.active,
+            "email": request.email
+        }
+
+    except Exception as e:
+        print(f"[StoreKit] Status check error: {e}")
+        return {"has_active_subscription": False, "error": str(e)}
 
 
 # =============================================================================

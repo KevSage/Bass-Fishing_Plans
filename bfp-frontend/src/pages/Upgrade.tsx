@@ -4,6 +4,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePlatformAuth } from "@/hooks/usePlatformAuth";
+import { isNativePlatform } from "@/lib/platform";
+import { useStoreKitPurchases } from "@/hooks/useStoreKitPurchases";
+import { useNativeAuth } from "@/context/NativeAuthContext";
 
 // ============================================================================
 // ICONS
@@ -122,13 +125,54 @@ export function Upgrade() {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const { isSignedIn } = usePlatformAuth();
   const navigate = useNavigate();
+  const isNative = isNativePlatform();
+  const nativeAuth = useNativeAuth();
+  const {
+    purchaseSubscription,
+    restorePurchases,
+    activateProOnBackend,
+    isPurchasing,
+    error: storeKitError,
+  } = useStoreKitPurchases();
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
 
-  const monthlyPrice = 9.99;
-  const annualPrice = 79.99;
+  const monthlyPrice = 12.99;
+  const annualPrice = 99.99;
   const annualMonthly = (annualPrice / 12).toFixed(2);
   const savings = Math.round(((monthlyPrice * 12 - annualPrice) / (monthlyPrice * 12)) * 100);
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
+    // Native: Use StoreKit for in-app purchase
+    if (isNative && isSignedIn && nativeAuth.userEmail) {
+      setPurchaseError(null);
+
+      const result = await purchaseSubscription();
+
+      if (result.success && result.jws) {
+        // Activate on backend with JWS for cryptographic verification
+        const activation = await activateProOnBackend(
+          nativeAuth.userEmail,
+          result.transactionId || '',
+          result.jws,
+          nativeAuth.userId || undefined
+        );
+
+        if (activation.success) {
+          navigate("/members?upgraded=true");
+        } else {
+          setPurchaseError(activation.error || "Activation failed. Please contact support.");
+        }
+      } else if (result.success && !result.jws) {
+        // Purchase succeeded but no JWS - this shouldn't happen on iOS 15+
+        setPurchaseError("Purchase completed but verification failed. Please contact support.");
+      } else if (result.error && !result.error.includes("cancelled")) {
+        setPurchaseError(result.error);
+      }
+      return;
+    }
+
+    // Web or not signed in: Navigate to subscribe/sign-up
     if (isSignedIn) {
       navigate("/subscribe");
     } else {
@@ -140,6 +184,53 @@ export function Upgrade() {
     const PROD_SAMPLE_URL = "/plan?token=ByW0Xj_COI5ek3gimQnLQ6rsyrhkvGO9X7R8Aw6Rhus";
     const DEV_SAMPLE_URL = "/plan?token=FSt4LZJLD62XHHTmYOL1ZoWua6V34U9c9TGVbKt1vEU";
     navigate(import.meta.env.PROD ? PROD_SAMPLE_URL : DEV_SAMPLE_URL);
+  };
+
+  // Restore purchases - required by Apple App Store
+  const handleRestorePurchases = async () => {
+    if (!isNative || !nativeAuth.userEmail) return;
+
+    setIsRestoring(true);
+    setPurchaseError(null);
+
+    try {
+      const result = await restorePurchases();
+
+      if (!result.success) {
+        setPurchaseError(result.error || "Failed to restore purchases");
+        return;
+      }
+
+      // If we got transactions with JWS, verify each with the backend
+      if (result.transactions && result.transactions.length > 0) {
+        for (const tx of result.transactions) {
+          if (tx.jws) {
+            const activation = await activateProOnBackend(
+              nativeAuth.userEmail,
+              tx.transactionId,
+              tx.jws,
+              nativeAuth.userId || undefined
+            );
+
+            if (activation.success) {
+              navigate("/members?restored=true");
+              return;
+            }
+          }
+        }
+        // Had transactions but none were valid
+        setPurchaseError("No active subscriptions found. You may need to repurchase.");
+      } else {
+        // No transactions returned - check backend status anyway
+        // The user may have an existing subscription that was already synced
+        setPurchaseError("No purchases to restore. If you believe this is an error, please contact support.");
+      }
+    } catch (err: any) {
+      console.error("[Restore] Error:", err);
+      setPurchaseError(err.message || "Restore failed. Please try again.");
+    } finally {
+      setIsRestoring(false);
+    }
   };
 
   return (
@@ -189,8 +280,23 @@ export function Upgrade() {
 
         {/* CTA BUTTONS */}
         <div className="hero-ctas">
-          <button className="cta-primary" onClick={handleUpgrade}>
-            {isSignedIn ? "Upgrade Now" : "Start Free Trial"}
+          {(purchaseError || storeKitError) && (
+            <div className="purchase-error">
+              {purchaseError || storeKitError}
+            </div>
+          )}
+          <button
+            className="cta-primary"
+            onClick={handleUpgrade}
+            disabled={isPurchasing || isRestoring}
+          >
+            {isPurchasing
+              ? "Processing..."
+              : isRestoring
+                ? "Restoring..."
+                : isSignedIn
+                  ? "Upgrade Now"
+                  : "Start Free Trial"}
           </button>
           <button className="cta-secondary" onClick={handleViewSample}>
             View Sample Plan
@@ -198,8 +304,17 @@ export function Upgrade() {
         </div>
 
         <p className="guarantee">
-          Cancel anytime. No questions asked.
+          {isNative ? "Subscription managed by App Store." : "Cancel anytime. No questions asked."}
         </p>
+        {isNative && isSignedIn && (
+          <button
+            className="restore-link"
+            onClick={handleRestorePurchases}
+            disabled={isRestoring || isPurchasing}
+          >
+            {isRestoring ? "Restoring..." : "Restore Purchases"}
+          </button>
+        )}
       </section>
 
       {/* FEATURES GRID */}
@@ -275,10 +390,22 @@ export function Upgrade() {
       <section className="final-cta">
         <h2>Ready to Fish Smarter?</h2>
         <p>Join thousands of anglers who've upgraded their game.</p>
-        <button className="cta-primary large" onClick={handleUpgrade}>
-          {isSignedIn ? "Upgrade to Pro" : "Get Started"}
+        <button
+          className="cta-primary large"
+          onClick={handleUpgrade}
+          disabled={isPurchasing || isRestoring}
+        >
+          {isPurchasing
+            ? "Processing..."
+            : isRestoring
+              ? "Restoring..."
+              : isSignedIn
+                ? "Upgrade to Pro"
+                : "Get Started"}
         </button>
-        <p className="guarantee">30-day money-back guarantee</p>
+        <p className="guarantee">
+          {isNative ? "Subscription managed by App Store" : "30-day money-back guarantee"}
+        </p>
       </section>
 
       {/* STYLES */}
@@ -472,6 +599,43 @@ export function Upgrade() {
           font-size: 0.85rem;
           color: rgba(255, 255, 255, 0.4);
           margin: 0;
+        }
+
+        .purchase-error {
+          padding: 12px 16px;
+          background: rgba(255, 107, 107, 0.1);
+          border: 1px solid rgba(255, 107, 107, 0.3);
+          border-radius: 12px;
+          color: #ff6b6b;
+          font-size: 0.9rem;
+          text-align: center;
+        }
+
+        .cta-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .restore-link {
+          display: block;
+          margin: 16px auto 0;
+          padding: 8px 16px;
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.4);
+          font-size: 0.85rem;
+          cursor: pointer;
+          text-decoration: underline;
+          transition: color 0.2s;
+        }
+
+        .restore-link:hover {
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        .restore-link:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         /* FEATURES */

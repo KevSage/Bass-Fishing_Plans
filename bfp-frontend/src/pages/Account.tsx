@@ -4,6 +4,7 @@ import { PlanHistory } from "../components/PlanHistory";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
 import { useNativeAuth } from "@/context/NativeAuthContext";
 import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
+import { useStoreKitPurchases } from "@/hooks/useStoreKitPurchases";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -188,6 +189,11 @@ export function Account() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // StoreKit for iOS restore purchases
+  const { restorePurchases } = useStoreKitPurchases();
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreMessage, setRestoreMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // Map style preference - reset to default if saved style is no longer available
   const [mapStyle, setMapStyle] = useState(() => {
     const saved = localStorage.getItem(MAPBOX_STYLE_KEY);
@@ -331,6 +337,50 @@ export function Account() {
     navigate("/");
   };
 
+  // Restore purchases for iOS (Apple requires this)
+  const handleRestorePurchases = async () => {
+    if (!isNativePlatform()) return;
+
+    setIsRestoring(true);
+    setRestoreMessage(null);
+
+    try {
+      const result = await restorePurchases();
+
+      if (result.success) {
+        // Check with backend if subscription is now active
+        // The restore operation syncs with Apple's servers, so backend should reflect the status
+        if (nativeAuth.userEmail && nativeAuth.userId) {
+          const response = await fetch(`${getApiBaseUrl()}/mobile-auth/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: nativeAuth.userEmail,
+              user_id: nativeAuth.userId,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.is_member) {
+            setRestoreMessage({ type: 'success', text: 'Subscription restored successfully!' });
+            // Refresh the page to update UI
+            setTimeout(() => window.location.reload(), 1500);
+          } else {
+            setRestoreMessage({ type: 'error', text: 'No active subscription found' });
+          }
+        }
+      } else {
+        setRestoreMessage({ type: 'error', text: 'No purchases to restore' });
+      }
+    } catch (err) {
+      console.error('[Account] Restore failed:', err);
+      setRestoreMessage({ type: 'error', text: 'Failed to restore purchases' });
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   // On native, use nativeAuth.isLoaded; on web, use Clerk's isLoaded
   const authLoaded = isNativePlatform() ? nativeAuth.isLoaded : isLoaded;
 
@@ -460,6 +510,24 @@ export function Account() {
                 Upgrade to Pro
               </Link>
               <p className="upsell-footer">Instant access. Cancel anytime.</p>
+
+              {/* Restore Purchases for native iOS (Apple requires this) */}
+              {isNativePlatform() && (
+                <button
+                  onClick={handleRestorePurchases}
+                  disabled={isRestoring}
+                  className="restore-btn"
+                >
+                  {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+                </button>
+              )}
+
+              {/* Restore message */}
+              {restoreMessage && (
+                <p className={`restore-message ${restoreMessage.type}`}>
+                  {restoreMessage.text}
+                </p>
+              )}
             </div>
           ) : (
             // PRO USER VIEW
@@ -489,13 +557,27 @@ export function Account() {
               )}
               {/* Show contact support for native users */}
               {subscription.status === "active" && isNativePlatform() && (
-                <a
-                  href="mailto:bassclarity@gmail.com?subject=Subscription%20Support"
-                  className="manage-link"
-                  style={{ textAlign: "center", textDecoration: "none" }}
-                >
-                  Contact Support for Billing
-                </a>
+                <>
+                  <a
+                    href="mailto:bassclarity@gmail.com?subject=Subscription%20Support"
+                    className="manage-link"
+                    style={{ textAlign: "center", textDecoration: "none" }}
+                  >
+                    Contact Support for Billing
+                  </a>
+                  <button
+                    onClick={handleRestorePurchases}
+                    disabled={isRestoring}
+                    className="restore-btn-pro"
+                  >
+                    {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+                  </button>
+                  {restoreMessage && (
+                    <p className={`restore-message ${restoreMessage.type}`}>
+                      {restoreMessage.text}
+                    </p>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -634,6 +716,30 @@ export function Account() {
         .support-text a { color: inherit; text-decoration: underline; }
 
         .error-banner { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 12px 16px; margin-bottom: 24px; color: #f87171; font-size: 0.85rem; }
+
+        .restore-btn {
+          width: 100%; margin-top: 16px; padding: 12px;
+          background: transparent; border: 1px solid rgba(255,255,255,0.15);
+          color: rgba(255,255,255,0.6); border-radius: 10px;
+          font-size: 0.85rem; font-weight: 500; cursor: pointer;
+          transition: all 0.2s;
+        }
+        .restore-btn:hover { border-color: rgba(255,255,255,0.3); color: rgba(255,255,255,0.8); }
+        .restore-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .restore-btn-pro {
+          width: 100%; margin-top: 12px; padding: 12px;
+          background: transparent; border: 1px solid rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.4); border-radius: 10px;
+          font-size: 0.8rem; font-weight: 500; cursor: pointer;
+          transition: all 0.2s;
+        }
+        .restore-btn-pro:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
+        .restore-btn-pro:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .restore-message { text-align: center; font-size: 0.8rem; margin-top: 12px; padding: 8px 12px; border-radius: 8px; }
+        .restore-message.success { background: rgba(34, 197, 94, 0.1); color: #4ade80; }
+        .restore-message.error { background: rgba(239, 68, 68, 0.1); color: #f87171; }
 
         .preferences-card { padding: 24px; margin-top: 24px; }
         .preferences-title { font-size: 1rem; font-weight: 700; margin: 0 0 20px; color: rgba(255,255,255,0.9); }

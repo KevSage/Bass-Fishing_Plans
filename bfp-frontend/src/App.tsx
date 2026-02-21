@@ -3,6 +3,7 @@ import { Routes, Route, Link, Navigate, useLocation } from "react-router-dom";
 import { SignedIn, SignedOut } from "./components/PlatformAuth";
 import { isNativePlatform, configureStatusBar } from "./lib/platform";
 import { usePlatformAuth } from "./hooks/usePlatformAuth";
+import { useMemberStatus } from "./hooks/useMemberStatus";
 import { Navigation } from "./components/Navigation";
 import { Landing } from "./pages/Landing";
 import { About } from "./pages/About";
@@ -108,6 +109,12 @@ function TopBar() {
 }
 
 export default function App() {
+  // Refresh entitlement status on app launch (ensures Pro stays correct across reinstalls/renewals)
+  const { refetch } = useMemberStatus();
+  React.useEffect(() => {
+    refetch();
+  }, []);
+
   // Configure status bar on native platforms (light text for dark background)
   React.useEffect(() => {
     configureStatusBar();

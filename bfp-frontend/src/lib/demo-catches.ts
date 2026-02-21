@@ -82,7 +82,7 @@ function makeCatch(lat: number, lng: number): any {
     color: randomItem(pair.colors),
     weight: (0.5 + Math.random() * 1.4).toFixed(2), // 0.5 - 1.9 lbs (under 2)
     notes: "",
-    photoUrl: null,
+    photoUrl: "/demo/sample.jpg",
     caughtAt: randomDateBefore2022(),
     catchLat: lat,
     catchLng: lng,

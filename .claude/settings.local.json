@@ -37,7 +37,11 @@
       "Bash(python:*)",
       "WebFetch(domain:gopro.github.io)",
       "Bash(npx tsc:*)",
-      "Bash(node scripts/generate-demo-catches.js:*)"
+      "Bash(node scripts/generate-demo-catches.js:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(brew install:*)",
+      "WebFetch(domain:www.revenuecat.com)",
+      "Bash(openssl x509:*)"
     ]
   }
 }

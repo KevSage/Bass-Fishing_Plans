@@ -661,13 +661,22 @@ export function Members() {
   const { user } = usePlatformUser();
   const { getToken } = usePlatformAuth();
   const nativeAuth = useNativeAuth();
-  const { isActive, isLoading: statusLoading, plansRemaining } = useMemberStatus();
+  const { isActive, isLoading: statusLoading, plansRemaining, refetch } = useMemberStatus();
   const navigate = useNavigate();
   const location = useLocation();
   const [dataVersion, setDataVersion] = useState(0);
   const [mapKey, setMapKey] = useState(0); // For forcing map re-init after navigation
   const [mapReady, setMapReady] = useState(false); // Triggers catch marker re-render when map loads
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Refresh entitlements after purchase (critical for immediate Pro unlock)
+  useEffect(() => {
+    if (searchParams.get("upgraded") === "true") {
+      refetch();
+      searchParams.delete("upgraded");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
 
   // --- WEATHER STATE & CACHING ---
   const [showWeather, setShowWeather] = useState(false);

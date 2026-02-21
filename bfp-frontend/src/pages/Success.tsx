@@ -174,7 +174,7 @@ export function Success() {
                 >
                   <span style={{ color: "rgba(255,255,255,0.6)" }}>Plan</span>
                   <span style={{ color: "#fff", fontWeight: 500 }}>
-                    $10/month • Unlimited plans
+                    $12.99/month • Unlimited plans
                   </span>
                 </div>
                 <div
