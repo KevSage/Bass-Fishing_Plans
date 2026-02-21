@@ -118,10 +118,10 @@ export function useStoreKitPurchases() {
   }, []);
 
   // Restore purchases (required by Apple)
-  // PRODUCTION-GRADE: After restore, gets active transactions with JWS for server verification
+  // PRODUCTION-GRADE: Uses getPurchases() API to retrieve transactions with JWS for server verification
   const restorePurchases = useCallback(async (): Promise<{
     success: boolean;
-    transactions?: Array<{ transactionId: string; jws: string }>;
+    transactions?: Array<{ transactionId: string; jws: string; isActive: boolean }>;
     error?: string;
   }> => {
     if (!isNativePlatform()) {
@@ -134,41 +134,34 @@ export function useStoreKitPurchases() {
     try {
       const { NativePurchases, PURCHASE_TYPE } = await import('@capgo/native-purchases');
 
-      // Restore purchases - this syncs with Apple's servers
+      // Step 1: Restore purchases - syncs with Apple's servers
       await NativePurchases.restorePurchases();
       console.log('[StoreKit] Restore synced with Apple');
 
-      // Get current entitlements to find active subscriptions with JWS
-      // The getProducts + checkEntitlements pattern varies by plugin version
-      // For @capgo/native-purchases, we check active subscriptions
-      const activeTransactions: Array<{ transactionId: string; jws: string }> = [];
+      // Step 2: Get all purchases using the dedicated getPurchases() API
+      // This returns Transaction[] with jwsRepresentation for server verification
+      const { purchases } = await NativePurchases.getPurchases({
+        productType: PURCHASE_TYPE.SUBS,
+      });
 
-      try {
-        // Try to get active transactions - plugin may return them via different methods
-        // Some versions expose getCurrentEntitlements or similar
-        const result = await NativePurchases.getProducts({
-          productIdentifiers: [MONTHLY_SUBSCRIPTION_ID],
-          productType: PURCHASE_TYPE.SUBS,
-        });
+      console.log(`[StoreKit] getPurchases returned ${purchases.length} transactions`);
 
-        // If the plugin provides active transaction info after restore, extract it
-        // Note: The exact API depends on plugin version - may need adjustment
-        if ((result as any).transactions) {
-          for (const tx of (result as any).transactions) {
-            if (tx.transactionId && tx.jwsRepresentation) {
-              activeTransactions.push({
-                transactionId: tx.transactionId,
-                jws: tx.jwsRepresentation,
-              });
-            }
-          }
+      // Filter for our product and extract JWS
+      const activeTransactions: Array<{ transactionId: string; jws: string; isActive: boolean }> = [];
+
+      for (const tx of purchases) {
+        // Only include transactions for our product that have JWS
+        if (tx.productIdentifier === MONTHLY_SUBSCRIPTION_ID && tx.jwsRepresentation) {
+          activeTransactions.push({
+            transactionId: tx.transactionId,
+            jws: tx.jwsRepresentation,
+            isActive: tx.isActive ?? false,
+          });
+          console.log(`[StoreKit] Found transaction: ${tx.transactionId}, isActive=${tx.isActive}`);
         }
-      } catch (entErr) {
-        console.warn('[StoreKit] Could not fetch active transactions after restore:', entErr);
-        // This is not fatal - the restore still succeeded with Apple
       }
 
-      console.log(`[StoreKit] Restore completed, found ${activeTransactions.length} active transactions`);
+      console.log(`[StoreKit] Restore completed, found ${activeTransactions.length} matching transactions`);
 
       return {
         success: true,

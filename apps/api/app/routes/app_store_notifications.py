@@ -123,15 +123,19 @@ async def handle_notification(request: Request):
             if signed_transaction_info:
                 try:
                     tx = verify_storekit_transaction_jws(signed_transaction_info)
-
-                    # Find user by original transaction ID
-                    # For now, we log and rely on the transaction having been recorded
-                    # In production, you'd look up the user by original_transaction_id
                     print(f"[AppStoreNotification] Renewal for transaction: {tx.original_transaction_id}")
                     print(f"[AppStoreNotification] New expiration: {tx.expiration_date}")
 
-                    # TODO: Look up user by apple_original_transaction_id and update expiration
-                    # store.update_apple_expiration(email, tx.expiration_date.isoformat())
+                    # Update expiration date in database
+                    if tx.expiration_date:
+                        updated = store.update_expiration_by_original_transaction_id(
+                            tx.original_transaction_id,
+                            tx.expiration_date.isoformat()
+                        )
+                        if updated:
+                            print(f"[AppStoreNotification] Updated expiration for {tx.original_transaction_id}")
+                        else:
+                            print(f"[AppStoreNotification] No subscriber found for {tx.original_transaction_id}")
 
                 except JWSVerificationError as e:
                     print(f"[AppStoreNotification] Failed to verify transaction: {e}")
@@ -143,8 +147,12 @@ async def handle_notification(request: Request):
                     tx = verify_storekit_transaction_jws(signed_transaction_info)
                     print(f"[AppStoreNotification] Expired: {tx.original_transaction_id}")
 
-                    # TODO: Look up user and deactivate
-                    # store.deactivate_by_transaction(tx.original_transaction_id)
+                    # Deactivate subscription
+                    deactivated = store.deactivate_by_original_transaction_id(tx.original_transaction_id)
+                    if deactivated:
+                        print(f"[AppStoreNotification] Deactivated subscription for {tx.original_transaction_id}")
+                    else:
+                        print(f"[AppStoreNotification] No subscriber found for {tx.original_transaction_id}")
 
                 except JWSVerificationError as e:
                     print(f"[AppStoreNotification] Failed to verify transaction: {e}")
@@ -156,10 +164,36 @@ async def handle_notification(request: Request):
                     tx = verify_storekit_transaction_jws(signed_transaction_info)
                     print(f"[AppStoreNotification] Refund: {tx.transaction_id}")
 
-                    if tx.revocation_date:
-                        # TODO: Look up user and revoke
-                        # store.revoke_by_transaction(tx.original_transaction_id, tx.revocation_date)
-                        pass
+                    # Revoke subscription with revocation date
+                    revocation_iso = tx.revocation_date.isoformat() if tx.revocation_date else None
+                    if revocation_iso:
+                        revoked = store.revoke_by_original_transaction_id(
+                            tx.original_transaction_id,
+                            revocation_iso
+                        )
+                        if revoked:
+                            print(f"[AppStoreNotification] Revoked subscription for {tx.original_transaction_id}")
+                        else:
+                            print(f"[AppStoreNotification] No subscriber found for {tx.original_transaction_id}")
+
+                except JWSVerificationError as e:
+                    print(f"[AppStoreNotification] Failed to verify transaction: {e}")
+
+        elif notification_type == "REVOKE":
+            # Family sharing revoked - same as refund
+            if signed_transaction_info:
+                try:
+                    tx = verify_storekit_transaction_jws(signed_transaction_info)
+                    print(f"[AppStoreNotification] Family sharing revoked: {tx.transaction_id}")
+
+                    revocation_iso = tx.revocation_date.isoformat() if tx.revocation_date else None
+                    if revocation_iso:
+                        revoked = store.revoke_by_original_transaction_id(
+                            tx.original_transaction_id,
+                            revocation_iso
+                        )
+                        if revoked:
+                            print(f"[AppStoreNotification] Revoked family share for {tx.original_transaction_id}")
 
                 except JWSVerificationError as e:
                     print(f"[AppStoreNotification] Failed to verify transaction: {e}")
@@ -168,17 +202,26 @@ async def handle_notification(request: Request):
             # User turned auto-renew on or off
             auto_renew_status = data.get("autoRenewStatus")
             print(f"[AppStoreNotification] Auto-renew status changed: {auto_renew_status}")
-            # This is informational - subscription is still active until expiration
+            # Informational only - subscription is still active until expiration
 
         elif notification_type == "DID_FAIL_TO_RENEW":
             # Billing retry started (grace period)
             print(f"[AppStoreNotification] Billing retry started")
-            # User is in grace period - subscription still active
+            # User is in grace period - subscription still active, no action needed
 
         elif notification_type == "GRACE_PERIOD_EXPIRED":
-            # Grace period ended without successful billing
-            print(f"[AppStoreNotification] Grace period expired")
-            # TODO: Deactivate subscription
+            # Grace period ended without successful billing - deactivate
+            if signed_transaction_info:
+                try:
+                    tx = verify_storekit_transaction_jws(signed_transaction_info)
+                    print(f"[AppStoreNotification] Grace period expired: {tx.original_transaction_id}")
+
+                    deactivated = store.deactivate_by_original_transaction_id(tx.original_transaction_id)
+                    if deactivated:
+                        print(f"[AppStoreNotification] Deactivated after grace period: {tx.original_transaction_id}")
+
+                except JWSVerificationError as e:
+                    print(f"[AppStoreNotification] Failed to verify transaction: {e}")
 
         # Always return 200 OK to Apple
         # If we return an error, Apple will retry the notification

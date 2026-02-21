@@ -1179,9 +1179,14 @@ async def activate_storekit_purchase(request: StoreKitPurchaseRequest):
     2. Validates bundleId, productId, expiration, and revocation status
     3. Uses Apple's REAL expiration date (not a guessed TTL)
     4. Records transaction for idempotency (prevents replay attacks)
+    5. Validates user_id matches stored apple_user_id (identity binding)
 
     SECURITY: Idempotency check uses verified_tx.transaction_id (from JWS payload),
     NOT the untrusted request.transaction_id from the client.
+
+    RESPONSE CONTRACT: All responses include consistent fields:
+    - Success: { success, is_member, expires_at, entitlement_source }
+    - Failure: { success: false, error }
     """
     try:
         print(f"[StoreKit] Activation request for {request.email}")
@@ -1189,44 +1194,48 @@ async def activate_storekit_purchase(request: StoreKitPurchaseRequest):
         # 1. Verify subscriber exists
         subscriber = _subs_store.get(request.email)
         if not subscriber:
-            return {
-                "success": False,
-                "error": "User not found. Please sign in first."
-            }
+            return {"success": False, "error": "User not found. Please sign in first."}
 
-        # 2. Cryptographically verify and validate the JWS FIRST
+        # 2. Validate user_id matches stored apple_user_id (identity binding)
+        # This prevents activating a subscription on someone else's email
+        if request.user_id and subscriber.apple_user_id:
+            if request.user_id != subscriber.apple_user_id:
+                print(f"[StoreKit] User ID mismatch: request={request.user_id}, stored={subscriber.apple_user_id}")
+                return {"success": False, "error": "Account mismatch. Please sign in with the correct account."}
+
+        # 3. Cryptographically verify and validate the JWS FIRST
         # SECURITY: Must verify before checking idempotency to prevent spoofed transaction IDs
         verified_tx, error = verify_and_validate_jws(request.jws)
 
         if error:
             print(f"[StoreKit] JWS verification failed: {error}")
-            return {
-                "success": False,
-                "error": f"Transaction verification failed: {error}"
-            }
+            return {"success": False, "error": f"Transaction verification failed: {error}"}
 
-        # 3. Verify client transaction_id matches verified payload (defense in depth)
+        # 4. Verify client transaction_id matches verified payload (defense in depth)
         if request.transaction_id != verified_tx.transaction_id:
             print(f"[StoreKit] Transaction ID mismatch: client={request.transaction_id}, verified={verified_tx.transaction_id}")
-            return {
-                "success": False,
-                "error": "Transaction ID mismatch"
-            }
+            return {"success": False, "error": "Transaction ID mismatch"}
 
-        # 4. Check idempotency using VERIFIED transaction ID (not client-provided)
+        # 5. Check idempotency using VERIFIED transaction ID (not client-provided)
         if _subs_store.transaction_exists(verified_tx.transaction_id):
             print(f"[StoreKit] Transaction {verified_tx.transaction_id} already processed (idempotent)")
-            # Get current status and return
             status = _subs_store.get_apple_subscription_status(request.email)
             return {
                 "success": True,
-                "message": "Transaction already processed",
                 "is_member": status.get("is_member", False),
                 "expires_at": status.get("subscription_expires_at"),
+                "entitlement_source": status.get("entitlement_source", "apple"),
                 "already_processed": True,
             }
 
-        # 6. Record transaction (idempotency + audit)
+        # 6. Verify original_transaction_id consistency (prevents cross-account entitlement theft)
+        # If subscriber already has an Apple subscription, the original_transaction_id must match
+        if subscriber.apple_original_transaction_id:
+            if subscriber.apple_original_transaction_id != verified_tx.original_transaction_id:
+                print(f"[StoreKit] Original transaction ID mismatch: stored={subscriber.apple_original_transaction_id}, verified={verified_tx.original_transaction_id}")
+                return {"success": False, "error": "This subscription belongs to a different account."}
+
+        # 8. Record transaction (idempotency + audit)
         _subs_store.record_transaction(
             transaction_id=verified_tx.transaction_id,
             original_transaction_id=verified_tx.original_transaction_id,
@@ -1240,7 +1249,7 @@ async def activate_storekit_purchase(request: StoreKitPurchaseRequest):
             user_id=request.user_id,
         )
 
-        # 7. Activate subscriber with Apple's real expiration date
+        # 9. Activate subscriber with Apple's real expiration date
         expiration_iso = verified_tx.expiration_date.isoformat() if verified_tx.expiration_date else None
 
         _subs_store.activate_apple_subscription(
@@ -1258,10 +1267,9 @@ async def activate_storekit_purchase(request: StoreKitPurchaseRequest):
 
         return {
             "success": True,
-            "message": "Pro subscription activated",
             "is_member": True,
             "expires_at": expiration_iso,
-            "environment": verified_tx.environment,
+            "entitlement_source": "apple",
         }
 
     except JWSVerificationError as e:

@@ -201,9 +201,16 @@ export function Upgrade() {
         return;
       }
 
-      // If we got transactions with JWS, verify each with the backend
+      // If we got transactions with JWS, verify with the backend
       if (result.transactions && result.transactions.length > 0) {
-        for (const tx of result.transactions) {
+        // Prioritize active transactions first (sorted by isActive=true first)
+        const sortedTransactions = [...result.transactions].sort((a, b) => {
+          if (a.isActive && !b.isActive) return -1;
+          if (!a.isActive && b.isActive) return 1;
+          return 0;
+        });
+
+        for (const tx of sortedTransactions) {
           if (tx.jws) {
             const activation = await activateProOnBackend(
               nativeAuth.userEmail,
@@ -212,17 +219,16 @@ export function Upgrade() {
               nativeAuth.userId || undefined
             );
 
-            if (activation.success) {
+            if (activation.success && activation.is_member) {
               navigate("/members?restored=true");
               return;
             }
           }
         }
-        // Had transactions but none were valid
-        setPurchaseError("No active subscriptions found. You may need to repurchase.");
+        // Had transactions but none resulted in active membership
+        setPurchaseError("No active subscriptions found. Your subscription may have expired.");
       } else {
-        // No transactions returned - check backend status anyway
-        // The user may have an existing subscription that was already synced
+        // No transactions returned
         setPurchaseError("No purchases to restore. If you believe this is an error, please contact support.");
       }
     } catch (err: any) {

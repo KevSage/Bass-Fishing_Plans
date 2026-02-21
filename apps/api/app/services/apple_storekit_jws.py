@@ -166,6 +166,8 @@ def _verify_jws_signature(jws: str, leaf_cert: x509.Certificate) -> None:
     IMPORTANT: JWS uses JOSE format for ECDSA signatures (R || S raw bytes),
     but cryptography's verify() expects DER-encoded ASN.1 format.
     We must convert JOSE → DER before verification.
+
+    SECURITY: Signature length is derived from the curve's key_size, not assumed.
     """
     parts = jws.split(".")
     if len(parts) != 3:
@@ -181,16 +183,22 @@ def _verify_jws_signature(jws: str, leaf_cert: x509.Certificate) -> None:
         raise JWSVerificationError("Expected EC public key for ES256")
 
     try:
-        # Convert JOSE signature (R || S raw bytes) to DER format
-        # JOSE signature is exactly 2 * coordinate_size bytes
-        # For P-256 (ES256), that's 64 bytes (32 + 32)
-        sig_len = len(jose_signature)
-        if sig_len % 2 != 0:
-            raise JWSVerificationError(f"Invalid JOSE signature length: {sig_len}")
+        # Derive expected signature length from curve's key_size
+        # key_size is in bits (e.g., 256 for P-256), convert to bytes
+        # JOSE signature = R || S, each is key_size // 8 bytes
+        key_size_bits = public_key.curve.key_size
+        coord_size = key_size_bits // 8  # 32 bytes for P-256
+        expected_sig_len = coord_size * 2  # 64 bytes for P-256
 
-        n = sig_len // 2
-        r = int.from_bytes(jose_signature[:n], "big")
-        s = int.from_bytes(jose_signature[n:], "big")
+        if len(jose_signature) != expected_sig_len:
+            raise JWSVerificationError(
+                f"Invalid JOSE signature length: got {len(jose_signature)}, "
+                f"expected {expected_sig_len} for {key_size_bits}-bit curve"
+            )
+
+        # Split signature by curve-derived coordinate size
+        r = int.from_bytes(jose_signature[:coord_size], "big")
+        s = int.from_bytes(jose_signature[coord_size:], "big")
 
         # Encode as DER (ASN.1 format that cryptography expects)
         der_signature = encode_dss_signature(r, s)

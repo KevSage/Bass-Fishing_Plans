@@ -193,7 +193,13 @@ class SubscriberStore:
         with self._pg_conn() as conn:
             row = conn.execute(
                 """
-                SELECT email, active, stripe_customer_id, stripe_subscription_id, apple_user_id, first_name, last_name, COALESCE(plans_generated, 0) as plans_generated
+                SELECT email, active, stripe_customer_id, stripe_subscription_id,
+                       apple_user_id, first_name, last_name,
+                       COALESCE(plans_generated, 0) as plans_generated,
+                       subscription_expires_at, entitlement_source,
+                       apple_transaction_id, apple_original_transaction_id,
+                       apple_product_id, apple_last_verified_at,
+                       apple_revoked_at, apple_environment
                 FROM subscribers
                 WHERE email = %s
                 """,
@@ -212,6 +218,14 @@ class SubscriberStore:
             first_name=row["first_name"],
             last_name=row["last_name"],
             plans_generated=row["plans_generated"] or 0,
+            subscription_expires_at=str(row["subscription_expires_at"]) if row.get("subscription_expires_at") else None,
+            entitlement_source=row.get("entitlement_source"),
+            apple_transaction_id=row.get("apple_transaction_id"),
+            apple_original_transaction_id=row.get("apple_original_transaction_id"),
+            apple_product_id=row.get("apple_product_id"),
+            apple_last_verified_at=str(row["apple_last_verified_at"]) if row.get("apple_last_verified_at") else None,
+            apple_revoked_at=str(row["apple_revoked_at"]) if row.get("apple_revoked_at") else None,
+            apple_environment=row.get("apple_environment"),
         )
 
     def _pg_get_by_apple_id(self, apple_user_id: str) -> Optional[Subscriber]:
@@ -907,3 +921,82 @@ class SubscriberStore:
                 }
 
         return {"exists": False}
+
+    def get_email_by_original_transaction_id(self, original_transaction_id: str) -> Optional[str]:
+        """
+        Look up subscriber email by Apple original_transaction_id.
+        Used by App Store Server Notifications to find the user for a subscription event.
+        """
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                row = conn.execute(
+                    "SELECT email FROM subscribers WHERE apple_original_transaction_id = %s",
+                    (original_transaction_id,),
+                ).fetchone()
+                return row["email"] if row else None
+        return None
+
+    def deactivate_by_original_transaction_id(self, original_transaction_id: str) -> bool:
+        """
+        Deactivate a subscription by original_transaction_id.
+        Used when Apple notifies us of expiration or grace period end.
+        """
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    """
+                    UPDATE subscribers SET active = FALSE
+                    WHERE apple_original_transaction_id = %s AND entitlement_source = 'apple'
+                    """,
+                    (original_transaction_id,),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        return False
+
+    def revoke_by_original_transaction_id(self, original_transaction_id: str, revocation_date: str) -> bool:
+        """
+        Revoke a subscription (refund/family sharing revoked).
+        Sets active=False and records the revocation date.
+        """
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    """
+                    UPDATE subscribers SET
+                        active = FALSE,
+                        apple_revoked_at = %s
+                    WHERE apple_original_transaction_id = %s AND entitlement_source = 'apple'
+                    """,
+                    (revocation_date, original_transaction_id),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        return False
+
+    def update_expiration_by_original_transaction_id(
+        self, original_transaction_id: str, expiration_date: str
+    ) -> bool:
+        """
+        Update expiration date for a subscription renewal.
+        Used when Apple notifies us of a renewal (DID_RENEW).
+        """
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    """
+                    UPDATE subscribers SET
+                        active = TRUE,
+                        subscription_expires_at = %s,
+                        apple_last_verified_at = %s,
+                        apple_revoked_at = NULL
+                    WHERE apple_original_transaction_id = %s AND entitlement_source = 'apple'
+                    """,
+                    (expiration_date, now, original_transaction_id),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        return False
