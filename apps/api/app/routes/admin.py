@@ -86,11 +86,15 @@ def toggle_subscriber(
     request: ToggleRequest,
     password: str = Header(..., alias="X-Admin-Password"),
 ):
-    """Toggle a subscriber's active status."""
+    """Toggle a subscriber's active status.
+
+    Uses set_active_manual which sets entitlement_source='manual',
+    making admin actions authoritative over Apple/web entitlements.
+    """
     verify_admin(password)
 
     store = SubscriberStore()
-    success = store.set_active(request.email, request.active)
+    success = store.set_active_manual(request.email, request.active)
 
     if not success:
         raise HTTPException(status_code=404, detail="Subscriber not found")

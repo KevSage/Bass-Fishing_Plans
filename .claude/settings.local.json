@@ -41,7 +41,12 @@
       "Bash(ffmpeg:*)",
       "Bash(brew install:*)",
       "WebFetch(domain:www.revenuecat.com)",
-      "Bash(openssl x509:*)"
+      "Bash(openssl x509:*)",
+      "Bash(brew list:*)",
+      "Bash(pip3 install:*)",
+      "Bash(unzip:*)",
+      "Bash(cat:*)",
+      "Bash(npm view:*)"
     ]
   }
 }

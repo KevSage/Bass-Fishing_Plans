@@ -92,7 +92,7 @@ export function Navigation() {
 
     checkStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, nativeAuth.isSignedIn]);
+  }, [isSignedIn, nativeAuth.isSignedIn, location.pathname]);
 
   const publicLinks = useMemo(
     () => [

@@ -673,6 +673,36 @@ class SubscriberStore:
                 conn.commit()
                 return cursor.rowcount > 0
 
+    def set_active_manual(self, email: str, active: bool) -> bool:
+        """Set a subscriber's active status with 'manual' entitlement source.
+
+        This is used by admin tools to override any existing entitlement source
+        (Apple, web, etc.) making admin actions authoritative.
+
+        Returns True if found and updated.
+        """
+        email_norm = email.lower().strip()
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                result = conn.execute(
+                    """
+                    UPDATE subscribers
+                    SET active = %s, entitlement_source = 'manual'
+                    WHERE email = %s
+                    """,
+                    (active, email_norm),
+                )
+                conn.commit()
+                return result.rowcount > 0
+        else:
+            with self._sqlite_conn() as conn:
+                cursor = conn.execute(
+                    "UPDATE subscribers SET active = ? WHERE email = ?",
+                    (1 if active else 0, email_norm),
+                )
+                conn.commit()
+                return cursor.rowcount > 0
+
     def is_subscription_expired(self, email: str) -> bool:
         """Check if a user's StoreKit subscription has expired."""
         email_norm = email.lower().strip()

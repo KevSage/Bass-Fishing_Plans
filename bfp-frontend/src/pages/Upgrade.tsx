@@ -1,10 +1,10 @@
 // src/pages/Upgrade.tsx
 // Premium upgrade page designed to maximize conversions
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePlatformAuth } from "@/hooks/usePlatformAuth";
-import { isNativePlatform } from "@/lib/platform";
+import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
 import { useStoreKitPurchases } from "@/hooks/useStoreKitPurchases";
 import { useNativeAuth } from "@/context/NativeAuthContext";
 
@@ -117,12 +117,149 @@ const COMPARISON = [
   { feature: "Custom Lake Mapping", free: false, pro: true },
 ];
 
+// Extracted styles for reuse in early returns
+const upgradeStyles = `
+  .upgrade-page {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #0a0a0f 0%, #0f0f18 50%, #0a0a0f 100%);
+    color: #fff;
+    padding-bottom: 80px;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 60px 24px 80px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, rgba(74, 144, 226, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+    border: 1px solid rgba(74, 144, 226, 0.3);
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    color: #4A90E2;
+    margin-bottom: 24px;
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0 0 20px;
+    letter-spacing: -0.03em;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #4A90E2 0%, #8B5CF6 50%, #4A90E2 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% center; }
+    50% { background-position: 100% center; }
+  }
+
+  .hero-subtitle {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0 0 32px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 300px;
+    margin: 0 auto 16px;
+  }
+
+  .cta-primary {
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+    border: none;
+    border-radius: 14px;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(74, 144, 226, 0.3);
+    transition: all 0.3s;
+  }
+
+  .cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(74, 144, 226, 0.4);
+  }
+
+  .cta-secondary {
+    padding: 14px 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .cta-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .restore-link {
+    display: block;
+    margin: 16px auto 0;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s;
+  }
+
+  .restore-link:hover {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .restore-link:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(74, 144, 226, 0.2);
+    border-top-color: #4A90E2;
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+`;
+
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
 
 export function Upgrade() {
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const { isSignedIn } = usePlatformAuth();
   const navigate = useNavigate();
   const isNative = isNativePlatform();
@@ -133,14 +270,62 @@ export function Upgrade() {
     activateProOnBackend,
     isPurchasing,
     error: storeKitError,
+    priceString,
   } = useStoreKitPurchases();
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [isAlreadyPro, setIsAlreadyPro] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
+  // Monthly subscription only (annual adds complexity for restore/upgrade/downgrade)
   const monthlyPrice = 12.99;
-  const annualPrice = 99.99;
-  const annualMonthly = (annualPrice / 12).toFixed(2);
-  const savings = Math.round(((monthlyPrice * 12 - annualPrice) / (monthlyPrice * 12)) * 100);
+
+  // Check membership status on mount for native users
+  useEffect(() => {
+    const checkMembershipStatus = async () => {
+      if (!isNative || !nativeAuth.isSignedIn || !nativeAuth.userEmail) {
+        setIsCheckingStatus(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/mobile-auth/status`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: nativeAuth.userEmail,
+            user_id: nativeAuth.userId || "",
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.is_member) {
+            setIsAlreadyPro(true);
+          }
+        }
+      } catch (err) {
+        console.error("[Upgrade] Failed to check status:", err);
+      } finally {
+        setIsCheckingStatus(false);
+      }
+    };
+
+    checkMembershipStatus();
+  }, [isNative, nativeAuth.isSignedIn, nativeAuth.userEmail, nativeAuth.userId]);
+
+  // Open App Store subscription management
+  const handleManageSubscription = async () => {
+    if (isNative) {
+      try {
+        const { NativePurchases } = await import("@capgo/native-purchases");
+        await NativePurchases.manageSubscriptions();
+      } catch (err) {
+        // Fallback: open App Store subscriptions URL
+        window.open("https://apps.apple.com/account/subscriptions", "_blank");
+      }
+    }
+  };
 
   const handleUpgrade = async () => {
     // Native: Use StoreKit for in-app purchase
@@ -239,6 +424,69 @@ export function Upgrade() {
     }
   };
 
+  // Show loading state while checking membership
+  if (isNative && isCheckingStatus) {
+    return (
+      <div className="upgrade-page">
+        <section className="hero">
+          <div className="hero-badge">BASS CLARITY PRO</div>
+          <div style={{ padding: "60px 0", textAlign: "center" }}>
+            <div className="loading-spinner" />
+            <p style={{ color: "rgba(255,255,255,0.5)", marginTop: 16 }}>
+              Checking subscription status...
+            </p>
+          </div>
+        </section>
+        <style>{upgradeStyles}</style>
+      </div>
+    );
+  }
+
+  // Already Pro - show confirmation and management options
+  if (isAlreadyPro) {
+    return (
+      <div className="upgrade-page">
+        <section className="hero">
+          <div className="hero-badge" style={{ background: "linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%)", borderColor: "rgba(34, 197, 94, 0.3)", color: "#22c55e" }}>
+            PRO MEMBER
+          </div>
+          <h1 className="hero-title">
+            You're Already<br />
+            <span className="gradient-text">Pro!</span>
+          </h1>
+          <p className="hero-subtitle">
+            You have full access to all Bass Clarity Pro features.
+            Thank you for being a Pro member!
+          </p>
+
+          <div className="hero-ctas">
+            <button
+              className="cta-primary"
+              onClick={() => navigate("/members")}
+            >
+              Go to Map
+            </button>
+            <button
+              className="cta-secondary"
+              onClick={handleManageSubscription}
+            >
+              Manage Subscription
+            </button>
+          </div>
+
+          <button
+            className="restore-link"
+            onClick={handleRestorePurchases}
+            disabled={isRestoring || isPurchasing}
+          >
+            {isRestoring ? "Restoring..." : "Restore Purchases"}
+          </button>
+        </section>
+        <style>{upgradeStyles}</style>
+      </div>
+    );
+  }
+
   return (
     <div className="upgrade-page">
       {/* HERO SECTION */}
@@ -253,35 +501,13 @@ export function Upgrade() {
           that turns every trip into an opportunity.
         </p>
 
-        {/* PRICING TOGGLE */}
-        <div className="pricing-toggle">
-          <button
-            className={`toggle-btn ${billingCycle === "monthly" ? "active" : ""}`}
-            onClick={() => setBillingCycle("monthly")}
-          >
-            Monthly
-          </button>
-          <button
-            className={`toggle-btn ${billingCycle === "annual" ? "active" : ""}`}
-            onClick={() => setBillingCycle("annual")}
-          >
-            Annual
-            <span className="save-badge">Save {savings}%</span>
-          </button>
-        </div>
-
         {/* PRICE DISPLAY */}
         <div className="price-display">
           <div className="price-main">
             <span className="currency">$</span>
-            <span className="amount">{billingCycle === "annual" ? annualMonthly : monthlyPrice}</span>
+            <span className="amount">{priceString ? priceString.replace('$', '') : monthlyPrice}</span>
             <span className="period">/mo</span>
           </div>
-          {billingCycle === "annual" && (
-            <div className="price-detail">
-              Billed ${annualPrice}/year
-            </div>
-          )}
         </div>
 
         {/* CTA BUTTONS */}
@@ -374,24 +600,6 @@ export function Upgrade() {
         </div>
       </section>
 
-      {/* SOCIAL PROOF */}
-      <section className="social-section">
-        <div className="stat-grid">
-          <div className="stat-card">
-            <div className="stat-value">10,000+</div>
-            <div className="stat-label">Plans Generated</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">500+</div>
-            <div className="stat-label">Lakes Mapped</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-value">4.9</div>
-            <div className="stat-label">App Store Rating</div>
-          </div>
-        </div>
-      </section>
-
       {/* FINAL CTA */}
       <section className="final-cta">
         <h2>Ready to Fish Smarter?</h2>
@@ -415,64 +623,8 @@ export function Upgrade() {
       </section>
 
       {/* STYLES */}
+      <style>{upgradeStyles}</style>
       <style>{`
-        .upgrade-page {
-          min-height: 100vh;
-          background: linear-gradient(180deg, #0a0a0f 0%, #0f0f18 50%, #0a0a0f 100%);
-          color: #fff;
-          padding-bottom: 80px;
-        }
-
-        /* HERO */
-        .hero {
-          text-align: center;
-          padding: 60px 24px 80px;
-          max-width: 600px;
-          margin: 0 auto;
-        }
-
-        .hero-badge {
-          display: inline-block;
-          padding: 6px 16px;
-          background: linear-gradient(135deg, rgba(74, 144, 226, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
-          border: 1px solid rgba(74, 144, 226, 0.3);
-          border-radius: 100px;
-          font-size: 0.7rem;
-          font-weight: 800;
-          letter-spacing: 0.15em;
-          color: #4A90E2;
-          margin-bottom: 24px;
-        }
-
-        .hero-title {
-          font-size: 2.5rem;
-          font-weight: 800;
-          line-height: 1.1;
-          margin: 0 0 20px;
-          letter-spacing: -0.03em;
-        }
-
-        .gradient-text {
-          background: linear-gradient(135deg, #4A90E2 0%, #8B5CF6 50%, #4A90E2 100%);
-          background-size: 200% auto;
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          animation: gradient-shift 3s ease infinite;
-        }
-
-        @keyframes gradient-shift {
-          0%, 100% { background-position: 0% center; }
-          50% { background-position: 100% center; }
-        }
-
-        .hero-subtitle {
-          font-size: 1.1rem;
-          line-height: 1.6;
-          color: rgba(255, 255, 255, 0.7);
-          margin: 0 0 32px;
-        }
-
         /* PRICING TOGGLE */
         .pricing-toggle {
           display: inline-flex;
@@ -552,55 +704,6 @@ export function Upgrade() {
           margin-top: 4px;
         }
 
-        /* CTA BUTTONS */
-        .hero-ctas {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          max-width: 300px;
-          margin: 0 auto 16px;
-        }
-
-        .cta-primary {
-          padding: 16px 32px;
-          background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-          border: none;
-          border-radius: 14px;
-          color: #fff;
-          font-size: 1.1rem;
-          font-weight: 700;
-          cursor: pointer;
-          box-shadow: 0 8px 24px rgba(74, 144, 226, 0.3);
-          transition: all 0.3s;
-        }
-
-        .cta-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 32px rgba(74, 144, 226, 0.4);
-        }
-
-        .cta-primary.large {
-          padding: 18px 40px;
-          font-size: 1.2rem;
-        }
-
-        .cta-secondary {
-          padding: 14px 32px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 14px;
-          color: #fff;
-          font-size: 1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        .cta-secondary:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: rgba(255, 255, 255, 0.2);
-        }
-
         .guarantee {
           font-size: 0.85rem;
           color: rgba(255, 255, 255, 0.4);
@@ -622,26 +725,9 @@ export function Upgrade() {
           cursor: not-allowed;
         }
 
-        .restore-link {
-          display: block;
-          margin: 16px auto 0;
-          padding: 8px 16px;
-          background: transparent;
-          border: none;
-          color: rgba(255, 255, 255, 0.4);
-          font-size: 0.85rem;
-          cursor: pointer;
-          text-decoration: underline;
-          transition: color 0.2s;
-        }
-
-        .restore-link:hover {
-          color: rgba(255, 255, 255, 0.6);
-        }
-
-        .restore-link:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
+        .cta-primary.large {
+          padding: 18px 40px;
+          font-size: 1.2rem;
         }
 
         /* FEATURES */

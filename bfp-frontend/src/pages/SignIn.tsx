@@ -250,6 +250,177 @@ export default function SignInPage() {
   // ============================================
   // Render
   // ============================================
+
+  // Native: Premium minimal design (position:fixed to cover nav bar)
+  if (isNative) {
+    return (
+      <section
+        style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          flexDirection: "column",
+          background: "linear-gradient(180deg, #081321 0%, #0B1A2E 100%)",
+          zIndex: 9999,
+          overflow: "hidden",
+        }}
+      >
+        {/* Radial focus field behind logo */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "radial-gradient(ellipse at 50% 40%, rgba(0, 170, 255, 0.14) 0%, rgba(0, 170, 255, 0.06) 35%, rgba(10, 22, 38, 0) 70%)",
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Content container */}
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "env(safe-area-inset-bottom)",
+          }}
+        >
+          {/* Logo + Typography - positioned at 42% from top */}
+          <div
+            style={{
+              position: "absolute",
+              top: "42%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              width: "100%",
+              padding: "0 24px",
+            }}
+          >
+            {/* Logo Mark */}
+            <img
+              src="/images/splash-logo.png"
+              alt="Bass Clarity"
+              style={{
+                width: "50%",
+                minWidth: 160,
+                maxWidth: 260,
+                height: "auto",
+              }}
+            />
+
+            {/* Title */}
+            <h1
+              style={{
+                marginTop: 28,
+                fontSize: "32px",
+                fontWeight: 600,
+                color: "#FFFFFF",
+                letterSpacing: "0.5px",
+                textAlign: "center",
+              }}
+            >
+              Bass Clarity
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              style={{
+                marginTop: 10,
+                fontSize: "16px",
+                fontWeight: 400,
+                color: "#A9B4C6",
+                opacity: 0.88,
+                lineHeight: "22px",
+                textAlign: "center",
+              }}
+            >
+              AI-Powered Fishing Intelligence
+            </p>
+          </div>
+
+          {/* CTA Section - positioned near bottom */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: "calc(env(safe-area-inset-bottom) + 80px)",
+              left: 0,
+              right: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              padding: "0 24px",
+            }}
+          >
+            {/* Error Message */}
+            {error && (
+              <div
+                style={{
+                  color: "#ff6b6b",
+                  fontSize: "14px",
+                  background: "rgba(255,107,107,0.1)",
+                  padding: 12,
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  width: "100%",
+                  maxWidth: 420,
+                  textAlign: "center",
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            {/* Apple Sign In Button */}
+            <button
+              type="button"
+              onClick={handleSignInWithApple}
+              disabled={appleSignInLoading}
+              style={{
+                width: "100%",
+                maxWidth: 420,
+                height: 54,
+                borderRadius: 14,
+                border: "1px solid rgba(255, 255, 255, 0.06)",
+                background: appleSignInLoading ? "rgba(0,0,0,0.7)" : "#000000",
+                color: "#FFFFFF",
+                fontSize: "17px",
+                fontWeight: 600,
+                cursor: appleSignInLoading ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                boxShadow: "0 10px 24px rgba(0, 0, 0, 0.45)",
+              }}
+            >
+              <AppleIcon />
+              {appleSignInLoading ? "Signing in..." : "Sign in with Apple"}
+            </button>
+
+            {/* Supporting Text */}
+            <p
+              style={{
+                marginTop: 16,
+                fontSize: "13px",
+                fontWeight: 400,
+                color: "#6E7C91",
+                opacity: 0.9,
+                textAlign: "center",
+              }}
+            >
+              Secure. Private. No spam.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Web: Original design with email/password
   return (
     <section
       style={{
@@ -341,7 +512,7 @@ export default function SignInPage() {
               marginBottom: 20,
             }}
           >
-            {isNative ? "Get Started" : "Welcome Back"}
+            Welcome Back
           </h2>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -361,50 +532,9 @@ export default function SignInPage() {
             )}
 
             {/* ============================================ */}
-            {/* NATIVE: Apple Sign-In Only */}
-            {/* ============================================ */}
-            {isNative && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleSignInWithApple}
-                  disabled={appleSignInLoading}
-                  style={{
-                    width: "100%",
-                    padding: "16px",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    background: appleSignInLoading ? "rgba(0,0,0,0.5)" : "#000",
-                    color: "white",
-                    fontSize: "1.1rem",
-                    fontWeight: 600,
-                    cursor: appleSignInLoading ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                  }}
-                >
-                  <AppleIcon />
-                  {appleSignInLoading ? "Signing in..." : "Sign in with Apple"}
-                </button>
-
-                <p
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "rgba(255,255,255,0.5)",
-                    marginTop: 8,
-                  }}
-                >
-                  Sign in or create an account instantly with your Apple ID
-                </p>
-              </>
-            )}
-
-            {/* ============================================ */}
             {/* WEB: Email/Password Form */}
             {/* ============================================ */}
-            {!isNative && !needsSecondFactor && (
+            {!needsSecondFactor && (
               <>
                 {showClerkWarning && !clerkIsLoaded && (
                   <div
@@ -508,7 +638,7 @@ export default function SignInPage() {
             {/* ============================================ */}
             {/* WEB: Verification Code Input */}
             {/* ============================================ */}
-            {!isNative && needsSecondFactor && (
+            {needsSecondFactor && (
               <>
                 <p
                   style={{

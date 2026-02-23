@@ -20,14 +20,14 @@
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
-                        <color key="backgroundColor" red="0.039215686274509803" green="0.039215686274509803" blue="0.039215686274509803" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.039215686274509803" green="0.086274509803921567" blue="0.14901960784313725" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <!-- Center horizontally -->
                             <constraint firstItem="YRO-k0-hao" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="cX1-aB-cD2"/>
                             <!-- Center vertically -->
                             <constraint firstItem="YRO-k0-hao" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="cY1-eF-gH3"/>
-                            <!-- Width = 100% of superview width (10% larger than 96%) -->
-                            <constraint firstItem="YRO-k0-hao" firstAttribute="width" secondItem="Ze5-6b-2t3" secondAttribute="width" multiplier="1.0" id="wD1-iJ-kL4"/>
+                            <!-- Width = 75% of superview width -->
+                            <constraint firstItem="YRO-k0-hao" firstAttribute="width" secondItem="Ze5-6b-2t3" secondAttribute="width" multiplier="0.75" id="wD1-iJ-kL4"/>
                             <!-- Aspect ratio constraint (1:1 for square logo) -->
                             <constraint firstItem="YRO-k0-hao" firstAttribute="height" secondItem="YRO-k0-hao" secondAttribute="width" multiplier="1" id="aR1-mN-oP5"/>
                         </constraints>
