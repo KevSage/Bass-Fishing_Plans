@@ -46,11 +46,21 @@
 }
 
 .top-bar-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.15em;
   color: #4A90E2;
   margin-bottom: 4px;
+}
+
+.top-bar-label img {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
 }
 
 .top-bar-title {
@@ -259,25 +269,25 @@
   font-weight: 600;
 }
 
-/* ========== MAPBOX CONTROLS (Premium Glass Style) ========== */
+/* ========== MAPBOX CONTROLS (Premium Glass Style - matches bottom nav) ========== */
 
-/* Control group container - glass morphism */
+/* Control group container - glass morphism matching bottom nav */
 .mapboxgl-ctrl-group {
-  background: rgba(18, 18, 20, 0.55) !important;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
-  border-radius: 14px !important;
+  background: rgba(18, 18, 24, 0.85) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
   overflow: hidden;
   box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.35),
-    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.05) inset;
 }
 
-/* Individual control buttons */
+/* Individual control buttons - smaller size */
 .mapboxgl-ctrl-group button {
-  width: 44px !important;
-  height: 44px !important;
+  width: 36px !important;
+  height: 36px !important;
   background: transparent !important;
   border: 0 !important;
   cursor: pointer;
@@ -285,18 +295,19 @@
 
 /* Separator lines between buttons */
 .mapboxgl-ctrl-group button + button {
-  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Icon styling - white icons for dark glass background */
+/* Icon styling - smaller icons with brand blue tint */
 .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
   filter: brightness(0) invert(1);
-  opacity: 0.9;
+  opacity: 0.85;
+  transform: scale(0.85);
 }
 
 /* Hover state */
 .mapboxgl-ctrl-group button:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Active/pressed state - brand blue flash */
@@ -315,13 +326,13 @@
 
 /* Spacing between separate control groups */
 .mapboxgl-ctrl-top-right .mapboxgl-ctrl-group:not(:first-child) {
-  margin-top: 10px !important;
+  margin-top: 8px !important;
 }
 
 /* Recenter button - matches group style */
 .mapboxgl-ctrl-recenter {
-  width: 44px !important;
-  height: 44px !important;
+  width: 36px !important;
+  height: 36px !important;
   display: flex;
   align-items: center;
   justify-content: center;
