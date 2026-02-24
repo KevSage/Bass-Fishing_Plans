@@ -53,7 +53,7 @@ export function Terms() {
           </p>
 
           <div style={{ marginTop: 18, fontSize: "0.95rem", opacity: 0.6 }}>
-            Effective date: <strong>TODO</strong>
+            Effective date: <strong>February 23, 2026</strong>
           </div>
         </section>
 

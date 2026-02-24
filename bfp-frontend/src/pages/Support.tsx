@@ -102,14 +102,14 @@ export function SupportPage() {
                   <Link className="btn" to="/faq">
                     FAQ
                   </Link>
-                  <Link className="btn" to="/how-to-use">
-                    How to Use
-                  </Link>
                   <Link className="btn" to="/privacy">
                     Privacy Policy
                   </Link>
                   <Link className="btn" to="/terms">
                     Terms of Service
+                  </Link>
+                  <Link className="btn" to="/refunds">
+                    Refund Policy
                   </Link>
                 </div>
               </div>

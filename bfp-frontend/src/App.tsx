@@ -26,6 +26,10 @@ import "./complete-styles.css";
 import { LakeBuilder } from "./pages/LakeBuilder";
 import { LureLibrary } from "./pages/LureLibrary";
 import { Upgrade } from "./pages/Upgrade";
+import { PrivacyPolicyPage } from "./pages/PrivacyPolicy";
+import { Terms } from "./pages/Terms";
+import { SupportPage } from "./pages/Support";
+import { RefundPolicyPage } from "./pages/RefundPolicy";
 
 /**
  * Root route handler - redirects to sign-in on native platforms
@@ -160,6 +164,10 @@ export default function App() {
         />
         {/* <Route path="/how-to-use" element={<HowToUse />} /> */}
         <Route path="/faq" element={<FAQ />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/support" element={<SupportPage />} />
+        <Route path="/refunds" element={<RefundPolicyPage />} />
         <Route path="/plan" element={<PlanPage />} />
         <Route path="/success" element={<Success />} />
         <Route

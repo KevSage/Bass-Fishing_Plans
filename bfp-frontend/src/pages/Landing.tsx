@@ -1831,6 +1831,13 @@ export function Landing() {
                 >
                   FAQ
                 </Link>
+                <Link
+                  to="/support"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Support
+                </Link>
                 <a
                   href="mailto:bassclarity@gmail.com"
                   className="muted"
@@ -1838,6 +1845,37 @@ export function Landing() {
                 >
                   Contact Us
                 </a>
+              </div>
+            </div>
+            <div>
+              <h4
+                style={{
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  marginBottom: 16,
+                  opacity: 0.5,
+                }}
+              >
+                Legal
+              </h4>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 10 }}
+              >
+                <Link
+                  to="/privacy"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  to="/terms"
+                  className="muted"
+                  style={{ textDecoration: "none" }}
+                >
+                  Terms of Service
+                </Link>
               </div>
             </div>
           </div>

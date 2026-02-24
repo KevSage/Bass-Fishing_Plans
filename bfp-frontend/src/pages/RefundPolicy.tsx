@@ -2,7 +2,7 @@
 import React from "react";
 
 export function RefundPolicyPage() {
-  const effectiveDate = "January 1, 2026"; // TODO: update before launch
+  const effectiveDate = "February 23, 2026";
 
   return (
     <div className="page">
