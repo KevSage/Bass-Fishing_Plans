@@ -1041,24 +1041,6 @@ export function Members() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataVersion, nativeAuth.userEmail]);
 
-  // Validate viewingFavoriteId against member status - redirect locked users to home lake
-  useEffect(() => {
-    if (!viewingFavoriteId || sortedFavorites.length === 0 || statusLoading) return;
-
-    // Check if user is viewing a non-home lake (locked for free users)
-    const homeLake = sortedFavorites[0];
-    const isViewingHomeLake = viewingFavoriteId === homeLake?.id;
-    const isLocked = !isActive && !isViewingHomeLake;
-
-    if (isLocked && homeLake) {
-      // User is viewing a locked lake - redirect to home lake
-      setWaterName(homeLake.name);
-      setViewingFavoriteId(homeLake.id);
-      setLocationDetails({ city: homeLake.city, state: homeLake.state });
-      setSelectedCoords({ lat: homeLake.lat, lng: homeLake.lng });
-    }
-  }, [isActive, statusLoading, viewingFavoriteId, sortedFavorites]);
-
   // Handle pending lake selection after returning from LakeBuilder
   useEffect(() => {
     if (!pendingLakeSelectRef.current) return;
@@ -1067,30 +1049,6 @@ export function Members() {
     const lakeIndex = favorites.findIndex((f) => f.id === targetId);
     const lake = lakeIndex >= 0 ? favorites[lakeIndex] : null;
     if (lake) {
-      // Check if lake is locked (non-pro user accessing non-home lake)
-      const isHomeLake = homeLakeId ? lake.id === homeLakeId : lakeIndex === 0;
-      const isLocked = !isActive && !isHomeLake;
-      if (isLocked) {
-        // Fall back to home lake instead
-        const homeLake = sortedFavorites[0];
-        if (homeLake) {
-          setWaterName(homeLake.name);
-          setViewingFavoriteId(homeLake.id);
-          setLocationDetails({ city: homeLake.city, state: homeLake.state });
-          setSelectedCoords({ lat: homeLake.lat, lng: homeLake.lng });
-          setTimeout(() => {
-            if (mapRef.current) {
-              mapRef.current.flyTo({
-                center: [homeLake.lng, homeLake.lat],
-                zoom: getZoomForLake(homeLake.acres),
-                duration: 2000,
-              });
-            }
-          }, 300);
-        }
-        pendingLakeSelectRef.current = null;
-        return;
-      }
       setWaterName(lake.name);
       setViewingFavoriteId(lake.id);
       setLocationDetails({ city: lake.city, state: lake.state });
@@ -1106,7 +1064,7 @@ export function Members() {
       }, 300);
       pendingLakeSelectRef.current = null;
     }
-  }, [favorites, sortedFavorites, homeLakeId, dataVersion, isActive]);
+  }, [favorites, dataVersion]);
 
   // Restore stored lake view when returning from another page
   useEffect(() => {
@@ -1720,15 +1678,16 @@ export function Members() {
             : null;
 
         if (polygonMatch) {
+          if (polygonMatch.source === "favorite") {
+            setViewingFavoriteId(polygonMatch.id);
+          }
           setWaterName(polygonMatch.name);
           setLocationDetails({
             city: polygonMatch.city,
             state: polygonMatch.state,
           });
-          if (polygonMatch.source === "favorite") {
-            setViewingFavoriteId(polygonMatch.id);
-          }
         } else if (nearbyFavorite) {
+          setViewingFavoriteId(nearbyFavorite.id);
           setWaterName(nearbyFavorite.name);
           setLocationDetails({
             city: nearbyFavorite.city,
@@ -2245,28 +2204,12 @@ export function Members() {
       e?.preventDefault();
       e?.stopPropagation();
 
-      // Free user checks
-      if (!isActive) {
-        // Check if at home lake (user-set home lake, or first favorite as fallback)
-        const homeLake = sortedFavorites.length > 0 ? sortedFavorites[0] : null;
-        const isAtHomeLake = homeLake && (
-          currentFavorite?.id === homeLake.id ||
-          (activeLake?.id === homeLake.id)
+      // Free user check - only verify they have generations remaining
+      if (!isActive && plansRemaining <= 0) {
+        triggerUpgrade(
+          "You've used your 5 free plans. Upgrade to unlock unlimited AI plans.",
         );
-
-        if (!isAtHomeLake) {
-          triggerUpgrade(
-            "Free users can generate plans for their Home Lake. Upgrade to plan any water.",
-          );
-          return;
-        }
-
-        if (plansRemaining <= 0) {
-          triggerUpgrade(
-            "You've used your 5 free plans. Upgrade to unlock unlimited AI plans.",
-          );
-          return;
-        }
+        return;
       }
 
       const targetName = currentFavorite ? currentFavorite.name : waterName;
@@ -2289,7 +2232,6 @@ export function Members() {
     },
     [
       isActive,
-      sortedFavorites,
       activeLake,
       waterName,
       currentFavorite,
@@ -2300,16 +2242,9 @@ export function Members() {
   );
 
   const handleWeatherClick = useCallback(() => {
-    const homeLake = sortedFavorites.length > 0 ? sortedFavorites[0] : null;
-    const isAtHomeLake = isActive || (homeLake && activeLake?.id === homeLake.id);
-    if (!isActive && !isAtHomeLake) {
-      triggerUpgrade(
-        "Unlock real-time weather and intelligent planning for unlimited lakes. Free users get access to 1 Home Lake.",
-      );
-      return;
-    }
+    // Weather is available for all users on any known lake
     setShowWeather((prev) => !prev);
-  }, [isActive, sortedFavorites, activeLake]);
+  }, []);
 
   const handleRemoveSpecificLake = useCallback(
     async (lake: FavoriteLake) => {
