@@ -2126,6 +2126,17 @@ export function Members() {
       setLocationDetails({ city: location.city, state: location.state });
       setSelectedCoords({ lat: location.latitude, lng: location.longitude });
       setInputMode("manual");
+
+      // Check if searched lake is a saved favorite - if so, set viewingFavoriteId
+      // Otherwise clear it so activeLake uses waterName/selectedCoords
+      const matchingFavorite = favoritesRef.current.find(
+        (f) =>
+          f.name.toLowerCase() === location.name.toLowerCase() ||
+          (Math.abs(f.lat - location.latitude) < 0.01 &&
+            Math.abs(f.lng - location.longitude) < 0.01)
+      );
+      setViewingFavoriteId(matchingFavorite?.id || null);
+
       if (mapRef.current) {
         const dbLake = (LAKES_DATA as LakeData[]).find(
           (l) =>
