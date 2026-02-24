@@ -559,6 +559,41 @@ function getSpeciesLabel(species?: BassSpecies): string {
 // =============================================================================
 let globalEntriesCache: CatchEntry[] | null = null;
 const API_CACHE_KEY = "bc_api_catches_cache";
+const LAST_CATCH_DEFAULTS_KEY = "bc_last_catch_defaults";
+
+// Store last used lure/color/species for auto-population
+type LastCatchDefaults = {
+  lure?: string;
+  color?: string;
+  species?: BassSpecies;
+  timestamp: number;
+};
+
+function saveLastCatchDefaults(lure: string, color: string, species: BassSpecies) {
+  const defaults: LastCatchDefaults = {
+    lure: lure || undefined,
+    color: color || undefined,
+    species,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(LAST_CATCH_DEFAULTS_KEY, JSON.stringify(defaults));
+}
+
+function loadLastCatchDefaults(): LastCatchDefaults | null {
+  try {
+    const stored = localStorage.getItem(LAST_CATCH_DEFAULTS_KEY);
+    if (!stored) return null;
+    const defaults: LastCatchDefaults = JSON.parse(stored);
+    // Only use if within 24 hours
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    if (Date.now() - defaults.timestamp > twentyFourHours) {
+      return null;
+    }
+    return defaults;
+  } catch {
+    return null;
+  }
+}
 
 // Global callback for when entries are updated (helps with race conditions)
 let globalEntriesUpdateCallback: (() => void) | null = null;
@@ -1798,10 +1833,12 @@ export function CatchFormView({
       (activeLake?.name === "Photo Upload" ? "" : activeLake?.name) ||
       "",
   );
-  const [lure, setLure] = useState(entry?.lure || "");
-  const [color, setColor] = useState(entry?.color || "");
+  // Auto-populate lure/color/species from last catch (for new catches only)
+  const lastDefaults = !entry ? loadLastCatchDefaults() : null;
+  const [lure, setLure] = useState(entry?.lure || lastDefaults?.lure || "");
+  const [color, setColor] = useState(entry?.color || lastDefaults?.color || "");
   const [species, setSpecies] = useState<BassSpecies>(
-    entry?.species || "largemouth",
+    entry?.species || lastDefaults?.species || "largemouth",
   );
   const [weight, setWeight] = useState(entry?.weight?.toString() || "");
   const [length, setLength] = useState(entry?.length?.toString() || "");
@@ -2379,6 +2416,10 @@ export function CatchFormView({
         pressure: pressure ? parseFloat(pressure) : undefined,
         skyCondition: sky || undefined,
       };
+      // Save last used lure/color/species for next catch auto-population
+      if (lure || color || species) {
+        saveLastCatchDefaults(lure, color, species);
+      }
       onSave(data);
     } catch (e) {
       // Fallback
@@ -2402,6 +2443,10 @@ export function CatchFormView({
         lakeId: activeLake.id,
         lakeType: "unresolved",
       };
+      // Save last used lure/color/species for next catch auto-population
+      if (lure || color || species) {
+        saveLastCatchDefaults(lure, color, species);
+      }
       onSave(fallbackData);
     } finally {
       setIsResolving(false);
