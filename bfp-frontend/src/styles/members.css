@@ -259,25 +259,87 @@
   font-weight: 600;
 }
 
-/* ========== MAPBOX CONTROLS ========== */
+/* ========== MAPBOX CONTROLS (Premium Glass Style) ========== */
+
+/* Control group container - glass morphism */
+.mapboxgl-ctrl-group {
+  background: rgba(18, 18, 20, 0.55) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+/* Individual control buttons */
+.mapboxgl-ctrl-group button {
+  width: 44px !important;
+  height: 44px !important;
+  background: transparent !important;
+  border: 0 !important;
+  cursor: pointer;
+}
+
+/* Separator lines between buttons */
+.mapboxgl-ctrl-group button + button {
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Icon styling - white icons for dark glass background */
+.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+/* Hover state */
+.mapboxgl-ctrl-group button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Active/pressed state - brand blue flash */
+.mapboxgl-ctrl-group button:active {
+  background: rgba(74, 144, 226, 0.25) !important;
+}
+
+/* Focus states */
+.mapboxgl-ctrl-group button:focus {
+  outline: none !important;
+}
+
+.mapboxgl-ctrl-group button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.4) inset;
+}
+
+/* Spacing between separate control groups */
+.mapboxgl-ctrl-top-right .mapboxgl-ctrl-group:not(:first-child) {
+  margin-top: 10px !important;
+}
+
+/* Recenter button - matches group style */
 .mapboxgl-ctrl-recenter {
-  width: 29px;
-  height: 29px;
+  width: 44px !important;
+  height: 44px !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: transparent !important;
   border: none;
   cursor: pointer;
-  border-radius: 4px;
 }
 
 .mapboxgl-ctrl-recenter:hover {
-  background: #f0f0f0;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.mapboxgl-ctrl-recenter:active {
+  background: rgba(74, 144, 226, 0.25) !important;
 }
 
 .mapboxgl-ctrl-recenter svg {
-  color: #333;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ========== BOTTOM NAVIGATION ========== */

@@ -1252,7 +1252,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
           )}
         </div>
       </div>
-      <style>{` .catch-modal-overlay { position: fixed; inset: 0; z-index: 2500; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); display: flex; align-items: flex-end; justify-content: center; padding: 16px; padding-top: calc(env(safe-area-inset-top, 0px) + 70px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px); } .catch-modal { width: 100%; max-width: 380px; max-height: 80vh; border-radius: 24px; background: rgba(18, 18, 24, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; overflow: hidden; color: white; } `}</style>
+      <style>{` .catch-modal-overlay { position: fixed; inset: 0; z-index: 2500; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); display: flex; align-items: flex-start; justify-content: center; padding: 12px; padding-top: calc(env(safe-area-inset-top, 0px) + 64px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 12px); } .catch-modal { width: 100%; max-width: 380px; max-height: 90vh; border-radius: 24px; background: rgba(18, 18, 24, 0.95); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; overflow: hidden; color: white; } `}</style>
     </>
   );
 }
@@ -1612,13 +1612,13 @@ export function CatchDetailView({
             <span className="catch-loc-name">{entry.lakeName}</span>
           </div>
 
-          {/* Brand Footer - Minimal */}
+          {/* Brand Footer - 2 Column Layout */}
           <div className="catch-brand-footer">
-            <div className="brand-logo-row">
-              <span className="brand-text">BASS CLARITY</span>
-              <span className="brand-pro">PRO</span>
+            <div className="brand-text-col">
+              <span className="brand-text">Bass Clarity</span>
+              <span className="brand-url">bassclarity.com</span>
             </div>
-            <span className="brand-url">bassclarity.com</span>
+            <img src="/images/logo-40.png" alt="" className="brand-logo" />
           </div>
         </div>
       </div>
@@ -1767,11 +1767,11 @@ export function CatchDetailView({
         .catch-loc-name { font-size: 0.85rem; font-weight: 600; color: #fff; }
 
         /* Brand Footer - Very Minimal */
-        .catch-brand-footer { text-align: center; padding-top: 6px; }
-        .brand-logo-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 1px; }
-        .brand-text { font-size: 0.75rem; font-weight: 800; color: rgba(255,255,255,0.7); letter-spacing: 0.05em; }
-        .brand-pro { background: rgba(74, 144, 226, 0.2); border: 1px solid rgba(74, 144, 226, 0.4); padding: 2px 6px; border-radius: 4px; font-size: 0.55rem; font-weight: 700; color: #6bb8e8; letter-spacing: 0.06em; }
-        .brand-url { font-size: 0.6rem; color: rgba(255,255,255,0.25); font-weight: 500; }
+        .catch-brand-footer { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 4px; }
+        .brand-text-col { display: flex; flex-direction: column; gap: 2px; }
+        .brand-text { font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.8); letter-spacing: 0.02em; }
+        .brand-url { font-size: 0.65rem; color: rgba(255,255,255,0.35); font-weight: 500; }
+        .brand-logo { width: 36px; height: 36px; object-fit: contain; }
 
         /* Action Footer */
         .catch-actions-footer { display: flex; gap: 10px; padding: 12px 16px 20px; }

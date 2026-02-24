@@ -1,6 +1,10 @@
 // src/utils/journeyUtils.ts
 import { CatchEntry, LURE_OPTIONS } from "@/components/CatchLog";
 
+// Helper to capitalize each word
+const capitalize = (str: string) =>
+  str.replace(/\b\w/g, (c) => c.toUpperCase());
+
 // --- TYPES ---
 
 export type BadgeTier = "bronze" | "silver" | "gold" | "platinum" | "obsidian";
@@ -130,9 +134,10 @@ export function calculateJourney(entries: CatchEntry[]): JourneyData {
     seasonLakeCounts[e.lakeName] = (seasonLakeCounts[e.lakeName] || 0) + 1;
   });
 
-  const bestSeasonLure =
+  const bestSeasonLure = capitalize(
     Object.entries(seasonLureCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
-    "None";
+    "None"
+  );
   const bestSeasonLake =
     Object.entries(seasonLakeCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
     "None";

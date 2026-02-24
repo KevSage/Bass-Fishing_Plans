@@ -2537,7 +2537,7 @@ export function Members() {
         onChange={handleLiveCapture}
       />
       <div style={{ width: "100%", height: "100%" }}>
-        <style>{`.mapboxgl-ctrl-top-right { top: 180px !important; }`}</style>
+        <style>{`.mapboxgl-ctrl-top-right { top: 180px !important; right: 14px !important; }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
 
@@ -2870,7 +2870,10 @@ export function Members() {
                 </div>
               ) : (
                 <div className="top-bar-card top-bar-card-empty">
-                  <span className="top-bar-label">Bass Clarity Pro</span>
+                  <span className="top-bar-label" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <img src="/images/logo-40.png" alt="" style={{ width: 18, height: 18, borderRadius: 4 }} />
+                    Bass Clarity Pro
+                  </span>
                   <h2 className="top-bar-title">Find Your Water</h2>
                   <p className="top-bar-subtitle">
                     Search or tap any body of water
