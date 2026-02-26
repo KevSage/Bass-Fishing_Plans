@@ -481,8 +481,36 @@ export function Upgrade() {
           >
             {isRestoring ? "Restoring..." : "Restore Purchases"}
           </button>
+
+          {/* Legal links - required by Apple App Store */}
+          <div className="legal-links">
+            <Link to="/terms">Terms of Use</Link>
+            <span className="legal-divider">•</span>
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
         </section>
         <style>{upgradeStyles}</style>
+        <style>{`
+          .legal-links {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            font-size: 0.8rem;
+          }
+          .legal-links a {
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: underline;
+            transition: color 0.2s;
+          }
+          .legal-links a:hover {
+            color: rgba(255, 255, 255, 0.7);
+          }
+          .legal-divider {
+            color: rgba(255, 255, 255, 0.2);
+          }
+        `}</style>
       </div>
     );
   }
@@ -535,9 +563,22 @@ export function Upgrade() {
           </button>
         </div>
 
-        <p className="guarantee">
-          {isNative ? "Subscription managed by App Store." : "Cancel anytime. No questions asked."}
-        </p>
+        {/* Subscription disclosure - required by Apple App Store */}
+        <div className="subscription-disclosure">
+          <p className="disclosure-title">Bass Clarity Pro</p>
+          <p className="disclosure-details">
+            1 Month • {priceString || `$${monthlyPrice}`}/month
+          </p>
+          <p className="disclosure-auto-renew">
+            Auto-renews until cancelled
+          </p>
+          <div className="legal-links">
+            <Link to="/terms">Terms of Use</Link>
+            <span className="legal-divider">•</span>
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
+        </div>
+
         {isNative && isSignedIn && (
           <button
             className="restore-link"
@@ -617,9 +658,17 @@ export function Upgrade() {
                 ? "Upgrade to Pro"
                 : "Get Started"}
         </button>
-        <p className="guarantee">
-          {isNative ? "Subscription managed by App Store" : "30-day money-back guarantee"}
-        </p>
+        {/* Subscription disclosure - required by Apple App Store */}
+        <div className="subscription-disclosure">
+          <p className="disclosure-details">
+            1 Month • {priceString || `$${monthlyPrice}`}/month • Auto-renews
+          </p>
+          <div className="legal-links">
+            <Link to="/terms">Terms of Use</Link>
+            <span className="legal-divider">•</span>
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
+        </div>
       </section>
 
       {/* STYLES */}
@@ -927,6 +976,63 @@ export function Upgrade() {
 
         .final-cta .guarantee {
           margin-top: 16px;
+        }
+
+        /* Subscription disclosure - required by Apple App Store */
+        .subscription-disclosure {
+          margin-top: 20px;
+          padding: 16px 20px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 12px;
+          text-align: center;
+        }
+
+        .disclosure-title {
+          font-size: 0.9rem;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.9);
+          margin: 0 0 4px;
+        }
+
+        .disclosure-details {
+          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.5);
+          margin: 0 0 4px;
+        }
+
+        .disclosure-auto-renew {
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.4);
+          margin: 0 0 12px;
+        }
+
+        .subscription-disclosure .legal-links {
+          margin-top: 12px;
+        }
+
+        /* Legal links - required by Apple App Store */
+        .legal-links {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-top: 16px;
+          font-size: 0.8rem;
+        }
+
+        .legal-links a {
+          color: rgba(255, 255, 255, 0.4);
+          text-decoration: underline;
+          transition: color 0.2s;
+        }
+
+        .legal-links a:hover {
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .legal-divider {
+          color: rgba(255, 255, 255, 0.2);
         }
 
         /* RESPONSIVE */

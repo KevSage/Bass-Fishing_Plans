@@ -1,0 +1,352 @@
+================================================================================
+BASS CLARITY LANDING PAGE COPY
+================================================================================
+Edit the text below and return to Claude to update the Landing page.
+Keep the section headers (in ALL CAPS) - they help identify where text goes.
+
+================================================================================
+HERO SECTION
+================================================================================
+
+Headline:
+Clarity on the Water.
+
+Subheadline:
+More than a fishing app. A way to understand your water, preserve what you've learned, and fish with real intention.
+
+CTA Button:
+Get Started Free
+
+Tagline:
+Strategy grounded in tradition. Insight built from your own history.
+
+================================================================================
+INTRO SECTION
+================================================================================
+
+Headline:
+Built Different.
+
+Body:
+Other apps give you data without direction. Charts without clarity. Someone else's hot spots instead of your own understanding.
+
+Bass Clarity focuses on the individual angler. Your waters. Your catches. Your patterns. We use AI to surface what worked, when, and why—so every trip builds on the last.
+
+================================================================================
+LOCATION CLARITY SECTION
+================================================================================
+
+Eyebrow:
+Location Clarity
+
+Headline:
+Your Living Record
+
+Lead:
+Every catch. Every spot. Every condition. Logged and mapped over time, so patterns reveal themselves naturally—through your own experience, not someone else's data.
+
+Card Header:
+Your Water, Your History
+
+Bullet 1 Title: Your Catches, Anchored to Place
+Bullet 1 Desc: Each fish is recorded where it actually happened
+
+Bullet 2 Title: Your Patterns, Revealed
+Bullet 2 Desc: Repeated success becomes visible through density and heat.
+
+Bullet 3 Title: Your Knowledge, Preserved
+Bullet 3 Desc: What you learn on the water doesn't disappear — it compounds.
+
+Bullet 4 Title: Start Where You Are
+Bullet 4 Desc: Import past catches and see your water come to life immediately.
+
+================================================================================
+INSIGHT CLARITY SECTION
+================================================================================
+
+Eyebrow:
+Insight Clarity
+
+Headline:
+Every Catch Tells You More.
+
+Lead:
+Every photo captures more than the moment. Location, date, time, season, weather—automatically extracted and preserved. Add your lure and color, and each catch becomes a data point that sharpens your edge over time.
+
+Card Header:
+Experience, Made Clear.
+
+Bullet 1 Title: Automatic Context
+Bullet 1 Desc: Location, weather, and time pulled from every photo—no manual entry required.
+
+Bullet 2 Title: The Details That Matter
+Bullet 2 Desc: Log your lure, color, and technique. Build a record of what actually worked.
+
+Bullet 3 Title: Patterns Over Time
+Bullet 3 Desc: See which conditions, baits, and spots produce—across seasons, not just single trips.
+
+Bullet 4 Title: Know Your Strengths
+Bullet 4 Desc: Your catch history, organized and visualized. See which baits you've got dialed in, which lakes produce for you, and where you might want to spend more time.
+
+================================================================================
+YOUR JOURNEY SECTION
+================================================================================
+
+Eyebrow:
+Your Journey
+
+Headline:
+Grow With Every Trip.
+
+Lead:
+See how far you've come. Track the techniques you're developing, celebrate real milestones, and watch your skills sharpen—season after season.
+
+Card Header:
+Your Progress, Visualized
+
+Bullet 1 Title: Skill Development
+Bullet 1 Desc: See which techniques you're sharpening and where there's room to grow.
+
+Bullet 2 Title: Milestones That Matter
+Bullet 2 Desc: Achievements tied to real moments—your first double-digit bass, back-to-back catches, joining the 100 club.
+
+Bullet 3 Title: Seasonal Reflection
+Bullet 3 Desc: Look back on each season—what worked, what clicked, and how you've improved.
+
+Bullet 4 Title: Growth You Can See
+Bullet 4 Desc: Watch your progress unfold over time, not just in numbers—but in skill and confidence.
+
+================================================================================
+DATA CLARITY SECTION
+================================================================================
+
+Eyebrow:
+Data Clarity
+
+Headline:
+AI-Enhanced. Angler-Driven.
+
+Lead:
+We process the same data other apps dump on your screen—but we interpret it. Live conditions, seasonal bass behavior, and proven strategy come together into a clear, actionable plan. Use our suggestions, or bring your confidence baits and let the engine build around what you already trust.
+
+Card Header:
+Strategy, Built Around You
+
+Bullet 1 Title: Grounded in Real Strategy
+Bullet 1 Desc: Lures, colors, and targets based on how bass actually behave—not generic lists.
+
+Bullet 2 Title: Your Conditions, Interpreted
+Bullet 2 Desc: Season, region, weather, and water—processed into a plan, not a dashboard.
+
+Bullet 3 Title: Use What You Trust
+Bullet 3 Desc: Bring your confidence baits. The AI builds strategy around what you want to throw.
+
+Bullet 4 Title: Show, Don't Tell
+Bullet 4 Desc: No charts to decode. No data to interpret yourself. Just clear direction for your day.
+
+================================================================================
+WEATHER CLARITY SECTION
+================================================================================
+
+Eyebrow:
+Weather Clarity
+
+Headline:
+Your Weather, In Context.
+
+Lead:
+We don't just show you the weather—we tell you what it means for your day on the water.
+
+Pills:
+- Temperature
+- Wind + Safety
+- Pressure
+- Sky + Precipitation
+
+Card Header:
+What you'll notice
+
+Bullet 1 Title: Tap for Insight
+Bullet 1 Desc: Every weather card opens into a deeper explanation of what that metric means for bass.
+
+Bullet 2 Title: Context, Not Just Numbers
+Bullet 2 Desc: 68°F means something different in March than it does in July. We account for that.
+
+Bullet 3 Title: Your Location, Your Conditions
+Bullet 3 Desc: Localized data interpreted for where you're fishing—not generic regional forecasts.
+
+Bullet 4 Title: Bass Mood, Explained
+Bullet 4 Desc: See how active fish are likely to be and understand why—based on what's happening right now.
+
+================================================================================
+STRATEGIC CLARITY - DAY PROGRESSION SECTION
+================================================================================
+
+Eyebrow:
+Strategic Clarity
+
+Headline:
+Your Plan, All Day Long.
+
+Lead:
+Clear, actionable guidance from daybreak to last cast. Every transition pulls directly from your plan—same lures, same targets, adapted for how the day unfolds.
+
+Card Header:
+All Day Guidance
+
+Bullet 1 Title: Plan-Connected Guidance
+Bullet 1 Desc: Morning, midday, and evening advice references your AI-generated strategy directly—nothing disconnected.
+
+Bullet 2 Title: Transitions That Make Sense
+Bullet 2 Desc: Know when to shift spots, adjust retrieves, or change depth—tied to how the day progresses.
+
+Bullet 3 Title: Specificity You Can Use
+Bullet 3 Desc: Not vague tips. Real direction for each phase of your day on the water.
+
+================================================================================
+TECHNIQUE / PRESENTATION CLARITY SECTION
+================================================================================
+
+Eyebrow:
+Technique / Presentation Clarity
+
+Headline:
+Two Techniques. Dialed In.
+
+Lead:
+Two techniques that make sense for your conditions—a primary to anchor your approach and a pivot for when bass are positioned differently. Fish with confidence knowing what to lean on, especially when the bite gets tough.
+
+Card Header:
+Primary + Pivot
+
+Bullet 1 Title: Primary - Your Foundation
+Bullet 1 Desc: The technique that makes the most sense for your conditions. Start here.
+
+Bullet 2 Title: Pivot - Your Backup With Purpose
+Bullet 2 Desc: For when bass are positioned differently. Not random—strategically paired with your primary.
+
+Bullet 3 Title: Confidence When It Counts
+Bullet 3 Desc: Know exactly what to lean on when the bite slows down. No second-guessing.
+
+Bullet 4 Title: The Why, Explained
+Bullet 4 Desc: We tell you why each technique was chosen and how they work together.
+
+Bullet 5 Title: Details That Matter
+Bullet 5 Desc: Trailer, color, and gear suggestions—all matched to your water and light conditions.
+
+================================================================================
+STRATEGIC CLARITY - FISH WITH INTENTION SECTION
+================================================================================
+
+Eyebrow:
+Strategic Clarity
+
+Headline:
+Fish With Intention.
+
+Lead:
+Make Every Cast Deliberate. Know exactly what to do, and why you're doing it.
+
+Card Header:
+Sound Reasoning. None of the Noise.
+
+Bullet 1 Title: The Logic
+Bullet 1 Desc: Why this presentation fits your conditions on the water
+
+Bullet 2 Title: The Gameplan
+Bullet 2 Desc: Commit to the plan. A brief overview of your lure and plan for execution
+
+Bullet 3 Title: Targets
+Bullet 3 Desc: Targets are narrowed to the places most likely to hold fish based on today's conditions.
+
+Bullet 4 Title: Retrieve Guidance
+Bullet 4 Desc: 130+ lure-specific retrieves, adjusted for your targets and conditions.
+
+================================================================================
+BUILT FOR ANGLERS SECTION
+================================================================================
+
+Headline:
+Built for How Anglers Actually Fish
+
+Body:
+Bass Clarity is built to reflect how you actually fish — capturing your time on the water, preserving what you've learned, and translating today's conditions into clear, intentional strategy.
+
+================================================================================
+COMPARISON & PRICING SECTION
+================================================================================
+
+Headline:
+Start with Clarity
+
+Lead:
+Start building your history today.
+
+--- FREE TIER ---
+
+Eyebrow: Free Tier
+Plan Name: Angler
+Plan Description: Build your Catchlog & map history.
+
+Features (included):
+- Unlimited Catch Logging
+- Interactive Map Dashboard
+- 1 Home Lake (Weather)
+- Auto Image Location Extraction
+
+Features (not included):
+- AI Fishing Plan Generator
+- Advanced Insights
+- Action Camera Uploads
+- Lake Customization
+
+CTA Button: Start - Free
+
+--- PRO TIER ---
+
+Badge: MOST POPULAR
+Eyebrow: Pro Tier
+Plan Name: Pro
+Price: $10/mo
+Plan Description: Full predictive intelligence.
+
+Features:
+- Everything in Angler
+- Unlimited Lakes and Live Weather
+- Unlimited AI Strategy Engine
+- Quick Action Camera Upload
+- Full Featured Insights
+- Lake Customization
+- Daily Catchlog
+
+CTA Button: Get Bass Clarity Pro
+
+================================================================================
+FOOTER
+================================================================================
+
+Brand:
+Bass Clarity
+
+Tagline:
+Modern tools. Timeless approach.
+
+Product Links:
+- Map Dashboard
+- Pricing
+
+Support Links:
+- FAQ
+- Support
+- Contact Us (bassclarity@gmail.com)
+
+Legal Links:
+- Privacy Policy
+- Terms of Service
+
+Copyright:
+© [YEAR] Bass Clarity. All rights reserved.
+
+================================================================================
+END OF COPY
+================================================================================

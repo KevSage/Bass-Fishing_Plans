@@ -751,10 +751,22 @@ export function useCatchLog(
         localStorage.setItem(OFFLINE_KEY, JSON.stringify(updatedOffline));
       }
 
+      // If API fetch failed (no apiEntries) and no offline catches, preserve existing cache
+      if (apiEntries.length === 0 && trulyOffline.length === 0 && localOnlyEntries.length === 0) {
+        console.log('[CatchLog] Offline or API failed - preserving cached data');
+        setIsLoading(false);
+        return;
+      }
+
       const mergedEntries = [...demoEntries, ...localOnlyEntries, ...trulyOffline, ...apiEntries];
       console.log('[CatchLog] FETCH COMPLETE - apiEntries:', apiEntries.length, 'trulyOffline:', trulyOffline.length, 'localOnly:', localOnlyEntries.length, 'demo:', demoEntries.length, 'merged:', mergedEntries.length);
       globalEntriesCache = mergedEntries;
-      localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
+
+      // Only update API cache if we actually got data from the API
+      if (apiEntries.length > 0) {
+        localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
+      }
+
       setState((s) => ({ ...s, entries: mergedEntries }));
       setEntriesVersion((v) => {
         console.log('[CatchLog] Incrementing entriesVersion to:', v + 1);
