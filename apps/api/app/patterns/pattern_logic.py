@@ -102,11 +102,11 @@ def _resolve_month(req: ProPatternRequest, weather: WeatherContext) -> int:
         except: pass
     return int(weather.timestamp.month)
 
-def _signals(weather: WeatherContext, month: int) -> Dict[str, Any]:
+def _signals(weather: WeatherContext, month: int, phase: str = None) -> Dict[str, Any]:
     temp_f = weather.temp_f
     wind_speed = weather.wind_speed
     sky = (weather.sky_condition or "").lower().replace("_", " ")
-    
+
     pressure = getattr(weather, "pressure", 1015.0)
     visibility = getattr(weather, "visibility", 10000.0)
     uvi = getattr(weather, "uvi", 0.0)
@@ -114,10 +114,17 @@ def _signals(weather: WeatherContext, month: int) -> Dict[str, Any]:
     is_foggy = visibility < 2000
     is_cloudy = any(k in sky for k in ["cloud", "overcast", "rain", "storm", "fog"])
     is_low_light = is_cloudy or is_foggy or (month in (12, 1) and temp_f > 40)
-    
+
     is_falling_pressure = pressure < 1012
     is_high_pressure = pressure > 1022
     is_high_uv = uvi > 6
+
+    # Use phase-based seasonal detection instead of just month
+    # This respects regional/temperature variations (e.g., 59°F in Feb GA = pre-spawn, not winter)
+    is_winter = phase == "winter" if phase else month in (12, 1, 2)
+    is_spring = phase in ("pre-spawn", "spawn", "post-spawn") if phase else month in (3, 4, 5)
+    is_summer = phase in ("summer", "late-summer") if phase else month in (6, 7, 8)
+    is_fall = phase in ("fall", "late-fall") if phase else month in (9, 10, 11)
 
     return {
         "temp_f": temp_f, "wind_speed": wind_speed, "sky": sky, "month": month,
@@ -127,8 +134,9 @@ def _signals(weather: WeatherContext, month: int) -> Dict[str, Any]:
         "is_falling_pressure": is_falling_pressure, "is_high_pressure": is_high_pressure,
         "is_high_uv": is_high_uv,
         "pressure_val": pressure, "uvi_val": uvi, "vis_val": visibility,
-        "is_winter": month in (12, 1, 2), "is_spring": month in (3, 4, 5),
-        "is_summer": month in (6, 7, 8), "is_fall": month in (9, 10, 11),
+        "is_winter": is_winter, "is_spring": is_spring,
+        "is_summer": is_summer, "is_fall": is_fall,
+        "phase": phase,
     }
 
 def _score_families(sig: Dict[str, Any]) -> Dict[str, int]:
@@ -389,7 +397,7 @@ def build_pro_pattern(req: ProPatternRequest) -> ProPatternResponse:
     longitude = getattr(req, "longitude", -84.0)
     month = _resolve_month(req, weather)
     phase = determine_phase(weather.temp_f, month, float(latitude))
-    sig = _signals(weather, month)
+    sig = _signals(weather, month, phase)
 
     primary_family = _pick_primary_family(sig)
     counter_family = _pick_counter_family(sig, primary_family)

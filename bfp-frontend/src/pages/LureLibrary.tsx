@@ -194,7 +194,7 @@ const GEAR_SPECS: Record<string, { rod: string; reel: string; line: string; note
 // Helper to get gear for a lure ID
 function getGearForLure(lureId: string) {
   // Convert underscore ID to space-separated key (e.g., "shallow_crankbait" -> "shallow crankbait")
-  const key = lureId.replace(/_/g, " ").replace("sided", "-sided"); // Handle "flat_sided" -> "flat-sided"
+  const key = lureId.replace(/_/g, " ").replace("flat sided", "flat-sided"); // Handle "flat_sided" -> "flat-sided"
   return GEAR_SPECS[key] || null;
 }
 

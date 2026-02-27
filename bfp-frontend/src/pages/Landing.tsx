@@ -170,6 +170,9 @@ function ComparisonTable() {
           <div className="feature-row">
             <CheckIcon size={18} /> Auto Image Location Extraction
           </div>
+          <div className="feature-row">
+            <CheckIcon size={18} /> Lure Library
+          </div>
           <div className="feature-row dim">
             <XIcon size={18} /> AI Fishing Plan Generator
           </div>
@@ -366,8 +369,8 @@ export function Landing() {
                 fontWeight: 500,
               }}
             >
-              More than a fishing app. A way to understand your water,
-              preserve what you've learned, and fish with real intention.
+              A precision fishing instrument that generates real-time strategy
+              and preserves your history — so every trip builds on the last.
             </p>
           </Reveal>
 
@@ -426,7 +429,8 @@ export function Landing() {
                 letterSpacing: "0.02em",
               }}
             >
-              Strategy grounded in tradition. Insight built from your own history.
+              Strategy grounded in tradition. Insight built from your own
+              history.
             </p>
           </Reveal>
         </div>
@@ -455,12 +459,13 @@ export function Landing() {
                 marginBottom: "clamp(44px, 8vw, 72px)",
               }}
             >
-              Other apps give you data without direction. Charts without clarity.
-              Someone else's hot spots instead of your own understanding.
-              <br /><br />
-              Bass Clarity focuses on the individual angler. Your waters. Your catches.
-              Your patterns. We use AI to surface what worked, when, and why—so every
-              trip builds on the last.
+              Other apps are built for browsing. <br />
+              Bass Clarity is built for fishing.
+              <br /> Clear actions. No social feeds. No clutter. Built for
+              on-the water use. Everything revolves around your lake and what
+              you need to do next.
+              <br />
+              <br />
             </p>
           </Reveal>
 
@@ -531,9 +536,8 @@ export function Landing() {
             </div>
             <h2 style={h2Style}>Your Living Record</h2>
             <p style={leadStyle}>
-              Every catch. Every spot. Every condition. Logged and mapped over
-              time, so patterns reveal themselves naturally—through your own
-              experience, not someone else's data.
+              Every catch anchored exactly where it happened. Your map becomes a
+              visual history of your time on the water.
             </p>
           </Reveal>
         </div>
@@ -583,6 +587,7 @@ export function Landing() {
                     width: "100%",
                     height: "97.5%",
                     objectFit: "contain",
+                    borderRadius: "75px",
                   }}
                 />
                 <div
@@ -673,257 +678,6 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ================= INSIGHT CLARITY ================= */}
-      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
-        <div className="container" style={container(1100)}>
-          <Reveal>
-            <div
-              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
-            >
-              <div
-                className="water-text"
-                style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
-              >
-                Insight Clarity
-              </div>
-              <h2 style={h2Style}>Every Catch Tells You More.</h2>
-              <p style={{ ...leadStyle, maxWidth: 980 }}>
-                Every photo captures more than the moment. Location, date, time,
-                season, weather—automatically extracted and preserved. Add your
-                lure and color, and each catch becomes a data point that sharpens
-                your edge over time.
-              </p>
-            </div>
-          </Reveal>
-
-          <div
-            style={{
-              ...grid2,
-              marginTop: "clamp(34px, 6vw, 54px)",
-              paddingBottom: "clamp(48px, 7vw, 72px)",
-            }}
-          >
-            <Reveal delay={200}>
-              <div
-                style={{
-                  position: "relative",
-                  maxWidth: 420,
-                  margin: "0 auto",
-                }}
-              >
-                <img
-                  src="/images/iphone15.png"
-                  alt="Mobile"
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    position: "relative",
-                    zIndex: 2,
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "4.8%",
-                    left: "2.2%",
-                    width: "94.6%",
-                    height: "92.4%",
-                    borderRadius: "72px",
-                    overflow: "hidden",
-                    zIndex: 1,
-                    background: "rgba(0,0,0,0.25)",
-                  }}
-                >
-                  <img
-                    src="/images/ProductionScreenshots/InsightsFinal.png"
-                    alt="Insights"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    }}
-                  />
-                </div>
-              </div>
-            </Reveal>
-
-            <Reveal>
-              <div
-                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
-              >
-                <div
-                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
-                >
-                  <div
-                    style={{
-                      ...eyebrow,
-                      marginBottom: 12,
-                      color: "rgba(255,255,255,0.68)",
-                    }}
-                  >
-                    Experience, Made Clear.
-                  </div>
-                  <div style={{ height: 14 }} />
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      padding: 0,
-                      margin: 0,
-                      display: "grid",
-                      gap: 14,
-                    }}
-                  >
-                    <Bullet
-                      title="Automatic Context"
-                      desc="Location, weather, and time pulled from every photo—no manual entry required."
-                    />
-                    <Bullet
-                      title="The Details That Matter"
-                      desc="Log your lure, color, and technique. Build a record of what actually worked."
-                    />
-                    <Bullet
-                      title="Patterns Over Time"
-                      desc="See which conditions, baits, and spots produce—across seasons, not just single trips."
-                    />
-                    <Bullet
-                      title="Know Your Strengths"
-                      desc="Your catch history, organized and visualized. See which baits you've got dialed in, which lakes produce for you, and where you might want to spend more time."
-                    />
-                  </ul>
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ================= YOUR JOURNEY ================= */}
-      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
-        <div className="container" style={container(1100)}>
-          <Reveal>
-            <div
-              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
-            >
-              <div
-                className="water-text"
-                style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
-              >
-                Your Journey
-              </div>
-              <h2 style={h2Style}>Grow With Every Trip.</h2>
-              <p style={{ ...leadStyle, maxWidth: 980 }}>
-                See how far you've come. Track the techniques you're developing,
-                celebrate real milestones, and watch your skills sharpen—season
-                after season.
-              </p>
-            </div>
-          </Reveal>
-
-          <div
-            style={{
-              ...grid2,
-              marginTop: "clamp(34px, 6vw, 54px)",
-              paddingBottom: "clamp(48px, 7vw, 72px)",
-            }}
-          >
-            <Reveal delay={200}>
-              <div
-                style={{
-                  position: "relative",
-                  maxWidth: 420,
-                  margin: "0 auto",
-                }}
-              >
-                <img
-                  src="/images/iphone15.png"
-                  alt="Mobile"
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    position: "relative",
-                    zIndex: 2,
-                    pointerEvents: "none",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "4.8%",
-                    left: "2.2%",
-                    width: "94.6%",
-                    height: "92.4%",
-                    borderRadius: "72px",
-                    overflow: "hidden",
-                    zIndex: 1,
-                    background: "rgba(0,0,0,0.25)",
-                  }}
-                >
-                  <img
-                    src="/images/ProductionScreenshots/Journey.png"
-                    alt="Journey"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    }}
-                  />
-                </div>
-              </div>
-            </Reveal>
-
-            <Reveal>
-              <div
-                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
-              >
-                <div
-                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
-                >
-                  <div
-                    style={{
-                      ...eyebrow,
-                      marginBottom: 12,
-                      color: "rgba(255,255,255,0.68)",
-                    }}
-                  >
-                    Your Progress, Visualized
-                  </div>
-                  <div style={{ height: 14 }} />
-                  <ul
-                    style={{
-                      listStyle: "none",
-                      padding: 0,
-                      margin: 0,
-                      display: "grid",
-                      gap: 14,
-                    }}
-                  >
-                    <Bullet
-                      title="Skill Development"
-                      desc="See which techniques you're sharpening and where there's room to grow."
-                    />
-                    <Bullet
-                      title="Milestones That Matter"
-                      desc="Achievements tied to real moments—your first double-digit bass, back-to-back catches, joining the 100 club."
-                    />
-                    <Bullet
-                      title="Seasonal Reflection"
-                      desc="Look back on each season—what worked, what clicked, and how you've improved."
-                    />
-                    <Bullet
-                      title="Growth You Can See"
-                      desc="Watch your progress unfold over time, not just in numbers—but in skill and confidence."
-                    />
-                  </ul>
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
       {/* ================= DATA CLARITY ================= */}
       <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
         <div className="container" style={container(1100)}>
@@ -941,11 +695,10 @@ export function Landing() {
             </div>
             <h2 style={h2Style}>AI-Enhanced. Angler-Driven.</h2>
             <p style={leadStyle}>
-              We process the same data other apps dump on your screen—but we
-              interpret it. Live conditions, seasonal bass behavior, and proven
-              strategy come together into a clear, actionable plan. Use our
-              suggestions, or bring your confidence baits and let the engine
-              build around what you already trust.
+              Generate a fully customized fishing strategy based on your exact
+              lake, current weather, seasonal behavior, and region — right now.
+              Not a 10-day forecast. Not generic lure lists. Not dashboards to
+              decode. Your strategy for where you are.
             </p>
           </Reveal>
         </div>
@@ -1100,8 +853,11 @@ export function Landing() {
               </div>
               <h2 style={h2Style}>Your Weather, In Context.</h2>
               <p style={{ ...leadStyle, maxWidth: 980 }}>
-                We don't just show you the weather—we tell you what it means
-                for your day on the water.
+                Your Weather, In Context. Instead of listing metrics, we
+                interpret what they mean for today. Temperature means something
+                different in March than in July. Wind changes positioning.
+                Pressure shifts activity. You don’t read numbers. You understand
+                implications.
               </p>
               <div
                 style={{
@@ -1645,18 +1401,278 @@ export function Landing() {
         </div>
       </section>
 
+      {/* ================= INSIGHT CLARITY ================= */}
+      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
+        <div className="container" style={container(1100)}>
+          <Reveal>
+            <div
+              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
+            >
+              <div
+                className="water-text"
+                style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+              >
+                Insight Clarity
+              </div>
+              <h2 style={h2Style}>Every Catch Tells You More.</h2>
+              <p style={{ ...leadStyle, maxWidth: 980 }}>
+                Every photo captures more than the moment. Location, date, time,
+                season, weather—automatically extracted and preserved. Add your
+                lure and color, and each catch becomes a data point that
+                sharpens your edge over time.
+              </p>
+            </div>
+          </Reveal>
+
+          <div
+            style={{
+              ...grid2,
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
+            }}
+          >
+            <Reveal delay={200}>
+              <div
+                style={{
+                  position: "relative",
+                  maxWidth: 420,
+                  margin: "0 auto",
+                }}
+              >
+                <img
+                  src="/images/iphone15.png"
+                  alt="Mobile"
+                  style={{
+                    width: "100%",
+                    display: "block",
+                    position: "relative",
+                    zIndex: 2,
+                    pointerEvents: "none",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "4.8%",
+                    left: "2.2%",
+                    width: "94.6%",
+                    height: "92.4%",
+                    borderRadius: "72px",
+                    overflow: "hidden",
+                    zIndex: 1,
+                    background: "rgba(0,0,0,0.25)",
+                  }}
+                >
+                  <img
+                    src="/images/ProductionScreenshots/InsightsFinal.png"
+                    alt="Insights"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                    }}
+                  />
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal>
+              <div
+                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
+              >
+                <div
+                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
+                >
+                  <div
+                    style={{
+                      ...eyebrow,
+                      marginBottom: 12,
+                      color: "rgba(255,255,255,0.68)",
+                    }}
+                  >
+                    Experience, Made Clear.
+                  </div>
+                  <div style={{ height: 14 }} />
+                  <ul
+                    style={{
+                      listStyle: "none",
+                      padding: 0,
+                      margin: 0,
+                      display: "grid",
+                      gap: 14,
+                    }}
+                  >
+                    <Bullet
+                      title="Automatic Context"
+                      desc="Location, weather, and time pulled from every photo—no manual entry required."
+                    />
+                    <Bullet
+                      title="The Details That Matter"
+                      desc="Log your lure, color, and technique. Build a record of what actually worked."
+                    />
+                    <Bullet
+                      title="Patterns Over Time"
+                      desc="See which conditions, baits, and spots produce—across seasons, not just single trips."
+                    />
+                    <Bullet
+                      title="Know Your Strengths"
+                      desc="Your catch history, organized and visualized. See which baits you've got dialed in, which lakes produce for you, and where you might want to spend more time."
+                    />
+                  </ul>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= YOUR JOURNEY ================= */}
+      <section style={{ padding: sectionPad, borderTop: sectionTopBorder }}>
+        <div className="container" style={container(1100)}>
+          <Reveal>
+            <div
+              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
+            >
+              <div
+                className="water-text"
+                style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+              >
+                Your Journey
+              </div>
+              <h2 style={h2Style}>Grow With Every Trip.</h2>
+              <p style={{ ...leadStyle, maxWidth: 980 }}>
+                See how far you've come. Track the techniques you're developing,
+                celebrate real milestones, and watch your skills sharpen—season
+                after season.
+              </p>
+            </div>
+          </Reveal>
+
+          <div
+            style={{
+              ...grid2,
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
+            }}
+          >
+            <Reveal delay={200}>
+              <div
+                style={{
+                  position: "relative",
+                  maxWidth: 420,
+                  margin: "0 auto",
+                }}
+              >
+                <img
+                  src="/images/iphone15.png"
+                  alt="Mobile"
+                  style={{
+                    width: "100%",
+                    display: "block",
+                    position: "relative",
+                    zIndex: 2,
+                    pointerEvents: "none",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "4.8%",
+                    left: "2.2%",
+                    width: "94.6%",
+                    height: "92.4%",
+                    borderRadius: "72px",
+                    overflow: "hidden",
+                    zIndex: 1,
+                    background: "rgba(0,0,0,0.25)",
+                  }}
+                >
+                  <img
+                    src="/images/ProductionScreenshots/Journey.png"
+                    alt="Journey"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "contain",
+                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                    }}
+                  />
+                </div>
+              </div>
+            </Reveal>
+
+            <Reveal>
+              <div
+                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
+              >
+                <div
+                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
+                >
+                  <div
+                    style={{
+                      ...eyebrow,
+                      marginBottom: 12,
+                      color: "rgba(255,255,255,0.68)",
+                    }}
+                  >
+                    Your Progress, Visualized
+                  </div>
+                  <div style={{ height: 14 }} />
+                  <ul
+                    style={{
+                      listStyle: "none",
+                      padding: 0,
+                      margin: 0,
+                      display: "grid",
+                      gap: 14,
+                    }}
+                  >
+                    <Bullet
+                      title="Skill Development"
+                      desc="See which techniques you're sharpening and where there's room to grow."
+                    />
+                    <Bullet
+                      title="Milestones That Matter"
+                      desc="Achievements tied to real moments—your first double-digit bass, back-to-back catches, joining the 100 club."
+                    />
+                    <Bullet
+                      title="Seasonal Reflection"
+                      desc="Look back on each season—what worked, what clicked, and how you've improved."
+                    />
+                    <Bullet
+                      title="Growth You Can See"
+                      desc="Watch your progress unfold over time, not just in numbers—but in skill and confidence."
+                    />
+                  </ul>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
       {/* ================= BUILT FOR ANGLERS ================= */}
       <section
         style={{ padding: sectionPad, background: "rgba(74, 144, 226, 0.02)" }}
       >
         <div className="container" style={container(900)}>
           <Reveal>
-            <h2 className="water-text" style={h2Style}>
-              Built for How Anglers Actually Fish
-            </h2>
+            <div
+              style={{ textAlign: "center", position: "relative", zIndex: 1 }}
+            >
+              <div
+                className="water-text"
+                style={{ ...eyebrow, color: "rgba(74,144,226,0.95)" }}
+              >
+                Lure Library
+              </div>
+              <br />
+            </div>
+            <h2 style={h2Style}>Learn the Why Behind the Plan.</h2>
             <p
               style={{
-                fontSize: "1.3rem",
+                fontSize: "1rem",
                 textAlign: "center",
                 opacity: 0.85,
                 lineHeight: 1.75,
@@ -1664,9 +1680,9 @@ export function Landing() {
                 margin: "0 auto 28px",
               }}
             >
-              Bass Clarity is built to reflect how you actually fish — capturing
-              your time on the water, preserving what you’ve learned, and
-              translating today’s conditions into clear, intentional strategy.
+              Every recommendation is backed by a structured, searchable lure
+              library. Filter by season, water clarity, structure, or conditions
+              to understand what makes each presentation effective.
             </p>
           </Reveal>
           <Reveal delay={200}>
@@ -1715,6 +1731,44 @@ export function Landing() {
               </div>
             </div>
           </Reveal>
+          <Reveal>
+            <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
+              <div style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}>
+                <div
+                  style={{
+                    ...eyebrow,
+                    marginBottom: 12,
+                    color: "rgba(255,255,255,0.68)",
+                  }}
+                >
+                  Condition-Based Lure Guide
+                </div>
+                <div style={{ height: 14 }} />
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "grid",
+                    gap: 14,
+                  }}
+                >
+                  <Bullet
+                    title="Filter By Conditions"
+                    desc="Quickly narrow down lures based on wind, clarity, structure, and seasonal stage."
+                  />
+                  <Bullet
+                    title="Detailed Breakdowns"
+                    desc="Understand when and why each lure shines — including retrieve variations and gear suggestions."
+                  />
+                  <Bullet
+                    title="Confidence Builder"
+                    desc="Build your own knowledge base — even without generating a full AI plan."
+                  />
+                </ul>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -1724,7 +1778,7 @@ export function Landing() {
           <Reveal>
             <div style={{ textAlign: "center" }}>
               <h2 className="water-text" style={h2Style}>
-                Start with Clarity
+                Fish with Clarity
               </h2>
               <p style={{ ...leadStyle, marginBottom: 60 }}>
                 Start building your history today.

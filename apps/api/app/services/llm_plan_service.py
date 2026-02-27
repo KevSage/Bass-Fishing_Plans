@@ -162,6 +162,108 @@ def _load_seasonal_policy(phase: str) -> Dict[str, Any]:
         return {"strong": [], "conditional": [], "avoid": [], "raw": None, "phase": phase_key}
 
 
+def _determine_active_temp_band(
+    raw_policy: Optional[Dict[str, Any]],
+    temp_window_f: Optional[float],
+) -> Optional[Dict[str, Any]]:
+    """Determine which temp_band applies based on available temperature data.
+
+    Uses temp_window_f (daylight air temp average) as proxy for water temp.
+    Returns the matching temp_band dict with its key, or None if no match.
+    """
+    if not raw_policy or not isinstance(raw_policy, dict):
+        return None
+
+    temp_bands = raw_policy.get("temp_bands")
+    if not temp_bands or not isinstance(temp_bands, dict):
+        return None
+
+    if temp_window_f is None:
+        return None
+
+    # Air temp is typically 5-10°F higher than water temp in spring
+    # Use conservative estimate: water_temp ≈ air_temp - 5
+    estimated_water_temp = temp_window_f - 5
+
+    # Find matching band
+    for band_key, band_data in temp_bands.items():
+        if not isinstance(band_data, dict):
+            continue
+        temp_range = band_data.get("range")
+        if not temp_range or len(temp_range) != 2:
+            continue
+        low, high = temp_range
+        if low <= estimated_water_temp <= high:
+            return {"band_key": band_key, **band_data}
+
+    return None
+
+
+def _extract_active_condition_modifiers(
+    raw_policy: Optional[Dict[str, Any]],
+    weather: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """Extract condition_modifiers that apply based on current weather.
+
+    Returns a list of active modifier dicts with their keys.
+    """
+    if not raw_policy or not isinstance(raw_policy, dict):
+        return []
+
+    condition_modifiers = raw_policy.get("condition_modifiers")
+    if not condition_modifiers or not isinstance(condition_modifiers, dict):
+        return []
+
+    active = []
+
+    # Extract weather signals
+    wind_mph = weather.get("wind_mph") or weather.get("wind_speed") or 0
+    try:
+        wind_mph = float(wind_mph)
+    except (ValueError, TypeError):
+        wind_mph = 0
+
+    cloud_cover = weather.get("cloud_cover") or weather.get("sky_condition") or ""
+    pressure_trend = str(weather.get("pressure_trend") or "").lower()
+    temp_high = weather.get("temp_high")
+    temp_low = weather.get("temp_low")
+
+    # Determine if warm_trend (high above 60°F and rising from low)
+    warm_trend = False
+    if temp_high is not None and temp_low is not None:
+        try:
+            warm_trend = float(temp_high) >= 60 and (float(temp_high) - float(temp_low)) >= 10
+        except (ValueError, TypeError):
+            pass
+
+    # Check each modifier
+    for mod_key, mod_data in condition_modifiers.items():
+        if not isinstance(mod_data, dict):
+            continue
+
+        applies = False
+
+        if mod_key == "warm_trend" and warm_trend:
+            applies = True
+        elif mod_key == "wind" and wind_mph >= 10:
+            applies = True
+        elif mod_key == "cold_stable" and not warm_trend and wind_mph < 10:
+            applies = True
+        elif mod_key == "sunny_high_pressure" and "rising" in pressure_trend:
+            applies = True
+        elif mod_key == "overcast" and any(x in str(cloud_cover).lower() for x in ["overcast", "cloudy", "cloud"]):
+            applies = True
+        elif mod_key == "falling_pressure" and "falling" in pressure_trend:
+            applies = True
+        elif mod_key == "rising_pressure" and "rising" in pressure_trend:
+            applies = True
+
+        if applies:
+            active.append({"modifier_key": mod_key, **mod_data})
+
+    return active
+
+
 def _get_target_meta(name: str) -> Dict[str, Any]:
     """Safe lookup for TARGET_DEFINITIONS[name], returning dict with defaults."""
     meta = TARGET_DEFINITIONS.get(name, {}) if isinstance(TARGET_DEFINITIONS, dict) else {}
@@ -816,6 +918,32 @@ Do not repeat the same three “default” targets unless conditions strongly ju
 - You MUST NOT choose any lure in AVOID.
 - Water clarity affects COLOR choice only, not lure eligibility.
 
+🔥 ENHANCED SEASONAL POLICY (PRE-SPAWN SPECIFIC):
+When `seasonal_policy` includes these optional fields, USE THEM to refine your selections:
+
+1. `active_temp_band`: The current temperature band with specific guidance
+   - `presentation_rule`: SLOW_WITH_PAUSE vs CONTROLLED_MOVING vs MATCH_THE_MOOD
+   - `pause_requirement`: Specific pause timing for jerkbait/jigs
+   - `primary_lures`: Lures that excel in this temp range (bias toward these)
+   - `forage_profile`: bottom_protein vs mixed_craw_baitfish vs opportunistic
+
+2. `active_conditions`: List of weather conditions currently in effect
+   - `bias_toward`: Lures to prioritize under these conditions
+   - `bias_away_from`: Lures to deprioritize under these conditions
+   - `priority_shift`: Lures that become primary options
+
+3. `staging_targets`: Where bass stage during pre-spawn migration
+   - Use in day_progression and target selection
+   - Match targets to the active_temp_band affinity
+
+4. `color_overrides`: Seasonal color biases (e.g., spring_craw_bias)
+   - `priority_colors`: Prioritize these colors for applicable lures
+   - `clarity_interaction`: How clarity affects color choice
+
+5. `lure_caveats`: Technique-specific guidance per lure
+   - `temp_band_technique`: How to work the lure in each temp band
+   - `why`: The reasoning behind the lure's effectiveness
+
 🚨 TARGET LOCK (HARD CONSTRAINT when provided):
 - The user message may include `primary_targets` and `secondary_targets`.
 - If present, you MUST use EXACTLY `primary_targets` for primary.targets and EXACTLY `secondary_targets` for secondary.targets.
@@ -1303,15 +1431,65 @@ async def call_openai_plan(
 
 
     # ✅ SURGICAL UPDATE: Enhanced user_input with Trend Data
+    # Extract rich policy data from raw
+    raw_policy = seasonal_policy.get("raw")
+    active_temp_band = _determine_active_temp_band(raw_policy, temp_window_f)
+    active_modifiers = _extract_active_condition_modifiers(raw_policy, weather)
+
+    # Build enhanced seasonal_policy with new fields
+    enhanced_seasonal_policy = {
+        "phase": seasonal_policy.get("phase"),
+        "strong": seasonal_policy.get("strong", []),
+        "conditional": seasonal_policy.get("conditional", []),
+        "avoid": seasonal_policy.get("avoid", []),
+    }
+
+    # Add temp_band guidance if available (pre-spawn specific)
+    if active_temp_band:
+        enhanced_seasonal_policy["active_temp_band"] = {
+            "name": active_temp_band.get("band_key"),
+            "description": active_temp_band.get("description"),
+            "presentation_rule": active_temp_band.get("presentation_rule"),
+            "pause_requirement": active_temp_band.get("pause_requirement"),
+            "primary_lures": active_temp_band.get("primary_lures", []),
+            "forage_profile": active_temp_band.get("forage_profile"),
+            "note": active_temp_band.get("note"),
+        }
+
+    # Add active condition modifiers if any apply
+    if active_modifiers:
+        enhanced_seasonal_policy["active_conditions"] = [
+            {
+                "condition": mod.get("modifier_key"),
+                "description": mod.get("description"),
+                "bias_toward": mod.get("bias_toward", []),
+                "bias_away_from": mod.get("bias_away_from", []),
+                "priority_shift": mod.get("priority_shift", []),
+                "note": mod.get("note"),
+            }
+            for mod in active_modifiers
+        ]
+
+    # Add staging targets if available (pre-spawn specific)
+    if raw_policy and isinstance(raw_policy, dict):
+        staging_targets = raw_policy.get("staging_targets")
+        if staging_targets and isinstance(staging_targets, dict):
+            enhanced_seasonal_policy["staging_targets"] = staging_targets
+
+        # Add color overrides (spring craw bias)
+        color_overrides = raw_policy.get("color_overrides")
+        if color_overrides and isinstance(color_overrides, dict):
+            enhanced_seasonal_policy["color_overrides"] = color_overrides
+
+        # Add lure-specific caveats
+        lure_caveats = raw_policy.get("lure_caveats")
+        if lure_caveats and isinstance(lure_caveats, dict):
+            enhanced_seasonal_policy["lure_caveats"] = lure_caveats
+
     user_input = {
         "location": location,
         "phase": phase,
-        "seasonal_policy": {
-            "phase": seasonal_policy.get("phase"),
-            "strong": seasonal_policy.get("strong", []),
-            "conditional": seasonal_policy.get("conditional", []),
-            "avoid": seasonal_policy.get("avoid", []),
-        },
+        "seasonal_policy": enhanced_seasonal_policy,
         "weather": {
             # Temperature
             "temp_f": weather.get("temp_f"),
