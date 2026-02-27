@@ -19,6 +19,9 @@ export function PlanPage() {
     | PlanGenerateResponse
     | undefined;
 
+  // Lake name passed via router state (for sharing)
+  const lakeName = location.state?.lakeName as string | undefined;
+
   // Check if we have a token in URL
   const token = React.useMemo(() => {
     const params = new URLSearchParams(location.search);
@@ -62,10 +65,12 @@ export function PlanPage() {
     if (!url) return;
 
     if (navigator.share) {
+      const currentPlan = planResponse || tokenPlan;
+      const location = currentPlan?.plan?.location || lakeName || "my lake";
       navigator
         .share({
           title: `Bass Clarity Plan`,
-          text: `Check out my fishing plan!`,
+          text: `Check out my fishing plan for ${location}!`,
           url: url,
         })
         .catch(console.error);
@@ -76,7 +81,7 @@ export function PlanPage() {
         setTimeout(() => setShareSuccess(false), 2000);
       });
     }
-  }, [getPlanUrl]);
+  }, [getPlanUrl, planResponse, tokenPlan, lakeName]);
 
   // Memoized fetch function
   const fetchPlan = useCallback(async (tokenValue: string) => {
@@ -360,9 +365,10 @@ export function PlanPage() {
                 </svg>
               }
               onClick={() => {
+                const loc = plan?.plan?.location || lakeName || "my lake";
                 window.open(
                   `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    `Fishing plan for ${plan.plan.location}`,
+                    `Check out my fishing plan for ${loc}!`,
                   )}&url=${encodeURIComponent(getPlanUrl())}`,
                   "_blank",
                 );

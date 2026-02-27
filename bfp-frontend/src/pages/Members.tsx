@@ -1324,10 +1324,14 @@ export function Members() {
       waterName !== "" &&
       !waterName.startsWith("Water near") &&
       !waterName.startsWith("Dropped Pin");
+
+    // Can edit boundary if:
+    // 1. It's a custom lake (currently viewing), OR
+    // 2. It's an unknown water body (not in our known lakes database)
+    // This allows adding boundary for custom lakes AND unknown water before/after saving
+    const isUnknownWater = !hydrateLakeData(waterName, selectedCoords.lat, selectedCoords.lng);
     const canEditBoundary =
-      isSaved &&
-      (currentFavorite?.lake_type === "custom" ||
-        !hydrateLakeData(waterName, selectedCoords.lat, selectedCoords.lng));
+      currentFavorite?.lake_type === "custom" || isUnknownWater;
     return {
       name: waterName,
       city: locationDetails.city,
@@ -2196,7 +2200,7 @@ export function Members() {
       localStorage.setItem("aiq_last_plan_lake", targetName || "");
       setLastPlanUrl(tokenUrl);
       setLastPlanLake(targetName || "");
-      navigate(tokenUrl, { state: { planResponse: response } });
+      navigate(tokenUrl, { state: { planResponse: response, lakeName: targetName } });
     } catch (e: any) {
       if (e instanceof RateLimitError) {
         setRateLimitInfo({
@@ -2439,7 +2443,7 @@ export function Members() {
         }
         if (lakeType === "custom") await addFavoriteCrossPlatform(lakeId, "custom");
         const zoom = mapRef.current?.getZoom() || 10;
-        const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${selectedCoords.lng},${selectedCoords.lat},${Math.min(zoom, 13)},0/600x400?access_token=${MAPBOX_TOKEN}`;
+        const imageUrl = `https://api.mapbox.com/styles/v1/${staticStyle}/static/${selectedCoords.lng},${selectedCoords.lat},${Math.min(zoom, 13)},0/600x400?access_token=${MAPBOX_TOKEN}`;
         const newLake: FavoriteLake = {
           id: lakeId,
           lake_type: lakeType,
@@ -2471,6 +2475,7 @@ export function Members() {
       getToken,
       handleRemoveSpecificLake,
       nativeAuth,
+      staticStyle,
     ],
   );
 
@@ -2491,7 +2496,10 @@ export function Members() {
       triggerUpgrade("Custom mapping tools are available in Pro.");
       return;
     }
-    if (currentFavorite && selectedCoords) {
+    if (!selectedCoords) return;
+
+    // For saved custom lakes, use the favorite data
+    if (currentFavorite) {
       navigate("/lake-builder", {
         state: {
           lat: selectedCoords.lat,
@@ -2500,6 +2508,19 @@ export function Members() {
           city: currentFavorite.city,
           state: currentFavorite.state,
           lakeId: currentFavorite.id,
+        },
+      });
+    } else {
+      // For unknown water not yet saved, navigate with current data
+      // LakeBuilder will create the custom lake
+      navigate("/lake-builder", {
+        state: {
+          lat: selectedCoords.lat,
+          lng: selectedCoords.lng,
+          suggestedName: manualWaterName || waterName || "Custom Water",
+          city: locationDetails.city,
+          state: locationDetails.state,
+          // No lakeId - LakeBuilder will create the lake
         },
       });
     }
