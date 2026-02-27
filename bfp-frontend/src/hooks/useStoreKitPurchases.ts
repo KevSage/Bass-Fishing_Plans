@@ -51,7 +51,7 @@ export function useStoreKitPurchases() {
 
         if (result.products && result.products.length > 0) {
           const product = result.products[0];
-          // priceString is the localized formatted price (e.g., "$12.99")
+          // priceString is the localized formatted price (e.g., "$9.99")
           setPriceString(product.priceString || `$${product.price}`);
         }
       } catch (err) {

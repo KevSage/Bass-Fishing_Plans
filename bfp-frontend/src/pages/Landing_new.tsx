@@ -2156,7 +2156,7 @@ export function Landing() {
               textAlign: "center",
             }}
           >
-            $12.99/month
+            $9.99/month
           </h2>
 
           <p

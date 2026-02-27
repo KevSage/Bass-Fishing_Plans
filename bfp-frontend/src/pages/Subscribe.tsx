@@ -512,7 +512,7 @@ function WebSubscribePage({ navigate }: { navigate: (path: string) => void }) {
             }}
           >
             Get the full arsenal: AI strategies, real-time weather safety, and
-            unlimited scouting for <strong>$12.99/month</strong>.
+            unlimited scouting for <strong>$9.99/month</strong>.
           </p>
         </div>
 
@@ -947,7 +947,7 @@ function WebSubscribePage({ navigate }: { navigate: (path: string) => void }) {
                   marginBottom: 12,
                 }}
               >
-                {checkingStatus ? "Checking..." : loading ? "Preparing..." : "Support Bass Clarity - $12.99/month"}
+                {checkingStatus ? "Checking..." : loading ? "Preparing..." : "Support Bass Clarity - $9.99/month"}
               </button>
 
               <Link to="/members">

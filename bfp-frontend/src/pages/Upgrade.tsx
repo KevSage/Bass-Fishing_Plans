@@ -278,7 +278,7 @@ export function Upgrade() {
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
   // Monthly subscription only (annual adds complexity for restore/upgrade/downgrade)
-  const monthlyPrice = 12.99;
+  const monthlyPrice = 9.99;
 
   // Check membership status on mount for native users
   useEffect(() => {
