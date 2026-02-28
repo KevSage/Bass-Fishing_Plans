@@ -119,10 +119,15 @@
   color: rgba(255,255,255,0.3);
   cursor: pointer;
   padding: 4px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
+  vertical-align: middle;
+}
+
+.top-bar-star-btn.inline {
+  margin-right: 6px;
 }
 
 .top-bar-star-btn:hover {
