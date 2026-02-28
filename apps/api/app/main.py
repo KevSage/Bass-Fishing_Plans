@@ -468,6 +468,7 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         # Sky/Air
         "cloud_cover": weather["cloud_cover"],
         "sky_condition": weather["sky_condition"], # New
+        "cloud_pct": weather.get("cloud_pct"),  # Cloud coverage percentage
         "humidity": weather["humidity"],
         "visibility_miles": weather.get("visibility_miles"), # New
         "dew_point": weather.get("dew_point"), # New
@@ -485,6 +486,12 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "sunriseTime": weather.get("sunriseTime", "--:--"),
         "solarNoonTime": weather.get("solarNoonTime", "--:--"),
         "sunsetTime": weather.get("sunsetTime", "--:--"),
+        # Temperature trends
+        "temp_trend": weather.get("temp_trend"),
+        "temp_season_context": weather.get("temp_season_context"),
+        "past_temp_f": weather.get("past_temp_f"),
+        # Water temperature (estimated from 5-day history)
+        "estimated_water_temp_f": weather.get("estimated_water_temp_f"),
     }
     
     if "forecast_rating" in plan:

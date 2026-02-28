@@ -7,6 +7,7 @@ import {
   MapPinIcon,
   ActivityIcon,
 } from "@/components/UnifiedIcons";
+import { getApiBaseUrl } from "@/lib/platform";
 
 // --- HELPERS ----------------------------------------------------
 const numOrNull = (v: unknown): number | null => {
@@ -450,7 +451,6 @@ const TemperatureDisplay = ({
 };
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL; // Ensure this is available in your .env
 
 // Moving CardId to top-level scope to ensure accessibility in all functions
 export type CardId = "temp" | "wind" | "pressure" | "light";
@@ -645,15 +645,15 @@ export function WeatherSection({
     if (
       !enableLiveUpdates ||
       !navigator.onLine ||
-      hasFetchedLive.current ||
-      !API_BASE_URL
+      hasFetchedLive.current
     )
       return;
 
     const fetchLiveWeather = async () => {
       try {
+        const apiBase = getApiBaseUrl();
         const res = await fetch(
-          `${API_BASE_URL}/weather/current?lat=${conditions.latitude}&lon=${conditions.longitude}`,
+          `${apiBase}/weather/current?lat=${conditions.latitude}&lon=${conditions.longitude}`,
         );
 
         if (res.ok) {
