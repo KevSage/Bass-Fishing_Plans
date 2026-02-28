@@ -560,7 +560,73 @@ FINAL VALIDATION:
   • NO targets violate the Weather Veto (e.g. no shade in snow)
 
 ═══════════════════════════════════════════════════════════════════════════════
-L) DAY LEAN → FISHING STYLE CONNECTION
+L) WATER TEMPERATURE → LURE COMPATIBILITY (MANDATORY CHECK)
+═══════════════════════════════════════════════════════════════════════════════
+
+🚨 CRITICAL: Before finalizing lure selection, you MUST verify the lure is appropriate
+for the current water temperature. Use weather.estimated_water_temp_f (calculated from
+5-day air temperature history, already provided in weather context).
+
+OPTIMAL WATER TEMPERATURE RANGES BY LURE:
+
+HORIZONTAL REACTION:
+  Shallow Crankbait:     55–72°F  (warming trends, active feeding 2-8ft)
+  Mid Crankbait:         58–75°F  (fish transitioning slightly deeper)
+  Deep Crankbait:        60–75°F  (fish push offshore post-spawn into summer)
+  Lipless Crankbait:     50–68°F  (prespawn and cooling fall)
+  Flat-Sided Crankbait:  48–60°F  (cold-water specialist, tight wobble)
+  Chatterbait:           55–75°F  (warming water and grass)
+  Swim Jig:              55–75°F  (shallow vegetation/cover)
+  Spinnerbait:           50–70°F  (wind, stain, transitional seasons)
+  Underspin:             50–65°F  (suspended fish, cooler water)
+  Paddle Tail Swimbait:  50–75°F  (versatile, adjust retrieve with temp)
+
+VERTICAL REACTION:
+  Jerkbait:              45–65°F  (cold-to-cool water, pause cadence critical)
+  Blade Bait:            40–55°F  (cold water, vertical structure)
+  Jighead Minnow:        45–65°F  (suspended fish, forward-facing)
+
+BOTTOM CONTACT - DRAGGING & HOPPING:
+  Texas Rig:             50–80°F  (all-season, adjust weight/speed)
+  Carolina Rig:          55–80°F  (fish spread offshore late spring/summer)
+  Football Jig:          50–75°F  (hard bottom structure)
+  Casting Jig:           50–75°F  (high-utility across seasons)
+  Shaky Head:            48–70°F  (cooler water, pressured fisheries)
+
+BOTTOM CONTACT - DRAGGING ONLY:
+  Ned Rig:               40–65°F  (cold-water and high-pressure MVP)
+
+HOVERING / MID-COLUMN FINESSE:
+  Neko Rig:              50–75°F  (transitional periods)
+  Wacky Rig:             55–75°F  (post-spawn through early fall)
+  Soft Jerkbait:         55–75°F  (shallow cover, warmer periods)
+  Dropshot:              45–75°F  (deep, suspended, or pressured fish)
+
+TOPWATER - HORIZONTAL:
+  Walking Bait:          60–80°F  (water stabilizes above 60)
+  Buzzbait:              60–85°F  (warm, aggressive feeding)
+  Whopper Plopper:       60–85°F  (summer and early fall)
+  Wake Bait:             58–75°F  (early morning, low light, warmer water)
+
+TOPWATER - PRECISION:
+  Hollow Body Frog:      65–85°F  (thick vegetation, summer)
+  Popping Frog:          65–85°F  (slower surface presentations)
+  Popper:                60–80°F  (low-light, calm water)
+
+QUICK TIER SUMMARY BY WATER TEMPERATURE:
+  40–50°F → Blade bait, Ned rig, Jerkbait, Football jig
+  50–60°F → Lipless, Flat-sided crank, Spinnerbait, Shaky head, Jerkbait
+  60–70°F → Crankbaits, Chatterbait, Swim jig, Wacky, Topwater emerging
+  70–80°F → Deep crank, Carolina rig, Frog, Buzzbait, Plopper, Texas rig
+
+🚨 TEMPERATURE VIOLATION CHECK:
+If your selected lure's optimal range does NOT include the current water temp:
+1. Flag internally that this is a "temperature stretch"
+2. Either select a more appropriate lure OR
+3. Explain in why_this_works why the lure can still work (e.g., "though typically effective in cooler water, the falling pressure may trigger reaction strikes")
+
+═══════════════════════════════════════════════════════════════════════════════
+M) DAY LEAN → FISHING STYLE CONNECTION
 ═══════════════════════════════════════════════════════════════════════════════
 
 Your Day Lean determination influences the overall FISHING APPROACH and should be reflected 

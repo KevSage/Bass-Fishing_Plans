@@ -164,11 +164,11 @@ def _load_seasonal_policy(phase: str) -> Dict[str, Any]:
 
 def _determine_active_temp_band(
     raw_policy: Optional[Dict[str, Any]],
-    temp_window_f: Optional[float],
+    estimated_water_temp_f: Optional[float],
 ) -> Optional[Dict[str, Any]]:
-    """Determine which temp_band applies based on available temperature data.
+    """Determine which temp_band applies based on estimated water temperature.
 
-    Uses temp_window_f (daylight air temp average) as proxy for water temp.
+    Uses estimated_water_temp_f (calculated from 5-day air temp history in weather service).
     Returns the matching temp_band dict with its key, or None if no match.
     """
     if not raw_policy or not isinstance(raw_policy, dict):
@@ -178,14 +178,10 @@ def _determine_active_temp_band(
     if not temp_bands or not isinstance(temp_bands, dict):
         return None
 
-    if temp_window_f is None:
+    if estimated_water_temp_f is None:
         return None
 
-    # Air temp is typically 5-10°F higher than water temp in spring
-    # Use conservative estimate: water_temp ≈ air_temp - 5
-    estimated_water_temp = temp_window_f - 5
-
-    # Find matching band
+    # Find matching band using backend-calculated water temp
     for band_key, band_data in temp_bands.items():
         if not isinstance(band_data, dict):
             continue
@@ -193,7 +189,7 @@ def _determine_active_temp_band(
         if not temp_range or len(temp_range) != 2:
             continue
         low, high = temp_range
-        if low <= estimated_water_temp <= high:
+        if low <= estimated_water_temp_f <= high:
             return {"band_key": band_key, **band_data}
 
     return None
@@ -756,10 +752,10 @@ RETURN JSON ONLY:
   ],
 
   "weather_card_insights":{
-    "temperature":"1-2 sentences. No numbers. No tactics. How temperature range may affect bass activity today.",
-    "wind":"1-2 sentences. No numbers. No tactics. How wind may affect bass activity today.",
-    "pressure":"1-2 sentences. No numbers. No tactics. How pressure/trend may affect bass activity today.",
-    "sky_uv":"1-2 sentences. No numbers. No tactics. How cloud cover/UV (light) may affect bass activity today."
+    "temperature":"2 sentences. Use weather.temp_trend and weather.temp_season_context. First sentence: describe the seasonal pattern (spawn window, post-spawn, summer pattern, etc.) and what that means for bass positioning. Second sentence: describe the temperature trend (warming/cooling/stable) and how that shift influences bass metabolism and feeding willingness. No exact numbers. No tactics or lures.",
+    "wind":"2 sentences. Use forecast_narrative wind context (building/calming/sustained). First sentence: describe how current wind conditions affect baitfish movement and water surface disruption. Second sentence: explain how bass positioning and ambush behavior changes in response to wind-driven current and chop. No exact numbers. No tactics or lures.",
+    "pressure":"2 sentences. Use weather.pressure_trend (Rising/Falling/Stable). First sentence: describe how the current barometric state affects bass swim bladder comfort and willingness to move vertically. Second sentence: explain the feeding window implications - falling pressure often triggers pre-frontal feeding, rising pressure creates post-frontal lockjaw or cautious behavior. No exact numbers. No tactics or lures.",
+    "sky_uv":"2 sentences. First sentence: describe how current light penetration (overcast vs bright) affects bass vision, comfort level, and positioning relative to cover and shade. Second sentence: explain how these light conditions influence feeding confidence - low light often emboldens bass to roam, while bright skies push them tight to structure. No exact numbers. No tactics or lures."
   },
 
   "outlook_blurb":"3 sentences of weather, condition and phase related analysis and how it may effect bass activity. No exact numbers or strategy>"
@@ -813,10 +809,10 @@ RETURN JSON ONLY:
   ],
 
   "weather_card_insights":{
-  "temperature":"1-2 sentences. No numbers. No tactics. How temperature range may affect bass activity today.",
-  "wind":"1-2 sentences. No numbers. No tactics. How wind may affect bass activity today.",
-  "pressure":"1-2 sentences. No numbers. No tactics. How pressure/trend may affect bass activity today.",
-  "sky_uv":"1-2 sentences. No numbers. No tactics. How cloud cover/UV (light) may affect bass activity today."
+  "temperature":"2 sentences. Use weather.temp_trend and weather.temp_season_context. First sentence: describe the seasonal pattern (spawn window, post-spawn, summer pattern, etc.) and what that means for bass positioning. Second sentence: describe the temperature trend (warming/cooling/stable) and how that shift influences bass metabolism and feeding willingness. No exact numbers. No tactics or lures.",
+  "wind":"2 sentences. Use forecast_narrative wind context (building/calming/sustained). First sentence: describe how current wind conditions affect baitfish movement and water surface disruption. Second sentence: explain how bass positioning and ambush behavior changes in response to wind-driven current and chop. No exact numbers. No tactics or lures.",
+  "pressure":"2 sentences. Use weather.pressure_trend (Rising/Falling/Stable). First sentence: describe how the current barometric state affects bass swim bladder comfort and willingness to move vertically. Second sentence: explain the feeding window implications - falling pressure often triggers pre-frontal feeding, rising pressure creates post-frontal lockjaw or cautious behavior. No exact numbers. No tactics or lures.",
+  "sky_uv":"2 sentences. First sentence: describe how current light penetration (overcast vs bright) affects bass vision, comfort level, and positioning relative to cover and shade. Second sentence: explain how these light conditions influence feeding confidence - low light often emboldens bass to roam, while bright skies push them tight to structure. No exact numbers. No tactics or lures."
 },
 
 "outlook_blurb":"3 sentences analyzing weather/conditions/phase. MUST implicitly explain Day Lean reasoning by connecting conditions → fish behavior → approach. Use Day Lean language from Section J without saying 'Day Lean'. Examples: Power Search='active feeding windows, roaming fish, aggressive feeding lanes' | Finesse='neutral positioning, precision needed, cautious behavior' | Control='tight to cover, defensive mode, seeking security'. No exact numbers. No fishing tactics."
@@ -977,11 +973,15 @@ Secondary is not a backup lure. It assumes the initial read may be slightly off 
 
 WEATHER CARD INSIGHTS (UI) (LOCKED):
 - You MUST populate weather_card_insights with 4 keys: temperature, wind, pressure, sky_uv.
-- Each value must be 1-2 sentences.
+- Each value must be 2 sentences that demonstrate expert bass fishing knowledge.
 - Do NOT include any exact numbers (no mph, mb, °F, UV values, ranges).
 - Do NOT mention lures, techniques, targets, or locations.
 - Use suggestive language only (may/might/can/tends to).
 - Do NOT restate the metric value; the UI already shows it.
+- TEMPERATURE: Use weather.temp_trend (Warming/Cooling/Stable) and weather.temp_season_context to explain seasonal bass behavior and how the trend affects metabolism/feeding.
+- WIND: Use forecast_narrative wind context to explain how wind direction/intensity affects baitfish movement and bass positioning.
+- PRESSURE: Use weather.pressure_trend to explain how barometric changes trigger feeding windows or defensive behavior.
+- SKY_UV: Explain how light penetration affects bass positioning and visibility for ambush feeding.
 
 FORECAST SCORING RULES (Mental Model):
 Assign a score (1-10) and rating based on these strict tier definitions:
@@ -1433,7 +1433,9 @@ async def call_openai_plan(
     # ✅ SURGICAL UPDATE: Enhanced user_input with Trend Data
     # Extract rich policy data from raw
     raw_policy = seasonal_policy.get("raw")
-    active_temp_band = _determine_active_temp_band(raw_policy, temp_window_f)
+    # Use backend-calculated water temp (based on 5-day air temp history)
+    estimated_water_temp = weather.get("estimated_water_temp_f")
+    active_temp_band = _determine_active_temp_band(raw_policy, estimated_water_temp)
     active_modifiers = _extract_active_condition_modifiers(raw_policy, weather)
 
     # Build enhanced seasonal_policy with new fields
@@ -1502,6 +1504,8 @@ async def call_openai_plan(
             "wind_gust_mph": weather.get("wind_gust_mph"),  # <-- NEW
             "wind_direction": weather.get("wind_direction"), # <-- NEW
             "cloud_cover": weather.get("cloud_cover") or weather.get("sky_condition"),
+            "sky_condition": weather.get("sky_condition"),
+            "cloud_pct": weather.get("cloud_pct", 0),
             
             # Barometric Pressure
             "pressure_mb": weather.get("pressure_mb"),
@@ -1519,6 +1523,7 @@ async def call_openai_plan(
             
             # Other
             "humidity": weather.get("humidity"),
+            "dew_point": weather.get("dew_point"),
             "clarity_estimate": weather.get("clarity_estimate"),
 
             # ✅ NEW: Forecast & Trends (The "Time Machine" Data)
@@ -1526,6 +1531,14 @@ async def call_openai_plan(
             "past_wind_mph": weather.get("past_wind_mph"),
             "future_wind_mph": weather.get("future_wind_mph"),
             "forecast_wind_max": weather.get("forecast_wind_max"),
+
+            # Temperature Trend (for premium card insights)
+            "past_temp_f": weather.get("past_temp_f"),
+            "temp_trend": weather.get("temp_trend", "Stable"),
+            "temp_season_context": weather.get("temp_season_context", "transitional"),
+
+            # Water Temperature (estimated from 5-day air temp history)
+            "estimated_water_temp_f": weather.get("estimated_water_temp_f"),
         },
         "accessible_targets": accessible_targets,
         "primary_targets": None,

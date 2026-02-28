@@ -190,7 +190,7 @@ export function PlanPage() {
       {plan.plan_url && (
         <div
           style={{
-            marginTop: 40,
+            marginTop: 16,
             padding: "24px",
             background: "rgba(10, 10, 10, 0.4)",
             border: "1px solid rgba(255, 255, 255, 0.08)",

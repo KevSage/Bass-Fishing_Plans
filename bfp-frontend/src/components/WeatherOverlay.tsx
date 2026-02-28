@@ -263,6 +263,12 @@ const getCurrentSeason = (): string => {
   return "Winter"; // Feb
 };
 
+// Extract first 2-3 sentences from description
+const getBriefDescription = (description: string): string => {
+  const sentences = description.match(/[^.!?]+[.!?]+/g) || [];
+  return sentences.slice(0, 3).join(" ").trim();
+};
+
 // --- MAIN COMPONENT ---
 
 type WeatherOverlayProps = {
@@ -282,11 +288,18 @@ export function WeatherOverlay({
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(0);
   const [lureIndex, setLureIndex] = useState(0);
+  const [showWaterTooltip, setShowWaterTooltip] = useState(false);
   const { isActive } = useMemberStatus();
 
   const handleUpgradeClick = () => {
     onClose();
     navigate("/upgrade");
+  };
+
+  const handleLureImageClick = (e: React.MouseEvent, lure: LureData) => {
+    e.stopPropagation(); // Don't trigger card cycle
+    onClose();
+    navigate("/lure-library", { state: { selectedLureId: lure.id } });
   };
 
   // Swipe handling
@@ -335,6 +348,7 @@ export function WeatherOverlay({
       tempHigh: weatherData.temp_high ?? null,
       tempLow: weatherData.temp_low ?? null,
       feelsLike: weatherData.feels_like_f ?? weatherData.temp_f ?? null,
+      waterTemp: weatherData.estimated_water_temp_f ?? null,
       condition: weatherData.sky_condition ?? "Unknown",
       pressure: weatherData.pressure_mb ?? null,
       windSpeed: weatherData.wind_mph ?? null,
@@ -417,16 +431,20 @@ export function WeatherOverlay({
         <div className="weather-header">
           <div className="header-text">
             <span className="weather-label">{currentPage === 0 ? "LIVE CONDITIONS" : "LURE SUGGESTIONS"}</span>
-            <h3 className="weather-title">{locationName}</h3>
-            {data && <span className="local-date">{data.date}</span>}
-            {data && <span className="local-time">{data.localTime}</span>}
+            {currentPage === 0 && (
+              <>
+                <h3 className="weather-title">{locationName}</h3>
+                {data && <span className="local-date">{data.date}</span>}
+                {data && <span className="local-time">{data.localTime}</span>}
+              </>
+            )}
           </div>
           <button onClick={onClose} className="weather-close-btn">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
-          {data && <span className="condition-pill">{data.condition}</span>}
+          {currentPage === 0 && data && <span className="condition-pill">{data.condition}</span>}
         </div>
 
         {/* --- LOADING STATE --- */}
@@ -439,7 +457,33 @@ export function WeatherOverlay({
           <div className="weather-content">
             {/* TEMPERATURE SECTION */}
             <div className="temp-section">
-              <span className="hero-temp">{renderValue(data.temp)}°</span>
+              <div className="temp-hero-stack">
+                <span className="hero-temp">{renderValue(data.temp)}°</span>
+                {data.waterTemp !== null && (
+                  <div
+                    className="water-temp-row"
+                    onMouseEnter={() => setShowWaterTooltip(true)}
+                    onMouseLeave={() => setShowWaterTooltip(false)}
+                    onTouchStart={() => setShowWaterTooltip(true)}
+                    onTouchEnd={() => setTimeout(() => setShowWaterTooltip(false), 2000)}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#4A90E2">
+                      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                    </svg>
+                    <span className="water-temp-value">~{renderValue(data.waterTemp)}°</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 16v-4M12 8h.01" />
+                    </svg>
+                    {showWaterTooltip && (
+                      <div className="water-tooltip">
+                        Water temp is estimated based on the past 5 days of air temperature trends
+                        <div className="water-tooltip-arrow" />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="temp-details">
                 <span className="temp-detail">H: {renderValue(data.tempHigh)}°</span>
                 <span className="temp-detail">L: {renderValue(data.tempLow)}°</span>
@@ -552,9 +596,12 @@ export function WeatherOverlay({
             ) : (
               <>
                 {currentLure && (
-                  <div className="lure-card" onClick={cycleLure}>
-                    {/* Image section */}
-                    <div className="lure-card-image">
+                  <div className="lure-card">
+                    {/* Image section - click to open lure library */}
+                    <div
+                      className="lure-card-image"
+                      onClick={(e) => handleLureImageClick(e, currentLure)}
+                    >
                       <img
                         src={currentLure.image}
                         alt={currentLure.display_name}
@@ -562,12 +609,13 @@ export function WeatherOverlay({
                           (e.target as HTMLImageElement).src = "/images/lures/placeholder.png";
                         }}
                       />
+                      <span className="tap-hint">Tap for details</span>
                     </div>
 
                     {/* Content section */}
                     <div className="lure-card-content">
                       <h3 className="lure-card-name">{currentLure.display_name}</h3>
-                      <p className="lure-card-tagline">{currentLure.tagline}</p>
+                      <p className="lure-card-description">{getBriefDescription(currentLure.description)}</p>
 
                       {/* Metadata grid */}
                       <div className="lure-card-meta">
@@ -600,7 +648,7 @@ export function WeatherOverlay({
 
                     {/* Cycle button at bottom right of card */}
                     {recommendedLures.length > 1 && (
-                      <div className="cycle-hint">
+                      <div className="cycle-hint" onClick={cycleLure}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <polyline points="23 4 23 10 17 10" />
                           <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
@@ -643,7 +691,12 @@ export function WeatherOverlay({
 
         /* TEMPERATURE SECTION */
         .temp-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .hero-temp { font-size: 4rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: #fff; }
+        .temp-hero-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+        .hero-temp { font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: #fff; }
+        .water-temp-row { position: relative; display: flex; align-items: center; gap: 5px; background: rgba(74, 144, 226, 0.12); border: 1px solid rgba(74, 144, 226, 0.25); padding: 4px 10px; border-radius: 10px; cursor: help; }
+        .water-temp-value { font-size: 0.9rem; font-weight: 700; color: #4A90E2; }
+        .water-tooltip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.95); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; width: 200px; z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.5); font-size: 0.7rem; color: rgba(255,255,255,0.9); line-height: 1.4; text-align: center; }
+        .water-tooltip-arrow { position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 7px solid rgba(0, 0, 0, 0.95); }
         .temp-details { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
         .temp-detail { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.6); }
         .temp-detail.feels { color: rgba(255,255,255,0.8); margin-top: 2px; }
@@ -684,15 +737,19 @@ export function WeatherOverlay({
         .lure-card:hover { border-color: rgba(74, 144, 226, 0.3); }
         .lure-card:active { transform: scale(0.98); }
 
-        .lure-card-image { width: 100%; height: 180px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; }
+        .lure-card-image { position: relative; width: 100%; height: 180px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease; }
+        .lure-card-image:hover { background: rgba(0,0,0,0.4); }
         .lure-card-image img { max-width: 90%; max-height: 160px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+        .tap-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: rgba(255,255,255,0.4); font-weight: 500; }
 
-        .cycle-hint { position: absolute; bottom: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: rgba(74, 144, 226, 0.2); border: 1px solid rgba(74, 144, 226, 0.4); display: flex; align-items: center; justify-content: center; color: #4A90E2; }
+        .cycle-hint { position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: rgba(74, 144, 226, 0.25); border: 1px solid rgba(74, 144, 226, 0.5); display: flex; align-items: center; justify-content: center; color: #4A90E2; cursor: pointer; transition: all 0.2s ease; z-index: 10; }
+        .cycle-hint:hover { background: rgba(74, 144, 226, 0.4); transform: scale(1.1); }
+        .cycle-hint:active { transform: scale(0.95); }
 
         .lure-card-content { padding: 14px 16px 16px; }
 
-        .lure-card-name { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0 0 4px; line-height: 1.2; }
-        .lure-card-tagline { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-weight: 500; margin: 0 0 12px; line-height: 1.3; font-style: italic; }
+        .lure-card-name { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0 0 8px; line-height: 1.2; }
+        .lure-card-description { font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 400; margin: 0 0 14px; line-height: 1.5; }
 
         .lure-card-meta { display: flex; flex-direction: column; gap: 6px; }
         .meta-row { display: flex; gap: 6px; font-size: 0.75rem; line-height: 1.3; }

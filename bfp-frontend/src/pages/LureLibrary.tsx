@@ -1,7 +1,8 @@
 // src/pages/LureLibrary.tsx
 
-import React, { useState, useMemo } from "react";
-import { LURES_ARRAY, FILTER_OPTIONS, type LureData } from "@/data/lures";
+import React, { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { LURES_ARRAY, FILTER_OPTIONS, LURE_CATALOG, type LureData } from "@/data/lures";
 import { ArrowLeftIcon, XIcon } from "@/components/UnifiedIcons";
 
 // =============================================================================
@@ -381,8 +382,19 @@ function FilterPill({
 // =============================================================================
 
 export function LureLibrary() {
+  const location = useLocation();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [selectedLure, setSelectedLure] = useState<LureData | null>(null);
+
+  // Auto-select lure if navigated with state
+  useEffect(() => {
+    const state = location.state as { selectedLureId?: string } | null;
+    if (state?.selectedLureId && LURE_CATALOG[state.selectedLureId]) {
+      setSelectedLure(LURE_CATALOG[state.selectedLureId]);
+      // Clear the state so it doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Toggle a filter value
   const toggleFilter = (group: keyof FilterState, value: string) => {

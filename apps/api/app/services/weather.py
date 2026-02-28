@@ -75,19 +75,65 @@ def _calculate_moon_phase(date: datetime = None) -> Tuple[str, float]:
 def _is_major_solunar_period(date: datetime, lat: float, lon: float) -> bool:
     """
     Detect major solunar feeding periods.
-    Simplified: Major periods correlate with full/new moon ±3 days 
+    Simplified: Major periods correlate with full/new moon ±3 days
     OR strong gibbous phases with high illumination.
     """
     phase_name, illumination = _calculate_moon_phase(date)
-    
+
     if phase_name in ["full", "new"]:
         return True
-    
+
     # Waxing/waning gibbous near full moon also have strong activity
     if phase_name in ["waxing gibbous", "waning gibbous"] and illumination > 80:
         return True
-    
+
     return False
+
+
+def estimate_water_temp(daily_highs: list, current_temp: float) -> float:
+    """
+    Estimate water temperature based on recent air temperature history.
+
+    Water temperature lags air temperature by 1-3 days and changes slowly.
+    Uses a weighted average of recent daily highs with seasonal offset.
+
+    Args:
+        daily_highs: List of daily high temps for past 5 days [oldest...newest]
+        current_temp: Current air temperature
+
+    Returns:
+        Estimated water temperature in °F
+    """
+    if not daily_highs:
+        # Fallback: water temp is roughly current air temp - 5°F
+        return round(max(32, current_temp - 5), 1)
+
+    # Weights: more recent days have higher weight
+    # Day -1 (yesterday): 35%, Day -2: 25%, Day -3: 20%, Day -4: 12%, Day -5: 8%
+    weights = [0.08, 0.12, 0.20, 0.25, 0.35]
+
+    # Pad or trim daily_highs to match weights
+    temps = list(daily_highs[-5:])  # Take last 5 days
+    while len(temps) < 5:
+        temps.insert(0, temps[0])  # Pad with oldest value
+
+    weighted_avg = sum(t * w for t, w in zip(temps, weights))
+
+    # Water temp offset varies by season:
+    # - Cold water (< 50°F air avg): water may actually be warmer (thermal mass)
+    # - Moderate (50-70°F): water lags by ~3-5°F
+    # - Hot (> 70°F): water lags by ~5-8°F (surface vs thermocline)
+    if weighted_avg < 50:
+        offset = 2  # Water holds heat in cold weather
+    elif weighted_avg < 70:
+        offset = 4
+    else:
+        offset = 6
+
+    estimated = weighted_avg - offset
+
+    # Clamp to reasonable bass fishing range (32°F - 90°F)
+    return round(max(32, min(90, estimated)), 1)
 
 
 def format_local_time(unix_ts: int, offset_seconds: int) -> str:
@@ -103,9 +149,10 @@ def format_local_time(unix_ts: int, offset_seconds: int) -> str:
 
 async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
     """
-    Primary entry point. Fetches weather data using Dual-Call Strategy:
-    1. Standard Call: Current + Hourly Forecast (Future)
-    2. History Call: T-4 Hours (Past)
+    Primary entry point. Fetches weather data using Multi-Call Strategy:
+    1. Standard Call: Current + Hourly Forecast + Daily Forecast (Future)
+    2. History Call: T-4 Hours (Past) for trend analysis
+    3. Historical Daily Calls: Past 5 days for water temperature estimation
     """
     api_key = os.getenv("OPENWEATHER_API_KEY")
     if not api_key:
@@ -120,7 +167,7 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
         "units": "imperial", "exclude": "minutely"
     }
 
-    # 2. Prepare History Call (Past T-4 Hours)
+    # 2. Prepare History Call (Past T-4 Hours) for trend analysis
     dt_past = int(time.time()) - (4 * 3600)
     url_hist = "https://api.openweathermap.org/data/3.0/onecall/timemachine"
     params_hist = {
@@ -128,20 +175,48 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
         "appid": api_key, "units": "imperial"
     }
 
+    # 3. Prepare Historical Daily Calls (Past 5 days) for water temp estimation
+    # Timemachine returns hourly data for a specific day, we'll extract daily highs
+    now_ts = int(time.time())
+    historical_requests = []
+    for days_ago in range(1, 6):  # 1 to 5 days ago
+        dt_historical = now_ts - (days_ago * 86400)  # 86400 seconds = 1 day
+        historical_requests.append({
+            "lat": lat, "lon": lon, "dt": dt_historical,
+            "appid": api_key, "units": "imperial"
+        })
+
     try:
-        # Execute both requests in parallel
+        # Execute standard + recent history in parallel
         resp_std, resp_hist = await asyncio.gather(
             client.get(url_std, params=params_std),
             client.get(url_hist, params=params_hist)
         )
-        
+
         # Check standard response (History might fail on free tier, handle gracefully)
         if resp_std.status_code != 200:
+            await client.aclose()
             return await _get_weather_fallback(lat, lon, api_key)
-            
+
         data_std = resp_std.json()
         data_hist = resp_hist.json() if resp_hist.status_code == 200 else {}
-        
+
+        # Fetch historical daily data for water temp (in parallel)
+        historical_responses = await asyncio.gather(
+            *[client.get(url_hist, params=req) for req in historical_requests],
+            return_exceptions=True
+        )
+
+        # Extract daily highs from historical data (reverse to get oldest first)
+        daily_highs = []
+        for resp in reversed(historical_responses):
+            if isinstance(resp, Exception) or resp.status_code != 200:
+                continue
+            hist_data = resp.json()
+            hourly_temps = [h.get("temp", 0) for h in hist_data.get("data", [])]
+            if hourly_temps:
+                daily_highs.append(max(hourly_temps))
+
     except Exception as e:
         print(f"Weather API Error: {e}")
         return await _get_weather_fallback(lat, lon, api_key)
@@ -183,6 +258,35 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
 
     # --- INTELLIGENCE: 3-POINT TREND ANALYSIS ---
 
+    # 0. Temperature Trend Analysis (NEW - for premium insights)
+    curr_temp = current.get("temp", 0)
+    past_temp = past_data.get("temp", curr_temp)
+    temp_diff = curr_temp - past_temp
+
+    # Determine temperature trend narrative
+    temp_trend_desc = "Stable"
+    if temp_diff >= 8:
+        temp_trend_desc = "Warming Rapidly"
+    elif temp_diff >= 4:
+        temp_trend_desc = "Warming"
+    elif temp_diff <= -8:
+        temp_trend_desc = "Cooling Rapidly"
+    elif temp_diff <= -4:
+        temp_trend_desc = "Cooling"
+
+    # Seasonal context based on temperature ranges
+    temp_season_context = "transitional"
+    if curr_temp >= 75:
+        temp_season_context = "summer pattern"
+    elif curr_temp >= 65:
+        temp_season_context = "post-spawn / early summer"
+    elif curr_temp >= 55:
+        temp_season_context = "spawn window"
+    elif curr_temp >= 45:
+        temp_season_context = "pre-spawn"
+    else:
+        temp_season_context = "cold water / winter"
+
     # 1. Wind Trend Analysis (Using our robust curr_wind)
     past_wind = past_data.get("wind_speed", raw_curr_wind) # Use raw for past comparison if needed, or consistent metric
     fut_wind = future_data.get("wind_speed", curr_wind)
@@ -216,8 +320,16 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
     # 3. Solunar
     is_major_period = _is_major_solunar_period(datetime.now(timezone.utc), lat, lon)
 
-    # 4. Construct Narrative for LLM
+    # 4. Water Temperature Estimation (based on past 5 days of air temps)
+    # Add today's high to daily_highs for most accurate estimate
+    todays_high = daily_today.get("temp", {}).get("max", curr_temp)
+    daily_highs_with_today = daily_highs + [todays_high]
+    estimated_water_temp = estimate_water_temp(daily_highs_with_today, curr_temp)
+
+    # 5. Construct Narrative for LLM (now includes water temp)
     forecast_narrative = (
+        f"TEMP CONTEXT: {temp_trend_desc} ({int(past_temp)}°F -> {int(curr_temp)}°F over 4hrs). Season: {temp_season_context}. "
+        f"ESTIMATED WATER TEMP: {estimated_water_temp}°F (based on 5-day air temp trend). "
         f"WIND CONTEXT: {wind_narrative}. Representative wind is {int(curr_wind)}mph (Gusts {int(curr_gust)}mph). "
         f"Was {int(past_wind)}mph 4hrs ago. "
         f"PRESSURE TREND: {pressure_trend_desc} ({past_pressure}mb -> {curr_pressure}mb). "
@@ -253,6 +365,7 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
         # Sky & Light
         "cloud_cover": current.get("weather", [{}])[0].get("description", "clear"),
         "sky_condition": current.get("weather", [{}])[0].get("main", "Clear"),
+        "cloud_pct": current.get("clouds", 0),  # Cloud coverage percentage 0-100 (OneCall 3.0 returns direct int)
         "uv_index": current.get("uvi"),
         "visibility_miles": vis_miles,
         "humidity": current.get("humidity"),
@@ -278,6 +391,15 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
         "timezone_offset": tz_offset,
         # Max wind is now redundant as it's baked into wind_mph, but kept for compatibility
         "forecast_wind_max": max([h.get("wind_speed", 0) for h in hourly[:8]]) if hourly else curr_wind,
+
+        # Temperature Trend (NEW - for premium card insights)
+        "past_temp_f": past_temp,
+        "temp_trend": temp_trend_desc,
+        "temp_season_context": temp_season_context,
+
+        # Water Temperature Estimation (NEW - for lure selection)
+        "estimated_water_temp_f": estimated_water_temp,
+        "daily_highs_history": daily_highs_with_today,  # For debugging/display
     }
 
 
@@ -346,8 +468,12 @@ async def _get_weather_fallback(lat: float, lon: float, api_key: str) -> Dict[st
     
     # Heuristic Solunar
     is_major_period = _is_major_solunar_period(datetime.now(timezone.utc), lat, lon)
-    
-    narrative = f"Current Wind: {wind_mph}mph. Pressure: {pressure_mb}mb ({pressure_trend}). Sky: {cloud_cover}."
+
+    # Fallback water temp estimate (no historical data available)
+    # Use simple heuristic: water temp ~5°F below air temp high
+    estimated_water_temp = estimate_water_temp([], temp_high)
+
+    narrative = f"Current Wind: {wind_mph}mph. Pressure: {pressure_mb}mb ({pressure_trend}). Sky: {cloud_cover}. Est. Water: {estimated_water_temp}°F."
 
     return {
         "temp_f": float(temp_f),
@@ -361,7 +487,7 @@ async def _get_weather_fallback(lat: float, lon: float, api_key: str) -> Dict[st
         "precipitation_1h": round(rain_1h, 2),
         "has_recent_rain": has_recent_rain,
         "uv_index": float(uv_index),
-        "moon_phase": "unknown", 
+        "moon_phase": "unknown",
         "moon_illumination": 0,
         "is_major_period": is_major_period,
         "humidity": int(humidity),
@@ -371,5 +497,8 @@ async def _get_weather_fallback(lat: float, lon: float, api_key: str) -> Dict[st
         "forecast_wind_max": wind_mph,
         "sunriseTime": "--:--",
         "sunsetTime": "--:--",
-        "solarNoonTime": "--:--"
+        "solarNoonTime": "--:--",
+        # Water Temperature (fallback estimate)
+        "estimated_water_temp_f": estimated_water_temp,
+        "daily_highs_history": [temp_high],
     }

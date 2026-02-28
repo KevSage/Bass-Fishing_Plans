@@ -242,17 +242,24 @@ PRESPAWN_SEASON = {
             "bias_toward": [
                 "spinnerbait",
                 "lipless crankbait",
-                "flat-sided crankbait",
-                "jerkbait",
+                "shallow crankbait",
+                "chatterbait",
+                "texas rig",
             ],
             "unlock": [
                 "mid crankbait",
-                "shallow crankbait",
                 "paddle tail swimbait",
+                "soft jerkbait",
+            ],
+            "bias_away_from": [
+                "jerkbait",
+                "blade bait",
+                "football jig",
             ],
             "note": (
-                "Warm trend expands the bite window and increases willingness to track moving baits. "
-                "Keep retrieves controlled; do not assume an all-out reaction bite."
+                "Warm trend shifts bass toward shallower staging and active feeding. "
+                "Prioritize search baits and shallow presentations. Hard jerkbait becomes less effective "
+                "as water temps exceed 62°F - fish are more willing to chase."
             ),
         },
 
@@ -356,12 +363,17 @@ PRESPAWN_SEASON = {
             "bias_toward": [
                 "lipless crankbait",
                 "spinnerbait",
-                "jerkbait",
-                "flat-sided crankbait",
+                "shallow crankbait",
+                "chatterbait",
             ],
+            "conditional_bias": {
+                "cold_staging": ["jerkbait", "flat-sided crankbait"],
+                "warm_staging": ["lipless crankbait", "spinnerbait"],
+                "spawn_transition": ["shallow crankbait", "spinnerbait", "chatterbait"],
+            },
             "note": (
-                "Falling pressure can create a short bite window. Lean into search baits and jerkbait, "
-                "but keep retrieves moderate—don’t confuse this with a summer reaction bite."
+                "Falling pressure creates a feeding window. In cold staging, jerkbait shines. "
+                "In warmer temps, bass are more willing to chase - prioritize search baits."
             ),
         },
 
@@ -583,13 +595,19 @@ Football Jig / Blade Bait
   Bottom contact specialists for cold_staging. Target secondary points and channel swings.
 
 CONDITION MODIFIERS:
-Warm Trend:
-  Expands feeding windows and increases willingness to track moving baits.
-  Warm trend + wind is the key combo that elevates chatterbait priority.
+Warm Trend (IMPORTANT FOR EARLY SPRING):
+  When temps are meaningfully above seasonal norm (e.g., 70°F in late Feb):
+  - BIAS TOWARD: Spinnerbait, lipless crankbait, shallow crankbait, chatterbait, texas rig
+  - BIAS AWAY FROM: Hard jerkbait, blade bait, football jig
+  - Bass shift to shallower staging and active feeding - they will chase
+  - Warm trend + wind is the key combo that elevates chatterbait priority
 
 Cold/Stable or Post-Front:
   Reverts behavior toward cold_staging. Downshift speed and prioritize pause/bottom contact.
 
-Wind / Overcast / Falling Pressure:
-  Improve search baits and increase roaming. Keep retrieves controlled.
+Falling Pressure:
+  Creates a feeding window. Lure selection should match temp band:
+  - Cold staging (50-55°F): Jerkbait, flat-sided crankbait shine
+  - Warm staging (55-62°F): Lipless crankbait, spinnerbait
+  - Spawn transition (62-68°F): Shallow crankbait, spinnerbait, chatterbait
 """
