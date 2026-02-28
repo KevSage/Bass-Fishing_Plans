@@ -1318,3 +1318,77 @@ export function MoreVerticalIcon({ size = 24, className, ...props }: IconProps) 
     </svg>
   );
 }
+
+export function EyeIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <path
+        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+export function HumidityIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <path
+        d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 14a4 4 0 0 0 4 4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function PrecipitationIcon({ size = 24, className, ...props }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      strokeWidth={STROKE_WIDTH}
+      stroke={COLOR}
+      {...props}
+    >
+      <path
+        d="M16 13V21M8 13V21M12 15V23"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
