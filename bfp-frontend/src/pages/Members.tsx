@@ -2558,7 +2558,7 @@ export function Members() {
         onChange={handleLiveCapture}
       />
       <div style={{ width: "100%", height: "100%" }}>
-        <style>{`.mapboxgl-ctrl-top-right { top: 180px !important; right: 14px !important; }`}</style>
+        <style>{`.mapboxgl-ctrl-top-right { top: 50% !important; right: 14px !important; transform: translateY(-50%); }`}</style>
         <div ref={mapContainer} style={{ width: "100%", height: "100%" }} />
       </div>
 
@@ -2803,8 +2803,9 @@ export function Members() {
                   </button>
                   <div className="top-bar-content-centered">
                     <div className="top-bar-name-row">
+                      {/* Show home icon if home lake, otherwise star icon */}
                       <button
-                        className={`top-bar-star-btn ${isCurrentLocationSaved ? "saved" : ""}`}
+                        className={`top-bar-star-btn ${isCurrentLocationSaved ? "saved" : ""} ${viewingFavoriteId === homeLakeId && homeLakeId ? "is-home" : ""}`}
                         onClick={toggleFavoriteLake}
                         aria-label={
                           isCurrentLocationSaved
@@ -2812,21 +2813,18 @@ export function Members() {
                             : "Save Favorite"
                         }
                       >
-                        <StarIcon size={24} filled={isCurrentLocationSaved} />
+                        {viewingFavoriteId === homeLakeId && homeLakeId ? (
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 3L4 9v12h5v-7h6v7h5V9l-8-6z" />
+                          </svg>
+                        ) : (
+                          <StarIcon size={24} filled={isCurrentLocationSaved} />
+                        )}
                       </button>
                       {lakeLabelData.isKnown ? (
-                        <>
-                          <h2 className="top-bar-lake-name">
-                            {lakeLabelData.name}
-                          </h2>
-                          {viewingFavoriteId === homeLakeId && homeLakeId && (
-                            <span className="top-bar-home-badge" title="Home Lake">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M12 3L4 9v12h5v-7h6v7h5V9l-8-6z" />
-                              </svg>
-                            </span>
-                          )}
-                        </>
+                        <h2 className="top-bar-lake-name">
+                          {lakeLabelData.name}
+                        </h2>
                       ) : (
                         <>
                           <input
