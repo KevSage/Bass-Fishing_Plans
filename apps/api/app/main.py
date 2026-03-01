@@ -492,6 +492,8 @@ async def plan_generate(body: PlanGenerateRequest, request: Request):
         "past_temp_f": weather.get("past_temp_f"),
         # Water temperature (estimated from 5-day history)
         "estimated_water_temp_f": weather.get("estimated_water_temp_f"),
+        # Hourly forecast (next 12 hours)
+        "hourly_forecast": weather.get("hourly_forecast", []),
     }
     
     if "forecast_rating" in plan:

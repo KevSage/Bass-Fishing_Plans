@@ -1626,7 +1626,7 @@ export function CatchDetailView({
 
           {/* Brand Footer - Centered */}
           <div className="catch-brand-footer">
-            <img src="/images/logo-40.png" alt="" className="brand-logo" />
+            <img src="/images/splash-logo.png" alt="" className="brand-logo" />
             <div className="brand-text-col">
               <span className="brand-text">Bass Clarity</span>
               <span className="brand-url">bassclarity.com</span>
@@ -1779,11 +1779,11 @@ export function CatchDetailView({
         .catch-loc-name { font-size: 0.85rem; font-weight: 600; color: #fff; }
 
         /* Brand Footer - Centered */
-        .catch-brand-footer { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 0 4px; }
+        .catch-brand-footer { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0; margin-top: -4px; }
         .brand-text-col { display: flex; flex-direction: column; gap: 1px; }
-        .brand-text { font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.8); letter-spacing: 0.02em; }
-        .brand-url { font-size: 0.6rem; color: rgba(255,255,255,0.35); font-weight: 500; }
-        .brand-logo { width: 32px; height: 32px; object-fit: contain; }
+        .brand-text { font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.8); letter-spacing: 0.02em; }
+        .brand-url { font-size: 0.7rem; color: rgba(255,255,255,0.35); font-weight: 500; }
+        .brand-logo { width: 56px; height: 56px; object-fit: contain; }
 
         /* Action Footer */
         .catch-actions-footer { display: flex; gap: 10px; padding: 12px 16px 20px; }

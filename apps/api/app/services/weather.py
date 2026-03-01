@@ -400,6 +400,19 @@ async def get_weather_snapshot(lat: float, lon: float) -> Dict[str, Any]:
         # Water Temperature Estimation (NEW - for lure selection)
         "estimated_water_temp_f": estimated_water_temp,
         "daily_highs_history": daily_highs_with_today,  # For debugging/display
+
+        # Hourly Forecast (next 12 hours for Apple-style display)
+        "hourly_forecast": [
+            {
+                "time": format_local_time(h.get("dt"), tz_offset),
+                "temp": round(h.get("temp", 0)),
+                "icon": h.get("weather", [{}])[0].get("icon", "01d"),
+                "description": h.get("weather", [{}])[0].get("main", "Clear"),
+                "wind": round(h.get("wind_speed", 0)),
+                "pop": round(h.get("pop", 0) * 100),  # Probability of precipitation %
+            }
+            for h in hourly[:12]
+        ] if hourly else [],
     }
 
 

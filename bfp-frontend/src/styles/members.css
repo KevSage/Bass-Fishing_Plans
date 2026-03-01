@@ -7,10 +7,10 @@
 .orb-marker-map {
   background-color: #4A90E2;
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(74, 144, 226, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 8px rgba(74, 144, 226, 0.7), 0 0 0 2px rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
 }
 
 /* ========== TOP GRADIENT BAR (Lake Label) ========== */

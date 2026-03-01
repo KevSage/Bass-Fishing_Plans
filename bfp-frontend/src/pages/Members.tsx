@@ -820,9 +820,8 @@ export function Members() {
   const mapStyle = localStorage.getItem("bc_mapbox_style") || "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn";
   const isLightTheme = mapStyle.includes("light-v11");
 
-  // Get static-compatible style for thumbnails (custom styles don't work with Static API)
+  // Get static-compatible style for thumbnails
   const getStaticStyle = () => {
-    if (mapStyle.includes("satellite")) return "mapbox/satellite-v9";
     if (mapStyle.includes("outdoors")) return "mapbox/outdoors-v12";
     return "mapbox/dark-v11"; // Default for custom dark or dark-v11
   };
@@ -1504,7 +1503,6 @@ export function Members() {
       "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn",
       "mapbox://styles/mapbox/dark-v11", // Keep old dark as fallback
       "mapbox://styles/mapbox/outdoors-v12",
-      "mapbox://styles/mapbox/satellite-streets-v12",
     ];
     const defaultStyle = "mapbox://styles/kaiwenphoenix/cmlssh825005w01s6awzzdncn";
     let savedMapStyle = localStorage.getItem("bc_mapbox_style");

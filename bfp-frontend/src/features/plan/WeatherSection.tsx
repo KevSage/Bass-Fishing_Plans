@@ -26,6 +26,210 @@ const titleCase = (s: string): string =>
 // Convert mb to inHg: 1 mb = 0.02953 inHg
 const mbToInHg = (mb: number): number => mb * 0.02953;
 
+// Inject global styles once (outside component to prevent re-renders)
+if (typeof document !== 'undefined') {
+  const styleId = 'hourly-scroll-styles';
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `.hourly-scroll::-webkit-scrollbar { display: none; }`;
+    document.head.appendChild(style);
+  }
+}
+
+// Helper to determine if a time string like "7:00 AM" is night
+const isNightTime = (timeStr: string): boolean => {
+  if (!timeStr) return false;
+  const isPM = timeStr.toUpperCase().includes("PM");
+  const isAM = timeStr.toUpperCase().includes("AM");
+  // Extract hour (handles "7:00 AM", "12:00 PM", etc.)
+  const hourMatch = timeStr.match(/^(\d{1,2}):/);
+  if (!hourMatch) return false;
+  let hour = parseInt(hourMatch[1], 10);
+
+  // Convert to 24-hour for easier comparison
+  if (isPM && hour !== 12) hour += 12;
+  if (isAM && hour === 12) hour = 0;
+
+  // Night: before 6am or after 8pm (rough estimate)
+  return hour < 6 || hour >= 20;
+};
+
+// Weather icon component (blue/white theme, day/night aware)
+const WeatherIcon = ({ icon, time }: { icon: string; time?: string }) => {
+  const code = icon.slice(0, 2);
+  // Use time-based detection if available, fallback to icon suffix
+  const isNight = time ? isNightTime(time) : icon.endsWith("n");
+  const color = "rgba(255,255,255,0.8)";
+  const size = 16;
+
+  // Clear - Sun or Moon
+  if (code === "01") {
+    if (isNight) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+        </svg>
+      );
+    }
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+        <circle cx="12" cy="12" r="5" />
+        <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+        <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      </svg>
+    );
+  }
+  // Partly cloudy - Sun/Moon with cloud
+  if (code === "02") {
+    if (isNight) {
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+          <path d="M17.5 19H9a7 7 0 116.71-9h1.79a4.5 4.5 0 010 9z" />
+          <path d="M22 10.79A6 6 0 0014.79 3" strokeOpacity="0.5" />
+        </svg>
+      );
+    }
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+        <path d="M17.5 19H9a7 7 0 116.71-9h1.79a4.5 4.5 0 010 9z" />
+        <circle cx="18" cy="5" r="3" strokeOpacity="0.5" />
+      </svg>
+    );
+  }
+  // Cloudy
+  if (code === "03" || code === "04") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+        <path d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z" />
+      </svg>
+    );
+  }
+  // Rain / Drizzle
+  if (code === "09" || code === "10") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth="2">
+        <path d="M16 13v6M8 13v6M12 15v6" stroke="#60a5fa" strokeLinecap="round" />
+        <path d="M18 8h-1.26A7 7 0 108 16h10a4 4 0 000-8z" stroke={color} />
+      </svg>
+    );
+  }
+  // Thunderstorm
+  if (code === "11") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth="2">
+        <path d="M18 8h-1.26A7 7 0 108 16h10a4 4 0 000-8z" stroke={color} />
+        <path d="M13 11l-2 4h4l-2 4" stroke="#60a5fa" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  }
+  // Snow
+  if (code === "13") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" strokeWidth="2">
+        <path d="M18 8h-1.26A7 7 0 108 14h10a4 4 0 000-8z" stroke={color} />
+        <circle cx="8" cy="18" r="1" fill={color} /><circle cx="12" cy="17" r="1" fill={color} /><circle cx="16" cy="18" r="1" fill={color} />
+      </svg>
+    );
+  }
+  // Fog/Mist
+  if (code === "50") {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round">
+        <path d="M5 8h14M3 12h18M5 16h14" />
+      </svg>
+    );
+  }
+  // Default - clear
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+      <circle cx="12" cy="12" r="5" />
+    </svg>
+  );
+};
+
+// --- COMPACT APPLE-STYLE HOURLY FORECAST ---
+const HourlyForecast = ({ hours }: { hours: PlanConditions["hourly_forecast"] }) => {
+  if (!hours || hours.length === 0) return null;
+
+  return (
+    <div
+      style={{
+        marginBottom: 8,
+        background: "rgba(74, 144, 226, 0.04)",
+        borderRadius: 8,
+        border: "1px solid rgba(74, 144, 226, 0.12)",
+        padding: "4px 0",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          overflowX: "auto",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        className="hourly-scroll"
+      >
+        {hours.map((hour, i) => (
+          <div
+            key={i}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              width: "calc(100% / 6)",
+              minWidth: "calc(100% / 6)",
+              padding: "2px 0",
+              borderRadius: 4,
+              background: i === 0 ? "rgba(74, 144, 226, 0.12)" : "transparent",
+              flexShrink: 0,
+            }}
+          >
+            {/* Time */}
+            <span style={{
+              fontSize: "0.5rem",
+              fontWeight: 600,
+              color: i === 0 ? "#4A90E2" : "rgba(255,255,255,0.45)",
+              marginBottom: 1,
+            }}>
+              {i === 0 ? "Now" : hour.time.replace(":00", "").replace(" ", "")}
+            </span>
+
+            {/* Weather icon with time-based day/night detection */}
+            <WeatherIcon icon={hour.icon} time={hour.time} />
+
+            {/* Precipitation probability (if > 0) */}
+            {hour.pop > 0 ? (
+              <span style={{
+                fontSize: "0.45rem",
+                fontWeight: 700,
+                color: "#60a5fa",
+                marginTop: 1,
+              }}>
+                {hour.pop}%
+              </span>
+            ) : (
+              <span style={{ height: 7, marginTop: 1 }} />
+            )}
+
+            {/* Temperature */}
+            <span style={{
+              fontSize: "0.6rem",
+              fontWeight: 700,
+              color: "#fff",
+            }}>
+              {hour.temp}°
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // --- PREMIUM WIND COMPASS GAUGE ---
 const WindCompassGauge = ({
   direction,
@@ -50,6 +254,19 @@ const WindCompassGauge = ({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+      <style>{`
+        @keyframes windWobble {
+          0%, 100% { transform: rotate(${rotation}deg); }
+          20% { transform: rotate(${rotation + 1.2}deg); }
+          40% { transform: rotate(${rotation - 0.8}deg); }
+          60% { transform: rotate(${rotation + 0.8}deg); }
+          80% { transform: rotate(${rotation - 1.2}deg); }
+        }
+        .wind-arrow {
+          transform-origin: 50px 50px;
+          animation: windWobble 1.2s ease-in-out infinite;
+        }
+      `}</style>
       <div style={{ position: "relative", width: 140, height: 140 }}>
         <svg viewBox="0 0 100 100" style={{ width: "100%", height: "100%" }}>
           {/* Defs first */}
@@ -89,7 +306,7 @@ const WindCompassGauge = ({
           <text x="20" y="53" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="10" fontWeight="700">W</text>
 
           {/* Direction arrow */}
-          <g transform={`rotate(${rotation} 50 50)`} filter="url(#windArrowGlow)">
+          <g className="wind-arrow" filter="url(#windArrowGlow)">
             <path d="M50 16 L56 38 L50 32 L44 38 Z" fill="#4A90E2" />
             <circle cx="50" cy="50" r="6" fill="#4A90E2" />
           </g>
@@ -202,12 +419,14 @@ const PressureArcGauge = ({ pressureMb }: { pressureMb: number | null }) => {
       <style>{`
         @keyframes needleWobble {
           0%, 100% { transform: rotate(${needleAngle}deg); }
-          25% { transform: rotate(${needleAngle + 0.8}deg); }
-          75% { transform: rotate(${needleAngle - 0.8}deg); }
+          15% { transform: rotate(${needleAngle + 1}deg); }
+          35% { transform: rotate(${needleAngle - 0.8}deg); }
+          55% { transform: rotate(${needleAngle + 0.6}deg); }
+          75% { transform: rotate(${needleAngle - 1}deg); }
         }
         .pressure-needle {
           transform-origin: 50px 52px;
-          animation: needleWobble 3s ease-in-out infinite;
+          animation: needleWobble 1.5s ease-in-out infinite;
         }
       `}</style>
       <div style={{ position: "relative", width: 140, height: 85 }}>
@@ -491,6 +710,15 @@ export type PlanConditions = {
   past_temp_f?: number | null;
   // Water Temperature (estimated from 5-day air temp history)
   estimated_water_temp_f?: number | null;
+  // Hourly Forecast (next 12 hours)
+  hourly_forecast?: {
+    time: string;
+    temp: number;
+    icon: string;
+    description: string;
+    wind: number;
+    pop: number;
+  }[];
   // Wind Trend
   past_wind_mph?: number | null;
   // Insights & Ratings
@@ -677,6 +905,8 @@ export function WeatherSection({
               liveData.visibility_miles ?? prev.visibility_miles,
             estimated_water_temp_f:
               liveData.estimated_water_temp_f ?? prev.estimated_water_temp_f,
+            hourly_forecast:
+              liveData.hourly_forecast ?? prev.hourly_forecast,
           }));
 
           setIsLive(true);
@@ -991,108 +1221,9 @@ export function WeatherSection({
         </div>
 
         {/* HUD DASHBOARD */}
-        <div style={{ padding: "24px" }}>
-          {/* FUNCTIONAL SOLAR STRIP */}
-          <div
-            style={{
-              marginBottom: 20,
-              padding: "16px",
-              background: "rgba(74, 144, 226, 0.04)",
-              borderRadius: 16,
-              border: "1px solid rgba(74, 144, 226, 0.12)",
-              position: "relative",
-            }}
-          >
-            <div
-              style={{
-                position: "relative",
-                height: 32,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  height: 1,
-                  background: "rgba(74, 144, 226, 0.2)",
-                }}
-              />
-              <div style={{ textAlign: "center", zIndex: 1 }}>
-                <div
-                  style={{
-                    fontSize: "0.6rem",
-                    color: "#4A90E2",
-                    fontWeight: 800,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Sunrise
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#fff",
-                    fontWeight: 700,
-                  }}
-                >
-                  {derived.sunrise}
-                </div>
-              </div>
-              <div style={{ textAlign: "center", zIndex: 1, marginTop: -12 }}>
-                <CloudIcon
-                  size={16}
-                  style={{
-                    color: "#FFD700",
-                    marginBottom: 2,
-                    filter: "drop-shadow(0 0 5px rgba(255, 215, 0, 0.4))",
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: "0.65rem",
-                    color: "#FFD700",
-                    fontWeight: 800,
-                  }}
-                >
-                  SOLAR PEAK
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#fff",
-                    fontWeight: 700,
-                  }}
-                >
-                  {derived.solarNoon}
-                </div>
-              </div>
-              <div style={{ textAlign: "center", zIndex: 1 }}>
-                <div
-                  style={{
-                    fontSize: "0.6rem",
-                    color: "#4A90E2",
-                    fontWeight: 800,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Sunset
-                </div>
-                <div
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#fff",
-                    fontWeight: 700,
-                  }}
-                >
-                  {derived.sunset}
-                </div>
-              </div>
-            </div>
-          </div>
+        <div style={{ padding: "12px 24px 24px" }}>
+          {/* APPLE-STYLE HOURLY FORECAST */}
+          <HourlyForecast hours={liveConditions.hourly_forecast} />
 
           {/* PREMIUM 2x2 GAUGE GRID */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1700,27 +1831,36 @@ function buildExpansion(card: CardId, conditions: PlanConditions): ExpansionData
 
   if (card === "temp") {
     const tempTrend = raw.temp_trend || "Stable";
-    const seasonContext = raw.temp_season_context || "";
     const waterTemp = numOrNull(raw.estimated_water_temp_f);
+    const pastTemp = numOrNull(raw.past_temp_f);
     let trendDir: "up" | "down" | "stable" = "stable";
     if (tempTrend.toLowerCase().includes("warming")) trendDir = "up";
     if (tempTrend.toLowerCase().includes("cooling")) trendDir = "down";
 
+    // Build a clean hierarchical display
     const currentVal = tempF != null ? `${Math.round(tempF)}°F` : "--";
-    const feelsVal = feelsLike != null ? `Feels ${Math.round(feelsLike)}°` : "--";
-    const hiLoVal = (high != null && low != null) ? `${Math.round(low)}° / ${Math.round(high)}°` : "--";
+    const feelsVal = feelsLike != null ? `${Math.round(feelsLike)}°` : "--";
+    const highVal = high != null ? `${Math.round(high)}°` : "--";
+    const lowVal = low != null ? `${Math.round(low)}°` : "--";
     const waterVal = waterTemp != null ? `~${Math.round(waterTemp)}°F` : "--";
-    const trendArrow = trendDir === "up" ? "↑" : trendDir === "down" ? "↓" : "→";
+
+    // Build trend label from actual temp change
+    let trendLabel = tempTrend; // "Warming", "Cooling", "Stable", etc.
+    if (pastTemp != null && tempF != null) {
+      const diff = Math.round(tempF - pastTemp);
+      if (diff > 0) trendLabel = `Warming (+${diff}° from 4hrs ago)`;
+      else if (diff < 0) trendLabel = `Cooling (${diff}° from 4hrs ago)`;
+      else trendLabel = "Stable";
+    }
 
     return {
       title: "Temperature",
       metrics: [
-        { label: "Current", value: currentVal, highlight: true },
-        { label: "Feels Like", value: feelsVal },
-        { label: "High / Low", value: `${hiLoVal} ${trendArrow}` },
-        { label: "Est. Water", value: waterVal, highlight: true },
+        { label: "Current", value: `${currentVal} · Feels ${feelsVal}`, highlight: true },
+        { label: "High / Low", value: `${highVal} / ${lowVal}` },
+        { label: "Est. Water Temp", value: waterVal },
       ],
-      trend: { label: seasonContext ? titleCase(seasonContext) : tempTrend, direction: trendDir, value: tempTrend },
+      trend: { label: trendLabel, direction: trendDir },
       insight,
     };
   }
