@@ -263,12 +263,6 @@ const getCurrentSeason = (): string => {
   return "Winter"; // Feb
 };
 
-// Extract first 2-3 sentences from description
-const getBriefDescription = (description: string): string => {
-  const sentences = description.match(/[^.!?]+[.!?]+/g) || [];
-  return sentences.slice(0, 3).join(" ").trim();
-};
-
 // --- MAIN COMPONENT ---
 
 type WeatherOverlayProps = {
@@ -629,7 +623,7 @@ export function WeatherOverlay({
                         {/* Content section */}
                         <div className="lure-card-content">
                           <h3 className="lure-card-name">{currentLure.display_name}</h3>
-                          <p className="lure-card-description">{getBriefDescription(currentLure.description)}</p>
+                          <p className="lure-card-description">{currentLure.description}</p>
 
                           {/* Metadata grid */}
                           <div className="lure-card-meta">
@@ -690,7 +684,7 @@ export function WeatherOverlay({
 
       <style>{`
         .weather-modal-backdrop { position: fixed; inset: 0; z-index: 2000; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 24px; animation: fade-in 0.2s ease-out; }
-        .weather-modal-card { width: 100%; max-width: 340px; height: 520px; max-height: 85vh; background: rgba(18, 18, 24, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; padding: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.7); color: white; animation: scale-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+        .weather-modal-card { width: 100%; max-width: 340px; height: 620px; max-height: 90vh; background: rgba(18, 18, 24, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; padding: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.7); color: white; animation: scale-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
 
         .weather-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px; position: relative; }
         .header-text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
@@ -773,7 +767,7 @@ export function WeatherOverlay({
         .lure-card-content { padding: 12px 16px 14px; flex: 1; overflow-y: auto; min-height: 0; }
 
         .lure-card-name { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 6px; line-height: 1.2; }
-        .lure-card-description { font-size: 0.7rem; color: rgba(255,255,255,0.6); font-weight: 400; margin: 0 0 10px; line-height: 1.45; max-height: 3.5em; overflow: hidden; }
+        .lure-card-description { font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 400; margin: 0 0 12px; line-height: 1.5; }
 
         .lure-card-meta { display: flex; flex-direction: column; gap: 6px; }
         .meta-row { display: flex; gap: 6px; font-size: 0.75rem; line-height: 1.3; }
