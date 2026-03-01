@@ -81,20 +81,31 @@
   position: absolute;
   top: 0;
   right: 0;
-  background: transparent;
-  border: none;
-  color: rgba(255,255,255,0.4);
+  width: 28px;
+  height: 28px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+  color: rgba(255,255,255,0.5);
   cursor: pointer;
-  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
   pointer-events: auto;
 }
 
 .top-bar-close:hover {
-  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.9);
+  transform: scale(1.05);
+}
+
+.top-bar-close:active {
+  transform: scale(0.95);
 }
 
 .top-bar-content-centered {
@@ -299,7 +310,7 @@
 
 /* Icon styling - brand blue icons (#4A90E2) */
 .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
-  filter: invert(51%) sepia(53%) saturate(859%) hue-rotate(184deg) brightness(92%) contrast(89%);
+  filter: invert(48%) sepia(79%) saturate(491%) hue-rotate(182deg) brightness(94%) contrast(88%);
   opacity: 1;
   transform: scale(0.85);
 }
@@ -1007,10 +1018,14 @@
 }
 
 .theme-light .top-bar-close {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.08);
   color: rgba(0,0,0,0.4);
 }
 
 .theme-light .top-bar-close:hover {
+  background: rgba(0,0,0,0.12);
+  border-color: rgba(0,0,0,0.15);
   color: rgba(0,0,0,0.8);
 }
 

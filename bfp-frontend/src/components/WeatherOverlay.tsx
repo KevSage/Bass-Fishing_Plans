@@ -302,15 +302,15 @@ export function WeatherOverlay({
     navigate("/lure-library", { state: { selectedLureId: lure.id } });
   };
 
-  // Swipe handling
-  const touchStartX = useRef<number | null>(null);
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+  // Page-level swipe handling (Weather ↔ Lure pages)
+  const pageTouchStartX = useRef<number | null>(null);
+  const handlePageTouchStart = (e: React.TouchEvent) => {
+    pageTouchStartX.current = e.touches[0].clientX;
   };
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
+  const handlePageTouchEnd = (e: React.TouchEvent) => {
+    if (pageTouchStartX.current === null) return;
     const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
+    const diff = pageTouchStartX.current - touchEndX;
     if (Math.abs(diff) > 50) {
       if (diff > 0 && currentPage === 0) {
         setCurrentPage(1);
@@ -318,7 +318,29 @@ export function WeatherOverlay({
         setCurrentPage(0);
       }
     }
-    touchStartX.current = null;
+    pageTouchStartX.current = null;
+  };
+
+  // Lure-level swipe handling (between 3 lure recommendations)
+  const lureTouchStartX = useRef<number | null>(null);
+  const handleLureTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation(); // Don't trigger page swipe
+    lureTouchStartX.current = e.touches[0].clientX;
+  };
+  const handleLureTouchEnd = (e: React.TouchEvent) => {
+    if (lureTouchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diff = lureTouchStartX.current - touchEndX;
+    if (Math.abs(diff) > 40 && recommendedLures.length > 1) {
+      if (diff > 0) {
+        // Swipe left - next lure
+        setLureIndex((prev) => (prev + 1) % recommendedLures.length);
+      } else {
+        // Swipe right - previous lure
+        setLureIndex((prev) => (prev - 1 + recommendedLures.length) % recommendedLures.length);
+      }
+    }
+    lureTouchStartX.current = null;
   };
   // 1. DATA NORMALIZATION
   const data = useMemo(() => {
@@ -395,12 +417,6 @@ export function WeatherOverlay({
     );
   }, [currentLure, currentConditions]);
 
-  const cycleLure = () => {
-    if (recommendedLures.length > 1) {
-      setLureIndex((prev) => (prev + 1) % recommendedLures.length);
-    }
-  };
-
   // 3. HELPER
   const renderValue = (val: number | null) => {
     if (val === null || val === undefined) return "--";
@@ -424,8 +440,8 @@ export function WeatherOverlay({
     <div className="weather-modal-backdrop" onClick={handleBackdropClick}>
       <div
         className="weather-modal-card"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
+        onTouchStart={handlePageTouchStart}
+        onTouchEnd={handlePageTouchEnd}
       >
         {/* --- HEADER --- */}
         <div className="weather-header">
@@ -453,217 +469,220 @@ export function WeatherOverlay({
             <WindIcon size={32} color="rgba(255,255,255,0.4)" />
             <span className="pulse-text">Syncing Buoy Data...</span>
           </div>
-        ) : currentPage === 0 ? (
-          <div className="weather-content">
-            {/* TEMPERATURE SECTION */}
-            <div className="temp-section">
-              <div className="temp-hero-stack">
-                <span className="hero-temp">{renderValue(data.temp)}°</span>
-                {data.waterTemp !== null && (
-                  <div
-                    className="water-temp-row"
-                    onMouseEnter={() => setShowWaterTooltip(true)}
-                    onMouseLeave={() => setShowWaterTooltip(false)}
-                    onTouchStart={() => setShowWaterTooltip(true)}
-                    onTouchEnd={() => setTimeout(() => setShowWaterTooltip(false), 2000)}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="#4A90E2">
-                      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                    </svg>
-                    <span className="water-temp-value">~{renderValue(data.waterTemp)}°</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M12 16v-4M12 8h.01" />
-                    </svg>
-                    {showWaterTooltip && (
-                      <div className="water-tooltip">
-                        Water temp is estimated based on the past 5 days of air temperature trends
-                        <div className="water-tooltip-arrow" />
+        ) : (
+          <div className="page-slider-container">
+            <div
+              className="page-slider-track"
+              style={{ transform: `translateX(${-currentPage * 100}%)` }}
+            >
+              {/* PAGE 0: WEATHER */}
+              <div className="page-slide">
+                {/* TEMPERATURE SECTION */}
+                <div className="temp-section">
+                  <div className="temp-hero-stack">
+                    <span className="hero-temp">{renderValue(data.temp)}°</span>
+                    {data.waterTemp !== null && (
+                      <div
+                        className="water-temp-row"
+                        onMouseEnter={() => setShowWaterTooltip(true)}
+                        onMouseLeave={() => setShowWaterTooltip(false)}
+                        onTouchStart={() => setShowWaterTooltip(true)}
+                        onTouchEnd={() => setTimeout(() => setShowWaterTooltip(false), 2000)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="#4A90E2">
+                          <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                        </svg>
+                        <span className="water-temp-value">~{renderValue(data.waterTemp)}°</span>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 16v-4M12 8h.01" />
+                        </svg>
+                        {showWaterTooltip && (
+                          <div className="water-tooltip">
+                            Water temp is estimated based on the past 5 days of air temperature trends
+                            <div className="water-tooltip-arrow" />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-              <div className="temp-details">
-                <span className="temp-detail">H: {renderValue(data.tempHigh)}°</span>
-                <span className="temp-detail">L: {renderValue(data.tempLow)}°</span>
-                <span className="temp-detail feels">Feels: {renderValue(data.feelsLike)}°</span>
-              </div>
-            </div>
-
-            <div className="weather-divider" />
-
-            {/* GAUGE CARDS */}
-            <div className="gauge-grid">
-              {/* WIND CARD */}
-              <div className="gauge-card">
-                <div className="gauge-header">
-                  <WindIcon size={18} />
-                  <span className="gauge-title">WIND</span>
-                </div>
-                <div className="gauge-body">
-                  <WindCompassGauge direction={data.windDir} speed={data.windSpeed} />
-                  {data.windGust !== null && data.windSpeed !== null && data.windGust > data.windSpeed + 5 && (
-                    <span className={`gust-label ${getGustClass(data.windGust, data.windSpeed)}`}>
-                      Gusts: {Math.round(data.windGust)} mph
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* PRESSURE CARD */}
-              <div className="gauge-card">
-                <div className="gauge-header">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v6l4 2" strokeLinecap="round" />
-                  </svg>
-                  <span className="gauge-title">PRESSURE</span>
-                </div>
-                <div className="gauge-body" style={{ paddingTop: 0 }}>
-                  <PressureArcGauge pressure={data.pressure} />
-                </div>
-              </div>
-            </div>
-
-            {/* METRICS BAR */}
-            <div className="metrics-bar">
-              <div className="metric-item">
-                <EyeIcon size={22} />
-                <span className="metric-label">VIS</span>
-                <span className="metric-value">{renderValue(data.visibility)} mi</span>
-              </div>
-              <div className="metric-item">
-                <HumidityIcon size={22} />
-                <span className="metric-label">HUM</span>
-                <span className="metric-value">{renderValue(data.humidity)}%</span>
-              </div>
-              <div className="metric-item">
-                <PrecipitationIcon size={22} />
-                <span className="metric-label">PRECIP</span>
-                <span className="metric-value">{data.precipitation > 0 ? `${data.precipitation.toFixed(1)}"` : '0"'}</span>
-              </div>
-            </div>
-
-            {/* PAGE INDICATOR */}
-            <div className="page-indicator">
-              <div className="page-dot active" onClick={() => setCurrentPage(0)} />
-              <div className="page-dot" onClick={() => setCurrentPage(1)} />
-            </div>
-          </div>
-        ) : (
-          <div className="lure-page">
-            {/* Lure count indicator */}
-            {recommendedLures.length > 1 && (
-              <div className="lure-page-header">
-                <span className="lure-count">{lureIndex + 1} of {recommendedLures.length}</span>
-              </div>
-            )}
-
-            {/* Blur gate for free users */}
-            {!isActive ? (
-              <div className="lure-blur-container">
-                <div className="lure-card blurred">
-                  {currentLure && (
-                    <>
-                      <div className="lure-card-image">
-                        <img
-                          src={currentLure.image}
-                          alt={currentLure.display_name}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "/images/lures/placeholder.png";
-                          }}
-                        />
-                      </div>
-                      <div className="lure-card-content">
-                        <h3 className="lure-card-name">{currentLure.display_name}</h3>
-                        <p className="lure-card-tagline">{currentLure.tagline}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className="lure-upgrade-overlay" onClick={handleUpgradeClick}>
-                  <div className="upgrade-icon">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
+                  <div className="temp-details">
+                    <span className="temp-detail">H: {renderValue(data.tempHigh)}°</span>
+                    <span className="temp-detail">L: {renderValue(data.tempLow)}°</span>
+                    <span className="temp-detail feels">Feels: {renderValue(data.feelsLike)}°</span>
                   </div>
-                  <span className="upgrade-text">Upgrade to Pro</span>
-                  <span className="upgrade-subtext">Get condition-based lure suggestions</span>
+                </div>
+
+                <div className="weather-divider" />
+
+                {/* GAUGE CARDS */}
+                <div className="gauge-grid">
+                  {/* WIND CARD */}
+                  <div className="gauge-card">
+                    <div className="gauge-header">
+                      <WindIcon size={18} />
+                      <span className="gauge-title">WIND</span>
+                    </div>
+                    <div className="gauge-body">
+                      <WindCompassGauge direction={data.windDir} speed={data.windSpeed} />
+                      {data.windGust !== null && data.windSpeed !== null && data.windGust > data.windSpeed + 5 && (
+                        <span className={`gust-label ${getGustClass(data.windGust, data.windSpeed)}`}>
+                          Gusts: {Math.round(data.windGust)} mph
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* PRESSURE CARD */}
+                  <div className="gauge-card">
+                    <div className="gauge-header">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 6v6l4 2" strokeLinecap="round" />
+                      </svg>
+                      <span className="gauge-title">PRESSURE</span>
+                    </div>
+                    <div className="gauge-body" style={{ paddingTop: 0 }}>
+                      <PressureArcGauge pressure={data.pressure} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* METRICS BAR */}
+                <div className="metrics-bar">
+                  <div className="metric-item">
+                    <EyeIcon size={22} />
+                    <span className="metric-label">VIS</span>
+                    <span className="metric-value">{renderValue(data.visibility)} mi</span>
+                  </div>
+                  <div className="metric-item">
+                    <HumidityIcon size={22} />
+                    <span className="metric-label">HUM</span>
+                    <span className="metric-value">{renderValue(data.humidity)}%</span>
+                  </div>
+                  <div className="metric-item">
+                    <PrecipitationIcon size={22} />
+                    <span className="metric-label">PRECIP</span>
+                    <span className="metric-value">{data.precipitation > 0 ? `${data.precipitation.toFixed(1)}"` : '0"'}</span>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <>
-                {currentLure && (
-                  <div className="lure-card">
-                    {/* Image section - click to open lure library */}
-                    <div
-                      className="lure-card-image"
-                      onClick={(e) => handleLureImageClick(e, currentLure)}
-                    >
-                      <img
-                        src={currentLure.image}
-                        alt={currentLure.display_name}
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/images/lures/placeholder.png";
-                        }}
-                      />
-                      <span className="tap-hint">Tap for details</span>
+
+              {/* PAGE 1: LURE SUGGESTIONS */}
+              <div className="page-slide">
+                {/* Blur gate for free users */}
+                {!isActive ? (
+                  <div className="lure-blur-container">
+                    <div className="lure-card blurred">
+                      {currentLure && (
+                        <>
+                          <div className="lure-card-image">
+                            <img
+                              src={currentLure.image}
+                              alt={currentLure.display_name}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/images/lures/placeholder.png";
+                              }}
+                            />
+                          </div>
+                          <div className="lure-card-content">
+                            <h3 className="lure-card-name">{currentLure.display_name}</h3>
+                            <p className="lure-card-tagline">{currentLure.tagline}</p>
+                          </div>
+                        </>
+                      )}
                     </div>
-
-                    {/* Content section */}
-                    <div className="lure-card-content">
-                      <h3 className="lure-card-name">{currentLure.display_name}</h3>
-                      <p className="lure-card-description">{getBriefDescription(currentLure.description)}</p>
-
-                      {/* Metadata grid */}
-                      <div className="lure-card-meta">
-                        {currentLure.temp_range && (
-                          <div className="meta-row">
-                            <span className="meta-label">Temp:</span>
-                            <span className="meta-value">{currentLure.temp_range.min}°–{currentLure.temp_range.max}°F</span>
-                          </div>
-                        )}
-                        {currentLure.cover_type.length > 0 && (
-                          <div className="meta-row">
-                            <span className="meta-label">Cover:</span>
-                            <span className="meta-value">{currentLure.cover_type.slice(0, 2).join(", ")}</span>
-                          </div>
-                        )}
-                        {matchingSeasons.length > 0 && (
-                          <div className="meta-row">
-                            <span className="meta-label">Season:</span>
-                            <span className="meta-value">{matchingSeasons.join(", ")}</span>
-                          </div>
-                        )}
-                        {matchingConditions.length > 0 && (
-                          <div className="meta-row">
-                            <span className="meta-label">Conditions:</span>
-                            <span className="meta-value">{matchingConditions.join(", ")}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Cycle button at bottom right of card */}
-                    {recommendedLures.length > 1 && (
-                      <div className="cycle-hint" onClick={cycleLure}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <polyline points="23 4 23 10 17 10" />
-                          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                    <div className="lure-upgrade-overlay" onClick={handleUpgradeClick}>
+                      <div className="upgrade-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
                       </div>
+                      <span className="upgrade-text">Upgrade to Pro</span>
+                      <span className="upgrade-subtext">Get condition-based lure suggestions</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="lure-slider-container"
+                    onTouchStart={handleLureTouchStart}
+                    onTouchEnd={handleLureTouchEnd}
+                  >
+                    {currentLure && (
+                      <div className="lure-card">
+                        {/* Image section - click to open lure library */}
+                        <div
+                          className="lure-card-image"
+                          onClick={(e) => handleLureImageClick(e, currentLure)}
+                        >
+                          <img
+                            src={currentLure.image}
+                            alt={currentLure.display_name}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/images/lures/placeholder.png";
+                            }}
+                          />
+                          <span className="tap-hint">Tap for details</span>
+                        </div>
+
+                        {/* Content section */}
+                        <div className="lure-card-content">
+                          <h3 className="lure-card-name">{currentLure.display_name}</h3>
+                          <p className="lure-card-description">{getBriefDescription(currentLure.description)}</p>
+
+                          {/* Metadata grid */}
+                          <div className="lure-card-meta">
+                            {currentLure.temp_range && (
+                              <div className="meta-row">
+                                <span className="meta-label">Temp:</span>
+                                <span className="meta-value">{currentLure.temp_range.min}°–{currentLure.temp_range.max}°F</span>
+                              </div>
+                            )}
+                            {currentLure.cover_type.length > 0 && (
+                              <div className="meta-row">
+                                <span className="meta-label">Cover:</span>
+                                <span className="meta-value">{currentLure.cover_type.slice(0, 2).join(", ")}</span>
+                              </div>
+                            )}
+                            {matchingSeasons.length > 0 && (
+                              <div className="meta-row">
+                                <span className="meta-label">Season:</span>
+                                <span className="meta-value">{matchingSeasons.join(", ")}</span>
+                              </div>
+                            )}
+                            {matchingConditions.length > 0 && (
+                              <div className="meta-row">
+                                <span className="meta-label">Conditions:</span>
+                                <span className="meta-value">{matchingConditions.join(", ")}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Lure breadcrumb dots */}
+                    {recommendedLures.length > 1 && (
+                      <div className="lure-dots">
+                        {recommendedLures.map((_, i) => (
+                          <div
+                            key={i}
+                            className={`lure-dot ${i === lureIndex ? "active" : ""}`}
+                            onClick={() => setLureIndex(i)}
+                          />
+                        ))}
+                      </div>
                     )}
                   </div>
                 )}
-              </>
-            )}
+              </div>
+            </div>
 
-            {/* PAGE INDICATOR */}
+            {/* PAGE INDICATOR - outside slider track */}
             <div className="page-indicator">
-              <div className="page-dot" onClick={() => setCurrentPage(0)} />
-              <div className="page-dot active" onClick={() => setCurrentPage(1)} />
+              <div className={`page-dot ${currentPage === 0 ? "active" : ""}`} onClick={() => setCurrentPage(0)} />
+              <div className={`page-dot ${currentPage === 1 ? "active" : ""}`} onClick={() => setCurrentPage(1)} />
             </div>
           </div>
         )}
@@ -671,7 +690,7 @@ export function WeatherOverlay({
 
       <style>{`
         .weather-modal-backdrop { position: fixed; inset: 0; z-index: 2000; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 24px; animation: fade-in 0.2s ease-out; }
-        .weather-modal-card { width: 100%; max-width: 340px; background: rgba(18, 18, 24, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; padding: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.7); color: white; animation: scale-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .weather-modal-card { width: 100%; max-width: 340px; height: 520px; max-height: 85vh; background: rgba(18, 18, 24, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; padding: 28px; box-shadow: 0 25px 60px rgba(0,0,0,0.7); color: white; animation: scale-up 0.3s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
 
         .weather-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; gap: 12px; position: relative; }
         .header-text { display: flex; flex-direction: column; gap: 2px; flex: 1; }
@@ -687,7 +706,12 @@ export function WeatherOverlay({
         .weather-status-box { height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.02); border-radius: 20px; font-size: 0.9rem; font-weight: 500; }
         .pulse-text { animation: pulse 2s infinite; }
 
-        .weather-content { animation: fade-in 0.3s ease-out; }
+        /* HORIZONTAL PAGE SLIDER */
+        .page-slider-container { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .page-slider-track { display: flex; flex: 1; min-height: 0; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .page-slide { flex: 0 0 100%; width: 100%; display: flex; flex-direction: column; overflow: hidden; }
+
+        .weather-content { animation: fade-in 0.3s ease-out; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
         /* TEMPERATURE SECTION */
         .temp-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -722,34 +746,34 @@ export function WeatherOverlay({
         .metric-value { font-size: 0.95rem; font-weight: 700; color: #fff; }
 
         /* PAGE INDICATOR DOTS */
-        .page-indicator { display: flex; justify-content: center; gap: 6px; margin-top: 16px; padding-top: 12px; }
+        .page-indicator { display: flex; justify-content: center; gap: 6px; margin-top: auto; padding-top: 12px; flex-shrink: 0; }
         .page-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.25); transition: all 0.3s ease; cursor: pointer; }
         .page-dot:hover { background: rgba(255,255,255,0.4); }
         .page-dot.active { width: 18px; border-radius: 3px; background: #4A90E2; }
 
-        /* LURE SUGGESTION PAGE */
-        .lure-page { animation: fade-in 0.3s ease-out; }
-        .lure-page-header { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-        .lure-count { font-size: 0.75rem; color: rgba(255,255,255,0.4); font-weight: 600; }
+        /* LURE SLIDER CONTAINER */
+        .lure-slider-container { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+        /* LURE BREADCRUMB DOTS */
+        .lure-dots { display: flex; justify-content: center; gap: 8px; padding: 12px 0 4px; flex-shrink: 0; }
+        .lure-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.1); transition: all 0.25s ease; cursor: pointer; }
+        .lure-dot:hover { background: rgba(255,255,255,0.35); }
+        .lure-dot.active { background: #4A90E2; border-color: rgba(74, 144, 226, 0.5); box-shadow: 0 0 8px rgba(74, 144, 226, 0.4); }
 
         /* FULL-WIDTH LURE CARD */
-        .lure-card { position: relative; width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden; cursor: pointer; transition: transform 0.2s ease, border-color 0.2s ease; }
+        .lure-card { position: relative; width: 100%; flex: 1; min-height: 0; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden; cursor: pointer; transition: transform 0.2s ease, border-color 0.2s ease; display: flex; flex-direction: column; }
         .lure-card:hover { border-color: rgba(74, 144, 226, 0.3); }
         .lure-card:active { transform: scale(0.98); }
 
-        .lure-card-image { position: relative; width: 100%; height: 180px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease; }
+        .lure-card-image { position: relative; width: 100%; height: 140px; flex-shrink: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s ease; }
         .lure-card-image:hover { background: rgba(0,0,0,0.4); }
-        .lure-card-image img { max-width: 90%; max-height: 160px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
+        .lure-card-image img { max-width: 90%; max-height: 120px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5)); }
         .tap-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: rgba(255,255,255,0.4); font-weight: 500; }
 
-        .cycle-hint { position: absolute; bottom: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; background: rgba(74, 144, 226, 0.25); border: 1px solid rgba(74, 144, 226, 0.5); display: flex; align-items: center; justify-content: center; color: #4A90E2; cursor: pointer; transition: all 0.2s ease; z-index: 10; }
-        .cycle-hint:hover { background: rgba(74, 144, 226, 0.4); transform: scale(1.1); }
-        .cycle-hint:active { transform: scale(0.95); }
+        .lure-card-content { padding: 12px 16px 14px; flex: 1; overflow-y: auto; min-height: 0; }
 
-        .lure-card-content { padding: 14px 16px 16px; }
-
-        .lure-card-name { font-size: 1.05rem; font-weight: 700; color: #fff; margin: 0 0 8px; line-height: 1.2; }
-        .lure-card-description { font-size: 0.75rem; color: rgba(255,255,255,0.6); font-weight: 400; margin: 0 0 14px; line-height: 1.5; }
+        .lure-card-name { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 6px; line-height: 1.2; }
+        .lure-card-description { font-size: 0.7rem; color: rgba(255,255,255,0.6); font-weight: 400; margin: 0 0 10px; line-height: 1.45; max-height: 3.5em; overflow: hidden; }
 
         .lure-card-meta { display: flex; flex-direction: column; gap: 6px; }
         .meta-row { display: flex; gap: 6px; font-size: 0.75rem; line-height: 1.3; }
@@ -757,8 +781,8 @@ export function WeatherOverlay({
         .meta-value { color: rgba(255,255,255,0.8); font-weight: 500; }
 
         /* BLUR GATE FOR FREE USERS */
-        .lure-blur-container { position: relative; width: 100%; }
-        .lure-card.blurred { filter: blur(10px); pointer-events: none; opacity: 0.7; }
+        .lure-blur-container { position: relative; width: 100%; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+        .lure-card.blurred { filter: blur(10px); pointer-events: none; opacity: 0.7; flex: 1; }
 
         .lure-upgrade-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: rgba(18, 18, 24, 0.4); border-radius: 20px; cursor: pointer; transition: background 0.2s ease; }
         .lure-upgrade-overlay:hover { background: rgba(18, 18, 24, 0.6); }
