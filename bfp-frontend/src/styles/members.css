@@ -297,9 +297,9 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
-/* Icon styling - brand blue icons */
+/* Icon styling - brand blue icons (#4A90E2) */
 .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
-  filter: invert(44%) sepia(98%) saturate(1037%) hue-rotate(193deg) brightness(97%) contrast(85%);
+  filter: invert(51%) sepia(53%) saturate(859%) hue-rotate(184deg) brightness(92%) contrast(89%);
   opacity: 1;
   transform: scale(0.85);
 }
