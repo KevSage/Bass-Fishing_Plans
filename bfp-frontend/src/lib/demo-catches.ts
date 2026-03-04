@@ -11,7 +11,7 @@
 // ==========================================
 // TOGGLE THIS FOR SCREENSHOT BUILDS
 // ==========================================
-const ENABLE_DEMO_CATCHES = true;
+const ENABLE_DEMO_CATCHES = false;
 // ==========================================
 
 // Lake Lanier center coordinates (for lakeLat/lakeLng filtering)

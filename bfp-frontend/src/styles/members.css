@@ -817,6 +817,14 @@
   padding: 16px;
 }
 
+/* Position modal higher on mobile to avoid keyboard obscuring search results */
+@media (max-width: 768px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+}
+
 .modal-content {
   width: 100%;
   max-width: 420px;
