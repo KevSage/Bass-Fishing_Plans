@@ -172,12 +172,56 @@ const PressureArcGauge = ({ pressure }: { pressure: number | null }) => {
 };
 
 // --- LURE SELECTION LOGIC ---
+
+// Get current fishing season based on month
+const getCurrentSeason = (): string => {
+  const month = new Date().getMonth(); // 0-11
+  if (month >= 2 && month <= 4) return "Pre-Spawn"; // Mar-May
+  if (month === 5) return "Spawn"; // June
+  if (month === 6) return "Post-Spawn"; // July
+  if (month >= 7 && month <= 9) return "Summer"; // Aug-Oct
+  if (month >= 10 || month <= 0) return "Fall"; // Nov-Jan
+  return "Winter"; // Feb
+};
+
+// Slot mapping based on canonical_presentation
+const PRESENTATION_TO_SLOT: Record<string, "bottom" | "moving" | "situational"> = {
+  "Bottom Contact - Dragging": "bottom",
+  "Bottom Contact - Hopping / Targeted": "bottom",
+  "Horizontal Reaction": "moving",
+  "Topwater - Horizontal": "situational",
+  "Topwater - Precision / Vertical Surface Work": "situational",
+  "Vertical Reaction": "situational",
+  "Hovering / Mid-Column Finesse": "situational",
+};
+
+// Get the primary slot for a lure (uses first presentation)
+const getLureSlot = (lure: LureData): "bottom" | "moving" | "situational" => {
+  for (const pres of lure.canonical_presentation) {
+    const slot = PRESENTATION_TO_SLOT[pres];
+    if (slot) return slot;
+  }
+  return "situational"; // Default fallback
+};
+
+// Preferred situational presentation by season
+const SEASON_SITUATIONAL_PREFERENCE: Record<string, string[]> = {
+  "Summer": ["Topwater - Horizontal", "Topwater - Precision / Vertical Surface Work"],
+  "Post-Spawn": ["Topwater - Horizontal", "Topwater - Precision / Vertical Surface Work"],
+  "Fall": ["Vertical Reaction", "Topwater - Horizontal"],
+  "Winter": ["Vertical Reaction", "Hovering / Mid-Column Finesse"],
+  "Pre-Spawn": ["Vertical Reaction", "Hovering / Mid-Column Finesse"],
+  "Spawn": ["Hovering / Mid-Column Finesse", "Topwater - Precision / Vertical Surface Work"],
+};
+
 const selectLuresForConditions = (
   temp: number | null,
   conditions: string[],
-  windSpeed: number | null
+  windSpeed: number | null,
+  season?: string
 ): LureData[] => {
   const lures = Object.values(LURE_CATALOG);
+  const currentSeason = season || getCurrentSeason();
 
   // Score each lure based on conditions
   const scored = lures.map((lure) => {
@@ -221,14 +265,56 @@ const selectLuresForConditions = (
       if (lure.finesse) score += 5;
     }
 
-    return { lure, score };
+    // Season affinity bonus
+    if (lure.season_affinity.includes(currentSeason)) {
+      score += 10;
+    }
+
+    // Situational slot: bonus for season-preferred presentations
+    const slot = getLureSlot(lure);
+    if (slot === "situational") {
+      const preferredPres = SEASON_SITUATIONAL_PREFERENCE[currentSeason] || [];
+      for (const pres of lure.canonical_presentation) {
+        if (preferredPres.includes(pres)) {
+          score += 15; // Bonus for matching seasonal situational preference
+          break;
+        }
+      }
+    }
+
+    return { lure, score, slot };
   });
 
-  // Sort by score and return top 3
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
-    .map((s) => s.lure);
+  // Group by slot and pick best from each
+  const bySlot: Record<string, typeof scored> = {
+    bottom: [],
+    moving: [],
+    situational: [],
+  };
+
+  scored.forEach((item) => {
+    bySlot[item.slot].push(item);
+  });
+
+  // Sort each slot by score
+  Object.keys(bySlot).forEach((slot) => {
+    bySlot[slot].sort((a, b) => b.score - a.score);
+  });
+
+  // Pick best from each slot: bottom, moving, situational
+  const result: LureData[] = [];
+
+  if (bySlot.bottom.length > 0) {
+    result.push(bySlot.bottom[0].lure);
+  }
+  if (bySlot.moving.length > 0) {
+    result.push(bySlot.moving[0].lure);
+  }
+  if (bySlot.situational.length > 0) {
+    result.push(bySlot.situational[0].lure);
+  }
+
+  return result;
 };
 
 // Map weather conditions to lure condition tags
@@ -250,17 +336,6 @@ const mapWeatherToConditions = (sky: string, precip: number): string[] => {
   }
 
   return conditions;
-};
-
-// Get current fishing season based on month
-const getCurrentSeason = (): string => {
-  const month = new Date().getMonth(); // 0-11
-  if (month >= 2 && month <= 4) return "Pre-Spawn"; // Mar-May
-  if (month === 5) return "Spawn"; // June
-  if (month === 6) return "Post-Spawn"; // July
-  if (month >= 7 && month <= 9) return "Summer"; // Aug-Oct
-  if (month >= 10 || month <= 0) return "Fall"; // Nov-Jan
-  return "Winter"; // Feb
 };
 
 // --- MAIN COMPONENT ---
@@ -711,9 +786,9 @@ export function WeatherOverlay({
         .temp-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .temp-hero-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
         .hero-temp { font-size: 3.2rem; font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: #fff; }
-        .water-temp-row { position: relative; display: flex; align-items: center; gap: 5px; background: rgba(74, 144, 226, 0.12); border: 1px solid rgba(74, 144, 226, 0.25); padding: 4px 10px; border-radius: 10px; cursor: help; }
+        .water-temp-row { position: relative; display: flex; align-items: center; gap: 5px; background: rgba(74, 144, 226, 0.12); border: 1px solid rgba(74, 144, 226, 0.25); padding: 4px 10px; border-radius: 10px; cursor: help; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
         .water-temp-value { font-size: 0.9rem; font-weight: 700; color: #4A90E2; }
-        .water-tooltip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.95); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; width: 200px; z-index: 100; box-shadow: 0 4px 16px rgba(0,0,0,0.5); font-size: 0.7rem; color: rgba(255,255,255,0.9); line-height: 1.4; text-align: center; }
+        .water-tooltip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.95); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; width: 200px; z-index: 9999; box-shadow: 0 4px 16px rgba(0,0,0,0.5); font-size: 0.7rem; color: rgba(255,255,255,0.9); line-height: 1.4; text-align: center; -webkit-user-select: none; user-select: none; }
         .water-tooltip-arrow { position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 7px solid rgba(0, 0, 0, 0.95); }
         .temp-details { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
         .temp-detail { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.6); }

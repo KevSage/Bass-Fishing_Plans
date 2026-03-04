@@ -1071,7 +1071,7 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
     setShowBatchDrawer(true);
   };
 
-  const handleDownloadJson = () => {
+  const handleSaveLakes = async () => {
     // 1. STAGE 1: Merge by ID (Handles renames/updates within current session)
     // Keys are random temp_ids assigned at load. This ensures that if I update "Lake A",
     // the original "Lake A" entry is overwritten.
@@ -1109,21 +1109,29 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
 
     const finalArray = Array.from(uniqueMap.values());
 
-    const dataStr = JSON.stringify(finalArray, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
+    try {
+      const response = await fetch(`${API_BASE}/admin/lakes/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Password": ADMIN_PASSWORD,
+        },
+        body: JSON.stringify({ lakes: finalArray }),
+      });
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "lakes.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || "Failed to save");
+      }
 
-    alert(
-      `Cleaned & Exported: Collapsed ${idMap.size} raw entries into ${finalArray.length} unique lakes.`,
-    );
+      const result = await response.json();
+      alert(
+        `Saved to src/data/lakes.json!\nCollapsed ${idMap.size} raw entries into ${result.count} unique lakes.`,
+      );
+    } catch (error) {
+      console.error("Save error:", error);
+      alert(`Failed to save: ${error}`);
+    }
   };
 
   // ==========================================
@@ -1256,7 +1264,7 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
             }}
           >
             <button
-              onClick={handleDownloadJson}
+              onClick={handleSaveLakes}
               disabled={batchQueue.length === 0}
               className="generate-btn"
               style={{
@@ -1266,7 +1274,7 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
                 opacity: batchQueue.length === 0 ? 0.5 : 1,
               }}
             >
-              <DownloadIcon /> Download lakes.json
+              <DownloadIcon /> Save to src/data
             </button>
           </div>
         </div>

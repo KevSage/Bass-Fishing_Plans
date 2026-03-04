@@ -6,7 +6,9 @@ Protected by simple password authentication.
 from __future__ import annotations
 
 import os
-from typing import Optional
+import json
+from pathlib import Path
+from typing import Optional, List, Any
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, EmailStr
 
@@ -127,3 +129,36 @@ def add_subscriber(
         "email": request.email,
         "active": request.active,
     }
+
+
+# =============================================================================
+# LAKES MANAGEMENT
+# =============================================================================
+
+class SaveLakesRequest(BaseModel):
+    lakes: List[Any]
+
+
+@router.post("/lakes/save")
+def save_lakes(
+    request: SaveLakesRequest,
+    password: str = Header(..., alias="X-Admin-Password"),
+):
+    """Save lakes.json to the frontend src/data directory."""
+    verify_admin(password)
+
+    # Path relative to the api app directory
+    api_dir = Path(__file__).parent.parent.parent  # apps/api/app/routes -> apps/api
+    lakes_path = api_dir.parent.parent / "bfp-frontend" / "src" / "data" / "lakes.json"
+
+    try:
+        with open(lakes_path, "w") as f:
+            json.dump(request.lakes, f, indent=2)
+
+        return {
+            "success": True,
+            "count": len(request.lakes),
+            "path": str(lakes_path),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save lakes: {str(e)}")

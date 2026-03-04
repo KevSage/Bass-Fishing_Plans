@@ -36,6 +36,7 @@ from app.canon.pools import (
     JIG_TRAILERS,
     # lure-specific color pools (ONLY colors allowed)
     get_color_pool_for_lure,
+    get_fallback_color,
     RIG_COLORS,
     BLADED_SKIRTED_COLORS,
     SOFT_SWIMBAIT_COLORS,
@@ -2069,9 +2070,24 @@ def _validate_pattern(pattern: Dict[str, Any], pattern_name: str) -> List[str]:
         soft_plastic = pattern.get("soft_plastic", None)
         valid_colors = get_color_pool_for_lure(base_lure, soft_plastic)
 
-        for color in colors:
+        # AUTO-CORRECT: Replace invalid colors with fallbacks
+        corrected_colors = []
+        for i, color in enumerate(colors):
             if color not in valid_colors:
-                errors.append(pattern_name + ": Invalid color '" + color + "' for " + base_lure + ". Allowed colors: " + str(valid_colors))
+                fallback = get_fallback_color(color, valid_colors)
+                if fallback:
+                    print(f"AUTO-CORRECTED {pattern_name}: color '{color}' -> '{fallback}' for {base_lure}")
+                    corrected_colors.append(fallback)
+                else:
+                    # No fallback found - this will still error
+                    corrected_colors.append(color)
+                    errors.append(pattern_name + ": Invalid color '" + color + "' for " + base_lure + ". Allowed colors: " + str(valid_colors))
+            else:
+                corrected_colors.append(color)
+
+        # Update pattern with corrected colors
+        pattern["color_recommendations"] = corrected_colors
+        colors = corrected_colors
 
         # additional lure/color compatibility checks
         color_errs = validate_colors_for_lure(base_lure, colors, soft_plastic)

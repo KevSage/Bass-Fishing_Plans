@@ -146,108 +146,152 @@ const grid2Col = {
 
 function ComparisonTable() {
   return (
-    <div className="pricing-grid">
-      {/* FREE TIER */}
-      <div className="pricing-card free">
-        <div className="card-header">
-          <div className="water-text" style={{ ...eyebrow, marginBottom: 8 }}>
-            Free Tier
+    <div className="pricing-card pro" style={{ maxWidth: 420, margin: "0 auto" }}>
+      <div className="popular-badge">NOW AVAILABLE</div>
+      <div className="card-header">
+        {/* App Icon + Name */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            marginBottom: 16,
+          }}
+        >
+          <img
+            src="/images/appstore/bass-clarity.png"
+            alt="Bass Clarity"
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: 10,
+            }}
+          />
+          <div style={{ textAlign: "left" }}>
+            <div
+              style={{
+                fontSize: "1.1rem",
+                fontWeight: 700,
+                color: "#fff",
+              }}
+            >
+              Bass Clarity
+            </div>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "rgba(255,255,255,0.6)",
+              }}
+            >
+              Available on iPhone
+            </div>
           </div>
-          <h3 className="plan-name">Angler</h3>
-          <p className="plan-desc">Build your Catchlog & map history.</p>
         </div>
-
-        <div className="features-list">
-          <div className="feature-row">
-            <CheckIcon size={18} /> Unlimited Catch Logging
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Interactive Map Dashboard
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> 1 Home Lake (Weather)
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Auto Image Location Extraction
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Lure Library
-          </div>
-          <div className="feature-row dim">
-            <XIcon size={18} /> AI Fishing Plan Generator
-          </div>
-          <div className="feature-row dim">
-            <XIcon size={18} /> Advanced Insights
-          </div>
-          <div className="feature-row dim">
-            <XIcon size={18} /> Action Camera Uploads
-          </div>
-          <div className="feature-row dim">
-            <XIcon size={18} />
-            Lake Customization
-          </div>
-        </div>
-
-        <Link to="/subscribe" className="plan-btn secondary">
-          Start - Free
-        </Link>
+        <p className="plan-desc" style={{ marginTop: 8 }}>
+          Intelligent fishing companion
+        </p>
       </div>
 
-      {/* PRO TIER */}
-      <div className="pricing-card pro">
-        <div className="popular-badge">MOST POPULAR</div>
-        <div className="card-header">
-          <div
-            className="water-text"
-            style={{ ...eyebrow, marginBottom: 8, color: "#4A90E2" }}
-          >
-            Pro Tier
-          </div>
-          <h3 className="plan-name">
-            Pro{" "}
-            <span>
-              $10<span className="period">/mo</span>
-            </span>
-          </h3>
-          <p className="plan-desc">Full predictive intelligence.</p>
-        </div>
-
-        <div className="features-list">
-          <div className="feature-row highlight">
-            <CrownIcon size={18} /> <strong>Everything in Angler</strong>
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Unlimited Lakes and Live Weather
-          </div>
-
-          <div className="feature-row">
-            <CheckIcon size={18} /> Unlimited AI Strategy Engine
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Quick Action Camera Upload
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Full Featured Insights
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Lake Customization
-          </div>
-          <div className="feature-row">
-            <CheckIcon size={18} /> Daily Catchlog
-          </div>
-        </div>
-
-        <Link to="/subscribe" className="plan-btn primary">
-          Get Bass Clarity Pro
-        </Link>
-        <p
+      <div className="features-list">
+        {/* Free tier header */}
+        <div
           style={{
-            textAlign: "center",
-            fontSize: "0.8rem",
-            opacity: 0.6,
-            marginTop: 12,
+            fontSize: "0.75rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            opacity: 0.5,
+            marginBottom: 8,
           }}
-        ></p>
+        >
+          Included Free
+        </div>
+        {/* Free tier features - dimmer */}
+        <div className="feature-row" style={{ opacity: 0.55, fontSize: "0.9em" }}>
+          <CheckIcon size={16} /> Unlimited Catch Logging
+        </div>
+        <div className="feature-row" style={{ opacity: 0.55, fontSize: "0.9em" }}>
+          <CheckIcon size={16} /> Interactive Map Dashboard
+        </div>
+        <div className="feature-row" style={{ opacity: 0.55, fontSize: "0.9em" }}>
+          <CheckIcon size={16} /> 1 Home Lake (Weather)
+        </div>
+        <div className="feature-row" style={{ opacity: 0.55, fontSize: "0.9em" }}>
+          <CheckIcon size={16} /> Auto Image Location Extraction
+        </div>
+        <div className="feature-row" style={{ opacity: 0.55, fontSize: "0.9em" }}>
+          <CheckIcon size={16} /> Lure Library
+        </div>
+
+        {/* Pro features - prominent */}
+        <div className="feature-row highlight" style={{ marginTop: 16 }}>
+          <CrownIcon size={18} /> <strong>Pro $10/mo</strong>
+        </div>
+        <div className="feature-row">
+          <CheckIcon size={18} /> Unlimited AI Strategy Engine
+        </div>
+        <div className="feature-row">
+          <CheckIcon size={18} /> Unlimited Lakes & Live Weather
+        </div>
+        <div className="feature-row">
+          <CheckIcon size={18} /> Quick Action Camera Upload
+        </div>
+        <div className="feature-row">
+          <CheckIcon size={18} /> Full Featured Insights
+        </div>
+        <div className="feature-row">
+          <CheckIcon size={18} /> Lake Customization
+        </div>
+        <div className="feature-row">
+          <CheckIcon size={18} /> Daily Catchlog
+        </div>
+      </div>
+
+      {/* App Store Badge */}
+      <div style={{ textAlign: "center", marginTop: 20 }}>
+        <a
+          href="https://apple.co/46AM73x"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: "inline-block",
+            cursor: "pointer",
+            transition: "opacity 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "0.85";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
+        >
+          <img
+            src="/images/appstore/app-store-badge.svg"
+            alt="Download on the App Store"
+            style={{ height: 48 }}
+          />
+        </a>
+      </div>
+
+      {/* Web Version Link */}
+      <div style={{ textAlign: "center", marginTop: 16 }}>
+        <Link
+          to="/subscribe"
+          style={{
+            fontSize: "0.8rem",
+            color: "rgba(255,255,255,0.4)",
+            textDecoration: "none",
+            transition: "color 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "rgba(255,255,255,0.4)";
+          }}
+        >
+          Use Web Version →
+        </Link>
       </div>
     </div>
   );
@@ -290,6 +334,42 @@ export function Landing() {
         overflowX: "clip",
       }}
     >
+      {/* QR Code - Desktop Only */}
+      <div
+        className="desktop-qr"
+        style={{
+          position: "absolute",
+          top: 80,
+          left: 24,
+          zIndex: 50,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        <img
+          src="/images/appstore/qr-code.png"
+          alt="Scan to download Bass Clarity"
+          style={{
+            width: 80,
+            borderRadius: 8,
+            opacity: 0.85,
+          }}
+        />
+        <span
+          style={{
+            fontSize: "0.65rem",
+            color: "rgba(255,255,255,0.5)",
+            textAlign: "center",
+          }}
+        >
+          Scan to
+          <br />
+          download
+        </span>
+      </div>
+
       {/* ================= HERO SECTION ================= */}
       <section
         style={{
@@ -345,6 +425,18 @@ export function Landing() {
           }}
         >
           <Reveal>
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "rgba(255,255,255,0.6)",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                marginBottom: 12,
+                fontWeight: 500,
+              }}
+            >
+              Built for Bass Anglers
+            </p>
             <h1
               style={{
                 ...h1Style,
@@ -374,48 +466,103 @@ export function Landing() {
             </p>
           </Reveal>
 
+          {/* App Store Download CTA */}
+          <Reveal delay={150}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                marginTop: 26,
+                marginBottom: 10,
+              }}
+            >
+              {/* App name row */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                }}
+              >
+                <img
+                  src="/images/appstore/bass-clarity.png"
+                  alt="Bass Clarity App"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 8,
+                  }}
+                />
+                <div style={{ textAlign: "left" }}>
+                  <div
+                    style={{
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      color: "#fff",
+                    }}
+                  >
+                    Bass Clarity
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "rgba(255,255,255,0.6)",
+                    }}
+                  >
+                    Available on iPhone
+                  </div>
+                </div>
+              </div>
+
+              {/* App Store Badge */}
+              <a
+                href="https://apple.co/46AM73x"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "inline-block",
+                  cursor: "pointer",
+                  transition: "opacity 0.15s ease",
+                  marginTop: 16,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.opacity = "0.85";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.opacity = "1";
+                }}
+              >
+                <img
+                  src="/images/appstore/app-store-badge.svg"
+                  alt="Download on the App Store"
+                  style={{ height: 48 }}
+                />
+              </a>
+            </div>
+          </Reveal>
+
           <Reveal delay={200}>
             <Link
               to="/subscribe"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 8,
-                padding: "16px 32px",
-                fontSize: "1.05rem",
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
-                color: "#fff",
-                border: "none",
-                borderRadius: 14,
+                gap: 4,
+                fontSize: "0.85rem",
+                color: "rgba(255,255,255,0.5)",
                 textDecoration: "none",
-                boxShadow: "0 10px 30px rgba(74, 144, 226, 0.3)",
-                transition: "all 0.2s",
+                marginTop: 24,
+                transition: "color 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 15px 40px rgba(74, 144, 226, 0.4)";
+                e.currentTarget.style.color = "rgba(255,255,255,0.8)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow =
-                  "0 10px 30px rgba(74, 144, 226, 0.3)";
+                e.currentTarget.style.color = "rgba(255,255,255,0.5)";
               }}
             >
-              Get Started Free
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
+              Use Web Version →
             </Link>
           </Reveal>
 
@@ -501,14 +648,14 @@ export function Landing() {
                   }}
                 >
                   <video
-                    src="/video/intro1.mov"
+                    src="/video/intro2.mov"
                     autoPlay
                     muted
                     loop
                     playsInline
                     style={{
                       width: "100%",
-                      height: "97.5%",
+                      height: "100%",
                       objectFit: "contain",
                     }}
                   />
@@ -568,7 +715,7 @@ export function Landing() {
                 style={{
                   position: "absolute",
                   top: "5%",
-                  left: "3.1%",
+                  left: "0%",
                   width: "97%",
                   height: "92.4%",
                   borderRadius: "75px",
@@ -578,7 +725,7 @@ export function Landing() {
                 }}
               >
                 <video
-                  src="/video/mapvid2.mov"
+                  src="/video/intro3.mov"
                   autoPlay
                   muted
                   loop
@@ -739,7 +886,7 @@ export function Landing() {
                 }}
               >
                 <video
-                  src="/video/bass-clarity-loading3.mov"
+                  src="/video/enhanced2.mov"
                   autoPlay
                   muted
                   loop
@@ -1210,7 +1357,7 @@ export function Landing() {
                   }}
                 >
                   <img
-                    src="/images/ProductionScreenshots/Jerkbait.png"
+                    src="/images/ProductionScreenshots/lipless.png"
                     alt="Pattern"
                     style={{
                       width: "100%",
@@ -1464,7 +1611,7 @@ export function Landing() {
                   }}
                 >
                   <img
-                    src="/images/ProductionScreenshots/InsightsFinal.png"
+                    src="/images/ProductionScreenshots/insightsFinal2.png"
                     alt="Insights"
                     style={{
                       width: "100%",
@@ -1652,11 +1799,11 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ================= BUILT FOR ANGLERS ================= */}
+      {/* ================= LURE LIBRARY ================= */}
       <section
         style={{ padding: sectionPad, background: "rgba(74, 144, 226, 0.02)" }}
       >
-        <div className="container" style={container(900)}>
+        <div className="container" style={container(1200)}>
           <Reveal>
             <div
               style={{ textAlign: "center", position: "relative", zIndex: 1 }}
@@ -1667,108 +1814,112 @@ export function Landing() {
               >
                 Lure Library
               </div>
-              <br />
+              <h2 style={h2Style}>Learn the Why Behind the Plan.</h2>
+              <p style={{ ...leadStyle, maxWidth: 980 }}>
+                Every recommendation is backed by a structured, searchable lure
+                library. Filter by season, water clarity, structure, or
+                conditions to understand what makes each presentation effective.
+              </p>
             </div>
-            <h2 style={h2Style}>Learn the Why Behind the Plan.</h2>
-            <p
-              style={{
-                fontSize: "1rem",
-                textAlign: "center",
-                opacity: 0.85,
-                lineHeight: 1.75,
-                maxWidth: 720,
-                margin: "0 auto 28px",
-              }}
-            >
-              Every recommendation is backed by a structured, searchable lure
-              library. Filter by season, water clarity, structure, or conditions
-              to understand what makes each presentation effective.
-            </p>
           </Reveal>
-          <Reveal delay={200}>
-            <div
-              style={{
-                position: "relative",
-                maxWidth: 420,
-                margin: "0 auto",
-              }}
-            >
-              <img
-                src="/images/iphone15.png"
-                alt="Mobile"
-                style={{
-                  width: "100%",
-                  display: "block",
-                  position: "relative",
-                  zIndex: 2,
-                  pointerEvents: "none",
-                }}
-              />
+
+          <div
+            style={{
+              ...grid2,
+              marginTop: "clamp(34px, 6vw, 54px)",
+              paddingBottom: "clamp(48px, 7vw, 72px)",
+            }}
+          >
+            <Reveal delay={200}>
               <div
                 style={{
-                  position: "absolute",
-                  top: "3.8%",
-                  left: "2.2%",
-                  width: "99.6%",
-                  height: "93%",
-                  borderRadius: "42px",
-                  overflow: "hidden",
-                  zIndex: 1,
-                  background: "rgba(0,0,0,0.25)",
+                  position: "relative",
+                  maxWidth: 420,
+                  margin: "0 auto",
                 }}
               >
                 <img
-                  src="/images/ProductionScreenshots/chatterbait.png"
-                  alt="Insights"
+                  src="/images/iphone15.png"
+                  alt="Mobile"
                   style={{
-                    width: "98%",
-                    height: "100%",
-                    objectFit: "contain",
-                    filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
-                    borderRadius: "80px",
+                    width: "100%",
+                    display: "block",
+                    position: "relative",
+                    zIndex: 2,
+                    pointerEvents: "none",
                   }}
                 />
-              </div>
-            </div>
-          </Reveal>
-          <Reveal>
-            <div style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}>
-              <div style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}>
                 <div
                   style={{
-                    ...eyebrow,
-                    marginBottom: 12,
-                    color: "rgba(255,255,255,0.68)",
+                    position: "absolute",
+                    top: "3.8%",
+                    left: "2.2%",
+                    width: "99.6%",
+                    height: "93%",
+                    borderRadius: "42px",
+                    overflow: "hidden",
+                    zIndex: 1,
+                    background: "rgba(0,0,0,0.25)",
                   }}
                 >
-                  Condition-Based Lure Guide
+                  <img
+                    src="/images/ProductionScreenshots/chatterbait.png"
+                    alt="Lure Library"
+                    style={{
+                      width: "98%",
+                      height: "100%",
+                      objectFit: "contain",
+                      filter: "brightness(0.92) contrast(1.08) saturate(0.95)",
+                      borderRadius: "80px",
+                    }}
+                  />
                 </div>
-                <div style={{ height: 14 }} />
-                <ul
-                  style={{
-                    listStyle: "none",
-                    padding: 0,
-                    margin: 0,
-                    display: "grid",
-                    gap: 14,
-                  }}
-                >
-                  <Bullet
-                    title="Filter By Conditions"
-                    desc="Quickly narrow down lures based on wind, clarity, structure, and seasonal stage."
-                  />
-                  <Bullet
-                    title="Detailed Breakdowns"
-                    desc="Understand when and why each lure shines — including retrieve variations and gear suggestions."
-                  />
-                  <Bullet
-                    title="Confidence Builder"
-                    desc="Build your own knowledge base — even without generating a full AI plan."
-                  />
-                </ul>
               </div>
-            </div>
-          </Reveal>
+            </Reveal>
+
+            <Reveal>
+              <div
+                style={{ padding: "0 4px", maxWidth: 640, margin: "0 auto" }}
+              >
+                <div
+                  style={{ ...softCard, padding: "clamp(18px, 3.5vw, 28px)" }}
+                >
+                  <div
+                    style={{
+                      ...eyebrow,
+                      marginBottom: 12,
+                      color: "rgba(255,255,255,0.68)",
+                    }}
+                  >
+                    Condition-Based Lure Guide
+                  </div>
+                  <div style={{ height: 14 }} />
+                  <ul
+                    style={{
+                      listStyle: "none",
+                      padding: 0,
+                      margin: 0,
+                      display: "grid",
+                      gap: 14,
+                    }}
+                  >
+                    <Bullet
+                      title="Filter By Conditions"
+                      desc="Quickly narrow down lures based on wind, clarity, structure, and seasonal stage."
+                    />
+                    <Bullet
+                      title="Detailed Breakdowns"
+                      desc="Understand when and why each lure shines — including retrieve variations and gear suggestions."
+                    />
+                    <Bullet
+                      title="Confidence Builder"
+                      desc="Build your own knowledge base — even without generating a full AI plan."
+                    />
+                  </ul>
+                </div>
+              </div>
+            </Reveal>
+          </div>
         </div>
       </section>
 
@@ -1778,10 +1929,11 @@ export function Landing() {
           <Reveal>
             <div style={{ textAlign: "center" }}>
               <h2 className="water-text" style={h2Style}>
-                Fish with Clarity
+                Your Time Deserves Clarity
               </h2>
               <p style={{ ...leadStyle, marginBottom: 60 }}>
-                Start building your history today.
+                Fishing tool built for the water. No Distractions. No social
+                Feeds
               </p>
             </div>
           </Reveal>
@@ -2050,6 +2202,8 @@ export function Landing() {
 
         @media (max-width: 768px) {
           .pricing-card.pro { transform: scale(1); }
+          .appstore-qr { display: none; }
+          .desktop-qr { display: none !important; }
         }
       `}</style>
     </div>

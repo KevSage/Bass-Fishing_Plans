@@ -519,6 +519,73 @@ COLOR_DESCRIPTIONS = {
 }
 
 # ----------------------------------------
+# COLOR FALLBACK MAPPINGS
+# ----------------------------------------
+# When LLM suggests a color not in the allowed pool, map to similar valid color
+# Key = invalid color, Value = fallback color (must be universal/common)
+COLOR_FALLBACKS = {
+    # Translucent baitfish colors -> shad/pearl
+    "ghost minnow": "shad",
+    "ghost shad": "shad",
+    "natural shad": "shad",
+    "pro blue": "shad",
+    "table rock": "shad",
+    "transparent": "pearl",
+    "bone": "white",
+    "citrus shad": "shad",
+
+    # Craw/creature colors -> green pumpkin or black/blue
+    "craw": "green pumpkin",
+    "red craw": "green pumpkin",
+    "morning dawn": "green pumpkin",
+    "peanut butter & jelly": "green pumpkin",
+    "watermelon red": "watermelon",
+    "baby bass": "green pumpkin",
+
+    # Dark colors -> black or black/blue
+    "junebug": "black/blue",
+    "brown": "green pumpkin",
+
+    # Signal colors
+    "firetiger": "chartreuse",
+    "chartreuse/black": "chartreuse",
+    "chartreuse/white": "white",
+
+    # Metallic -> closest non-metallic
+    "chrome": "shad",
+    "gold": "shad",
+    "silver": "shad",
+    "bronze": "shad",
+}
+
+
+def get_fallback_color(invalid_color: str, valid_colors: list) -> str:
+    """
+    Get a fallback color when the LLM suggests an invalid color.
+
+    Args:
+        invalid_color: The color that failed validation
+        valid_colors: List of allowed colors for this lure
+
+    Returns:
+        A valid fallback color, or None if no fallback found
+    """
+    # First check direct mapping
+    fallback = COLOR_FALLBACKS.get(invalid_color)
+    if fallback and fallback in valid_colors:
+        return fallback
+
+    # If mapped fallback isn't valid either, try common defaults in order
+    common_defaults = ["shad", "white", "green pumpkin", "black/blue", "pearl"]
+    for default in common_defaults:
+        if default in valid_colors:
+            return default
+
+    # Last resort: return first valid color
+    return valid_colors[0] if valid_colors else None
+
+
+# ----------------------------------------
 # LEGACY COLOR POOL (for backwards compatibility)
 # ----------------------------------------
 # This is the old unified pool - kept for now but will be deprecated

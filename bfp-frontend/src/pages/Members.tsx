@@ -2166,7 +2166,6 @@ export function Members() {
   );
 
   const performGeneration = useCallback(async () => {
-    setShowGenerateConfirm(false);
     setShowReplaceConfirm(false);
     const targetName = currentFavorite ? currentFavorite.name : waterName;
     const targetCoords = currentFavorite
@@ -2198,6 +2197,7 @@ export function Members() {
       localStorage.setItem("aiq_last_plan_lake", targetName || "");
       setLastPlanUrl(tokenUrl);
       setLastPlanLake(targetName || "");
+      setShowGenerateConfirm(false);
       navigate(tokenUrl, { state: { planResponse: response, lakeName: targetName } });
     } catch (e: any) {
       if (e instanceof RateLimitError) {
@@ -2205,6 +2205,7 @@ export function Members() {
           message: e.message,
           secondsRemaining: e.seconds_remaining,
         });
+        setShowGenerateConfirm(false);
       } else {
         setErr(e?.message ?? "Failed to generate plan.");
       }
@@ -3305,14 +3306,70 @@ export function Members() {
               </div>
             )}
 
+            {/* Error Banner */}
+            {err && (
+              <div
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  marginBottom: 16,
+                  background: "rgba(239, 68, 68, 0.15)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  borderRadius: 10,
+                  color: "#EF4444",
+                  fontSize: "0.85rem",
+                  textAlign: "center",
+                }}
+              >
+                {err}
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loading && (
+              <div
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  marginBottom: 16,
+                  background: "rgba(74, 144, 226, 0.1)",
+                  border: "1px solid rgba(74, 144, 226, 0.2)",
+                  borderRadius: 10,
+                  color: "#4A90E2",
+                  fontSize: "0.85rem",
+                  textAlign: "center",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 10,
+                }}
+              >
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    border: "2px solid rgba(74, 144, 226, 0.3)",
+                    borderTopColor: "#4A90E2",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+                Generating your plan...
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 10, width: "100%" }}>
               <button
-                onClick={() => setShowGenerateConfirm(false)}
+                onClick={() => {
+                  setShowGenerateConfirm(false);
+                  setErr(null);
+                }}
                 className="modal-btn"
                 style={{
                   background: "transparent",
                   border: "1px solid rgba(255,255,255,0.1)",
                 }}
+                disabled={loading}
               >
                 Cancel
               </button>
@@ -3327,12 +3384,15 @@ export function Members() {
                 }}
                 className="generate-btn"
                 disabled={
-                  lureSelectionMode === "user" &&
-                  (!userPrimaryLure || !userSecondaryLure)
+                  loading ||
+                  (lureSelectionMode === "user" &&
+                  (!userPrimaryLure || !userSecondaryLure))
                 }
                 style={{
                   background:
-                    lureSelectionMode === "view"
+                    loading
+                      ? "rgba(74,144,226,0.3)"
+                      : lureSelectionMode === "view"
                       ? "linear-gradient(135deg, #22C55E 0%, #16A34A 100%)"
                       : lureSelectionMode === "user" &&
                         (!userPrimaryLure || !userSecondaryLure)
@@ -3340,13 +3400,14 @@ export function Members() {
                         : "linear-gradient(135deg, #4A90E2 0%, #357ABD 100%)",
                   padding: "12px",
                   cursor:
-                    lureSelectionMode === "user" &&
-                    (!userPrimaryLure || !userSecondaryLure)
+                    loading ||
+                    (lureSelectionMode === "user" &&
+                    (!userPrimaryLure || !userSecondaryLure))
                       ? "not-allowed"
                       : "pointer",
                 }}
               >
-                {lureSelectionMode === "view" ? "View Plan" : "Generate"}
+                {loading ? "Generating..." : lureSelectionMode === "view" ? "View Plan" : "Generate"}
               </button>
             </div>
           </div>
