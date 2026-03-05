@@ -653,6 +653,8 @@ export function Landing() {
                     muted
                     loop
                     playsInline
+                    webkit-playsinline="true"
+                    onCanPlay={(e) => (e.target as HTMLVideoElement).play()}
                     style={{
                       width: "100%",
                       height: "100%",
@@ -730,6 +732,8 @@ export function Landing() {
                   muted
                   loop
                   playsInline
+                  webkit-playsinline="true"
+                  onCanPlay={(e) => (e.target as HTMLVideoElement).play()}
                   style={{
                     width: "100%",
                     height: "97.5%",
@@ -891,6 +895,8 @@ export function Landing() {
                   muted
                   loop
                   playsInline
+                  webkit-playsinline="true"
+                  onCanPlay={(e) => (e.target as HTMLVideoElement).play()}
                   style={{
                     width: "102.6%",
                     height: "100%",
