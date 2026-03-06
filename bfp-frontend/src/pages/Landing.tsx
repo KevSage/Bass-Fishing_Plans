@@ -648,7 +648,7 @@ export function Landing() {
                   }}
                 >
                   <video
-                    src="/video/intro2.mov"
+                    src="/video/intro2.mp4"
                     autoPlay
                     muted
                     loop
@@ -727,7 +727,7 @@ export function Landing() {
                 }}
               >
                 <video
-                  src="/video/intro3.mov"
+                  src="/video/intro3.mp4"
                   autoPlay
                   muted
                   loop
@@ -890,7 +890,7 @@ export function Landing() {
                 }}
               >
                 <video
-                  src="/video/enhanced2.mov"
+                  src="/video/enhanced2.mp4"
                   autoPlay
                   muted
                   loop
