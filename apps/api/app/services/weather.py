@@ -454,21 +454,36 @@ async def _get_weather_fallback(lat: float, lon: float, api_key: str) -> Dict[st
     temp_low = temp_f - 5
     has_recent_rain = rain_1h > 0
     
+    # Get timezone offset from current weather data
+    tz_offset = current_data.get("timezone", 0)
+    hourly_forecast = []
+
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             r = await client.get(forecast_url, params=forecast_params)
             r.raise_for_status()
             forecast_data = r.json()
-            
+
         temps = [item["main"]["temp"] for item in forecast_data.get("list", [])]
         if temps:
             temp_high = max(temps + [temp_f])
             temp_low = min(temps + [temp_f])
-            
+
         for item in forecast_data.get("list", []):
             if item.get("rain", {}).get("3h", 0) > 0:
                 has_recent_rain = True
                 break
+
+        # Build hourly_forecast from 3-hour forecast data
+        for item in forecast_data.get("list", []):
+            hourly_forecast.append({
+                "time": format_local_time(item.get("dt"), tz_offset),
+                "temp": round(item.get("main", {}).get("temp", 0)),
+                "icon": item.get("weather", [{}])[0].get("icon", "01d"),
+                "description": item.get("weather", [{}])[0].get("main", "Clear"),
+                "wind": round(item.get("wind", {}).get("speed", 0)),
+                "pop": round(item.get("pop", 0) * 100),
+            })
     except Exception:
         pass
         
@@ -514,4 +529,6 @@ async def _get_weather_fallback(lat: float, lon: float, api_key: str) -> Dict[st
         # Water Temperature (fallback estimate)
         "estimated_water_temp_f": estimated_water_temp,
         "daily_highs_history": [temp_high],
+        # Hourly forecast (3-hour intervals from fallback API)
+        "hourly_forecast": hourly_forecast,
     }
