@@ -144,18 +144,22 @@ FINESSE (High Pressure / Calm / Bright Lean):
 - Warm Water Options: Wacky Rig, Shaky Head, Weightless Senko, Neko Rig.
 
 FRONT / INSTABILITY Lean:
-- Cold Water Options:
+- Cold Water Options (ROTATE for variety):
   • Jerkbait -> The pause triggers hesitant fish.
-  • Football Jig -> Dragging deep structure (defensive but big meal).
+  • Football Jig -> Deep rock/ledges when fish are bottom-pinned.
+  • Casting Jig -> Wood/docks when fish are tight to cover.
+  • Texas Rig -> Heavy cover penetration, versatile.
   • Lipless Crankbait -> Reaction strike from defensive fish.
   • Blade Bait -> Triggering dormant fish via vibration.
+  • Ned Rig -> Micro profile for extreme lockjaw conditions.
 
 CONTROL (Neutral Lean):
-- Cold Water Options:
-  • Football Jig -> Deep rock/ledges (The "Winter Standard").
-  • Casting Jig -> Wood/Docks.
-  • Texas Rig (Creature) -> Penetrating heavy cover.
-  • Shaky Head -> Rock transitions.
+- Cold Water Options (ROTATE - do not always default to first):
+  • Football Jig -> Deep rock/ledges/hard bottom.
+  • Casting Jig -> Wood/Docks/laydowns.
+  • Texas Rig (Creature) -> Penetrating heavy cover, versatile.
+  • Shaky Head -> Rock transitions, pressured fish.
+  • Ned Rig -> High pressure, micro profile finesse.
 
 ═══════════════════════════════════════════════════════════════════════════════
 F) HERO MOMENT UNLOCKS (WEATHER-DRIVEN OVERRIDES)
@@ -205,14 +209,58 @@ PRIMARY:
 
 SECONDARY (PIVOT) - BREAK THE "DEFAULT PAIRS":
 - **ANTI-BOREDOM RULE:** If Primary is Jerkbait, Secondary should NOT be Dropshot unless conditions are extreme (slick calm/high pressure).
-- TRY THESE PIVOTS INSTEAD:
-  • Jerkbait (Suspended) → Football Jig (Bottom Pinned) [Depth Pivot]
-  • Jerkbait (Visual) → Crankbait (Vibration) [Speed Pivot]
-  • Lipless Crankbait (Speed) → Ned Rig (Deadstick) [Tempo Pivot]
-  • Football Jig (Slow) → Blade Bait (Reaction) [Trigger Pivot]
+
+🚨 FOOTBALL JIG DIVERSITY RULE:
+Football Jig is a valid pivot but NOT the only bottom-contact option. You MUST rotate through these alternatives:
+  • Texas Rig - Heavy cover, versatile, creature/craw profile
+  • Casting Jig - Wood/docks, vertical presentation
+  • Shaky Head - Rock transitions, finesse bottom contact
+  • Ned Rig - High pressure, micro profile, deadstick
+  • Carolina Rig - Offshore flats, slow drag (when targets support)
+Do NOT default to Football Jig every time bottom contact is needed.
+
+PIVOT OPTIONS BY PRIMARY (Choose ONE - rotate for variety):
+
+IF PRIMARY IS JERKBAIT:
+  • Football Jig [Depth Pivot - deep rock/ledges]
+  • Casting Jig [Cover Pivot - wood/docks/laydowns]
+  • Texas Rig [Versatility Pivot - heavy cover penetration]
+  • Shaky Head [Finesse Pivot - rock transitions, pressured fish]
+  • Ned Rig [Micro Pivot - high pressure, cold front]
+  • Flat-Sided Crankbait [Speed Pivot - if rocky structure present]
+
+IF PRIMARY IS LIPLESS CRANKBAIT:
+  • Ned Rig [Tempo Pivot - deadstick when reaction fails]
+  • Shaky Head [Bottom Pivot - rock/gravel transitions]
+  • Texas Rig [Cover Pivot - penetrate grass/wood]
+  • Dropshot [Suspend Pivot - if fish suspend and won't commit]
+
+IF PRIMARY IS SPINNERBAIT/CHATTERBAIT:
+  • Texas Rig [Slow Pivot - pick apart the cover you searched]
+  • Casting Jig [Precision Pivot - target specific laydowns/docks]
+  • Shaky Head [Finesse Pivot - when fish follow but won't commit]
+  • Neko Rig [Neutral Pivot - soft bottom, deep cover]
+
+IF PRIMARY IS FOOTBALL JIG:
+  • Blade Bait [Trigger Pivot - vertical reaction for dormant fish]
+  • Dropshot [Finesse Pivot - when drag gets ignored]
+  • Ned Rig [Downsize Pivot - micro profile for lockjaw]
+  • Jerkbait [Suspend Pivot - if fish are off bottom]
+
+IF PRIMARY IS CRANKBAIT (any depth):
+  • Texas Rig [Slow Pivot - pick apart deflection zones]
+  • Casting Jig [Precision Pivot - isolated cover]
+  • Shaky Head [Finesse Pivot - follow up on short strikes]
+  • Dropshot [Vertical Pivot - suspended fish near structure]
+
+IF PRIMARY IS TOPWATER:
+  • Texas Rig [Subsurface Pivot - when blowups miss]
+  • Soft Jerkbait [Subtle Pivot - weightless twitch under surface]
+  • Wacky Rig [Fall Pivot - slow sinking follow-up]
 
 - MUST be a different presentation family.
 - MUST represent a plausible "counter-lean" for today.
+- ROTATE through pivot options across plans - do NOT always select the first option listed.
 
 SEARCH AND PICK APART (CONDITIONAL STRATEGY):
 - If Primary is Fast (Crankbait/Lipless), Secondary can be Slow (Jig/Ned).
