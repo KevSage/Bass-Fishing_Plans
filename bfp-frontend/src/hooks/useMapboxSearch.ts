@@ -1,6 +1,7 @@
 // src/hooks/useMapboxSearch.ts
 import { useState, useCallback } from "react";
-import LAKES_DATA from "../data/lakes.json";
+import { getLakesSync } from "@/hooks/useLakes";
+import type { LakeEntry } from "@/lib/lakes-cache";
 
 export type MapboxFeature = {
   id: string;
@@ -15,22 +16,10 @@ export type MapboxFeature = {
   };
 };
 
-type Lake = {
-  name: string;
-  state: string;
-  city?: string;
-  latitude: number;
-  longitude: number;
-  acres?: number;
-  tier: number;
-};
+type Lake = LakeEntry;
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 const MAPBOX_API = "https://api.mapbox.com/geocoding/v5/mapbox.places";
-const LAKES: Lake[] = LAKES_DATA as Lake[];
-
-// Debug: Log lake count on module load
-console.log(`🎣 Lakes database loaded: ${LAKES.length} lakes`);
 
 /**
  * Exact substring match - the target must contain the exact query sequence
@@ -44,8 +33,9 @@ function exactSubstringMatch(query: string, target: string): boolean {
  */
 function searchLakesDatabase(query: string): MapboxFeature[] {
   const results: Array<Lake & { score: number }> = [];
+  const lakes = getLakesSync();
 
-  for (const lake of LAKES) {
+  for (const lake of lakes) {
     const searchText = `${lake.name} ${lake.city || ""} ${lake.state}`;
 
     if (exactSubstringMatch(query, searchText)) {

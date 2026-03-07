@@ -6,8 +6,8 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { LocationSearch } from "@/components/LocationSearch";
 
 // --- DATA SOURCE ---
-// Ensure this file exists at src/data/lakes.json
-import existingLakesRaw from "@/data/lakes.json";
+import { getLakesSync } from "@/hooks/useLakes";
+import type { LakeEntry } from "@/lib/lakes-cache";
 
 // --- CONFIG ---
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -608,14 +608,18 @@ function calculateAcres(coords: Coordinate[]): number {
   return Math.round(area * 0.000247105);
 }
 
-const INITIAL_LAKES: InternalLakeEntry[] = (existingLakesRaw as any[]).map(
-  (l) => ({
+/**
+ * Get current lakes from cache, converting to internal format with IDs.
+ * Creates stable IDs based on name+state to support merge operations.
+ */
+function getCurrentLakes(): InternalLakeEntry[] {
+  return getLakesSync().map((l) => ({
     ...l,
-    id: generateTempId(),
+    id: `${l.name.toLowerCase().replace(/\s+/g, "-")}-${l.state.toLowerCase()}`,
     anchors: l.anchors || [],
     bbox: l.bbox || undefined,
-  }),
-);
+  }));
+}
 
 // ==========================================
 // MAIN COMPONENT
@@ -945,9 +949,9 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
       console.error("Geocode failed", e);
     }
 
-    // Check both INITIAL_LAKES and current batch queue for nearby matches
+    // Check both current lakes and batch queue for nearby matches
     const allLakes = [
-      ...INITIAL_LAKES,
+      ...getCurrentLakes(),
       ...batchQueue.map((b) => ({ ...b, id: b.id })),
     ];
 
@@ -1073,10 +1077,10 @@ function AdminWorkstation({ onLogout }: { onLogout: () => void }) {
 
   const handleSaveLakes = async () => {
     // 1. STAGE 1: Merge by ID (Handles renames/updates within current session)
-    // Keys are random temp_ids assigned at load. This ensures that if I update "Lake A",
+    // Keys are name-state slugs. This ensures that if I update "Lake A",
     // the original "Lake A" entry is overwritten.
     const idMap = new Map<string, InternalLakeEntry>();
-    INITIAL_LAKES.forEach((l) => idMap.set(l.id, l));
+    getCurrentLakes().forEach((l) => idMap.set(l.id, l));
     batchQueue.forEach((item) => {
       idMap.set(item.id, item);
     });

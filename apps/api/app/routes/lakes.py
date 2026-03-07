@@ -25,38 +25,62 @@ user_lake_store = UserLakeStore()
 # =============================================================================
 
 _known_lakes_cache: Optional[List[Dict]] = None
+_known_lakes_version: Optional[str] = None
 
-def get_known_lakes() -> List[Dict]:
-    """Load known lakes from JSON file (cached)."""
-    global _known_lakes_cache
-    
-    if _known_lakes_cache is not None:
-        return _known_lakes_cache
-    
-    # Adjust path based on your project structure
-    lakes_path = os.path.join(
+def get_lakes_path() -> str:
+    """Get the path to lakes.json."""
+    return os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "data",
         "lakes.json"
     )
-    
+
+def invalidate_lakes_cache():
+    """Clear the lakes cache (call after admin updates)."""
+    global _known_lakes_cache, _known_lakes_version
+    _known_lakes_cache = None
+    _known_lakes_version = None
+    print("[Lakes] Cache invalidated")
+
+def get_known_lakes() -> List[Dict]:
+    """Load known lakes from JSON file (cached)."""
+    global _known_lakes_cache
+
+    if _known_lakes_cache is not None:
+        return _known_lakes_cache
+
+    lakes_path = get_lakes_path()
+
     # Fallback paths to try
     fallback_paths = [
         lakes_path,
         os.path.join(os.getcwd(), "data", "lakes.json"),
         os.path.join(os.getcwd(), "lakes.json"),
     ]
-    
+
     for path in fallback_paths:
         if os.path.exists(path):
             with open(path, "r") as f:
                 _known_lakes_cache = json.load(f)
                 print(f"[Lakes] Loaded {len(_known_lakes_cache)} known lakes from {path}")
                 return _known_lakes_cache
-    
+
     print("[Lakes] WARNING: lakes.json not found, using empty list")
     _known_lakes_cache = []
     return _known_lakes_cache
+
+def get_lakes_version() -> str:
+    """Get version hash of lakes data."""
+    global _known_lakes_version
+    import hashlib
+
+    if _known_lakes_version is not None:
+        return _known_lakes_version
+
+    lakes = get_known_lakes()
+    content = json.dumps(lakes, sort_keys=True)
+    _known_lakes_version = hashlib.md5(content.encode()).hexdigest()[:12]
+    return _known_lakes_version
 
 
 def find_known_lake_by_proximity(lat: float, lng: float, radius_km: float = 1.0) -> Optional[Dict]:
@@ -554,3 +578,48 @@ async def resolve_lake(
         "city": None,
         "state": None,
     }
+
+
+# =============================================================================
+# KNOWN LAKES DATA ENDPOINT (for offline caching)
+# =============================================================================
+
+@router.get("/known")
+async def get_all_known_lakes(
+    if_none_match: Optional[str] = Header(None, alias="If-None-Match"),
+):
+    """
+    Get all known lakes with version for caching.
+
+    Returns 304 Not Modified if client's cached version matches.
+    Client should send If-None-Match header with cached version.
+
+    This endpoint is PUBLIC (no auth required) for offline caching.
+    """
+    from fastapi.responses import JSONResponse, Response
+
+    lakes = get_known_lakes()
+    version = get_lakes_version()
+    etag = f'"{version}"'
+
+    # Check if client has current version
+    if if_none_match and if_none_match.strip('"') == version:
+        return Response(status_code=304)
+
+    return JSONResponse(
+        content={
+            "lakes": lakes,
+            "version": version,
+            "count": len(lakes),
+        },
+        headers={
+            "ETag": etag,
+            "Cache-Control": "public, max-age=3600",  # Cache for 1 hour
+        },
+    )
+
+
+@router.get("/known/version")
+async def get_known_lakes_version():
+    """Get just the version hash - lightweight check for updates."""
+    return {"version": get_lakes_version()}

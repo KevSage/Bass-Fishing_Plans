@@ -57,7 +57,8 @@ import {
 import { compressImage } from "@/lib/image-utils";
 
 // --- DATA IMPORT ---
-import LAKES_DATA from "../data/lakes.json";
+import { getLakesSync } from "@/hooks/useLakes";
+import type { LakeEntry } from "@/lib/lakes-cache";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -587,7 +588,7 @@ function findLakeByPolygon(
       };
     }
   }
-  for (const lake of LAKES_DATA as LakeData[]) {
+  for (const lake of getLakesSync()) {
     const anchors = lake.anchors as { lat: number; lng: number }[] | undefined;
     if (anchors && anchors.length >= 3 && pointInPolygon(p, anchors)) {
       const favorite = favorites.find(
@@ -612,15 +613,16 @@ function findLakeByPolygon(
 }
 
 function findNearestLake(lat: number, lng: number): LakeData | null {
-  const bboxMatch = (LAKES_DATA as LakeData[]).find((l) => {
+  const lakes = getLakesSync();
+  const bboxMatch = lakes.find((l) => {
     if (!l.bbox) return false;
     const [minLng, minLat, maxLng, maxLat] = l.bbox;
     return lat >= minLng && lat <= maxLng && lng >= minLng && lng <= maxLng;
   });
-  if (bboxMatch) return bboxMatch;
+  if (bboxMatch) return bboxMatch as LakeData;
   let nearest: LakeData | null = null;
   let minDist = Infinity;
-  const candidates = (LAKES_DATA as LakeData[]).filter(
+  const candidates = lakes.filter(
     (l) =>
       Math.abs(l.latitude - lat) < 0.3 && Math.abs(l.longitude - lng) < 0.3,
   );
@@ -770,9 +772,11 @@ export function Members() {
 
   // Derived suggestion data
   const lakeSuggestionsData = useMemo(() => {
-    const base = (
-      LAKES_DATA as Array<{ name: string; city?: string; state?: string }>
-    ).map((l) => ({ name: l.name, city: l.city, state: l.state }));
+    const base = getLakesSync().map((l) => ({
+      name: l.name,
+      city: l.city,
+      state: l.state,
+    }));
     const user = (customLakes || []).map((l) => ({
       name: l.name,
       city: l.city ?? undefined,
@@ -958,9 +962,9 @@ export function Members() {
 
         if (mounted && res.favorites) {
           const mapped = res.favorites.map((f: any) => {
-            // Known lakes: hydrate from LAKES_DATA (backend has no access to lakes.json)
+            // Known lakes: hydrate from lakes cache (backend has no access to lakes.json)
             if (f.lake_type === "known") {
-              const lakeData = (LAKES_DATA as LakeData[]).find(
+              const lakeData = getLakesSync().find(
                 (l) => l.name === f.lake_id
               );
               if (lakeData) {
@@ -1195,38 +1199,39 @@ export function Members() {
   ): LakeData | undefined => {
     const normalize = (s: string) => s.toLowerCase().replace("lake", "").trim();
     const query = normalize(name);
-    
+    const lakes = getLakesSync();
+
     // 1. Try EXACT name match first (highest priority)
-    let match = (LAKES_DATA as LakeData[]).find(
+    let match = lakes.find(
       (l) => normalize(l.name) === query
     );
-    if (match) return match;
-    
+    if (match) return match as LakeData;
+
     // 2. For lakes with boundaries, check if point is inside polygon
-    for (const lake of LAKES_DATA as LakeData[]) {
+    for (const lake of lakes) {
       if (lake.anchors && lake.anchors.length >= 3) {
         if (pointInPolygon({ lat, lng }, lake.anchors as any)) {
-          return lake;
+          return lake as LakeData;
         }
       }
     }
-    
+
     // 3. Fuzzy name match (but avoid partial matches that are too broad)
-    match = (LAKES_DATA as LakeData[]).find((l) => {
+    match = lakes.find((l) => {
       const lakeName = normalize(l.name);
       // Both must be longer than 3 chars to avoid false matches like "bay", "arm", etc.
       if (query.length < 4 || lakeName.length < 4) return false;
       return lakeName.includes(query) || query.includes(lakeName);
     });
-    if (match) return match;
-    
+    if (match) return match as LakeData;
+
     // 4. Finally, proximity for lakes without boundaries (tightened to 0.01°)
-    match = (LAKES_DATA as LakeData[]).find((l) => {
+    match = lakes.find((l) => {
       // If lake has boundaries, skip - polygon check already handled it
       if (l.anchors && l.anchors.length >= 3) {
         return false;
       }
-      
+
       // For lakes without boundaries, use tight proximity
       return (
         Math.abs(l.latitude - lat) < 0.01 &&
@@ -1663,9 +1668,9 @@ export function Members() {
         let dbMatch: LakeData | undefined;
         if (!polygonMatch && vectorName) {
           const searchName = vectorName.toLowerCase();
-          dbMatch = (LAKES_DATA as LakeData[]).find((l) =>
+          dbMatch = getLakesSync().find((l) =>
             l.name.toLowerCase().includes(searchName),
-          );
+          ) as LakeData | undefined;
         }
         const nearbyFavorite = !polygonMatch
           ? findNearestFavorite(lat, lng, favoritesRef.current)
@@ -1835,8 +1840,8 @@ export function Members() {
         }
       }
       
-      // Priority 2: Check known lakes from LAKES_DATA
-      for (const lake of LAKES_DATA as LakeData[]) {
+      // Priority 2: Check known lakes from database
+      for (const lake of getLakesSync()) {
         // Skip if zoom too low for this lake size
         const minZoom = getZoomForLake(lake.acres ?? 0) - 1;
         if (zoom < minZoom) continue;
@@ -2140,7 +2145,7 @@ export function Members() {
       setViewingFavoriteId(matchingFavorite?.id || null);
 
       if (mapRef.current) {
-        const dbLake = (LAKES_DATA as LakeData[]).find(
+        const dbLake = getLakesSync().find(
           (l) =>
             l.name.toLowerCase() === location.name.toLowerCase() ||
             (Math.abs(l.latitude - location.latitude) < 0.01 &&

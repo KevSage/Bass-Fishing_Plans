@@ -144,21 +144,34 @@ def save_lakes(
     request: SaveLakesRequest,
     password: str = Header(..., alias="X-Admin-Password"),
 ):
-    """Save lakes.json to the frontend src/data directory."""
+    """
+    Save lakes.json to the backend data directory.
+
+    This updates the lakes served by GET /lakes/known endpoint.
+    The frontend caches this data locally for offline use.
+    """
     verify_admin(password)
 
-    # Path relative to the api app directory
-    api_dir = Path(__file__).parent.parent.parent  # apps/api/app/routes -> apps/api
-    lakes_path = api_dir.parent.parent / "bfp-frontend" / "src" / "data" / "lakes.json"
+    # Import here to avoid circular imports
+    from app.routes.lakes import get_lakes_path, invalidate_lakes_cache
+
+    lakes_path = Path(get_lakes_path())
+
+    # Ensure data directory exists
+    lakes_path.parent.mkdir(parents=True, exist_ok=True)
 
     try:
         with open(lakes_path, "w") as f:
             json.dump(request.lakes, f, indent=2)
 
+        # Invalidate cache so next request gets fresh data
+        invalidate_lakes_cache()
+
         return {
             "success": True,
             "count": len(request.lakes),
             "path": str(lakes_path),
+            "message": "Lakes saved. Frontend will sync on next load.",
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save lakes: {str(e)}")
