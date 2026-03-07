@@ -384,16 +384,20 @@ class CatchStore:
     ) -> Optional[Catch]:
         """Update an existing catch."""
         email_norm = email.lower().strip()
-        
+
         # ✅ Add new fields to allowed set
         allowed_fields = {
             "date", "time", "species", "weight", "length", "lure", "color",
-            "notes", "photo_url", "lat", "lng", "lake_id", "lake_type", 
+            "notes", "photo_url", "lat", "lng", "lake_id", "lake_type",
             "lake_name", "city", "state", "source",
             "temp", "wind_speed", "wind_direction", "pressure", "sky_condition"
         }
         updates = {k: v for k, v in kwargs.items() if k in allowed_fields}
-        
+
+        # Debug: Log what's being updated
+        if "lat" in updates or "lng" in updates:
+            print(f"[CatchStore.update] Location update: lat={updates.get('lat')}, lng={updates.get('lng')}")
+
         if not updates:
             return self.get(catch_id, email)
 

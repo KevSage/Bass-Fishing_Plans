@@ -286,17 +286,29 @@ export async function updateCatchMobile(
   email: string,
   userId: string,
 ): Promise<{ success: boolean; catch_id?: string; error?: string }> {
+  const payload = { ...data, catch_id: catchId, email, user_id: userId };
+
+  // Debug: Log the exact payload being sent to API
+  console.log('[catches-api] updateCatchMobile payload:', {
+    catch_id: catchId,
+    lat: payload.lat,
+    lng: payload.lng,
+    lake_name: payload.lake_name,
+  });
+
   const response = await fetch(`${getApiBase()}/mobile-auth/update-catch`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ...data, catch_id: catchId, email, user_id: userId }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
     throw new Error(`Failed to update catch: ${response.status}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  console.log('[catches-api] updateCatchMobile response:', result);
+  return result;
 }
 
 // =============================================================================

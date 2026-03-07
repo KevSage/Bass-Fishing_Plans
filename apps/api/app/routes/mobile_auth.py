@@ -1528,11 +1528,16 @@ async def mobile_update_catch(request: MobileUpdateCatchRequest):
 
     catch_store = CatchStore()
 
+    # Debug: Log incoming request
+    print(f"[mobile_auth] update-catch request: catch_id={request.catch_id}, lat={request.lat}, lng={request.lng}")
+
     try:
         # Check if catch exists and belongs to user
         existing = catch_store.get(request.catch_id, request.email)
         if not existing:
             return {"success": False, "error": "Catch not found or not owned by user"}
+
+        print(f"[mobile_auth] existing catch: lat={existing.lat}, lng={existing.lng}")
 
         # Perform update
         updated_catch = catch_store.update(
@@ -1565,6 +1570,7 @@ async def mobile_update_catch(request: MobileUpdateCatchRequest):
         if not updated_catch:
             return {"success": False, "error": "Failed to update catch"}
 
+        print(f"[mobile_auth] updated catch: lat={updated_catch.lat}, lng={updated_catch.lng}")
         return {"success": True, "catch_id": request.catch_id}
     except Exception as e:
         print(f"[mobile_auth] update catch error: {e}")
