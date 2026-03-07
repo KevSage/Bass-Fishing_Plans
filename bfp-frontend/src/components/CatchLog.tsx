@@ -1113,35 +1113,49 @@ export function useCatchLog(
         isEditing: false,
       }));
       try {
-        const currentEntry = state.entries.find((e) => e.id === id);
-        if (currentEntry) {
-          const merged = { ...currentEntry, ...updates };
-          const apiInput = entryToApiInput(merged, activeLake);
+        // Check if this is an offline catch (not yet synced to backend)
+        const isOfflineCatch = id.startsWith("offline-");
 
-          console.log("[CatchLog] Sending to API:", {
-            lat: apiInput.lat,
-            lng: apiInput.lng,
-          });
+        if (isOfflineCatch) {
+          // Offline catches: update in localStorage only, skip API
+          console.log("[CatchLog] Updating offline catch locally:", id);
+          const offlineCatches = JSON.parse(localStorage.getItem(OFFLINE_KEY) || "[]");
+          const updatedOffline = offlineCatches.map((c: CatchEntry) =>
+            c.id === id ? { ...c, ...updates } : c
+          );
+          localStorage.setItem(OFFLINE_KEY, JSON.stringify(updatedOffline));
+          console.log("[CatchLog] Offline catch updated in localStorage");
+        } else {
+          // Online catches: update via API
+          const currentEntry = state.entries.find((e) => e.id === id);
+          if (currentEntry) {
+            const merged = { ...currentEntry, ...updates };
+            const apiInput = entryToApiInput(merged, activeLake);
 
-          // Use mobile endpoint on native platforms
-          if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
-            console.log("[CatchLog] Updating via mobile endpoint:", id);
-            await updateCatchMobile(id, apiInput, nativeAuth.userEmail, nativeAuth.userId);
+            console.log("[CatchLog] Sending to API:", {
+              lat: apiInput.lat,
+              lng: apiInput.lng,
+            });
 
-            // Sync localStorage with optimistic data (don't call fetchCatches -
-            // it could return stale data and overwrite the correct optimistic update)
-            const apiOnlyEntries = updatedEntries.filter((c) => !c.isOffline);
-            localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnlyEntries));
-            console.log("[CatchLog] Update successful, caches synced");
-          } else {
-            const token = await getToken();
-            if (token) {
-              await updateCatchApi(id, apiInput, token);
+            // Use mobile endpoint on native platforms
+            if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+              console.log("[CatchLog] Updating via mobile endpoint:", id);
+              await updateCatchMobile(id, apiInput, nativeAuth.userEmail, nativeAuth.userId);
 
               // Sync localStorage with optimistic data
               const apiOnlyEntries = updatedEntries.filter((c) => !c.isOffline);
               localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnlyEntries));
               console.log("[CatchLog] Update successful, caches synced");
+            } else {
+              const token = await getToken();
+              if (token) {
+                await updateCatchApi(id, apiInput, token);
+
+                // Sync localStorage with optimistic data
+                const apiOnlyEntries = updatedEntries.filter((c) => !c.isOffline);
+                localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnlyEntries));
+                console.log("[CatchLog] Update successful, caches synced");
+              }
             }
           }
         }
