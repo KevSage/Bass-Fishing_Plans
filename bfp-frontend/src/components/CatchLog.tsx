@@ -1127,11 +1127,24 @@ export function useCatchLog(
           if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
             console.log("[CatchLog] Updating via mobile endpoint:", id);
             await updateCatchMobile(id, apiInput, nativeAuth.userEmail, nativeAuth.userId);
+
+            // Fix: Update localStorage immediately with optimistic data
+            // This prevents race condition where fetchCatches might get stale data
+            const apiOnlyEntries = updatedEntries.filter((c) => !c.isOffline);
+            localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnlyEntries));
+            console.log("[CatchLog] localStorage updated with optimistic data");
+
             fetchCatches();
           } else {
             const token = await getToken();
             if (token) {
               await updateCatchApi(id, apiInput, token);
+
+              // Fix: Update localStorage immediately with optimistic data
+              const apiOnlyEntries = updatedEntries.filter((c) => !c.isOffline);
+              localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnlyEntries));
+              console.log("[CatchLog] localStorage updated with optimistic data");
+
               fetchCatches();
             }
           }
