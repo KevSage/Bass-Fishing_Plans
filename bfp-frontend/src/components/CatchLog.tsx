@@ -182,6 +182,14 @@ type CatchLogState = {
 // API CONVERTERS
 // =============================================================================
 export function apiRecordToEntry(record: CatchRecord): CatchEntry {
+  // Debug: Log location from API
+  console.log("[CatchLog] apiRecordToEntry:", {
+    id: record.id,
+    lat: record.lat,
+    lng: record.lng,
+    lakeName: record.lake_name,
+  });
+
   return {
     id: record.id,
     lakeId: record.lake_id,
@@ -768,7 +776,24 @@ export function useCatchLog(
         localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiEntries));
       }
 
-      setState((s) => ({ ...s, entries: mergedEntries }));
+      setState((s) => {
+        // Log if selectedEntry would change from this fetch
+        if (s.selectedEntry) {
+          const fromEntries = mergedEntries.find((e) => e.id === s.selectedEntry!.id);
+          if (fromEntries) {
+            console.log('[CatchLog] fetchCatches - selectedEntry vs entries:', {
+              selectedLat: s.selectedEntry.catchLat,
+              selectedLng: s.selectedEntry.catchLng,
+              entriesLat: fromEntries.catchLat,
+              entriesLng: fromEntries.catchLng,
+              match: s.selectedEntry.catchLat === fromEntries.catchLat &&
+                     s.selectedEntry.catchLng === fromEntries.catchLng,
+            });
+          }
+        }
+        // Keep selectedEntry unchanged - trust the optimistic update
+        return { ...s, entries: mergedEntries };
+      });
       setEntriesVersion((v) => {
         console.log('[CatchLog] Incrementing entriesVersion to:', v + 1);
         return v + 1;
@@ -1062,14 +1087,28 @@ export function useCatchLog(
 
   const updateCatch = useCallback(
     async (id: string, updates: Partial<CatchEntry>) => {
+      // Debug: Log location update
+      console.log("[CatchLog] updateCatch called:", {
+        id,
+        updateLat: updates.catchLat,
+        updateLng: updates.catchLng,
+      });
+
       const updatedEntries = state.entries.map((c) =>
         c.id === id ? { ...c, ...updates } : c,
       );
       globalEntriesCache = updatedEntries;
+
+      const updatedEntry = updatedEntries.find((c) => c.id === id);
+      console.log("[CatchLog] Optimistic update applied:", {
+        entryLat: updatedEntry?.catchLat,
+        entryLng: updatedEntry?.catchLng,
+      });
+
       setState((s) => ({
         ...s,
         entries: updatedEntries,
-        selectedEntry: updatedEntries.find((c) => c.id === id) || null,
+        selectedEntry: updatedEntry || null,
         view: "detail",
         isEditing: false,
       }));
@@ -1078,6 +1117,11 @@ export function useCatchLog(
         if (currentEntry) {
           const merged = { ...currentEntry, ...updates };
           const apiInput = entryToApiInput(merged, activeLake);
+
+          console.log("[CatchLog] Sending to API:", {
+            lat: apiInput.lat,
+            lng: apiInput.lng,
+          });
 
           // Use mobile endpoint on native platforms
           if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
