@@ -2706,7 +2706,9 @@ export function CatchFormView({
     }
   };
 
-  const canSubmit = lure && activeLake && !isResolving && !isUploading;
+  // Block save if GPS is still loading (wait for success, error, or timeout)
+  const isLocationReady = locationStatus !== "loading";
+  const canSubmit = lure && activeLake && !isResolving && !isUploading && isLocationReady;
 
   return (
     <>
@@ -3129,11 +3131,13 @@ export function CatchFormView({
         >
           {isUploading
             ? "Uploading Photo..."
-            : isResolving
-              ? "Resolving..."
-              : isEditing
-                ? "Save Changes"
-                : "Save Catch"}
+            : locationStatus === "loading"
+              ? "Getting Location..."
+              : isResolving
+                ? "Resolving..."
+                : isEditing
+                  ? "Save Changes"
+                  : "Save Catch"}
         </button>
       </div>
 
