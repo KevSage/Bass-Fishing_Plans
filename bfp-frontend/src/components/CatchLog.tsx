@@ -146,6 +146,7 @@ export type CatchEntry = {
   notes?: string;
   photoUrl?: string;
   imageData?: string;
+  pendingPhotoBase64?: string; // Base64 photo data waiting to be uploaded when back online
   caughtAt: string;
   createdAt: string;
   source: "camera" | "library" | "manual" | "demo";
@@ -829,10 +830,53 @@ export function useCatchLog(
 
     const remaining: CatchEntry[] = [];
     let syncedCount = 0;
+    let photosUploaded = 0;
+
     for (const entry of offline) {
       try {
         const input = entryToApiInput(entry, activeLake);
         input.source = entry.source || "manual";
+
+        // Upload pending photo if present
+        if (entry.pendingPhotoBase64 && !entry.photoUrl) {
+          try {
+            console.log('[CatchLog] Uploading pending photo for offline catch:', entry.id);
+            // Convert base64 to File
+            const base64Data = entry.pendingPhotoBase64.split(',')[1] || entry.pendingPhotoBase64;
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/jpeg' });
+            const file = new File([blob], `catch_${Date.now()}.jpeg`, { type: 'image/jpeg' });
+
+            // Get presigned URL and upload
+            let upload_url: string;
+            let public_url: string;
+
+            if (isNative && hasNativeAuth) {
+              const result = await getPresignedUrlMobile(file.name, file.type, nativeAuth.userEmail!, nativeAuth.userId!);
+              upload_url = result.upload_url;
+              public_url = result.public_url;
+            } else {
+              const result = await getPresignedUrl(file.name, file.type, token!);
+              upload_url = result.upload_url;
+              public_url = result.public_url;
+            }
+
+            await uploadFileToR2(upload_url, file);
+            console.log('[CatchLog] Pending photo uploaded:', public_url);
+            input.photo_url = public_url;
+            photosUploaded++;
+          } catch (uploadErr) {
+            console.error('[CatchLog] Failed to upload pending photo:', uploadErr);
+            // Keep the catch with pendingPhotoBase64 for next sync attempt
+            remaining.push(entry);
+            continue;
+          }
+        }
 
         if (isNative && hasNativeAuth) {
           await createCatchMobile(input, nativeAuth.userEmail!, nativeAuth.userId!);
@@ -847,7 +891,10 @@ export function useCatchLog(
     }
     localStorage.setItem(OFFLINE_KEY, JSON.stringify(remaining));
     await fetchCatches();
-    if (syncedCount > 0) alert(`Synced ${syncedCount} catches.`);
+    if (syncedCount > 0) {
+      const photoMsg = photosUploaded > 0 ? ` (${photosUploaded} photos uploaded)` : '';
+      alert(`Synced ${syncedCount} catches${photoMsg}.`);
+    }
     setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLake, fetchCatches, getOfflineCatches, nativeAuth.userEmail, nativeAuth.userId]);
@@ -1240,13 +1287,15 @@ export function CatchLogModal(props: CatchLogModalProps) {
               isEditing={isEditing}
               activeLake={activeLake}
               galleryOnly={galleryOnly}
-              onSave={(data) => {
+              onSave={async (data) => {
                 if (isEditing && selectedEntry) {
-                  updateCatch(selectedEntry.id, data);
+                  await updateCatch(selectedEntry.id, data);
+                  return null;
                 } else {
-                  addCatch(data as Omit<CatchEntry, "id" | "createdAt">);
+                  const result = await addCatch(data as Omit<CatchEntry, "id" | "createdAt">);
                   if (!selectedEntry?.id) onDraftDone?.();
                   if (disableListView) close();
+                  return result;
                 }
               }}
               onCancel={() => {
@@ -1806,7 +1855,7 @@ export type CatchFormViewProps = {
   entry: CatchEntry | null;
   isEditing: boolean;
   activeLake: ActiveLake;
-  onSave: (data: Partial<CatchEntry>) => void;
+  onSave: (data: Partial<CatchEntry>) => Promise<CatchEntry | null> | void;
   onCancel: () => void;
   initialSource?: "camera" | "library" | "manual";
   initialCoords?: { lat: number; lng: number };
@@ -1882,6 +1931,9 @@ export function CatchFormView({
   const [photoPreview, setPhotoPreview] = useState(
     entry?.imageData || entry?.photoUrl || "",
   );
+  // Pending photo base64 - stored when upload fails due to network issues
+  const [pendingPhotoBase64, setPendingPhotoBase64] = useState(entry?.pendingPhotoBase64 || "");
+  const [uploadFailed, setUploadFailed] = useState(false);
   const [caughtAt, setCaughtAt] = useState(
     initialDateTime?.toISOString() ||
       entry?.caughtAt ||
@@ -1908,6 +1960,9 @@ export function CatchFormView({
   const mapPickerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
+
+  // Prevent duplicate save submissions
+  const isSavingRef = useRef(false);
 
   // Auto-Fetch Weather Logic
   const autoFetchWeather = async (lat: number, lng: number, time: string) => {
@@ -2216,6 +2271,12 @@ export function CatchFormView({
       setIsUploading(false);
     } catch (err) {
       console.error("Upload failed:", err);
+      // Save photo locally for later upload when back online
+      if (photoPreview) {
+        console.log("[Upload] Saving photo locally for offline sync");
+        setPendingPhotoBase64(photoPreview);
+        setUploadFailed(true);
+      }
       setIsUploading(false);
     }
   };
@@ -2235,38 +2296,86 @@ export function CatchFormView({
       setExifStatus("extracting");
       setSource(photoSource);
 
-      // Extract EXIF data (same as web flow)
-      try {
-        const exif = await extractExifData(file);
-        let foundLoc = false;
-        let foundTime = false;
+      // CAMERA vs LIBRARY have different location strategies:
+      // - CAMERA: Device GPS is PRIMARY (you're at the catch location right now)
+      // - LIBRARY: EXIF GPS is PRIMARY (photo was taken at a different time/place)
 
-        if (exif.latitude && exif.longitude) {
-          setCatchLat(exif.latitude);
-          setCatchLng(exif.longitude);
-          setLocationStatus("exif");
-          foundLoc = true;
-          checkLakeMatch(exif.latitude, exif.longitude);
-        }
+      if (photoSource === 'camera') {
+        // CAMERA SOURCE: Get device GPS immediately (primary), use EXIF only for time
+        console.log('[CatchForm] Camera source - using device GPS as primary');
+        const now = new Date();
+        setCaughtAt(now.toISOString());
 
-        if (exif.dateTime) {
-          setCaughtAt(exif.dateTime.toISOString());
-          foundTime = true;
-        }
-
-        if (foundLoc && foundTime) {
-          setExifStatus("found-all");
-          autoFetchWeather(
-            exif.latitude!,
-            exif.longitude!,
-            exif.dateTime!.toISOString(),
+        // Get device GPS first (primary location source for camera)
+        if (navigator.geolocation) {
+          setLocationStatus("loading");
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              console.log('[CatchForm] Device GPS success:', position.coords.latitude, position.coords.longitude);
+              setCatchLat(position.coords.latitude);
+              setCatchLng(position.coords.longitude);
+              setLocationStatus("success");
+              checkLakeMatch(position.coords.latitude, position.coords.longitude);
+              autoFetchWeather(position.coords.latitude, position.coords.longitude, now.toISOString());
+              setExifStatus("found-all"); // We have location from device
+            },
+            (err) => {
+              console.warn('[CatchForm] Device GPS failed:', err);
+              setLocationStatus("error");
+              setExifStatus("none");
+              // Fallback: try EXIF location
+              extractExifData(file).then(exif => {
+                if (exif.latitude && exif.longitude) {
+                  setCatchLat(exif.latitude);
+                  setCatchLng(exif.longitude);
+                  setLocationStatus("exif");
+                  checkLakeMatch(exif.latitude, exif.longitude);
+                }
+              }).catch(() => {});
+            },
+            { enableHighAccuracy: true, timeout: 15000 }
           );
-        } else if (foundLoc) {
-          setExifStatus("found-all");
-        } else if (foundTime) {
-          setExifStatus("found-time");
-        } else {
-          // No EXIF data - show manual date/time pickers (match web flow)
+        }
+      } else {
+        // LIBRARY SOURCE: Use EXIF data (primary), no device GPS fallback
+        try {
+          const exif = await extractExifData(file);
+          let foundLoc = false;
+          let foundTime = false;
+
+          if (exif.latitude && exif.longitude) {
+            setCatchLat(exif.latitude);
+            setCatchLng(exif.longitude);
+            setLocationStatus("exif");
+            foundLoc = true;
+            checkLakeMatch(exif.latitude, exif.longitude);
+          }
+
+          if (exif.dateTime) {
+            setCaughtAt(exif.dateTime.toISOString());
+            foundTime = true;
+          }
+
+          if (foundLoc && foundTime) {
+            setExifStatus("found-all");
+            autoFetchWeather(exif.latitude!, exif.longitude!, exif.dateTime!.toISOString());
+          } else if (foundLoc) {
+            setExifStatus("found-all");
+          } else if (foundTime) {
+            setExifStatus("found-time");
+            // No GPS in EXIF for library photo - user should pick location on map
+            // Don't use device GPS - that's where they are NOW, not where photo was taken
+          } else {
+            // No EXIF data - show manual date/time pickers
+            setExifStatus("none");
+            setShowManualDateTime(true);
+            const now = new Date();
+            setManualDate(now.toISOString().split('T')[0]);
+            setManualTime(now.toTimeString().slice(0, 5));
+            setCaughtAt(now.toISOString());
+          }
+        } catch (err) {
+          console.warn("EXIF extraction failed:", err);
           setExifStatus("none");
           setShowManualDateTime(true);
           const now = new Date();
@@ -2274,30 +2383,32 @@ export function CatchFormView({
           setManualTime(now.toTimeString().slice(0, 5));
           setCaughtAt(now.toISOString());
         }
-      } catch (err) {
-        console.warn("EXIF extraction failed:", err);
-        setExifStatus("none");
-        setShowManualDateTime(true);
-        const now = new Date();
-        setManualDate(now.toISOString().split('T')[0]);
-        setManualTime(now.toTimeString().slice(0, 5));
-        setCaughtAt(now.toISOString());
       }
 
       // Small delay to let UI render before starting heavy compression
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      // Compress and upload (same as web flow)
+      // Compress and convert to base64 (need base64 for offline fallback)
       let fileToUpload = file;
+      let base64Data = "";
+
+      // Helper to read file as base64
+      const readAsBase64 = (f: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(f);
+        });
+      };
+
       try {
         fileToUpload = await compressImage(file);
-        const reader = new FileReader();
-        reader.onload = () => setPhotoPreview(reader.result as string);
-        reader.readAsDataURL(fileToUpload);
+        base64Data = await readAsBase64(fileToUpload);
+        setPhotoPreview(base64Data);
       } catch (err) {
-        const reader = new FileReader();
-        reader.onload = () => setPhotoPreview(reader.result as string);
-        reader.readAsDataURL(file);
+        base64Data = await readAsBase64(file);
+        setPhotoPreview(base64Data);
       }
 
       // Upload to R2
@@ -2341,6 +2452,13 @@ export function CatchFormView({
           status: err?.status,
           stack: err?.stack?.slice(0, 200),
         });
+        // Save photo locally for later upload when back online
+        // Use base64Data directly (not state) to avoid race condition
+        if (base64Data) {
+          console.log("[Upload] Saving photo locally for offline sync");
+          setPendingPhotoBase64(base64Data);
+          setUploadFailed(true);
+        }
       } finally {
         setIsUploading(false);
       }
@@ -2366,7 +2484,13 @@ export function CatchFormView({
   };
 
   const handleSubmit = async () => {
+    // Prevent duplicate submissions
+    if (isSavingRef.current) {
+      console.log('[CatchForm] Save already in progress, ignoring click');
+      return;
+    }
     if (!lure || !activeLake) return;
+    isSavingRef.current = true;
     setIsResolving(true);
     try {
       const token = await getToken();
@@ -2418,6 +2542,7 @@ export function CatchFormView({
         notes: notes || undefined,
         photoUrl: photoUrl || undefined,
         imageData: photoPreview || undefined,
+        pendingPhotoBase64: pendingPhotoBase64 || undefined, // Photo waiting to upload when online
         caughtAt,
         source,
         lakeId: lakeId,
@@ -2432,11 +2557,13 @@ export function CatchFormView({
       if (lure || color || species) {
         saveLastCatchDefaults(lure, color, species);
       }
-      onSave(data);
+      // Await the actual save - this is the key fix!
+      const result = await onSave(data);
+      console.log('[CatchForm] Save completed:', result ? 'success' : 'offline');
     } catch (e) {
+      console.error('[CatchForm] Save error, using fallback:', e);
       // Fallback
       const fallbackData: Partial<CatchEntry> = {
-        // ... (Keep existing fallback)
         lakeName: lakeName || activeLake.name || "Unknown Water",
         lakeLat: activeLake.lat,
         lakeLng: activeLake.lng,
@@ -2450,6 +2577,7 @@ export function CatchFormView({
         notes: notes || undefined,
         photoUrl: photoUrl || undefined,
         imageData: photoPreview || undefined,
+        pendingPhotoBase64: pendingPhotoBase64 || undefined, // Photo waiting to upload when online
         caughtAt,
         source,
         lakeId: activeLake.id,
@@ -2459,8 +2587,10 @@ export function CatchFormView({
       if (lure || color || species) {
         saveLastCatchDefaults(lure, color, species);
       }
-      onSave(fallbackData);
+      await onSave(fallbackData);
     } finally {
+      // Always reset saving state
+      isSavingRef.current = false;
       setIsResolving(false);
     }
   };
@@ -2498,6 +2628,8 @@ export function CatchFormView({
                 onClick={() => {
                   setPhotoPreview("");
                   setPhotoUrl("");
+                  setPendingPhotoBase64("");
+                  setUploadFailed(false);
                   setExifStatus("idle");
                 }}
                 className="catch-image-remove"
@@ -2530,6 +2662,11 @@ export function CatchFormView({
               {exifStatus === "none" && (
                 <div className="catch-exif-badge none">
                   No GPS data in photo
+                </div>
+              )}
+              {uploadFailed && pendingPhotoBase64 && (
+                <div className="catch-exif-badge" style={{ background: "rgba(255, 165, 0, 0.9)", color: "#000" }}>
+                  📶 Photo saved locally - will upload when online
                 </div>
               )}
             </div>

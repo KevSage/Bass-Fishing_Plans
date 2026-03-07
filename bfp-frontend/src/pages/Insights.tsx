@@ -665,12 +665,13 @@ export function Insights() {
     setIsEditing(false);
   };
 
-  const handleUpdateCatch = async (data: Partial<CatchEntry>) => {
+  const handleUpdateCatch = async (data: Partial<CatchEntry>): Promise<CatchEntry | null> => {
     if (viewingCatch?.id) {
       await hookUpdateCatch(viewingCatch.id, data);
       setViewingCatch(null);
       setIsEditing(false);
     }
+    return null;
   };
 
   const handleUploadClick = () => {
