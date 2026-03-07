@@ -924,6 +924,50 @@ export function useCatchLog(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLake, fetchCatches, getOfflineCatches, nativeAuth.userEmail, nativeAuth.userId]);
 
+  // Auto-sync offline catches when coming online or app resumes
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('[CatchLog] Network online - checking for offline catches to sync');
+      const offline = getOfflineCatches();
+      if (offline.length > 0) {
+        console.log(`[CatchLog] Found ${offline.length} offline catches, triggering sync`);
+        syncOfflineCatches();
+      }
+    };
+
+    // Listen for browser online event
+    window.addEventListener('online', handleOnline);
+
+    // For Capacitor: listen for app resume (coming back to foreground)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        console.log('[CatchLog] App visible and online - checking for offline catches');
+        const offline = getOfflineCatches();
+        if (offline.length > 0) {
+          console.log(`[CatchLog] Found ${offline.length} offline catches, triggering sync`);
+          syncOfflineCatches();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Also check on initial mount if we have offline catches and are online
+    if (navigator.onLine) {
+      const offline = getOfflineCatches();
+      if (offline.length > 0) {
+        console.log(`[CatchLog] Initial check: ${offline.length} offline catches, online - triggering sync`);
+        // Delay slightly to let auth initialize
+        setTimeout(syncOfflineCatches, 2000);
+      }
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [getOfflineCatches, syncOfflineCatches]);
+
   const lakeCatches = useMemo(() => {
     if (!activeLake) return [];
     return state.entries
