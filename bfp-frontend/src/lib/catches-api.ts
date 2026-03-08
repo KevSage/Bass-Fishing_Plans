@@ -315,6 +315,12 @@ export async function updateCatchMobile(
 
     const result = await response.json();
     console.log('[catches-api] updateCatchMobile response:', result);
+
+    // Check for server-side error (200 OK but success: false)
+    if (!result.success) {
+      throw new Error(result.error || 'Update failed on server');
+    }
+
     return result;
   } catch (err) {
     clearTimeout(timeoutId);

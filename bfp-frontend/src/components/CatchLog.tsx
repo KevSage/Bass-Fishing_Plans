@@ -1412,7 +1412,7 @@ export function CatchLogModal(props: CatchLogModalProps) {
               hasOffline={hasOffline}
             />
           )}
-          {view === "detail" && selectedEntry && (
+          {view === "detail" && selectedEntry ? (
             <CatchDetailView
               entry={selectedEntry}
               allEntries={entries}
@@ -1425,7 +1425,14 @@ export function CatchLogModal(props: CatchLogModalProps) {
               onFlyToLocation={handleFlyToLocation}
               readOnly={false}
             />
-          )}
+          ) : view === "detail" && !selectedEntry ? (
+            // Fallback: if detail view but no entry, close or show list
+            (() => {
+              console.warn("[CatchModal] Detail view but no selectedEntry - closing");
+              setTimeout(() => close(), 0);
+              return null;
+            })()
+          ) : null}
           {view === "form" && (
             <CatchFormView
               entry={selectedEntry}
