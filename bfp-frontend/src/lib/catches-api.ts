@@ -296,19 +296,35 @@ export async function updateCatchMobile(
     lake_name: payload.lake_name,
   });
 
-  const response = await fetch(`${getApiBase()}/mobile-auth/update-catch`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  // Add 15-second timeout to prevent indefinite hanging on spotty networks
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-  if (!response.ok) {
-    throw new Error(`Failed to update catch: ${response.status}`);
+  try {
+    const response = await fetch(`${getApiBase()}/mobile-auth/update-catch`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Failed to update catch: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('[catches-api] updateCatchMobile response:', result);
+    return result;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.warn('[updateCatchMobile] Request timed out after 15s');
+      // Return uncertain state - server may have processed the update
+      throw new Error('TIMEOUT: Update may have succeeded - please refresh');
+    }
+    throw err;
   }
-
-  const result = await response.json();
-  console.log('[catches-api] updateCatchMobile response:', result);
-  return result;
 }
 
 // =============================================================================

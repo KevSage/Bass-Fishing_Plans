@@ -1238,8 +1238,31 @@ export function useCatchLog(
         }
       } catch (err) {
         console.error("Failed to update catch:", err);
-        alert("Failed to save changes. Please check your connection.");
-        fetchCatches();
+
+        // On network errors, the server may have actually processed the update.
+        // Refresh to check current state rather than immediately showing error.
+        try {
+          await fetchCatches();
+
+          // Check if the update actually persisted by comparing with what we tried to update
+          const refreshedEntry = globalEntriesCache.find((e) => e.id === id);
+          const updateSucceeded = refreshedEntry && (
+            (updates.catchLat === undefined || refreshedEntry.catchLat === updates.catchLat) &&
+            (updates.catchLng === undefined || refreshedEntry.catchLng === updates.catchLng)
+          );
+
+          if (updateSucceeded) {
+            console.log("[CatchLog] Update verified after refresh - no error shown");
+            // Update succeeded despite error - don't show alert
+          } else {
+            // Update genuinely failed
+            alert("Failed to save changes. Please check your connection.");
+          }
+        } catch (fetchErr) {
+          // Can't verify, show error
+          console.error("Failed to verify update:", fetchErr);
+          alert("Failed to save changes. Please check your connection.");
+        }
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
