@@ -1171,7 +1171,11 @@ export function useCatchLog(
         updateLng: updates.catchLng,
       });
 
-      const updatedEntries = state.entries.map((c) =>
+      // Use globalEntriesCache to avoid stale closure issues with state.entries
+      const currentEntries = globalEntriesCache || state.entries;
+      console.log("[CatchLog] Current entries count:", currentEntries.length);
+
+      const updatedEntries = currentEntries.map((c) =>
         c.id === id ? { ...c, ...updates } : c,
       );
       globalEntriesCache = updatedEntries;
@@ -1180,6 +1184,7 @@ export function useCatchLog(
       console.log("[CatchLog] Optimistic update applied:", {
         entryLat: updatedEntry?.catchLat,
         entryLng: updatedEntry?.catchLng,
+        entriesCount: updatedEntries.length,
       });
 
       setState((s) => ({
@@ -1204,7 +1209,7 @@ export function useCatchLog(
           console.log("[CatchLog] Offline catch updated in localStorage");
         } else {
           // Online catches: update via API
-          const currentEntry = state.entries.find((e) => e.id === id);
+          const currentEntry = currentEntries.find((e) => e.id === id);
           if (currentEntry) {
             const merged = { ...currentEntry, ...updates };
             const apiInput = entryToApiInput(merged, activeLake);
@@ -1244,12 +1249,14 @@ export function useCatchLog(
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [activeLake, state.entries, fetchCatches],
+    [activeLake, fetchCatches, nativeAuth.userEmail, nativeAuth.userId],
   );
 
   const deleteCatch = useCallback(
     async (id: string) => {
-      const remaining = state.entries.filter((c) => c.id !== id);
+      // Use globalEntriesCache to avoid stale closure issues
+      const currentEntries = globalEntriesCache || state.entries;
+      const remaining = currentEntries.filter((c) => c.id !== id);
       globalEntriesCache = remaining;
       setState((s) => ({
         ...s,
@@ -1287,7 +1294,7 @@ export function useCatchLog(
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [getOfflineCatches, state.entries, fetchCatches],
+    [getOfflineCatches, fetchCatches, nativeAuth.userEmail, nativeAuth.userId],
   );
 
   return {
