@@ -547,13 +547,29 @@ function formatLureName(value: string): string {
 function isPersonalBest(entry: CatchEntry, allEntries: CatchEntry[]): boolean {
   if (!entry.weight) return false;
   const species = entry.species || "largemouth";
-  const otherCatches = allEntries.filter(
-    (c) =>
-      c.id !== entry.id && (c.species || "largemouth") === species && c.weight,
+  const sameSpeciesWithWeight = allEntries.filter(
+    (c) => (c.species || "largemouth") === species && c.weight,
   );
-  if (otherCatches.length === 0) return true;
-  const maxWeight = Math.max(...otherCatches.map((c) => Number(c.weight)));
-  return Number(entry.weight) > maxWeight;
+
+  // Need at least 2 catches to compare (including this one)
+  if (sameSpeciesWithWeight.length < 2) return false;
+
+  // Find the max weight among ALL catches of this species
+  const maxWeight = Math.max(...sameSpeciesWithWeight.map((c) => Number(c.weight)));
+
+  // This is PB only if it equals the max (handles ties - first catch wins)
+  const entryWeight = Number(entry.weight);
+  if (entryWeight < maxWeight) return false;
+
+  // If tied for max, only the earliest catch gets PB
+  const maxCatches = sameSpeciesWithWeight.filter(c => Number(c.weight) === maxWeight);
+  if (maxCatches.length === 1) return true;
+
+  // Multiple catches with same max weight - earliest one is PB
+  const sorted = maxCatches.sort((a, b) =>
+    new Date(a.caughtAt).getTime() - new Date(b.caughtAt).getTime()
+  );
+  return sorted[0].id === entry.id;
 }
 
 function getSpeciesLabel(species?: BassSpecies): string {
