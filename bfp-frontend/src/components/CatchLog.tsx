@@ -831,9 +831,20 @@ export function useCatchLog(
     fetchCatches();
   }, [fetchCatches, isSignedIn, nativeAuth.userEmail, nativeAuth.userId]);
 
+  // Ref to prevent concurrent sync operations
+  const isSyncingRef = useRef(false);
+
   const syncOfflineCatches = useCallback(async () => {
+    // Prevent concurrent syncs
+    if (isSyncingRef.current) {
+      console.log('[CatchLog] Sync already in progress, skipping');
+      return;
+    }
+
     const offline = getOfflineCatches();
     if (offline.length === 0) return;
+
+    isSyncingRef.current = true;
     setIsLoading(true);
 
     const isNative = isNativePlatform();
@@ -843,6 +854,7 @@ export function useCatchLog(
     if (isNative && !hasNativeAuth) {
       console.log('[CatchLog] syncOfflineCatches: No native auth, skipping');
       setIsLoading(false);
+      isSyncingRef.current = false;
       return;
     }
 
@@ -850,6 +862,7 @@ export function useCatchLog(
     if (!isNative && !token) {
       console.log('[CatchLog] syncOfflineCatches: No web token, skipping');
       setIsLoading(false);
+      isSyncingRef.current = false;
       return;
     }
 
@@ -918,15 +931,27 @@ export function useCatchLog(
     await fetchCatches();
     if (syncedCount > 0) {
       const photoMsg = photosUploaded > 0 ? ` (${photosUploaded} photos uploaded)` : '';
-      alert(`Synced ${syncedCount} catches${photoMsg}.`);
+      // Use console.log instead of alert() to avoid triggering visibilitychange loop
+      console.log(`[CatchLog] Synced ${syncedCount} catches${photoMsg}`);
     }
     setIsLoading(false);
+    isSyncingRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLake, fetchCatches, getOfflineCatches, nativeAuth.userEmail, nativeAuth.userId]);
 
   // Auto-sync offline catches when coming online or app resumes
   useEffect(() => {
+    let lastSyncAttempt = 0;
+    const SYNC_DEBOUNCE_MS = 5000; // Don't sync more than once per 5 seconds
+
     const handleOnline = () => {
+      const now = Date.now();
+      if (now - lastSyncAttempt < SYNC_DEBOUNCE_MS) {
+        console.log('[CatchLog] Sync debounced (too soon)');
+        return;
+      }
+      lastSyncAttempt = now;
+
       console.log('[CatchLog] Network online - checking for offline catches to sync');
       const offline = getOfflineCatches();
       if (offline.length > 0) {
@@ -941,6 +966,13 @@ export function useCatchLog(
     // For Capacitor: listen for app resume (coming back to foreground)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
+        const now = Date.now();
+        if (now - lastSyncAttempt < SYNC_DEBOUNCE_MS) {
+          console.log('[CatchLog] Visibility sync debounced (too soon)');
+          return;
+        }
+        lastSyncAttempt = now;
+
         console.log('[CatchLog] App visible and online - checking for offline catches');
         const offline = getOfflineCatches();
         if (offline.length > 0) {
@@ -958,6 +990,7 @@ export function useCatchLog(
       if (offline.length > 0) {
         console.log(`[CatchLog] Initial check: ${offline.length} offline catches, online - triggering sync`);
         // Delay slightly to let auth initialize
+        lastSyncAttempt = Date.now();
         setTimeout(syncOfflineCatches, 2000);
       }
     }
