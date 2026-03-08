@@ -2437,12 +2437,17 @@ export function CatchFormView({
               // Fallback: try EXIF location
               extractExifData(file).then(exif => {
                 if (exif.latitude && exif.longitude) {
+                  console.log('[CatchForm] EXIF fallback success:', exif.latitude, exif.longitude);
                   setCatchLat(exif.latitude);
                   setCatchLng(exif.longitude);
                   setLocationStatus("exif");
                   checkLakeMatch(exif.latitude, exif.longitude);
+                } else {
+                  console.warn('[CatchForm] EXIF fallback has no GPS - coordinates will be lake centroid!');
                 }
-              }).catch(() => {});
+              }).catch((exifErr) => {
+                console.warn('[CatchForm] EXIF extraction failed:', exifErr);
+              });
             },
             { enableHighAccuracy: true, timeout: 15000 }
           );
@@ -2601,6 +2606,18 @@ export function CatchFormView({
       return;
     }
     if (!lure || !activeLake) return;
+
+    // DEBUG: Log coordinate state at save time
+    console.log('[CatchForm] SAVE STARTED - Coordinate state:', {
+      catchLat,
+      catchLng,
+      activeLakeLat: activeLake.lat,
+      activeLakeLng: activeLake.lng,
+      willUseFallback: !catchLat || !catchLng,
+      locationStatus,
+      source,
+    });
+
     isSavingRef.current = true;
     setIsResolving(true);
     try {
@@ -2664,6 +2681,15 @@ export function CatchFormView({
         pressure: pressure ? parseFloat(pressure) : undefined,
         skyCondition: sky || undefined,
       };
+      // DEBUG: Log exact coordinates being saved
+      console.log('[CatchForm] SAVING with coordinates:', {
+        catchLat: data.catchLat,
+        catchLng: data.catchLng,
+        lakeLat: data.lakeLat,
+        lakeLng: data.lakeLng,
+        isCentroid: data.catchLat === activeLake.lat && data.catchLng === activeLake.lng,
+      });
+
       // Save last used lure/color/species for next catch auto-population
       if (lure || color || species) {
         saveLastCatchDefaults(lure, color, species);
@@ -2706,9 +2732,7 @@ export function CatchFormView({
     }
   };
 
-  // Block save if GPS is still loading (wait for success, error, or timeout)
-  const isLocationReady = locationStatus !== "loading";
-  const canSubmit = lure && activeLake && !isResolving && !isUploading && isLocationReady;
+  const canSubmit = lure && activeLake && !isResolving && !isUploading;
 
   return (
     <>
@@ -3131,13 +3155,11 @@ export function CatchFormView({
         >
           {isUploading
             ? "Uploading Photo..."
-            : locationStatus === "loading"
-              ? "Getting Location..."
-              : isResolving
-                ? "Resolving..."
-                : isEditing
-                  ? "Save Changes"
-                  : "Save Catch"}
+            : isResolving
+              ? "Resolving..."
+              : isEditing
+                ? "Save Changes"
+                : "Save Catch"}
         </button>
       </div>
 

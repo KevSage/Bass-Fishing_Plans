@@ -504,21 +504,36 @@ export async function resolveLakeMobile(
   userId: string,
   radiusKm = 1.0,
 ): Promise<ResolvedLake> {
-  const response = await fetch(`${getApiBase()}/mobile-auth/resolve-lake`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email,
-      user_id: userId,
-      lat,
-      lng,
-      radius_km: radiusKm,
-    }),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to resolve lake: ${response.status}`);
+  // Add 10-second timeout to prevent indefinite hanging on spotty networks
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const response = await fetch(`${getApiBase()}/mobile-auth/resolve-lake`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        user_id: userId,
+        lat,
+        lng,
+        radius_km: radiusKm,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Failed to resolve lake: ${response.status}`);
+    }
+    return response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error && err.name === 'AbortError') {
+      console.warn('[resolveLakeMobile] Request timed out after 10s');
+    }
+    throw err;
   }
-  return response.json();
 }
 
 export async function getPresignedUrl(
