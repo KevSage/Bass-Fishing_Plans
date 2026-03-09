@@ -1990,42 +1990,31 @@ export function Members() {
         console.log("[LiveCamera] Distance from lake center:", distanceKm.toFixed(2), "km");
 
         if (distanceKm <= 10) {
-          // User is near the lake - check if GPS point is actually on water
+          // User is within 10km of lake - TRUST THE GPS
+          // Previous logic snapped to lake center if not "on water" but this was too strict
+          // (GPS drift, boat near shore, inaccurate polygon all caused false negatives)
+          latitude = gpsLat;
+          longitude = gpsLng;
+          useGps = true;
+
+          // Log whether GPS is inside polygon (informational only, don't snap)
           if (lakeAnchors && lakeAnchors.length >= 3) {
             const isOnWater = pointInPolygon({ lat: gpsLat, lng: gpsLng }, lakeAnchors);
-            console.log("[LiveCamera] GPS point in lake boundary:", isOnWater);
-
-            if (isOnWater) {
-              // GPS is confirmed on water - use it for precise hot spot
-              latitude = gpsLat;
-              longitude = gpsLng;
-              useGps = true;
-              console.log("[LiveCamera] Using real GPS - confirmed on water");
-            } else {
-              // GPS is near lake but not on water (on shore?) - snap to lake center
-              const waterCenter = findWaterCenter(currentFav as any);
-              latitude = waterCenter.lat;
-              longitude = waterCenter.lng;
-              console.log("[LiveCamera] GPS near lake but not on water - using visual center:", latitude, longitude);
-            }
+            console.log("[LiveCamera] GPS within 10km, using GPS coords. In polygon:", isOnWater);
           } else {
-            // No boundary data - use GPS since we're within 10km
-            latitude = gpsLat;
-            longitude = gpsLng;
-            useGps = true;
-            console.log("[LiveCamera] No lake boundary - using GPS within vicinity");
+            console.log("[LiveCamera] GPS within 10km, using GPS coords (no boundary data)");
           }
         } else {
-          // User is far from lake (testing from home?) - use lake coordinates
+          // User is far from lake (>10km, testing from home?) - use lake coordinates
           if (lakeAnchors && lakeAnchors.length >= 3 && currentFav) {
             const waterCenter = findWaterCenter(currentFav as any);
             latitude = waterCenter.lat;
             longitude = waterCenter.lng;
-            console.log("[LiveCamera] GPS too far - using lake visual center:", latitude, longitude);
+            console.log("[LiveCamera] GPS too far (", distanceKm.toFixed(1), "km) - using lake visual center:", latitude, longitude);
           } else {
             latitude = selectedCoords.lat;
             longitude = selectedCoords.lng;
-            console.log("[LiveCamera] GPS too far - using lake center:", latitude, longitude);
+            console.log("[LiveCamera] GPS too far (", distanceKm.toFixed(1), "km) - using lake center:", latitude, longitude);
           }
         }
       } else {

@@ -2083,11 +2083,12 @@ export function CatchFormView({
     // Demo entries default to "manual" in the form
     entry?.source === "demo" ? "manual" : (entry?.source || initialSource),
   );
+  // Use nullish coalescing (??) instead of || to handle 0 as valid coordinate
   const [catchLat, setCatchLat] = useState(
-    initialCoords?.lat || entry?.catchLat || activeLake?.lat || 0,
+    initialCoords?.lat ?? entry?.catchLat ?? activeLake?.lat ?? 0,
   );
   const [catchLng, setCatchLng] = useState(
-    initialCoords?.lng || entry?.catchLng || activeLake?.lng || 0,
+    initialCoords?.lng ?? entry?.catchLng ?? activeLake?.lng ?? 0,
   );
 
   // Weather Fields
@@ -2724,8 +2725,9 @@ export function CatchFormView({
         lakeName: finalLakeName,
         lakeLat: activeLake.lat,
         lakeLng: activeLake.lng,
-        catchLat: catchLat || activeLake.lat,
-        catchLng: catchLng || activeLake.lng,
+        // Use ?? instead of || to preserve 0 as valid coordinate
+        catchLat: catchLat ?? activeLake.lat,
+        catchLng: catchLng ?? activeLake.lng,
         lure,
         color: color || undefined,
         species,
@@ -2768,8 +2770,9 @@ export function CatchFormView({
         lakeName: lakeName || activeLake.name || "Unknown Water",
         lakeLat: activeLake.lat,
         lakeLng: activeLake.lng,
-        catchLat: catchLat || activeLake.lat,
-        catchLng: catchLng || activeLake.lng,
+        // Use ?? instead of || to preserve 0 as valid coordinate
+        catchLat: catchLat ?? activeLake.lat,
+        catchLng: catchLng ?? activeLake.lng,
         lure,
         color: color || undefined,
         species,
