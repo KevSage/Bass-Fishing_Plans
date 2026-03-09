@@ -89,3 +89,70 @@ export async function configureStatusBar(): Promise<void> {
     console.warn('StatusBar configuration failed:', err);
   }
 }
+
+/**
+ * Get current GPS position using Capacitor Geolocation on native, web API on browser
+ * Returns { latitude, longitude } or throws on failure
+ */
+export async function getCurrentPosition(options?: {
+  timeout?: number;
+  enableHighAccuracy?: boolean;
+  maximumAge?: number;
+}): Promise<{ latitude: number; longitude: number }> {
+  const timeout = options?.timeout ?? 15000;
+  const enableHighAccuracy = options?.enableHighAccuracy ?? true;
+  const maximumAge = options?.maximumAge ?? 60000;
+
+  if (isNativePlatform()) {
+    // Use Capacitor Geolocation plugin for native platforms
+    const { Geolocation } = await import('@capacitor/geolocation');
+
+    // Check/request permissions first
+    let perms = await Geolocation.checkPermissions();
+    console.log('[Geolocation] Current permissions:', perms.location);
+
+    if (perms.location === 'prompt' || perms.location === 'prompt-with-rationale') {
+      console.log('[Geolocation] Requesting permissions...');
+      perms = await Geolocation.requestPermissions();
+      console.log('[Geolocation] After request:', perms.location);
+    }
+
+    if (perms.location !== 'granted') {
+      throw new Error('Location permission denied');
+    }
+
+    console.log('[Geolocation] Getting position via Capacitor...');
+    const position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy,
+      timeout,
+      maximumAge,
+    });
+
+    console.log('[Geolocation] Success:', position.coords.latitude, position.coords.longitude);
+    return {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+    };
+  } else {
+    // Web browser - use navigator.geolocation
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Geolocation not supported'));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+        },
+        (err) => {
+          reject(new Error(err.message));
+        },
+        { enableHighAccuracy, timeout, maximumAge }
+      );
+    });
+  }
+}

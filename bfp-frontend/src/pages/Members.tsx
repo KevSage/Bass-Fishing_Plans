@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { usePlatformAuth, usePlatformUser } from "@/hooks/usePlatformAuth";
 import { useNativeAuth } from "@/context/NativeAuthContext";
-import { isNativePlatform, getApiBaseUrl } from "@/lib/platform";
+import { isNativePlatform, getApiBaseUrl, getCurrentPosition } from "@/lib/platform";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "@/styles/members.css";
@@ -1575,35 +1575,24 @@ export function Members() {
         this._container.innerHTML = `<button class="mapboxgl-ctrl-recenter" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>`;
         this._container
           .querySelector("button")
-          ?.addEventListener("click", () => {
+          ?.addEventListener("click", async () => {
             // Always try GPS first - recenter should show USER location
-            if (navigator.geolocation && mapRef.current) {
-              console.log("[Recenter] Getting user GPS location...");
-              navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                  console.log("[Recenter] GPS success:", pos.coords.latitude, pos.coords.longitude);
-                  mapRef.current?.flyTo({
-                    center: [pos.coords.longitude, pos.coords.latitude],
-                    zoom: 14,
-                    duration: 1500,
-                  });
-                },
-                (err) => {
-                  console.warn("[Recenter] GPS failed:", err.message);
-                  // Fall back to lake coords if GPS fails
-                  const coords = selectedCoords;
-                  if (coords && mapRef.current) {
-                    mapRef.current.flyTo({
-                      center: [coords.lng, coords.lat],
-                      zoom: 13,
-                      duration: 1500,
-                    });
-                  }
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
-              );
-            } else {
-              // No geolocation API - fall back to lake coords
+            console.log("[Recenter] Getting user GPS location via Capacitor...");
+            try {
+              const pos = await getCurrentPosition({
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 30000,
+              });
+              console.log("[Recenter] GPS success:", pos.latitude, pos.longitude);
+              mapRef.current?.flyTo({
+                center: [pos.longitude, pos.latitude],
+                zoom: 14,
+                duration: 1500,
+              });
+            } catch (err: any) {
+              console.warn("[Recenter] GPS failed:", err.message);
+              // Fall back to lake coords if GPS fails
               const coords = selectedCoords;
               if (coords && mapRef.current) {
                 mapRef.current.flyTo({
@@ -1983,28 +1972,16 @@ export function Members() {
     const lakeAnchors = currentFav?.anchors;
     console.log("[LiveCamera] Lake anchors available:", !!lakeAnchors, lakeAnchors?.length || 0, "points");
 
-    // Try to get real-time GPS first
+    // Try to get real-time GPS first using Capacitor Geolocation
     try {
-      const gpsPromise = new Promise<GeolocationPosition>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          console.log("[LiveCamera] No geolocation API");
-          return reject("No Geo");
-        }
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true, // we want precise location for hot spots
-          timeout: 15000, // Increased: iOS often needs longer for first fix
-          maximumAge: 60000, // Accept positions up to 1 minute old
-        });
+      console.log("[LiveCamera] Getting GPS via Capacitor...");
+      const pos = await getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000,
       });
-
-      // Manual timeout that actually works in WebView
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("GPS timeout")), 15000);
-      });
-
-      const pos = await Promise.race([gpsPromise, timeoutPromise]);
-      const gpsLat = pos.coords.latitude;
-      const gpsLng = pos.coords.longitude;
+      const gpsLat = pos.latitude;
+      const gpsLng = pos.longitude;
       console.log("[LiveCamera] GPS success:", gpsLat, gpsLng);
 
       // Check if GPS is within vicinity of the active lake (10km radius)
