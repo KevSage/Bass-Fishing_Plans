@@ -1576,21 +1576,42 @@ export function Members() {
         this._container
           .querySelector("button")
           ?.addEventListener("click", () => {
-            const coords = selectedCoords;
-            if (coords && mapRef.current) {
-              mapRef.current.flyTo({
-                center: [coords.lng, coords.lat],
-                zoom: 13,
-                duration: 1500,
-              });
-            } else if (navigator.geolocation && mapRef.current) {
-              navigator.geolocation.getCurrentPosition((pos) => {
-                mapRef.current?.flyTo({
-                  center: [pos.coords.longitude, pos.coords.latitude],
-                  zoom: 12,
+            // Always try GPS first - recenter should show USER location
+            if (navigator.geolocation && mapRef.current) {
+              console.log("[Recenter] Getting user GPS location...");
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  console.log("[Recenter] GPS success:", pos.coords.latitude, pos.coords.longitude);
+                  mapRef.current?.flyTo({
+                    center: [pos.coords.longitude, pos.coords.latitude],
+                    zoom: 14,
+                    duration: 1500,
+                  });
+                },
+                (err) => {
+                  console.warn("[Recenter] GPS failed:", err.message);
+                  // Fall back to lake coords if GPS fails
+                  const coords = selectedCoords;
+                  if (coords && mapRef.current) {
+                    mapRef.current.flyTo({
+                      center: [coords.lng, coords.lat],
+                      zoom: 13,
+                      duration: 1500,
+                    });
+                  }
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+              );
+            } else {
+              // No geolocation API - fall back to lake coords
+              const coords = selectedCoords;
+              if (coords && mapRef.current) {
+                mapRef.current.flyTo({
+                  center: [coords.lng, coords.lat],
+                  zoom: 13,
                   duration: 1500,
                 });
-              });
+              }
             }
           });
         return this._container;
@@ -1971,14 +1992,14 @@ export function Members() {
         }
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true, // we want precise location for hot spots
-          timeout: 3000,
-          maximumAge: 10000,
+          timeout: 15000, // Increased: iOS often needs longer for first fix
+          maximumAge: 60000, // Accept positions up to 1 minute old
         });
       });
 
       // Manual timeout that actually works in WebView
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("GPS timeout")), 3000);
+        setTimeout(() => reject(new Error("GPS timeout")), 15000);
       });
 
       const pos = await Promise.race([gpsPromise, timeoutPromise]);
