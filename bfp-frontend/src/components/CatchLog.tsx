@@ -633,6 +633,11 @@ export function getGlobalEntries(): CatchEntry[] {
   return globalEntriesCache || [];
 }
 
+// GLOBAL sync lock - shared across ALL useCatchLog instances to prevent duplicate syncs
+let globalSyncInProgress = false;
+let globalLastSyncAttempt = 0;
+const GLOBAL_SYNC_DEBOUNCE_MS = 10000; // 10 seconds between sync attempts
+
 // =============================================================================
 // CUSTOM HOOK: useCatchLog
 // =============================================================================
@@ -851,16 +856,25 @@ export function useCatchLog(
   const isSyncingRef = useRef(false);
 
   const syncOfflineCatches = useCallback(async () => {
-    // Prevent concurrent syncs
-    if (isSyncingRef.current) {
-      console.log('[CatchLog] Sync already in progress, skipping');
+    // Use GLOBAL lock to prevent concurrent syncs across all hook instances
+    if (globalSyncInProgress) {
+      console.log('[CatchLog] Global sync already in progress, skipping');
+      return;
+    }
+
+    // Also check global debounce
+    const now = Date.now();
+    if (now - globalLastSyncAttempt < GLOBAL_SYNC_DEBOUNCE_MS) {
+      console.log('[CatchLog] Global sync debounced, last attempt was', Math.round((now - globalLastSyncAttempt) / 1000), 's ago');
       return;
     }
 
     const offline = getOfflineCatches();
     if (offline.length === 0) return;
 
-    isSyncingRef.current = true;
+    // Set global lock
+    globalSyncInProgress = true;
+    globalLastSyncAttempt = now;
     setIsLoading(true);
 
     const isNative = isNativePlatform();
@@ -870,7 +884,7 @@ export function useCatchLog(
     if (isNative && !hasNativeAuth) {
       console.log('[CatchLog] syncOfflineCatches: No native auth, skipping');
       setIsLoading(false);
-      isSyncingRef.current = false;
+      globalSyncInProgress = false;
       return;
     }
 
@@ -878,14 +892,15 @@ export function useCatchLog(
     if (!isNative && !token) {
       console.log('[CatchLog] syncOfflineCatches: No web token, skipping');
       setIsLoading(false);
-      isSyncingRef.current = false;
+      globalSyncInProgress = false;
       return;
     }
 
-    const remaining: CatchEntry[] = [];
     let syncedCount = 0;
     let photosUploaded = 0;
 
+    // Process one catch at a time and update localStorage IMMEDIATELY after each success
+    // This prevents re-syncing if interrupted
     for (const entry of offline) {
       try {
         const input = entryToApiInput(entry, activeLake);
@@ -926,8 +941,7 @@ export function useCatchLog(
             photosUploaded++;
           } catch (uploadErr) {
             console.error('[CatchLog] Failed to upload pending photo:', uploadErr);
-            // Keep the catch with pendingPhotoBase64 for next sync attempt
-            remaining.push(entry);
+            // Photo upload failed - keep this catch for next sync attempt, continue to next
             continue;
           }
         }
@@ -937,21 +951,28 @@ export function useCatchLog(
         } else {
           await createCatch(input, token!);
         }
+
+        // SUCCESS! Remove this catch from offline storage IMMEDIATELY
+        // This prevents re-syncing if the app is interrupted
+        const currentOffline = getOfflineCatches();
+        const updatedOffline = currentOffline.filter(c => c.id !== entry.id);
+        localStorage.setItem(OFFLINE_KEY, JSON.stringify(updatedOffline));
+        console.log('[CatchLog] Synced catch', entry.id, '- removed from offline storage');
+
         syncedCount++;
       } catch (e) {
-        console.error('[CatchLog] Failed to sync catch:', e);
-        remaining.push(entry);
+        console.error('[CatchLog] Failed to sync catch:', entry.id, e);
+        // Keep this catch in offline storage (don't remove it)
       }
     }
-    localStorage.setItem(OFFLINE_KEY, JSON.stringify(remaining));
+
     await fetchCatches();
     if (syncedCount > 0) {
       const photoMsg = photosUploaded > 0 ? ` (${photosUploaded} photos uploaded)` : '';
-      // Use console.log instead of alert() to avoid triggering visibilitychange loop
       console.log(`[CatchLog] Synced ${syncedCount} catches${photoMsg}`);
     }
     setIsLoading(false);
-    isSyncingRef.current = false;
+    globalSyncInProgress = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLake, fetchCatches, getOfflineCatches, nativeAuth.userEmail, nativeAuth.userId]);
 
