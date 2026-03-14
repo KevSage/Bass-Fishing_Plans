@@ -1329,13 +1329,9 @@ export function Members() {
       !waterName.startsWith("Water near") &&
       !waterName.startsWith("Dropped Pin");
 
-    // Can edit boundary if:
-    // 1. It's a custom lake (currently viewing), OR
-    // 2. It's an unknown water body (not in our known lakes database)
-    // This allows adding boundary for custom lakes AND unknown water before/after saving
-    const isUnknownWater = !hydrateLakeData(waterName, selectedCoords.lat, selectedCoords.lng);
-    const canEditBoundary =
-      currentFavorite?.lake_type === "custom" || isUnknownWater;
+    // Can edit boundary only if it's a SAVED custom lake
+    // User must save the lake first before they can outline the boundary
+    const canEditBoundary = currentFavorite?.lake_type === "custom";
     return {
       name: waterName,
       city: locationDetails.city,
