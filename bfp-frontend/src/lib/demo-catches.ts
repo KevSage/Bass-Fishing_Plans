@@ -95,60 +95,12 @@ function makeCatch(lat: number, lng: number): any {
 }
 
 // ==========================================
-// ON-WATER COORDINATES - 40 catches spread across lake
-// Based on visible lake body in Mapbox dark style
+// ON-WATER COORDINATES - 1 demo catch
+// Shown until user logs their first catch
 // ==========================================
 
 const DEMO_CATCHES: any[] = [
-  // ========== HOT ZONE: Main lake center (8 catches) ==========
-  makeCatch(34.2500, -83.9550),
-  makeCatch(34.2505, -83.9545),
-  makeCatch(34.2495, -83.9555),
-  makeCatch(34.2502, -83.9552),
-  makeCatch(34.2498, -83.9548),
-  makeCatch(34.2503, -83.9553),
-  makeCatch(34.2497, -83.9547),
-  makeCatch(34.2501, -83.9551),
-
-  // ========== MODERATE ZONE 1: South of center (6 catches) ==========
-  makeCatch(34.2200, -83.9700),
-  makeCatch(34.2205, -83.9695),
-  makeCatch(34.2195, -83.9705),
-  makeCatch(34.2202, -83.9702),
-  makeCatch(34.2198, -83.9698),
-  makeCatch(34.2203, -83.9703),
-
-  // ========== MODERATE ZONE 2: North of center (5 catches) ==========
-  makeCatch(34.2800, -83.9400),
-  makeCatch(34.2805, -83.9395),
-  makeCatch(34.2795, -83.9405),
-  makeCatch(34.2802, -83.9402),
-  makeCatch(34.2798, -83.9398),
-
-  // ========== MODERATE ZONE 3: Southeast section (4 catches) ==========
-  makeCatch(34.2300, -83.9300),
-  makeCatch(34.2305, -83.9295),
-  makeCatch(34.2295, -83.9305),
-  makeCatch(34.2302, -83.9302),
-
-  // ========== SCATTERED SINGLES: Spread across visible water (17 catches) ==========
-  makeCatch(34.2100, -83.9600), // South
-  makeCatch(34.2150, -83.9550), // South-central
-  makeCatch(34.2250, -83.9650), // Central-south
-  makeCatch(34.2350, -83.9500), // Central
-  makeCatch(34.2450, -83.9600), // Central
-  makeCatch(34.2550, -83.9450), // Central-north
-  makeCatch(34.2650, -83.9500), // North
-  makeCatch(34.2700, -83.9350), // North
-  makeCatch(34.2750, -83.9450), // North
-  makeCatch(34.2850, -83.9300), // Far north
-  makeCatch(34.2600, -83.9600), // Central
-  makeCatch(34.2400, -83.9450), // Central
-  makeCatch(34.2300, -83.9550), // Central-south
-  makeCatch(34.2180, -83.9700), // South
-  makeCatch(34.2280, -83.9400), // Central
-  makeCatch(34.2380, -83.9650), // Central
-  makeCatch(34.2480, -83.9350), // Central-north
+  makeCatch(34.2500, -83.9550), // Lake center
 ];
 
 export function injectDemoCatches(): void {
