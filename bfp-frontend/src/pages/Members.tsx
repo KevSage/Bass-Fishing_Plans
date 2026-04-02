@@ -1980,49 +1980,35 @@ export function Members() {
       const gpsLng = pos.longitude;
       console.log("[LiveCamera] GPS success:", gpsLat, gpsLng);
 
-      // Check if GPS is within vicinity of the active lake (10km radius)
+      // ALWAYS use GPS coordinates when available - this is the actual catch location
+      // The "active lake" is just for UI convenience, not for determining catch position
+      latitude = gpsLat;
+      longitude = gpsLng;
+      useGps = true;
+
+      // Log distance from active lake for debugging
       if (selectedCoords) {
         const distanceKm = getDistanceKm(gpsLat, gpsLng, selectedCoords.lat, selectedCoords.lng);
-        console.log("[LiveCamera] Distance from lake center:", distanceKm.toFixed(2), "km");
+        console.log("[LiveCamera] GPS success - distance from active lake:", distanceKm.toFixed(2), "km");
 
-        if (distanceKm <= 10) {
-          // User is within 10km of lake - TRUST THE GPS
-          // Previous logic snapped to lake center if not "on water" but this was too strict
-          // (GPS drift, boat near shore, inaccurate polygon all caused false negatives)
-          latitude = gpsLat;
-          longitude = gpsLng;
-          useGps = true;
-
-          // Log whether GPS is inside polygon (informational only, don't snap)
-          if (lakeAnchors && lakeAnchors.length >= 3) {
-            const isOnWater = pointInPolygon({ lat: gpsLat, lng: gpsLng }, lakeAnchors);
-            console.log("[LiveCamera] GPS within 10km, using GPS coords. In polygon:", isOnWater);
-          } else {
-            console.log("[LiveCamera] GPS within 10km, using GPS coords (no boundary data)");
-          }
-        } else {
-          // User is far from lake (>10km, testing from home?) - use lake coordinates
-          if (lakeAnchors && lakeAnchors.length >= 3 && currentFav) {
-            const waterCenter = findWaterCenter(currentFav as any);
-            latitude = waterCenter.lat;
-            longitude = waterCenter.lng;
-            console.log("[LiveCamera] GPS too far (", distanceKm.toFixed(1), "km) - using lake visual center:", latitude, longitude);
-          } else {
-            latitude = selectedCoords.lat;
-            longitude = selectedCoords.lng;
-            console.log("[LiveCamera] GPS too far (", distanceKm.toFixed(1), "km) - using lake center:", latitude, longitude);
-          }
+        // Check if GPS is inside lake polygon (informational only)
+        if (lakeAnchors && lakeAnchors.length >= 3) {
+          const isOnWater = pointInPolygon({ lat: gpsLat, lng: gpsLng }, lakeAnchors);
+          console.log("[LiveCamera] Using GPS coords. In active lake polygon:", isOnWater);
         }
+      }
+
+      // Try to resolve lake name from GPS location (may be different from active lake)
+      const nearestFav = findNearestFavorite(latitude, longitude, favorites);
+      const nearestDb = findNearestLake(latitude, longitude);
+      if (nearestFav) {
+        lakeName = nearestFav.name;
+        console.log("[LiveCamera] Resolved lake from GPS:", lakeName);
+      } else if (nearestDb) {
+        lakeName = nearestDb.name;
+        console.log("[LiveCamera] Resolved lake from GPS (known lake):", lakeName);
       } else {
-        // No selected coords, use GPS and try to find nearest lake
-        latitude = gpsLat;
-        longitude = gpsLng;
-        useGps = true;
-        const fav = findNearestFavorite(latitude, longitude, favorites);
-        const db = findNearestLake(latitude, longitude);
-        if (fav) lakeName = fav.name;
-        else if (db) lakeName = db.name;
-        console.log("[LiveCamera] No active lake, resolved from GPS:", lakeName);
+        console.log("[LiveCamera] Using active lake name:", lakeName);
       }
     } catch (gpsErr) {
       console.warn("[LiveCamera] GPS failed or timed out:", gpsErr);
