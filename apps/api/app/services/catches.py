@@ -202,6 +202,89 @@ class CatchStore:
     # -------------------------
     # Public API
     # -------------------------
+    def find_duplicate(
+        self,
+        email: str,
+        date: str,
+        lat: float,
+        lng: float,
+        time: Optional[str] = None,
+    ) -> Optional[str]:
+        """
+        Check if a similar catch already exists.
+        Returns the existing catch ID if found, None otherwise.
+
+        A catch is considered duplicate if it has the same:
+        - email (user)
+        - date
+        - time (if provided)
+        - lat/lng within ~10 meters (0.0001 degrees)
+        """
+        email_norm = email.lower().strip()
+        lat_tolerance = 0.0001  # ~10 meters
+        lng_tolerance = 0.0001
+
+        if self._use_pg:
+            with self._pg_conn() as conn:
+                if time:
+                    row = conn.execute(
+                        """
+                        SELECT id FROM catches
+                        WHERE email = %s
+                          AND date = %s
+                          AND time = %s
+                          AND ABS(lat - %s) < %s
+                          AND ABS(lng - %s) < %s
+                        LIMIT 1
+                        """,
+                        (email_norm, date, time, lat, lat_tolerance, lng, lng_tolerance),
+                    ).fetchone()
+                else:
+                    row = conn.execute(
+                        """
+                        SELECT id FROM catches
+                        WHERE email = %s
+                          AND date = %s
+                          AND time IS NULL
+                          AND ABS(lat - %s) < %s
+                          AND ABS(lng - %s) < %s
+                        LIMIT 1
+                        """,
+                        (email_norm, date, lat, lat_tolerance, lng, lng_tolerance),
+                    ).fetchone()
+        else:
+            with self._sqlite_conn() as conn:
+                if time:
+                    row = conn.execute(
+                        """
+                        SELECT id FROM catches
+                        WHERE email = ?
+                          AND date = ?
+                          AND time = ?
+                          AND ABS(lat - ?) < ?
+                          AND ABS(lng - ?) < ?
+                        LIMIT 1
+                        """,
+                        (email_norm, date, time, lat, lat_tolerance, lng, lng_tolerance),
+                    ).fetchone()
+                else:
+                    row = conn.execute(
+                        """
+                        SELECT id FROM catches
+                        WHERE email = ?
+                          AND date = ?
+                          AND time IS NULL
+                          AND ABS(lat - ?) < ?
+                          AND ABS(lng - ?) < ?
+                        LIMIT 1
+                        """,
+                        (email_norm, date, lat, lat_tolerance, lng, lng_tolerance),
+                    ).fetchone()
+
+        if row:
+            return row["id"]
+        return None
+
     def create(
         self,
         email: str,
@@ -230,9 +313,20 @@ class CatchStore:
         pressure: Optional[float] = None,
         sky_condition: Optional[str] = None,
     ) -> str:
-        """Create a new catch record. Returns the catch ID."""
-        catch_id = f"catch_{uuid.uuid4().hex[:12]}"
+        """Create a new catch record. Returns the catch ID.
+
+        If a duplicate catch exists (same user, date, time, location),
+        returns the existing catch ID instead of creating a new one.
+        """
         email_norm = email.lower().strip()
+
+        # Check for duplicate before creating
+        existing_id = self.find_duplicate(email_norm, date, lat, lng, time)
+        if existing_id:
+            print(f"[CatchStore] Duplicate catch detected, returning existing: {existing_id}")
+            return existing_id
+
+        catch_id = f"catch_{uuid.uuid4().hex[:12]}"
 
         if self._use_pg:
             with self._pg_conn() as conn:
