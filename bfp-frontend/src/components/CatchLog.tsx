@@ -2098,8 +2098,9 @@ export function CatchFormView({
   const [species, setSpecies] = useState<BassSpecies>(
     entry?.species || lastDefaults?.species || "largemouth",
   );
-  const [weight, setWeight] = useState(entry?.weight?.toString() || "");
-  const [length, setLength] = useState(entry?.length?.toString() || "");
+  // Use ternary to treat 0 as empty - user shouldn't have to clear "0" before entering weight
+  const [weight, setWeight] = useState(entry?.weight ? entry.weight.toString() : "");
+  const [length, setLength] = useState(entry?.length ? entry.length.toString() : "");
   const [notes, setNotes] = useState(entry?.notes || "");
   const [source, setSource] = useState<"camera" | "library" | "manual">(
     // Demo entries default to "manual" in the form
