@@ -2047,9 +2047,8 @@ export function Members() {
         imageData: imageData,
         catchLat: latitude || 0,
         catchLng: longitude || 0,
-        lure: "",
+        // Don't set lure/color/species - let form auto-populate from last catch defaults
         weight: 0,
-        species: "Largemouth Bass",
         source: "camera",
       };
       console.log("[LiveCamera] Setting draftEntry - useEffect will handle showForm");

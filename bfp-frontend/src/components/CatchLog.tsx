@@ -2091,7 +2091,8 @@ export function CatchFormView({
       "",
   );
   // Auto-populate lure/color/species from last catch (for new catches only)
-  const lastDefaults = !entry ? loadLastCatchDefaults() : null;
+  // Check entry?.id, not entry, because camera drafts have entry data but no id
+  const lastDefaults = !entry?.id ? loadLastCatchDefaults() : null;
   const [lure, setLure] = useState(entry?.lure || lastDefaults?.lure || "");
   const [color, setColor] = useState(entry?.color || lastDefaults?.color || "");
   const [species, setSpecies] = useState<BassSpecies>(
