@@ -3419,9 +3419,9 @@ export function CatchFormView({
         .catch-form-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(18,18,24,0.92); }
         .catch-cancel-btn { border: none; background: transparent; color: rgba(255,255,255,0.65); font-weight: 600; font-size: 0.85rem; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; min-width: 60px; text-align: left; }
         .catch-cancel-btn:hover { background: rgba(255,255,255,0.06); color: #fff; }
-        .catch-header-save-btn { border: none; background: transparent; color: #4A90E2; font-weight: 700; font-size: 0.85rem; padding: 6px 10px; border-radius: 10px; cursor: pointer; transition: all 0.2s; min-width: 60px; text-align: right; }
-        .catch-header-save-btn:hover { background: rgba(74,144,226,0.1); }
-        .catch-header-save-btn:disabled { color: rgba(255,255,255,0.25); cursor: not-allowed; }
+        .catch-header-save-btn { border: none; background: transparent; color: #4A90E2; font-weight: 700; font-size: 0.95rem; padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: all 0.2s; min-width: 50px; }
+        .catch-header-save-btn:hover { background: rgba(74,144,226,0.15); }
+        .catch-header-save-btn:disabled { color: rgba(74,144,226,0.4); cursor: not-allowed; }
         .catch-form-title { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.2px; color: #fff; }
         .catch-form-body { padding: 14px 16px 18px; overflow: auto; min-height: 400px; }
         .catch-form-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; animation: fadeInField 0.2s ease-out; }
