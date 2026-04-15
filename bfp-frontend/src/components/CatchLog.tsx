@@ -1684,12 +1684,15 @@ export function CatchDetailView({
   };
   const season = getSeason(new Date(entry.caughtAt));
 
+  // Convert mb to inHg for pressure display
+  const mbToInHg = (mb: number): string => (mb * 0.02953).toFixed(2);
+
   // Build conditions string
   const getConditionsString = (): string => {
     const parts: string[] = [];
     if (entry.temp) parts.push(`${Math.round(entry.temp)}°`);
     if (entry.windSpeed) parts.push(`${Math.round(entry.windSpeed)}mph wind`);
-    if (entry.pressure) parts.push(`${Math.round(entry.pressure)}mb`);
+    if (entry.pressure) parts.push(`${mbToInHg(entry.pressure)} inHg`);
     if (entry.skyCondition) parts.push(entry.skyCondition);
     return parts.length > 0 ? parts.join(" • ") : "";
   };
@@ -1843,7 +1846,7 @@ export function CatchDetailView({
               {entry.pressure && (
                 <div className="cond-item">
                   <span className="cond-label">Pressure</span>
-                  <span className="cond-value">{Math.round(entry.pressure)}mb</span>
+                  <span className="cond-value">{mbToInHg(entry.pressure)} inHg</span>
                 </div>
               )}
               {entry.skyCondition && (
