@@ -2833,17 +2833,7 @@ export function CatchFormView({
         <span className="catch-form-title">
           {isEditing ? "Edit Catch" : "Log Catch"}
         </span>
-        <button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="catch-header-save-btn"
-        >
-          {isUploading
-            ? "Saving..."
-            : isResolving
-              ? "..."
-              : "Save"}
-        </button>
+        <div style={{ width: 60 }} />
       </div>
       <div className="catch-form-body">
         {/* PHOTO FIELD - First so user uploads image before entering details */}
@@ -3246,6 +3236,21 @@ export function CatchFormView({
             rows={3}
           />
         </div>
+      </div>
+      <div className="catch-form-footer">
+        <button
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          className="catch-save-btn"
+        >
+          {isUploading
+            ? "Uploading Photo..."
+            : isResolving
+              ? "Resolving..."
+              : isEditing
+                ? "Save Changes"
+                : "Save Catch"}
+        </button>
       </div>
 
       {/* UPGRADE MODAL - Lake Not Found */}
