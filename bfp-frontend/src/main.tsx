@@ -8,9 +8,17 @@ import { BrowserRouter, HashRouter } from "react-router-dom";
 import { isNativePlatform } from "./lib/platform";
 import { NativeAuthProvider } from "./context/NativeAuthContext";
 import { injectDemoCatches } from "./lib/demo-catches";
+import { initDatabase, isSQLiteAvailable } from "./lib/sqlite-db";
 
 // Inject demo catches BEFORE React mounts (for App Store screenshots)
 injectDemoCatches();
+
+// Initialize SQLite database on native platforms
+if (isNativePlatform() && isSQLiteAvailable()) {
+  initDatabase()
+    .then(() => console.log("[Main] SQLite database initialized"))
+    .catch((err) => console.error("[Main] SQLite init error:", err));
+}
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
