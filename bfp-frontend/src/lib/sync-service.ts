@@ -7,7 +7,7 @@
  * - Photo sync: Download photos to local filesystem
  */
 
-import { Network } from '@capacitor/network';
+import { Network, type ConnectionStatus } from '@capacitor/network';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Preferences } from '@capacitor/preferences';
 import {
@@ -472,7 +472,7 @@ export function startNetworkListener(
 ): void {
   if (networkListenerRegistered) return;
 
-  Network.addListener('networkStatusChange', async (status) => {
+  Network.addListener('networkStatusChange', async (status: ConnectionStatus) => {
     console.log('[Sync] Network status changed:', status.connected, status.connectionType);
 
     if (status.connected) {
