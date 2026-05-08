@@ -23,6 +23,12 @@ import {
   purgeSyncedDeletions,
   isSQLiteAvailable,
   LocalCatch,
+  // Lake functions
+  upsertLakes,
+  getLakeCount,
+  getSyncMetadata,
+  setSyncMetadata,
+  LocalLake,
 } from './sqlite-db';
 import {
   listCatchesMobile,
@@ -31,6 +37,7 @@ import {
   deleteCatchMobile,
   CatchRecord,
 } from './catches-api';
+import { getApiBaseUrl } from './platform';
 
 // =============================================================================
 // TYPES
@@ -181,6 +188,10 @@ export async function performInitialSync(
 
       downloaded++;
     }
+
+    // Sync lakes (important for offline lake resolution)
+    console.log('[Sync] Syncing lakes...');
+    await syncLakes(userEmail, userId);
 
     // Mark initial sync as complete
     await Preferences.set({ key: 'initial_sync_complete', value: 'true' });
@@ -559,5 +570,104 @@ export async function manualSync(
   uploaded = uploadResult.uploaded;
   errors += uploadResult.errors;
 
+  // Also sync lakes
+  await syncLakes(userEmail, userId);
+
   return { downloaded, uploaded, errors };
+}
+
+// =============================================================================
+// LAKE SYNC
+// =============================================================================
+
+/**
+ * Sync lakes from server to local database
+ * Uses incremental sync based on updated_at timestamp
+ */
+export async function syncLakes(
+  userEmail: string,
+  userId: string
+): Promise<{ success: boolean; synced: number; error?: string }> {
+  if (!isSQLiteAvailable()) {
+    return { success: false, synced: 0, error: 'SQLite not available' };
+  }
+
+  // Check network
+  const networkStatus = await Network.getStatus();
+  if (!networkStatus.connected) {
+    console.log('[Sync] No network, skipping lake sync');
+    return { success: false, synced: 0, error: 'No network' };
+  }
+
+  try {
+    console.log('[Sync] Starting lake sync...');
+
+    // Get last sync timestamp
+    const lastSyncAt = await getSyncMetadata('last_lake_sync_at');
+    console.log('[Sync] Last lake sync:', lastSyncAt || 'never');
+
+    // Fetch lakes from server (with optional updated_since filter)
+    const apiBase = getApiBaseUrl();
+    const url = lastSyncAt
+      ? `${apiBase}/mobile-auth/lakes?updated_since=${encodeURIComponent(lastSyncAt)}`
+      : `${apiBase}/mobile-auth/lakes`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail, user_id: userId }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Lake sync failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const serverLakes: any[] = data.lakes || [];
+
+    console.log(`[Sync] Received ${serverLakes.length} lakes from server`);
+
+    if (serverLakes.length > 0) {
+      // Convert to LocalLake format and upsert
+      const localLakes: LocalLake[] = serverLakes.map(lake => ({
+        id: lake.id,
+        name: lake.name,
+        lat: lake.lat,
+        lng: lake.lng,
+        radius_km: lake.radius_km || 0.5,
+        lake_type: lake.lake_type || 'known',
+        user_email: lake.user_email || null,
+        city: lake.city || null,
+        state: lake.state || null,
+        updated_at: lake.updated_at || new Date().toISOString(),
+        is_synced: true,
+      }));
+
+      await upsertLakes(localLakes);
+    }
+
+    // Update last sync timestamp
+    await setSyncMetadata('last_lake_sync_at', new Date().toISOString());
+
+    const counts = await getLakeCount();
+    console.log(`[Sync] Lake sync complete. Total: ${counts.known} known, ${counts.custom} custom`);
+
+    return { success: true, synced: serverLakes.length };
+
+  } catch (error: any) {
+    console.error('[Sync] Lake sync failed:', error);
+    return { success: false, synced: 0, error: error.message };
+  }
+}
+
+/**
+ * Force full lake sync (ignores last sync timestamp)
+ */
+export async function forceFullLakeSync(
+  userEmail: string,
+  userId: string
+): Promise<{ success: boolean; synced: number; error?: string }> {
+  // Clear last sync timestamp to force full sync
+  await setSyncMetadata('last_lake_sync_at', '');
+  return syncLakes(userEmail, userId);
 }

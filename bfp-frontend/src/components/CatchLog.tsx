@@ -79,6 +79,7 @@ import {
   updateLocalCatch,
   deleteLocalCatch,
   migrateFromLocalStorage,
+  resolveLakeLocal,
   type LocalCatch,
 } from "@/lib/sqlite-db";
 import {
@@ -2561,6 +2562,27 @@ export function CatchFormView({
       setIsAutoResolving(true);
       let resolution;
 
+      // =====================================================
+      // NATIVE: Try local SQLite resolution first (instant, no network)
+      // =====================================================
+      if (isNativePlatform() && isSQLiteAvailable()) {
+        console.log('[CatchLog] Resolving lake locally...');
+        const localResult = await resolveLakeLocal(lat, lng, nativeAuth.userEmail || undefined);
+
+        if (localResult.resolved && localResult.lake_name) {
+          console.log('[CatchLog] Lake resolved locally:', localResult.lake_name);
+          setLakeName(localResult.lake_name);
+          setIsAutoResolving(false);
+          return;
+        }
+
+        // Local resolution didn't find a match - try API as fallback if online
+        console.log('[CatchLog] No local match, trying API...');
+      }
+
+      // =====================================================
+      // FALLBACK: Use API (requires network)
+      // =====================================================
       if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
         // Use mobile endpoint
         resolution = await resolveLakeMobile(lat, lng, nativeAuth.userEmail, nativeAuth.userId);
@@ -2576,6 +2598,7 @@ export function CatchFormView({
       }
     } catch (err) {
       console.error("Failed to auto-resolve lake:", err);
+      // Graceful degradation - user can still enter lake name manually
     } finally {
       setIsAutoResolving(false);
     }
@@ -3023,25 +3046,54 @@ export function CatchFormView({
             hasToken: !!token,
             coords: { catchLat, catchLng }
           });
-          if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
-            // Use mobile endpoint for native platforms
-            console.log('[CatchLog] Using mobile lake resolution');
+
+          // =====================================================
+          // NATIVE: Try local SQLite resolution first (instant, no network)
+          // =====================================================
+          if (isNativePlatform() && isSQLiteAvailable()) {
+            console.log('[CatchLog] Using local lake resolution for save');
+            const localResult = await resolveLakeLocal(catchLat, catchLng, nativeAuth.userEmail || undefined);
+
+            if (localResult.resolved) {
+              console.log('[CatchLog] Lake resolved locally for save:', localResult.lake_name);
+              lakeType = localResult.lake_type;
+              lakeId = localResult.lake_id || undefined;
+              finalLakeName = localResult.lake_name || activeLake.name;
+            } else {
+              // No local match - use manually entered name or "Unknown Water"
+              if (lakeName.trim()) finalLakeName = lakeName;
+              else finalLakeName = "Unknown Water";
+            }
+          } else if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+            // Fallback: Use mobile endpoint for native platforms (requires network)
+            console.log('[CatchLog] Using mobile lake resolution (network)');
             resolution = await resolveLakeMobile(catchLat, catchLng, nativeAuth.userEmail, nativeAuth.userId);
             console.log('[CatchLog] Mobile resolution result:', resolution);
+            if (resolution?.resolved) {
+              lakeType = resolution.lake_type;
+              lakeId = resolution.lake_id || undefined;
+              finalLakeName = resolution.lake_name || activeLake.name;
+            } else {
+              if (lakeName.trim()) finalLakeName = lakeName;
+              else finalLakeName = "Unknown Water";
+            }
           } else if (token) {
             // Use standard endpoint for web
             resolution = await resolveLake(catchLat, catchLng, token);
-          }
-          if (resolution?.resolved) {
-            lakeType = resolution.lake_type;
-            lakeId = resolution.lake_id || undefined;
-            finalLakeName = resolution.lake_name || activeLake.name;
-          } else {
-            if (lakeName.trim()) finalLakeName = lakeName;
-            else finalLakeName = "Unknown Water";
+            if (resolution?.resolved) {
+              lakeType = resolution.lake_type;
+              lakeId = resolution.lake_id || undefined;
+              finalLakeName = resolution.lake_name || activeLake.name;
+            } else {
+              if (lakeName.trim()) finalLakeName = lakeName;
+              else finalLakeName = "Unknown Water";
+            }
           }
         } catch (err) {
           console.warn("Lake resolution failed", err);
+          // Graceful degradation - use manually entered name or "Unknown Water"
+          if (lakeName.trim()) finalLakeName = lakeName;
+          else finalLakeName = "Unknown Water";
         }
       }
       const data: Partial<CatchEntry> = {

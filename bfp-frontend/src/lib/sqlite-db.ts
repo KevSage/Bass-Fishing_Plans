@@ -83,6 +83,28 @@ export interface SyncQueueItem {
   created_at: string;
 }
 
+export interface LocalLake {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  radius_km: number;
+  lake_type: 'known' | 'custom';
+  user_email: string | null;  // NULL for known lakes
+  city: string | null;
+  state: string | null;
+  updated_at: string;
+  is_synced: boolean;
+}
+
+export interface LakeResolutionResult {
+  resolved: boolean;
+  lake_id: string | null;
+  lake_name: string | null;
+  lake_type: 'known' | 'custom' | 'unresolved';
+  distance_km: number | null;
+}
+
 // =============================================================================
 // DATABASE INITIALIZATION
 // =============================================================================
@@ -137,6 +159,27 @@ CREATE TABLE IF NOT EXISTS catches (
   sync_error TEXT
 );
 
+-- Lakes table for offline lake resolution
+CREATE TABLE IF NOT EXISTS lakes (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  lat REAL NOT NULL,
+  lng REAL NOT NULL,
+  radius_km REAL DEFAULT 0.5,
+  lake_type TEXT CHECK(lake_type IN ('known', 'custom')) DEFAULT 'known',
+  user_email TEXT,  -- NULL for known lakes, set for user's custom lakes
+  city TEXT,
+  state TEXT,
+  updated_at TEXT NOT NULL,
+  is_synced INTEGER DEFAULT 1
+);
+
+-- Sync metadata table
+CREATE TABLE IF NOT EXISTS sync_metadata (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
 -- Sync queue for pending operations
 CREATE TABLE IF NOT EXISTS sync_queue (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,6 +202,8 @@ CREATE INDEX IF NOT EXISTS idx_catches_synced ON catches(is_synced);
 CREATE INDEX IF NOT EXISTS idx_catches_server_id ON catches(server_id);
 CREATE INDEX IF NOT EXISTS idx_sync_queue_next ON sync_queue(next_attempt_at);
 CREATE INDEX IF NOT EXISTS idx_sync_queue_local_id ON sync_queue(local_id);
+CREATE INDEX IF NOT EXISTS idx_lakes_location ON lakes(lat, lng);
+CREATE INDEX IF NOT EXISTS idx_lakes_user ON lakes(user_email);
 `;
 
 /**
@@ -753,4 +798,259 @@ function rowToCatch(row: any): LocalCatch {
  */
 export function isSQLiteAvailable(): boolean {
   return Capacitor.isNativePlatform();
+}
+
+// =============================================================================
+// LAKE OPERATIONS
+// =============================================================================
+
+/**
+ * Convert database row to LocalLake
+ */
+function rowToLake(row: any): LocalLake {
+  return {
+    id: row.id,
+    name: row.name,
+    lat: row.lat,
+    lng: row.lng,
+    radius_km: row.radius_km || 0.5,
+    lake_type: row.lake_type,
+    user_email: row.user_email,
+    city: row.city,
+    state: row.state,
+    updated_at: row.updated_at,
+    is_synced: row.is_synced === 1,
+  };
+}
+
+/**
+ * Upsert a lake (insert or update)
+ */
+export async function upsertLake(lake: LocalLake): Promise<void> {
+  const database = await getDb();
+
+  const sql = `
+    INSERT INTO lakes (id, name, lat, lng, radius_km, lake_type, user_email, city, state, updated_at, is_synced)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      lat = excluded.lat,
+      lng = excluded.lng,
+      radius_km = excluded.radius_km,
+      lake_type = excluded.lake_type,
+      user_email = excluded.user_email,
+      city = excluded.city,
+      state = excluded.state,
+      updated_at = excluded.updated_at,
+      is_synced = excluded.is_synced
+  `;
+
+  await database.run(sql, [
+    lake.id,
+    lake.name,
+    lake.lat,
+    lake.lng,
+    lake.radius_km,
+    lake.lake_type,
+    lake.user_email,
+    lake.city,
+    lake.state,
+    lake.updated_at,
+    lake.is_synced ? 1 : 0,
+  ]);
+}
+
+/**
+ * Bulk upsert lakes (for sync)
+ */
+export async function upsertLakes(lakes: LocalLake[]): Promise<void> {
+  for (const lake of lakes) {
+    await upsertLake(lake);
+  }
+  console.log(`[SQLite] Upserted ${lakes.length} lakes`);
+}
+
+/**
+ * Get all lakes
+ */
+export async function getAllLakes(): Promise<LocalLake[]> {
+  const database = await getDb();
+  const result = await database.query('SELECT * FROM lakes ORDER BY name');
+  if (!result.values) return [];
+  return result.values.map(rowToLake);
+}
+
+/**
+ * Get lakes for a user (known + user's custom lakes)
+ */
+export async function getLakesForUser(userEmail: string): Promise<LocalLake[]> {
+  const database = await getDb();
+  const result = await database.query(
+    `SELECT * FROM lakes
+     WHERE lake_type = 'known' OR user_email = ?
+     ORDER BY name`,
+    [userEmail.toLowerCase()]
+  );
+  if (!result.values) return [];
+  return result.values.map(rowToLake);
+}
+
+/**
+ * Resolve lake from GPS coordinates (local query)
+ * Uses Haversine-approximation for distance calculation
+ */
+export async function resolveLakeLocal(
+  lat: number,
+  lng: number,
+  userEmail?: string,
+  radiusKm: number = 1.0
+): Promise<LakeResolutionResult> {
+  const database = await getDb();
+
+  // Approximate degrees per km (at equator, adjust for latitude)
+  const kmPerDegreeLat = 111.0;
+  const kmPerDegreeLng = 111.0 * Math.cos(lat * Math.PI / 180);
+
+  // Convert radius to degrees for bounding box filter
+  const latDelta = radiusKm / kmPerDegreeLat;
+  const lngDelta = radiusKm / kmPerDegreeLng;
+
+  // Query lakes within bounding box, then calculate actual distance
+  // Include known lakes and user's custom lakes
+  const sql = `
+    SELECT *,
+      (
+        (lat - ?) * (lat - ?) * ? * ? +
+        (lng - ?) * (lng - ?) * ? * ?
+      ) as distance_sq
+    FROM lakes
+    WHERE lat BETWEEN ? AND ?
+      AND lng BETWEEN ? AND ?
+      AND (lake_type = 'known' OR user_email = ?)
+    ORDER BY distance_sq ASC
+    LIMIT 1
+  `;
+
+  const result = await database.query(sql, [
+    lat, lat, kmPerDegreeLat, kmPerDegreeLat,
+    lng, lng, kmPerDegreeLng, kmPerDegreeLng,
+    lat - latDelta, lat + latDelta,
+    lng - lngDelta, lng + lngDelta,
+    userEmail?.toLowerCase() || '',
+  ]);
+
+  if (!result.values || result.values.length === 0) {
+    return {
+      resolved: false,
+      lake_id: null,
+      lake_name: null,
+      lake_type: 'unresolved',
+      distance_km: null,
+    };
+  }
+
+  const row = result.values[0];
+  const distanceKm = Math.sqrt(row.distance_sq);
+
+  // Check if within the lake's radius or the search radius
+  const effectiveRadius = Math.max(row.radius_km || 0.5, radiusKm);
+  if (distanceKm > effectiveRadius) {
+    return {
+      resolved: false,
+      lake_id: null,
+      lake_name: null,
+      lake_type: 'unresolved',
+      distance_km: distanceKm,
+    };
+  }
+
+  return {
+    resolved: true,
+    lake_id: row.id,
+    lake_name: row.name,
+    lake_type: row.lake_type,
+    distance_km: distanceKm,
+  };
+}
+
+/**
+ * Create a custom lake (saves locally, queues for sync)
+ */
+export async function createCustomLake(
+  name: string,
+  lat: number,
+  lng: number,
+  userEmail: string,
+  city?: string,
+  state?: string,
+): Promise<LocalLake> {
+  const now = new Date().toISOString();
+  const localId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const lake: LocalLake = {
+    id: localId,
+    name,
+    lat,
+    lng,
+    radius_km: 0.5,
+    lake_type: 'custom',
+    user_email: userEmail.toLowerCase(),
+    city: city || null,
+    state: state || null,
+    updated_at: now,
+    is_synced: false,
+  };
+
+  await upsertLake(lake);
+  await addToSyncQueue(localId, 'create', { entity: 'lake' });
+
+  console.log('[SQLite] Created custom lake:', localId, name);
+  return lake;
+}
+
+/**
+ * Get lake count (for debugging/stats)
+ */
+export async function getLakeCount(): Promise<{ known: number; custom: number }> {
+  const database = await getDb();
+
+  const knownResult = await database.query(
+    "SELECT COUNT(*) as count FROM lakes WHERE lake_type = 'known'"
+  );
+  const customResult = await database.query(
+    "SELECT COUNT(*) as count FROM lakes WHERE lake_type = 'custom'"
+  );
+
+  return {
+    known: knownResult.values?.[0]?.count || 0,
+    custom: customResult.values?.[0]?.count || 0,
+  };
+}
+
+// =============================================================================
+// SYNC METADATA OPERATIONS
+// =============================================================================
+
+/**
+ * Get sync metadata value
+ */
+export async function getSyncMetadata(key: string): Promise<string | null> {
+  const database = await getDb();
+  const result = await database.query(
+    'SELECT value FROM sync_metadata WHERE key = ?',
+    [key]
+  );
+  return result.values?.[0]?.value || null;
+}
+
+/**
+ * Set sync metadata value
+ */
+export async function setSyncMetadata(key: string, value: string): Promise<void> {
+  const database = await getDb();
+  await database.run(
+    `INSERT INTO sync_metadata (key, value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    [key, value]
+  );
 }
