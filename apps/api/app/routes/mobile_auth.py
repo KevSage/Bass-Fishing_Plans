@@ -995,6 +995,115 @@ async def mobile_resolve_lake(request: MobileResolveLakeRequest):
 
 
 # =============================================================================
+# MOBILE LAKES SYNC ENDPOINT
+# =============================================================================
+
+class MobileLakesSyncRequest(BaseModel):
+    email: EmailStr
+    user_id: str
+    updated_since: Optional[str] = None  # ISO timestamp for incremental sync
+
+
+@router.post("/lakes")
+async def mobile_sync_lakes(request: MobileLakesSyncRequest):
+    """
+    Sync lakes for offline-first mobile app.
+    Returns both known lakes and user's custom lakes.
+
+    If updated_since is provided, only returns lakes modified after that timestamp.
+    Otherwise returns all lakes (for initial sync).
+    """
+    from app.routes.lakes import get_known_lakes
+    from app.services.custom_lakes import CustomLakeStore
+    from datetime import datetime
+
+    custom_lake_store = CustomLakeStore()
+
+    try:
+        lakes = []
+        updated_since_dt = None
+
+        if request.updated_since:
+            try:
+                updated_since_dt = datetime.fromisoformat(request.updated_since.replace('Z', '+00:00'))
+            except:
+                pass  # Ignore invalid timestamps, return all
+
+        # Get known lakes
+        known_lakes = get_known_lakes()
+
+        for lake in known_lakes:
+            lake_data = {
+                "id": lake.get("id") or lake.get("name"),
+                "name": lake.get("name"),
+                "lat": lake.get("lat") or lake.get("latitude"),
+                "lng": lake.get("lng") or lake.get("lon") or lake.get("longitude"),
+                "radius_km": 0.5,  # Default radius
+                "lake_type": "known",
+                "user_email": None,
+                "city": lake.get("city"),
+                "state": lake.get("state"),
+                "updated_at": lake.get("updated_at") or "2024-01-01T00:00:00Z",
+            }
+
+            # Apply updated_since filter if provided
+            if updated_since_dt:
+                try:
+                    lake_updated = datetime.fromisoformat(lake_data["updated_at"].replace('Z', '+00:00'))
+                    if lake_updated <= updated_since_dt:
+                        continue  # Skip if not updated
+                except:
+                    pass  # Include if can't parse date
+
+            lakes.append(lake_data)
+
+        # Get user's custom lakes
+        custom_lakes = custom_lake_store.list_by_user(request.email)
+
+        for lake in custom_lakes:
+            lake_data = {
+                "id": lake.id,
+                "name": lake.name,
+                "lat": lake.lat,
+                "lng": lake.lng,
+                "radius_km": 0.5,
+                "lake_type": "custom",
+                "user_email": request.email.lower(),
+                "city": lake.city,
+                "state": lake.state,
+                "updated_at": getattr(lake, 'updated_at', None) or lake.created_at,
+            }
+
+            # Apply updated_since filter if provided
+            if updated_since_dt:
+                try:
+                    lake_updated = datetime.fromisoformat(lake_data["updated_at"].replace('Z', '+00:00'))
+                    if lake_updated <= updated_since_dt:
+                        continue  # Skip if not updated
+                except:
+                    pass  # Include if can't parse date
+
+            lakes.append(lake_data)
+
+        print(f"[MobileAuth] Lakes sync: {len(lakes)} lakes for {request.email}")
+
+        return {
+            "success": True,
+            "lakes": lakes,
+            "count": len(lakes),
+        }
+
+    except Exception as e:
+        print(f"[MobileAuth] Lakes sync failed: {e}")
+        return {
+            "success": False,
+            "lakes": [],
+            "count": 0,
+            "error": str(e),
+        }
+
+
+# =============================================================================
 # MOBILE PLAN HISTORY ENDPOINT
 # =============================================================================
 
