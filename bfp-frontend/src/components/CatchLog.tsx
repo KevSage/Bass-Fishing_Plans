@@ -432,6 +432,7 @@ const COLOR_OPTIONS = [
   { value: "shad", label: "Shad" },
   { value: "bone", label: "Bone" },
   { value: "pearl", label: "Pearl" },
+  { value: "baby bass", label: "Baby Bass" },
   { value: "bluegill", label: "Bluegill" },
   { value: "perch", label: "Perch" },
   { value: "crawfish", label: "Crawfish" },
