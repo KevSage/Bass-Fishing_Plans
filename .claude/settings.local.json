@@ -47,7 +47,17 @@
       "Bash(unzip:*)",
       "Bash(cat:*)",
       "Bash(npm view:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git stash:*)",
+      "Bash(git lfs:*)",
+      "Bash(git rm:*)",
+      "Bash(git reset:*)",
+      "Bash(git show:*)",
+      "Bash(/usr/bin/git status --short)",
+      "Bash(/usr/bin/git -c core.gitProxy= status --short)",
+      "WebFetch(domain:rxdb.info)",
+      "WebFetch(domain:ionic.io)",
+      "WebFetch(domain:dev.to)"
     ]
   }
 }

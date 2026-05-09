@@ -70,6 +70,27 @@ import { useMemberStatus } from "@/hooks/useMemberStatus";
 import { saveCatchFormDraft, loadCatchFormDraft, loadCatchFormDraftAsync, clearCatchFormDraft } from "@/lib/form-draft";
 // IMPORT NAVIGATION
 import { useNavigate, useLocation } from "react-router-dom";
+// IMPORT SQLITE FOR OFFLINE-FIRST STORAGE
+import {
+  isSQLiteAvailable,
+  initDatabase,
+  getCatches as getSQLiteCatches,
+  createLocalCatch,
+  updateLocalCatch,
+  deleteLocalCatch,
+  migrateFromLocalStorage,
+  resolveLakeLocal,
+  type LocalCatch,
+} from "@/lib/sqlite-db";
+import {
+  performInitialSync,
+  refreshFromServer,
+  syncToServer,
+  startNetworkListener,
+  getSyncStatus,
+  onSyncStatusChange,
+  syncLakes,
+} from "@/lib/sync-service";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -151,6 +172,7 @@ export type CatchEntry = {
   createdAt: string;
   source: "camera" | "library" | "manual" | "demo";
   isOffline?: boolean;
+  _localId?: string; // SQLite local_id for offline-first operations
 
   // Weather Fields
   temp?: number;
@@ -226,6 +248,83 @@ export function apiRecordToEntry(record: CatchRecord): CatchEntry {
     // temp: record.temp,
     // windSpeed: record.wind_speed,
     // etc...
+  };
+}
+
+// =============================================================================
+// SQLITE CONVERTERS
+// =============================================================================
+
+/**
+ * Convert LocalCatch (SQLite) to CatchEntry (UI)
+ */
+function localCatchToEntry(c: LocalCatch): CatchEntry {
+  return {
+    id: c.server_id || c.local_id, // Use server_id if synced, otherwise local_id
+    lakeId: c.lake_id,
+    lakeType: c.lake_type,
+    lakeName: c.lake_name || "Unknown Water",
+    lakeLat: c.lake_lat,
+    lakeLng: c.lake_lng,
+    catchLat: c.catch_lat,
+    catchLng: c.catch_lng,
+    lure: c.lure || "",
+    color: c.color || undefined,
+    species: c.species as BassSpecies || undefined,
+    weight: c.weight || undefined,
+    length: c.length || undefined,
+    notes: c.notes || undefined,
+    photoUrl: c.photo_local_path || c.photo_url || undefined,
+    caughtAt: c.caught_at,
+    createdAt: c.created_at,
+    source: c.source,
+    isOffline: !c.is_synced,
+    temp: c.temp || undefined,
+    windSpeed: c.wind_speed || undefined,
+    windDir: c.wind_direction || undefined,
+    pressure: c.pressure || undefined,
+    skyCondition: c.sky_condition || undefined,
+    // Store local_id for SQLite operations
+    _localId: c.local_id,
+  } as CatchEntry & { _localId: string };
+}
+
+/**
+ * Convert CatchEntry (UI) to LocalCatch input (SQLite)
+ */
+function entryToLocalCatch(
+  entry: Partial<CatchEntry>,
+  userEmail: string,
+  activeLake: ActiveLake,
+): Omit<LocalCatch, 'local_id' | 'created_at' | 'updated_at' | 'is_synced' | 'is_deleted' | 'sync_error'> {
+  const caughtAt = entry.caughtAt ? new Date(entry.caughtAt).toISOString() : new Date().toISOString();
+
+  return {
+    server_id: entry.id?.startsWith('local_') || entry.id?.startsWith('offline-') ? null : entry.id || null,
+    user_email: userEmail,
+    lake_id: entry.lakeId || null,
+    lake_type: entry.lakeType || 'unresolved',
+    lake_name: entry.lakeName || activeLake?.name || null,
+    lake_lat: entry.lakeLat || activeLake?.lat || 0,
+    lake_lng: entry.lakeLng || activeLake?.lng || 0,
+    catch_lat: entry.catchLat || activeLake?.lat || 0,
+    catch_lng: entry.catchLng || activeLake?.lng || 0,
+    species: entry.species || 'largemouth',
+    weight: entry.weight || null,
+    length: entry.length || null,
+    lure: entry.lure || null,
+    color: entry.color || null,
+    notes: entry.notes || null,
+    photo_local_path: null,
+    photo_url: entry.photoUrl || null,
+    photo_pending: false,
+    temp: entry.temp || null,
+    wind_speed: entry.windSpeed || null,
+    wind_direction: entry.windDir || null,
+    pressure: entry.pressure || null,
+    sky_condition: entry.skyCondition || null,
+    caught_at: caughtAt,
+    source: entry.source || 'manual',
   };
 }
 
@@ -649,11 +748,14 @@ export function useCatchLog(
   const { getToken, isSignedIn } = usePlatformAuth();
   // Get native auth credentials for mobile endpoints
   const nativeAuth = useNativeAuth();
-  const OFFLINE_KEY = "offline_catches";
+  const OFFLINE_KEY = "offline_catches"; // Legacy - kept for migration
+
+  // SQLite state
+  const [sqliteReady, setSqliteReady] = useState(false);
+  const [syncStatus, setSyncStatus] = useState({ pendingUploads: 0, isSyncing: false });
 
   const [state, setState] = useState<CatchLogState>(() => {
     // Load from globalEntriesCache if available (preserves data across component remounts)
-    // Otherwise load from localStorage
     if (globalEntriesCache && globalEntriesCache.length > 0) {
       console.log('[CatchLog] INIT - source: globalEntriesCache, entries:', globalEntriesCache.length);
       return {
@@ -666,25 +768,37 @@ export function useCatchLog(
       };
     }
 
-    // No cache - load from localStorage
-    const cached = localStorage.getItem(API_CACHE_KEY);
-    const offline = localStorage.getItem(OFFLINE_KEY);
-    const cachedEntries: CatchEntry[] = cached ? JSON.parse(cached) : [];
-    const offlineEntries: CatchEntry[] = offline ? JSON.parse(offline) : [];
+    // On native, SQLite will load data - start with empty for now
+    // On web, use localStorage for backwards compat
+    if (!isNativePlatform()) {
+      const cached = localStorage.getItem(API_CACHE_KEY);
+      const offline = localStorage.getItem(OFFLINE_KEY);
+      const cachedEntries: CatchEntry[] = cached ? JSON.parse(cached) : [];
+      const offlineEntries: CatchEntry[] = offline ? JSON.parse(offline) : [];
 
-    // Merge offline + cached, keeping offline entries that aren't already in cache
-    const offlineIds = new Set(offlineEntries.map(e => e.id));
-    const uniqueCached = cachedEntries.filter(e => !offlineIds.has(e.id));
-    const initialEntries = [...offlineEntries, ...uniqueCached];
+      const offlineIds = new Set(offlineEntries.map(e => e.id));
+      const uniqueCached = cachedEntries.filter(e => !offlineIds.has(e.id));
+      const initialEntries = [...offlineEntries, ...uniqueCached];
 
-    console.log('[CatchLog] INIT - source: localStorage, cached:', cachedEntries.length, 'offline:', offlineEntries.length, 'merged:', initialEntries.length);
+      console.log('[CatchLog] INIT - source: localStorage (web), entries:', initialEntries.length);
+      if (initialEntries.length > 0) globalEntriesCache = initialEntries;
 
-    if (initialEntries.length > 0) globalEntriesCache = initialEntries;
+      return {
+        isOpen: false,
+        view: "list",
+        entries: initialEntries,
+        selectedEntry: null,
+        isEditing: false,
+        visibleCount: ENTRIES_PER_PAGE,
+      };
+    }
 
+    // Native platform - will load from SQLite in useEffect
+    console.log('[CatchLog] INIT - native platform, will load from SQLite');
     return {
       isOpen: false,
       view: "list",
-      entries: initialEntries,
+      entries: [],
       selectedEntry: null,
       isEditing: false,
       visibleCount: ENTRIES_PER_PAGE,
@@ -697,6 +811,80 @@ export function useCatchLog(
   // Version counter to signal when entries change (helps trigger re-renders in consumers)
   const [entriesVersion, setEntriesVersion] = useState(0);
 
+  // ==========================================================================
+  // SQLite Initialization (Native platforms only)
+  // ==========================================================================
+  useEffect(() => {
+    if (!isNativePlatform() || !nativeAuth.userEmail || !nativeAuth.userId) {
+      return;
+    }
+
+    const initSQLite = async () => {
+      try {
+        console.log('[CatchLog] Initializing SQLite...');
+        setIsLoading(true);
+
+        // Initialize database
+        await initDatabase();
+        console.log('[CatchLog] SQLite database initialized');
+
+        // Migrate from localStorage if needed
+        const migrated = await migrateFromLocalStorage(nativeAuth.userEmail!);
+        if (migrated > 0) {
+          console.log(`[CatchLog] Migrated ${migrated} catches from localStorage`);
+        }
+
+        // Load catches from SQLite
+        const localCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+        console.log(`[CatchLog] Loaded ${localCatches.length} catches from SQLite`);
+
+        const entries = localCatches.map(localCatchToEntry);
+        globalEntriesCache = entries;
+
+        setState(s => ({
+          ...s,
+          entries,
+        }));
+
+        setSqliteReady(true);
+
+        // Start network listener for background sync
+        startNetworkListener(nativeAuth.userEmail!, nativeAuth.userId!);
+
+        // Refresh catches from server (always fetches, not just on initial sync)
+        console.log('[CatchLog] Refreshing from server...');
+        const syncResult = await refreshFromServer(nativeAuth.userEmail!, nativeAuth.userId!);
+        console.log(`[CatchLog] Refresh result:`, syncResult);
+
+        // Also sync lakes for offline resolution
+        await syncLakes(nativeAuth.userEmail!, nativeAuth.userId!);
+
+        // Reload from SQLite after sync
+        const updatedCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+        const newEntries = updatedCatches.map(localCatchToEntry);
+        globalEntriesCache = newEntries;
+        setState(s => ({ ...s, entries: newEntries }));
+        console.log(`[CatchLog] Now have ${newEntries.length} catches`);
+
+        setIsLoading(false);
+
+        // Subscribe to sync status changes
+        const unsubscribe = onSyncStatusChange(status => {
+          setSyncStatus({ pendingUploads: status.pendingUploads, isSyncing: status.isSyncing });
+        });
+
+        return () => unsubscribe();
+      } catch (err) {
+        console.error('[CatchLog] SQLite init error:', err);
+        setError('Failed to initialize local storage');
+        setIsLoading(false);
+      }
+    };
+
+    initSQLite();
+  }, [nativeAuth.userEmail, nativeAuth.userId]);
+
+  // Legacy getOfflineCatches for web platform compatibility
   const getOfflineCatches = useCallback((): CatchEntry[] => {
     try {
       const stored = localStorage.getItem(OFFLINE_KEY);
@@ -711,24 +899,41 @@ export function useCatchLog(
     if (state.entries.length === 0) setIsLoading(true);
     setError(null);
     try {
-      let apiEntries: CatchEntry[] = [];
-
       const isNative = isNativePlatform();
       const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
 
       console.log('[CatchLog] fetchCatches - isNative:', isNative, 'hasNativeAuth:', hasNativeAuth, 'email:', nativeAuth.userEmail);
 
-      // Use mobile endpoint on native platforms
-      if (isNative && hasNativeAuth) {
-        try {
-          console.log('[CatchLog] Fetching via mobile endpoint...');
-          const response = await listCatchesMobile(nativeAuth.userEmail!, nativeAuth.userId!, 500, 0);
-          console.log('[CatchLog] Mobile response catches:', response.catches?.length);
-          apiEntries = response.catches.map(apiRecordToEntry);
-        } catch (apiErr) {
-          console.warn("Mobile catch fetch failed:", apiErr);
-        }
-      } else if (!isNative) {
+      // =====================================================
+      // NATIVE PLATFORM: Use SQLite (offline-first)
+      // =====================================================
+      if (isNative && hasNativeAuth && isSQLiteAvailable()) {
+        console.log('[CatchLog] Loading from SQLite...');
+        const localCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+        const entries = localCatches.map(localCatchToEntry);
+
+        // Preserve demo catches
+        const demoEntries = state.entries.filter(e => e.source === "demo");
+        const mergedEntries = [...demoEntries, ...entries];
+
+        globalEntriesCache = mergedEntries;
+        setState(s => ({ ...s, entries: mergedEntries }));
+        localStorage.setItem(API_CACHE_KEY, JSON.stringify(mergedEntries.filter(e => !e.isOffline)));
+
+        console.log(`[CatchLog] Loaded ${localCatches.length} catches from SQLite`);
+        setIsLoading(false);
+
+        // Trigger background sync
+        syncToServer(nativeAuth.userEmail!, nativeAuth.userId!);
+        return;
+      }
+
+      // =====================================================
+      // WEB PLATFORM: Use API + localStorage (legacy behavior)
+      // =====================================================
+      let apiEntries: CatchEntry[] = [];
+
+      if (!isNative) {
         // Web platform: use JWT token
         const token = await getToken();
         if (token) {
@@ -857,6 +1062,31 @@ export function useCatchLog(
   const isSyncingRef = useRef(false);
 
   const syncOfflineCatches = useCallback(async () => {
+    const isNative = isNativePlatform();
+    const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
+
+    // =====================================================
+    // NATIVE PLATFORM: Use sync service
+    // =====================================================
+    if (isNative && hasNativeAuth && isSQLiteAvailable()) {
+      console.log('[CatchLog] Using sync service for native platform');
+      const result = await syncToServer(nativeAuth.userEmail!, nativeAuth.userId!);
+
+      if (result.uploaded > 0) {
+        console.log(`[CatchLog] Sync service uploaded ${result.uploaded} catches`);
+        // Reload from SQLite to refresh entries
+        const localCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+        const entries = localCatches.map(localCatchToEntry);
+        globalEntriesCache = entries;
+        setState(s => ({ ...s, entries }));
+      }
+      return;
+    }
+
+    // =====================================================
+    // WEB PLATFORM: Legacy localStorage sync
+    // =====================================================
+
     // Use GLOBAL lock to prevent concurrent syncs across all hook instances
     if (globalSyncInProgress) {
       console.log('[CatchLog] Global sync already in progress, skipping');
@@ -878,19 +1108,8 @@ export function useCatchLog(
     globalLastSyncAttempt = now;
     setIsLoading(true);
 
-    const isNative = isNativePlatform();
-    const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
-
-    // On native, use mobile endpoint; on web, use JWT
-    if (isNative && !hasNativeAuth) {
-      console.log('[CatchLog] syncOfflineCatches: No native auth, skipping');
-      setIsLoading(false);
-      globalSyncInProgress = false;
-      return;
-    }
-
-    const token = isNative ? null : await getToken();
-    if (!isNative && !token) {
+    const token = await getToken();
+    if (!token) {
       console.log('[CatchLog] syncOfflineCatches: No web token, skipping');
       setIsLoading(false);
       globalSyncInProgress = false;
@@ -923,22 +1142,10 @@ export function useCatchLog(
             const file = new File([blob], `catch_${Date.now()}.jpeg`, { type: 'image/jpeg' });
 
             // Get presigned URL and upload
-            let upload_url: string;
-            let public_url: string;
-
-            if (isNative && hasNativeAuth) {
-              const result = await getPresignedUrlMobile(file.name, file.type, nativeAuth.userEmail!, nativeAuth.userId!);
-              upload_url = result.upload_url;
-              public_url = result.public_url;
-            } else {
-              const result = await getPresignedUrl(file.name, file.type, token!);
-              upload_url = result.upload_url;
-              public_url = result.public_url;
-            }
-
-            await uploadFileToR2(upload_url, file);
-            console.log('[CatchLog] Pending photo uploaded:', public_url);
-            input.photo_url = public_url;
+            const result = await getPresignedUrl(file.name, file.type, token);
+            await uploadFileToR2(result.upload_url, file);
+            console.log('[CatchLog] Pending photo uploaded:', result.public_url);
+            input.photo_url = result.public_url;
             photosUploaded++;
           } catch (uploadErr) {
             console.error('[CatchLog] Failed to upload pending photo:', uploadErr);
@@ -947,11 +1154,7 @@ export function useCatchLog(
           }
         }
 
-        if (isNative && hasNativeAuth) {
-          await createCatchMobile(input, nativeAuth.userEmail!, nativeAuth.userId!);
-        } else {
-          await createCatch(input, token!);
-        }
+        await createCatch(input, token);
 
         // SUCCESS! Remove this catch from offline storage IMMEDIATELY
         // This prevents re-syncing if the app is interrupted
@@ -1126,6 +1329,50 @@ export function useCatchLog(
   const addCatch = useCallback(
     async (catchData: Omit<CatchEntry, "id" | "createdAt">) => {
       if (!activeLake) return null;
+
+      const isNative = isNativePlatform();
+      const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
+
+      // =====================================================
+      // NATIVE PLATFORM: Save to SQLite immediately (offline-first)
+      // =====================================================
+      if (isNative && hasNativeAuth && isSQLiteAvailable()) {
+        try {
+          console.log('[CatchLog] Saving catch to SQLite...');
+
+          const localCatchData = entryToLocalCatch(catchData, nativeAuth.userEmail!, activeLake);
+          const savedCatch = await createLocalCatch(localCatchData);
+          const savedEntry = localCatchToEntry(savedCatch);
+
+          console.log('[CatchLog] Catch saved to SQLite:', savedCatch.local_id);
+
+          const newEntries = [savedEntry, ...state.entries];
+          globalEntriesCache = newEntries;
+          setState((s) => ({
+            ...s,
+            entries: newEntries,
+            view: "list",
+            selectedEntry: null,
+            isEditing: false,
+            isOpen: options?.disableListView ? false : s.isOpen,
+          }));
+
+          // Trigger background sync (non-blocking)
+          syncToServer(nativeAuth.userEmail!, nativeAuth.userId!).catch(err => {
+            console.log('[CatchLog] Background sync error (non-fatal):', err);
+          });
+
+          return savedEntry;
+        } catch (err: any) {
+          console.error('[CatchLog] SQLite save failed:', err);
+          setError("Failed to save catch locally");
+          return null;
+        }
+      }
+
+      // =====================================================
+      // WEB PLATFORM: Legacy API-first behavior
+      // =====================================================
       const tempId = `offline-${Date.now()}`;
       const newEntry: CatchEntry = {
         ...catchData,
@@ -1138,16 +1385,9 @@ export function useCatchLog(
         setIsLoading(true);
         const input = entryToApiInput(catchData, activeLake);
 
-        let response: { success: boolean; catch_id: string };
-
-        // Use mobile endpoint on native platforms
-        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
-          response = await createCatchMobile(input, nativeAuth.userEmail, nativeAuth.userId);
-        } else {
-          const token = await getToken();
-          if (!token) throw new Error("Offline");
-          response = await createCatch(input, token);
-        }
+        const token = await getToken();
+        if (!token) throw new Error("Offline");
+        const response = await createCatch(input, token);
 
         const savedEntry = { ...newEntry, id: response.catch_id };
         const newEntries = [savedEntry, ...state.entries];
@@ -1197,6 +1437,8 @@ export function useCatchLog(
       getOfflineCatches,
       options?.disableListView,
       state.entries,
+      nativeAuth.userEmail,
+      nativeAuth.userId,
     ],
   );
 
@@ -1232,6 +1474,52 @@ export function useCatchLog(
         view: "detail",
         isEditing: false,
       }));
+
+      const isNative = isNativePlatform();
+      const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
+
+      // =====================================================
+      // NATIVE PLATFORM: Update in SQLite
+      // =====================================================
+      if (isNative && hasNativeAuth && isSQLiteAvailable()) {
+        try {
+          // Get local_id from entry (either from _localId or from id if it's a local ID)
+          const entry = currentEntries.find(e => e.id === id);
+          const localId = entry?._localId || (id.startsWith('local_') ? id : null);
+
+          if (localId) {
+            console.log('[CatchLog] Updating in SQLite:', localId);
+            await updateLocalCatch(localId, {
+              catch_lat: updates.catchLat,
+              catch_lng: updates.catchLng,
+              species: updates.species,
+              weight: updates.weight,
+              length: updates.length,
+              lure: updates.lure,
+              color: updates.color,
+              notes: updates.notes,
+              photo_url: updates.photoUrl,
+              temp: updates.temp,
+              wind_speed: updates.windSpeed,
+              wind_direction: updates.windDir,
+              pressure: updates.pressure,
+              sky_condition: updates.skyCondition,
+            });
+
+            // Trigger background sync
+            syncToServer(nativeAuth.userEmail!, nativeAuth.userId!).catch(err => {
+              console.log('[CatchLog] Background sync error (non-fatal):', err);
+            });
+          }
+          return;
+        } catch (err) {
+          console.error('[CatchLog] SQLite update error:', err);
+        }
+      }
+
+      // =====================================================
+      // WEB PLATFORM OR FALLBACK: Legacy behavior
+      // =====================================================
       try {
         // Check if this is an offline catch (not yet synced to backend)
         const isOfflineCatch = id.startsWith("offline-");
@@ -1257,25 +1545,14 @@ export function useCatchLog(
               lng: apiInput.lng,
             });
 
-            // Use mobile endpoint on native platforms
-            if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
-              console.log("[CatchLog] Updating via mobile endpoint:", id);
-              await updateCatchMobile(id, apiInput, nativeAuth.userEmail, nativeAuth.userId);
+            const token = await getToken();
+            if (token) {
+              await updateCatchApi(id, apiInput, token);
 
               // Sync localStorage with optimistic data
               const apiOnlyEntries = updatedEntries.filter((c) => !c.isOffline);
               localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnlyEntries));
               console.log("[CatchLog] Update successful, caches synced");
-            } else {
-              const token = await getToken();
-              if (token) {
-                await updateCatchApi(id, apiInput, token);
-
-                // Sync localStorage with optimistic data
-                const apiOnlyEntries = updatedEntries.filter((c) => !c.isOffline);
-                localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnlyEntries));
-                console.log("[CatchLog] Update successful, caches synced");
-              }
             }
           }
         }
@@ -1303,20 +1580,43 @@ export function useCatchLog(
         selectedEntry: null,
         isEditing: false,
       }));
+
+      const isNative = isNativePlatform();
+      const hasNativeAuth = !!(nativeAuth.userEmail && nativeAuth.userId);
+
+      // =====================================================
+      // NATIVE PLATFORM: Delete from SQLite
+      // =====================================================
+      if (isNative && hasNativeAuth && isSQLiteAvailable()) {
+        try {
+          // Get local_id from entry
+          const entry = currentEntries.find(e => e.id === id);
+          const localId = entry?._localId || (id.startsWith('local_') ? id : null);
+
+          if (localId) {
+            console.log('[CatchLog] Deleting from SQLite:', localId);
+            await deleteLocalCatch(localId);
+
+            // Trigger background sync to delete from server
+            syncToServer(nativeAuth.userEmail!, nativeAuth.userId!).catch(err => {
+              console.log('[CatchLog] Background sync error (non-fatal):', err);
+            });
+          }
+          return;
+        } catch (err) {
+          console.error('[CatchLog] SQLite delete error:', err);
+        }
+      }
+
+      // =====================================================
+      // WEB PLATFORM OR FALLBACK: Legacy behavior
+      // =====================================================
       try {
-        // Use mobile endpoint on native platforms
-        if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
-          console.log("[CatchLog] Deleting via mobile endpoint:", id);
-          await deleteCatchMobile(id, nativeAuth.userEmail, nativeAuth.userId);
+        const token = await getToken();
+        if (token) {
+          await deleteCatchApi(id, token);
           const apiOnly = remaining.filter((c) => !c.isOffline);
           localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnly));
-        } else {
-          const token = await getToken();
-          if (token) {
-            await deleteCatchApi(id, token);
-            const apiOnly = remaining.filter((c) => !c.isOffline);
-            localStorage.setItem(API_CACHE_KEY, JSON.stringify(apiOnly));
-          }
         }
       } catch (err) {
         if (id.startsWith("offline-")) {
@@ -1360,6 +1660,9 @@ export function useCatchLog(
     refresh: fetchCatches,
     syncOfflineCatches,
     hasOffline: state.entries.some((e) => e.isOffline),
+    // SQLite offline-first status
+    sqliteReady,
+    syncStatus,
   };
 }
 export type UseCatchLogReturn = ReturnType<typeof useCatchLog>;
@@ -2265,6 +2568,27 @@ export function CatchFormView({
       setIsAutoResolving(true);
       let resolution;
 
+      // =====================================================
+      // NATIVE: Try local SQLite resolution first (instant, no network)
+      // =====================================================
+      if (isNativePlatform() && isSQLiteAvailable()) {
+        console.log('[CatchLog] Resolving lake locally...');
+        const localResult = await resolveLakeLocal(lat, lng, nativeAuth.userEmail || undefined);
+
+        if (localResult.resolved && localResult.lake_name) {
+          console.log('[CatchLog] Lake resolved locally:', localResult.lake_name);
+          setLakeName(localResult.lake_name);
+          setIsAutoResolving(false);
+          return;
+        }
+
+        // Local resolution didn't find a match - try API as fallback if online
+        console.log('[CatchLog] No local match, trying API...');
+      }
+
+      // =====================================================
+      // FALLBACK: Use API (requires network)
+      // =====================================================
       if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
         // Use mobile endpoint
         resolution = await resolveLakeMobile(lat, lng, nativeAuth.userEmail, nativeAuth.userId);
@@ -2280,6 +2604,7 @@ export function CatchFormView({
       }
     } catch (err) {
       console.error("Failed to auto-resolve lake:", err);
+      // Graceful degradation - user can still enter lake name manually
     } finally {
       setIsAutoResolving(false);
     }
@@ -2727,25 +3052,54 @@ export function CatchFormView({
             hasToken: !!token,
             coords: { catchLat, catchLng }
           });
-          if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
-            // Use mobile endpoint for native platforms
-            console.log('[CatchLog] Using mobile lake resolution');
+
+          // =====================================================
+          // NATIVE: Try local SQLite resolution first (instant, no network)
+          // =====================================================
+          if (isNativePlatform() && isSQLiteAvailable()) {
+            console.log('[CatchLog] Using local lake resolution for save');
+            const localResult = await resolveLakeLocal(catchLat, catchLng, nativeAuth.userEmail || undefined);
+
+            if (localResult.resolved) {
+              console.log('[CatchLog] Lake resolved locally for save:', localResult.lake_name);
+              lakeType = localResult.lake_type;
+              lakeId = localResult.lake_id || undefined;
+              finalLakeName = localResult.lake_name || activeLake.name;
+            } else {
+              // No local match - use manually entered name or "Unknown Water"
+              if (lakeName.trim()) finalLakeName = lakeName;
+              else finalLakeName = "Unknown Water";
+            }
+          } else if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
+            // Fallback: Use mobile endpoint for native platforms (requires network)
+            console.log('[CatchLog] Using mobile lake resolution (network)');
             resolution = await resolveLakeMobile(catchLat, catchLng, nativeAuth.userEmail, nativeAuth.userId);
             console.log('[CatchLog] Mobile resolution result:', resolution);
+            if (resolution?.resolved) {
+              lakeType = resolution.lake_type;
+              lakeId = resolution.lake_id || undefined;
+              finalLakeName = resolution.lake_name || activeLake.name;
+            } else {
+              if (lakeName.trim()) finalLakeName = lakeName;
+              else finalLakeName = "Unknown Water";
+            }
           } else if (token) {
             // Use standard endpoint for web
             resolution = await resolveLake(catchLat, catchLng, token);
-          }
-          if (resolution?.resolved) {
-            lakeType = resolution.lake_type;
-            lakeId = resolution.lake_id || undefined;
-            finalLakeName = resolution.lake_name || activeLake.name;
-          } else {
-            if (lakeName.trim()) finalLakeName = lakeName;
-            else finalLakeName = "Unknown Water";
+            if (resolution?.resolved) {
+              lakeType = resolution.lake_type;
+              lakeId = resolution.lake_id || undefined;
+              finalLakeName = resolution.lake_name || activeLake.name;
+            } else {
+              if (lakeName.trim()) finalLakeName = lakeName;
+              else finalLakeName = "Unknown Water";
+            }
           }
         } catch (err) {
           console.warn("Lake resolution failed", err);
+          // Graceful degradation - use manually entered name or "Unknown Water"
+          if (lakeName.trim()) finalLakeName = lakeName;
+          else finalLakeName = "Unknown Water";
         }
       }
       const data: Partial<CatchEntry> = {
