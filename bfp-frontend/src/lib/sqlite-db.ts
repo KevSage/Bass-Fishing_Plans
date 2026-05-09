@@ -15,6 +15,7 @@ const DB_VERSION = 1;
 
 // Use window to store singleton state (survives module reloads from HMR/bundling)
 interface SQLiteGlobalState {
+  id: string;  // Debug ID to track if same object
   db: SQLiteDBConnection | null;
   initPromise: Promise<void> | null;
   initStarted: boolean;
@@ -33,19 +34,22 @@ declare global {
 function getState(): SQLiteGlobalState {
   if (typeof window !== 'undefined') {
     if (!window.__sqliteState) {
-      console.log('[SQLite] Creating new window.__sqliteState');
+      const id = `state_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      console.log('[SQLite] Creating new window.__sqliteState with id:', id);
       window.__sqliteState = {
+        id,
         db: null,
         initPromise: null,
         initStarted: false,
         sqlite: null,
       };
     }
+    console.log('[SQLite] getState returning id:', window.__sqliteState.id, 'initStarted:', window.__sqliteState.initStarted);
     return window.__sqliteState;
   }
   // Fallback for SSR - will create new each time but that's ok
   console.warn('[SQLite] No window object, using ephemeral state');
-  return { db: null, initPromise: null, initStarted: false, sqlite: null };
+  return { id: 'ephemeral', db: null, initPromise: null, initStarted: false, sqlite: null };
 }
 
 // Lazy-init SQLite connection
