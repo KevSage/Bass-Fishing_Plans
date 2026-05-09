@@ -212,6 +212,106 @@ export async function performInitialSync(
   }
 }
 
+/**
+ * Refresh catches from server (always fetches, ignores initial_sync_complete)
+ * Use this on app launch to ensure local data is up to date
+ */
+export async function refreshFromServer(
+  userEmail: string,
+  userId: string
+): Promise<{ success: boolean; downloaded: number; error?: string }> {
+  if (!isSQLiteAvailable()) {
+    return { success: false, downloaded: 0, error: 'SQLite not available' };
+  }
+
+  // Check network
+  const networkStatus = await Network.getStatus();
+  if (!networkStatus.connected) {
+    console.log('[Sync] No network, skipping refresh');
+    return { success: false, downloaded: 0, error: 'No network connection' };
+  }
+
+  if (isSyncing) {
+    console.log('[Sync] Sync already in progress');
+    return { success: false, downloaded: 0, error: 'Sync in progress' };
+  }
+
+  console.log('[Sync] Refreshing catches from server...');
+  isSyncing = true;
+  await notifySyncStatusChange(userEmail);
+
+  try {
+    // Fetch all catches from server
+    const response = await listCatchesMobile(userEmail, userId, 1000, 0);
+    const serverCatches = response.catches;
+
+    console.log(`[Sync] Fetched ${serverCatches.length} catches from server`);
+
+    let downloaded = 0;
+
+    for (const serverCatch of serverCatches) {
+      // Check if we already have this catch
+      const existing = await getCatchByServerId(serverCatch.id);
+      if (existing) {
+        continue; // Already have it
+      }
+
+      // Insert into local database
+      await createLocalCatch({
+        user_email: userEmail,
+        server_id: serverCatch.id,
+        lake_id: serverCatch.lake_id,
+        lake_type: serverCatch.lake_type,
+        lake_name: serverCatch.lake_name,
+        lake_lat: serverCatch.lat,
+        lake_lng: serverCatch.lng,
+        catch_lat: serverCatch.lat,
+        catch_lng: serverCatch.lng,
+        species: serverCatch.species,
+        weight: serverCatch.weight,
+        length: serverCatch.length,
+        lure: serverCatch.lure,
+        color: serverCatch.color,
+        notes: serverCatch.notes,
+        photo_local_path: null,
+        photo_url: serverCatch.photo_url,
+        photo_pending: false,
+        temp: serverCatch.temp || null,
+        wind_speed: serverCatch.wind_speed || null,
+        wind_direction: serverCatch.wind_direction || null,
+        pressure: serverCatch.pressure || null,
+        sky_condition: serverCatch.sky_condition || null,
+        caught_at: `${serverCatch.date}T${serverCatch.time || '12:00'}:00`,
+        source: serverCatch.source as any,
+      });
+
+      // Mark as synced
+      const createdCatch = await getCatchByServerId(serverCatch.id);
+      if (createdCatch) {
+        await updateLocalCatch(createdCatch.local_id, { is_synced: true });
+      }
+
+      downloaded++;
+    }
+
+    // Update last sync time
+    await Preferences.set({ key: 'last_sync_at', value: new Date().toISOString() });
+
+    console.log(`[Sync] Refresh complete: ${downloaded} new catches downloaded`);
+
+    isSyncing = false;
+    await notifySyncStatusChange(userEmail);
+
+    return { success: true, downloaded };
+
+  } catch (error: any) {
+    console.error('[Sync] Refresh failed:', error);
+    isSyncing = false;
+    await notifySyncStatusChange(userEmail);
+    return { success: false, downloaded: 0, error: error.message };
+  }
+}
+
 // =============================================================================
 // UPLOAD SYNC (Push to Server)
 // =============================================================================

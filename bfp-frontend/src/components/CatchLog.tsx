@@ -84,10 +84,12 @@ import {
 } from "@/lib/sqlite-db";
 import {
   performInitialSync,
+  refreshFromServer,
   syncToServer,
   startNetworkListener,
   getSyncStatus,
   onSyncStatusChange,
+  syncLakes,
 } from "@/lib/sync-service";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -844,23 +846,26 @@ export function useCatchLog(
         }));
 
         setSqliteReady(true);
-        setIsLoading(false);
 
         // Start network listener for background sync
         startNetworkListener(nativeAuth.userEmail!, nativeAuth.userId!);
 
-        // Perform initial sync to get any new catches from server
-        performInitialSync(nativeAuth.userEmail!, nativeAuth.userId!).then(result => {
-          if (result.downloaded > 0) {
-            console.log(`[CatchLog] Initial sync downloaded ${result.downloaded} catches`);
-            // Reload from SQLite
-            getSQLiteCatches(nativeAuth.userEmail!).then(catches => {
-              const newEntries = catches.map(localCatchToEntry);
-              globalEntriesCache = newEntries;
-              setState(s => ({ ...s, entries: newEntries }));
-            });
-          }
-        });
+        // Refresh catches from server (always fetches, not just on initial sync)
+        console.log('[CatchLog] Refreshing from server...');
+        const syncResult = await refreshFromServer(nativeAuth.userEmail!, nativeAuth.userId!);
+        console.log(`[CatchLog] Refresh result:`, syncResult);
+
+        // Also sync lakes for offline resolution
+        await syncLakes(nativeAuth.userEmail!, nativeAuth.userId!);
+
+        // Reload from SQLite after sync
+        const updatedCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+        const newEntries = updatedCatches.map(localCatchToEntry);
+        globalEntriesCache = newEntries;
+        setState(s => ({ ...s, entries: newEntries }));
+        console.log(`[CatchLog] Now have ${newEntries.length} catches`);
+
+        setIsLoading(false);
 
         // Subscribe to sync status changes
         const unsubscribe = onSyncStatusChange(status => {
