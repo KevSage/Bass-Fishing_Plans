@@ -57,7 +57,8 @@
       "Bash(/usr/bin/git -c core.gitProxy= status --short)",
       "WebFetch(domain:rxdb.info)",
       "WebFetch(domain:ionic.io)",
-      "WebFetch(domain:dev.to)"
+      "WebFetch(domain:dev.to)",
+      "Bash(npm info:*)"
     ]
   }
 }
