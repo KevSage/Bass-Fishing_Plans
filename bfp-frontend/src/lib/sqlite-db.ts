@@ -482,8 +482,15 @@ export async function getDb(): Promise<SQLiteDBConnection> {
     await state.initPromise;
     console.log('[SQLite] getDb: initPromise resolved successfully');
   } catch (initError: any) {
-    console.error('[SQLite] getDb: initDatabase FAILED:', initError?.message || initError);
-    console.error('[SQLite] getDb: Full error:', JSON.stringify(initError, Object.getOwnPropertyNames(initError)));
+    // Log error in multiple ways to ensure we see it
+    console.log('[SQLite] getDb: CATCH BLOCK ENTERED');
+    console.log('[SQLite] getDb: Error type:', typeof initError);
+    console.log('[SQLite] getDb: Error toString:', String(initError));
+    if (initError) {
+      console.log('[SQLite] getDb: Error message:', initError.message);
+      console.log('[SQLite] getDb: Error name:', initError.name);
+      console.log('[SQLite] getDb: Error stack:', initError.stack);
+    }
     state.initStarted = false;
     state.initPromise = null;
     throw initError;
@@ -1292,8 +1299,14 @@ export async function resolveLakeLocal(
   };
 
   } catch (error: any) {
-    console.error('[SQLite] resolveLakeLocal ERROR:', error?.message || error);
-    console.error('[SQLite] resolveLakeLocal Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error || {})));
+    // Log error in multiple ways
+    console.log('[SQLite] resolveLakeLocal: CATCH BLOCK ENTERED');
+    console.log('[SQLite] resolveLakeLocal: Error type:', typeof error);
+    console.log('[SQLite] resolveLakeLocal: Error toString:', String(error));
+    if (error) {
+      console.log('[SQLite] resolveLakeLocal: Error message:', error.message);
+      console.log('[SQLite] resolveLakeLocal: Error name:', error.name);
+    }
     // Return unresolved on error - caller will fall back to API
     return {
       resolved: false,
