@@ -84,6 +84,8 @@ import {
 } from "@/lib/sqlite-db";
 // IMPORT FILESYSTEM FOR LOCAL PHOTO STORAGE
 import { Filesystem, Directory } from "@capacitor/filesystem";
+// IMPORT CAPACITOR CORE FOR FILE URL CONVERSION
+import { Capacitor } from "@capacitor/core";
 import {
   performInitialSync,
   refreshFromServer,
@@ -93,6 +95,12 @@ import {
   onSyncStatusChange,
   syncLakes,
 } from "@/lib/sync-service";
+// IMPORT WEIGHT UTILITIES
+import {
+  parseWeightInput,
+  formatWeightForInput,
+  formatWeightForDisplay,
+} from "@/lib/weight-utils";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -294,9 +302,24 @@ function normalizeDateString(dateStr: string | null | undefined): string {
 }
 
 /**
+ * Convert a file:// URL to a URL that works in WKWebView
+ */
+function convertLocalFileUrl(url: string | null | undefined): string | undefined {
+  if (!url) return undefined;
+  // Convert file:// URLs to capacitor:// URLs for WKWebView
+  if (url.startsWith('file://')) {
+    return Capacitor.convertFileSrc(url);
+  }
+  return url;
+}
+
+/**
  * Convert LocalCatch (SQLite) to CatchEntry (UI)
  */
 function localCatchToEntry(c: LocalCatch): CatchEntry {
+  // Get photo URL, preferring local path, and convert file:// URLs for WKWebView
+  const photoUrl = convertLocalFileUrl(c.photo_local_path) || c.photo_url || undefined;
+
   return {
     id: c.server_id || c.local_id, // Use server_id if synced, otherwise local_id
     lakeId: c.lake_id,
@@ -312,7 +335,7 @@ function localCatchToEntry(c: LocalCatch): CatchEntry {
     weight: c.weight || undefined,
     length: c.length || undefined,
     notes: c.notes || undefined,
-    photoUrl: c.photo_local_path || c.photo_url || undefined,
+    photoUrl,
     caughtAt: normalizeDateString(c.caught_at),
     createdAt: c.created_at,
     source: c.source,
@@ -1469,6 +1492,13 @@ export function useCatchLog(
       if (isNative && hasNativeAuth && isSQLiteAvailable()) {
         try {
           console.log('[CatchLog] Saving catch to SQLite...');
+          console.log('[CatchLog] Photo debug:', {
+            hasPhotoUrl: !!catchData.photoUrl,
+            hasImageData: !!catchData.imageData,
+            imageDataLength: catchData.imageData?.length || 0,
+            hasPendingPhoto: !!catchData.pendingPhotoBase64,
+            pendingPhotoLength: catchData.pendingPhotoBase64?.length || 0,
+          });
 
           // Generate a temp ID for photo filename
           const tempId = `local_${Date.now()}`;
@@ -1477,8 +1507,10 @@ export function useCatchLog(
           const photoData = catchData.imageData || catchData.pendingPhotoBase64;
           let photoLocalPath: string | null = null;
           if (photoData) {
-            console.log('[CatchLog] Saving photo locally...');
+            console.log('[CatchLog] Saving photo locally, data length:', photoData.length);
             photoLocalPath = await savePhotoLocally(photoData, tempId);
+          } else {
+            console.log('[CatchLog] No photo data to save locally');
           }
 
           const localCatchData = entryToLocalCatch(catchData, nativeAuth.userEmail!, activeLake);
@@ -2064,7 +2096,7 @@ function CatchListView(props: CatchListViewProps) {
                     )}
                   </div>
                   <div className="catch-item-details">
-                    {entry.weight && `${entry.weight} lbs`}{" "}
+                    {entry.weight && formatWeightForDisplay(entry.weight)}{" "}
                     {entry.weight && entry.length && " • "}{" "}
                     {entry.length && `${entry.length}"`}{" "}
                     {!entry.weight &&
@@ -2267,8 +2299,7 @@ export function CatchDetailView({
                     <TrophyIcon size={12} /> PB
                   </div>
                 )}
-                <span className="catch-weight-value">{entry.weight}</span>
-                <span className="catch-weight-unit">LBS</span>
+                <span className="catch-weight-value">{formatWeightForDisplay(entry.weight)}</span>
               </div>
             )}
           </div>
@@ -2553,7 +2584,7 @@ export function CatchFormView({
     entry?.species || lastDefaults?.species || "largemouth",
   );
   // Use ternary to treat 0 as empty - user shouldn't have to clear "0" before entering weight
-  const [weight, setWeight] = useState(entry?.weight ? entry.weight.toString() : "");
+  const [weight, setWeight] = useState(formatWeightForInput(entry?.weight));
   const [length, setLength] = useState(entry?.length ? entry.length.toString() : "");
   const [notes, setNotes] = useState(entry?.notes || "");
   const [source, setSource] = useState<"camera" | "library" | "manual">(
@@ -3262,7 +3293,7 @@ export function CatchFormView({
         lure,
         color: color || undefined,
         species,
-        weight: weight ? parseFloat(weight) : undefined,
+        weight: parseWeightInput(weight),
         length: length ? parseFloat(length) : undefined,
         notes: notes || undefined,
         photoUrl: photoUrl || undefined,
@@ -3307,7 +3338,7 @@ export function CatchFormView({
         lure,
         color: color || undefined,
         species,
-        weight: weight ? parseFloat(weight) : undefined,
+        weight: parseWeightInput(weight),
         length: length ? parseFloat(length) : undefined,
         notes: notes || undefined,
         photoUrl: photoUrl || undefined,

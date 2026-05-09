@@ -26,6 +26,7 @@ import {
   type ActiveLake,
   CatchFormView,
 } from "@/components/CatchLog";
+import { formatWeightForDisplay, formatWeightCompact } from "@/lib/weight-utils";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -455,8 +456,7 @@ const FullPBCard = ({
         </div>
 
         <div className="pb-main-stat">
-          <span className="pb-weight-val">{entry.weight}</span>
-          <span className="pb-weight-unit">lbs</span>
+          <span className="pb-weight-val">{formatWeightForDisplay(entry.weight)}</span>
         </div>
 
         <div className="pb-details-grid">
@@ -1029,7 +1029,7 @@ export function Insights() {
                     })}
                   </span>
                   {entry.weight && (
-                    <span className="wall-weight">{entry.weight}lb</span>
+                    <span className="wall-weight">{formatWeightCompact(entry.weight)}</span>
                   )}
                 </div>
               </div>
