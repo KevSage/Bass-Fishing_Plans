@@ -824,59 +824,84 @@ export function useCatchLog(
         console.log('[CatchLog] Initializing SQLite...');
         setIsLoading(true);
 
-        // Initialize database
-        await initDatabase();
-        console.log('[CatchLog] SQLite database initialized');
+        let sqliteWorking = false;
+        let entries: CatchEntry[] = [];
 
-        // Migrate from localStorage if needed
-        const migrated = await migrateFromLocalStorage(nativeAuth.userEmail!);
-        if (migrated > 0) {
-          console.log(`[CatchLog] Migrated ${migrated} catches from localStorage`);
+        // Try to initialize SQLite
+        try {
+          await initDatabase();
+          console.log('[CatchLog] SQLite database initialized');
+          sqliteWorking = true;
+
+          // Migrate from localStorage if needed
+          const migrated = await migrateFromLocalStorage(nativeAuth.userEmail!);
+          if (migrated > 0) {
+            console.log(`[CatchLog] Migrated ${migrated} catches from localStorage`);
+          }
+
+          // Load catches from SQLite
+          const localCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+          console.log(`[CatchLog] Loaded ${localCatches.length} catches from SQLite`);
+          entries = localCatches.map(localCatchToEntry);
+        } catch (sqliteErr) {
+          console.warn('[CatchLog] SQLite init failed, will use API fallback:', sqliteErr);
         }
 
-        // Load catches from SQLite
-        const localCatches = await getSQLiteCatches(nativeAuth.userEmail!);
-        console.log(`[CatchLog] Loaded ${localCatches.length} catches from SQLite`);
-
-        const entries = localCatches.map(localCatchToEntry);
+        // Set initial entries
         globalEntriesCache = entries;
+        setState(s => ({ ...s, entries }));
 
-        setState(s => ({
-          ...s,
-          entries,
-        }));
+        if (sqliteWorking) {
+          setSqliteReady(true);
+          startNetworkListener(nativeAuth.userEmail!, nativeAuth.userId!);
 
-        setSqliteReady(true);
+          // Try to refresh from server
+          console.log('[CatchLog] Refreshing from server...');
+          try {
+            const syncResult = await refreshFromServer(nativeAuth.userEmail!, nativeAuth.userId!);
+            console.log(`[CatchLog] Refresh result:`, syncResult);
+            await syncLakes(nativeAuth.userEmail!, nativeAuth.userId!);
+          } catch (syncErr) {
+            console.warn('[CatchLog] Server refresh failed:', syncErr);
+          }
 
-        // Start network listener for background sync
-        startNetworkListener(nativeAuth.userEmail!, nativeAuth.userId!);
+          // Reload from SQLite after sync
+          try {
+            const updatedCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+            entries = updatedCatches.map(localCatchToEntry);
+          } catch (reloadErr) {
+            console.warn('[CatchLog] SQLite reload failed:', reloadErr);
+          }
+        }
 
-        // Refresh catches from server (always fetches, not just on initial sync)
-        console.log('[CatchLog] Refreshing from server...');
-        const syncResult = await refreshFromServer(nativeAuth.userEmail!, nativeAuth.userId!);
-        console.log(`[CatchLog] Refresh result:`, syncResult);
+        // If still no entries, fetch directly from mobile API
+        if (entries.length === 0) {
+          console.log('[CatchLog] No entries, fetching directly from mobile API...');
+          try {
+            const response = await listCatchesMobile(nativeAuth.userEmail!, nativeAuth.userId!, 500, 0);
+            entries = response.catches.map(apiRecordToEntry);
+            console.log(`[CatchLog] Loaded ${entries.length} catches from mobile API`);
+          } catch (apiErr) {
+            console.warn('[CatchLog] Mobile API fetch failed:', apiErr);
+          }
+        }
 
-        // Also sync lakes for offline resolution
-        await syncLakes(nativeAuth.userEmail!, nativeAuth.userId!);
-
-        // Reload from SQLite after sync
-        const updatedCatches = await getSQLiteCatches(nativeAuth.userEmail!);
-        const newEntries = updatedCatches.map(localCatchToEntry);
-        globalEntriesCache = newEntries;
-        setState(s => ({ ...s, entries: newEntries }));
-        console.log(`[CatchLog] Now have ${newEntries.length} catches`);
+        globalEntriesCache = entries;
+        setState(s => ({ ...s, entries }));
+        console.log(`[CatchLog] Final entries count: ${entries.length}`);
 
         setIsLoading(false);
 
         // Subscribe to sync status changes
-        const unsubscribe = onSyncStatusChange(status => {
-          setSyncStatus({ pendingUploads: status.pendingUploads, isSyncing: status.isSyncing });
-        });
-
-        return () => unsubscribe();
+        if (sqliteWorking) {
+          const unsubscribe = onSyncStatusChange(status => {
+            setSyncStatus({ pendingUploads: status.pendingUploads, isSyncing: status.isSyncing });
+          });
+          return () => unsubscribe();
+        }
       } catch (err) {
-        console.error('[CatchLog] SQLite init error:', err);
-        setError('Failed to initialize local storage');
+        console.error('[CatchLog] Init error:', err);
+        setError('Failed to load catches');
         setIsLoading(false);
       }
     };
@@ -905,12 +930,34 @@ export function useCatchLog(
       console.log('[CatchLog] fetchCatches - isNative:', isNative, 'hasNativeAuth:', hasNativeAuth, 'email:', nativeAuth.userEmail);
 
       // =====================================================
-      // NATIVE PLATFORM: Use SQLite (offline-first)
+      // NATIVE PLATFORM: Use SQLite (offline-first) with API fallback
       // =====================================================
-      if (isNative && hasNativeAuth && isSQLiteAvailable()) {
-        console.log('[CatchLog] Loading from SQLite...');
-        const localCatches = await getSQLiteCatches(nativeAuth.userEmail!);
-        const entries = localCatches.map(localCatchToEntry);
+      if (isNative && hasNativeAuth) {
+        let entries: CatchEntry[] = [];
+
+        // Try SQLite first
+        if (isSQLiteAvailable()) {
+          try {
+            console.log('[CatchLog] Loading from SQLite...');
+            const localCatches = await getSQLiteCatches(nativeAuth.userEmail!);
+            entries = localCatches.map(localCatchToEntry);
+            console.log(`[CatchLog] Loaded ${localCatches.length} catches from SQLite`);
+          } catch (sqliteErr) {
+            console.warn('[CatchLog] SQLite read failed:', sqliteErr);
+          }
+        }
+
+        // If SQLite is empty or failed, fetch from API directly
+        if (entries.length === 0) {
+          console.log('[CatchLog] SQLite empty, fetching from mobile API...');
+          try {
+            const response = await listCatchesMobile(nativeAuth.userEmail!, nativeAuth.userId!, 500, 0);
+            entries = response.catches.map(apiRecordToEntry);
+            console.log(`[CatchLog] Loaded ${entries.length} catches from mobile API`);
+          } catch (apiErr) {
+            console.warn('[CatchLog] Mobile API fetch failed:', apiErr);
+          }
+        }
 
         // Preserve demo catches
         const demoEntries = state.entries.filter(e => e.source === "demo");
@@ -920,11 +967,12 @@ export function useCatchLog(
         setState(s => ({ ...s, entries: mergedEntries }));
         localStorage.setItem(API_CACHE_KEY, JSON.stringify(mergedEntries.filter(e => !e.isOffline)));
 
-        console.log(`[CatchLog] Loaded ${localCatches.length} catches from SQLite`);
         setIsLoading(false);
 
-        // Trigger background sync
-        syncToServer(nativeAuth.userEmail!, nativeAuth.userId!);
+        // Trigger background sync if SQLite is available
+        if (isSQLiteAvailable()) {
+          syncToServer(nativeAuth.userEmail!, nativeAuth.userId!);
+        }
         return;
       }
 
