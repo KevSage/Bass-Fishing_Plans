@@ -27,22 +27,24 @@ declare global {
   }
 }
 
-// Initialize global state if not present
-if (typeof window !== 'undefined' && !window.__sqliteState) {
-  window.__sqliteState = {
-    db: null,
-    initPromise: null,
-    initStarted: false,
-    sqlite: null,
-  };
-}
+// Note: State is initialized lazily in getState() to avoid module loading issues
 
 // Get state from window (with fallback for SSR)
 function getState(): SQLiteGlobalState {
-  if (typeof window !== 'undefined' && window.__sqliteState) {
+  if (typeof window !== 'undefined') {
+    if (!window.__sqliteState) {
+      console.log('[SQLite] Creating new window.__sqliteState');
+      window.__sqliteState = {
+        db: null,
+        initPromise: null,
+        initStarted: false,
+        sqlite: null,
+      };
+    }
     return window.__sqliteState;
   }
   // Fallback for SSR - will create new each time but that's ok
+  console.warn('[SQLite] No window object, using ephemeral state');
   return { db: null, initPromise: null, initStarted: false, sqlite: null };
 }
 
