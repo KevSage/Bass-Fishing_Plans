@@ -58,7 +58,9 @@
       "WebFetch(domain:rxdb.info)",
       "WebFetch(domain:ionic.io)",
       "WebFetch(domain:dev.to)",
-      "Bash(npm info:*)"
+      "Bash(npm info:*)",
+      "Bash(node scripts/fix-sqlite-spm.js:*)",
+      "Bash(node scripts/fix-sqlite-spm.cjs:*)"
     ]
   }
 }

@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "postinstall": "node scripts/fix-sqlite-spm.js"
+    "postinstall": "node scripts/fix-sqlite-spm.cjs"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "^7.1.0",
