@@ -277,14 +277,22 @@ export async function initDatabase(): Promise<void> {
  */
 export async function getDb(): Promise<SQLiteDBConnection> {
   if (!Capacitor.isNativePlatform()) {
+    console.error('[SQLite] getDb called on non-native platform');
     throw new Error('SQLite only available on native platforms');
   }
 
   if (!db) {
-    await initDatabase();
+    console.log('[SQLite] getDb: No connection, initializing...');
+    try {
+      await initDatabase();
+    } catch (initError) {
+      console.error('[SQLite] getDb: initDatabase failed:', initError);
+      throw initError;
+    }
   }
 
   if (!db) {
+    console.error('[SQLite] getDb: db is still null after init');
     throw new Error('Failed to initialize database');
   }
 
@@ -319,9 +327,12 @@ export function generateLocalId(): string {
 export async function createLocalCatch(
   catchData: Omit<LocalCatch, 'local_id' | 'created_at' | 'updated_at' | 'is_synced' | 'is_deleted' | 'sync_error'>
 ): Promise<LocalCatch> {
-  const database = await getDb();
-  const now = new Date().toISOString();
-  const localId = generateLocalId();
+  console.log('[SQLite] createLocalCatch called');
+  try {
+    const database = await getDb();
+    console.log('[SQLite] createLocalCatch: got database connection');
+    const now = new Date().toISOString();
+    const localId = generateLocalId();
 
   const newCatch: LocalCatch = {
     ...catchData,
@@ -400,6 +411,11 @@ export async function createLocalCatch(
 
   console.log('[SQLite] Created catch:', localId, newCatch.server_id ? '(from server)' : '(local)');
   return newCatch;
+
+  } catch (error) {
+    console.error('[SQLite] createLocalCatch ERROR:', error);
+    throw error;
+  }
 }
 
 /**
