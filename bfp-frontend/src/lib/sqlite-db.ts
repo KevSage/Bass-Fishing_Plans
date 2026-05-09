@@ -13,11 +13,47 @@ import { Preferences } from '@capacitor/preferences';
 const DB_NAME = 'bass_clarity_catches';
 const DB_VERSION = 1;
 
-// Singleton connection
-let db: SQLiteDBConnection | null = null;
-let initPromise: Promise<void> | null = null;  // Mutex for initialization
-let initStarted = false;  // Flag to prevent race conditions
-const sqlite = new SQLiteConnection(CapacitorSQLite);
+// Use window to store singleton state (survives module reloads from HMR/bundling)
+interface SQLiteGlobalState {
+  db: SQLiteDBConnection | null;
+  initPromise: Promise<void> | null;
+  initStarted: boolean;
+  sqlite: SQLiteConnection | null;
+}
+
+declare global {
+  interface Window {
+    __sqliteState?: SQLiteGlobalState;
+  }
+}
+
+// Initialize global state if not present
+if (typeof window !== 'undefined' && !window.__sqliteState) {
+  window.__sqliteState = {
+    db: null,
+    initPromise: null,
+    initStarted: false,
+    sqlite: null,
+  };
+}
+
+// Get state from window (with fallback for SSR)
+function getState(): SQLiteGlobalState {
+  if (typeof window !== 'undefined' && window.__sqliteState) {
+    return window.__sqliteState;
+  }
+  // Fallback for SSR - will create new each time but that's ok
+  return { db: null, initPromise: null, initStarted: false, sqlite: null };
+}
+
+// Lazy-init SQLite connection
+function getSqlite(): SQLiteConnection {
+  const state = getState();
+  if (!state.sqlite) {
+    state.sqlite = new SQLiteConnection(CapacitorSQLite);
+  }
+  return state.sqlite;
+}
 
 // =============================================================================
 // TYPES
@@ -260,13 +296,16 @@ function withTimeout<T>(promise: Promise<T>, ms: number, operation: string): Pro
  * Instead, we just try to create/open directly and handle errors.
  */
 export async function initDatabase(): Promise<void> {
+  const state = getState();
+  const sqlite = getSqlite();
+
   if (!Capacitor.isNativePlatform()) {
     console.log('[SQLite] Not on native platform, skipping init');
     return;
   }
 
   // If already initialized, skip
-  if (db) {
+  if (state.db) {
     console.log('[SQLite] Already initialized, skipping');
     return;
   }
@@ -295,15 +334,15 @@ export async function initDatabase(): Promise<void> {
     }
 
     try {
-      db = await withTimeout(connectionPromise, 10000, 'createConnection');
-      console.log(`[SQLite] Step 1b done: Connection object received (${Date.now() - startTime}ms)`, db ? 'valid' : 'NULL');
+      state.db = await withTimeout(connectionPromise, 10000, 'createConnection');
+      console.log(`[SQLite] Step 1b done: Connection object received (${Date.now() - startTime}ms)`, state.db ? 'valid' : 'NULL');
     } catch (createErr: any) {
       console.error('[SQLite] Step 1b ERROR:', createErr?.message || createErr);
       // If connection already exists, try to retrieve it
       if (createErr?.message?.includes('already exists') || createErr?.message?.includes('Connection')) {
         console.log('[SQLite] Connection may already exist, trying to retrieve...');
         try {
-          db = await withTimeout(
+          state.db = await withTimeout(
             sqlite.retrieveConnection(DB_NAME, false),
             5000,
             'retrieveConnection'
@@ -318,17 +357,17 @@ export async function initDatabase(): Promise<void> {
       }
     }
 
-    if (!db) {
+    if (!state.db) {
       console.error('[SQLite] db is null/undefined after createConnection');
       throw new Error('Failed to create database connection - db is null');
     }
 
-    console.log('[SQLite] Step 1 complete: db object type =', typeof db);
+    console.log('[SQLite] Step 1 complete: db object type =', typeof state.db);
 
     // Step 2: Open database
     console.log('[SQLite] Step 2: Opening database...');
     try {
-      await withTimeout(db.open(), 10000, 'open');
+      await withTimeout(state.db.open(), 10000, 'open');
       console.log(`[SQLite] Step 2 done: Database opened (${Date.now() - startTime}ms)`);
     } catch (openErr: any) {
       // Database might already be open
@@ -341,12 +380,12 @@ export async function initDatabase(): Promise<void> {
 
     // Step 3: Execute schema
     console.log('[SQLite] Step 3: Executing schema...');
-    await withTimeout(db.execute(SCHEMA), 10000, 'execute schema');
+    await withTimeout(state.db.execute(SCHEMA), 10000, 'execute schema');
     console.log(`[SQLite] Step 3 done: Schema created/verified (${Date.now() - startTime}ms)`);
 
     // Step 4: Run migrations
     console.log('[SQLite] Step 4: Running migrations...');
-    await runMigrations(db);
+    await runMigrations(state.db);
     console.log(`[SQLite] Step 4 done: Migrations complete (${Date.now() - startTime}ms)`);
 
     // Mark as initialized
@@ -356,7 +395,7 @@ export async function initDatabase(): Promise<void> {
   } catch (error) {
     console.error(`[SQLite] Init error after ${Date.now() - startTime}ms:`, error);
     // Reset db on failure so next attempt starts fresh
-    db = null;
+    state.db = null;
     throw error;
   }
 }
@@ -365,7 +404,8 @@ export async function initDatabase(): Promise<void> {
  * Get database connection (initializes if needed)
  */
 export async function getDb(): Promise<SQLiteDBConnection> {
-  console.log(`[SQLite] getDb called: db=${!!db}, initStarted=${initStarted}, initPromise=${!!initPromise}`);
+  const state = getState();
+  console.log(`[SQLite] getDb called: db=${!!state.db}, initStarted=${state.initStarted}, initPromise=${!!state.initPromise}`);
 
   if (!Capacitor.isNativePlatform()) {
     console.error('[SQLite] getDb called on non-native platform');
@@ -373,25 +413,25 @@ export async function getDb(): Promise<SQLiteDBConnection> {
   }
 
   // If already have a valid connection, return it
-  if (db) {
+  if (state.db) {
     console.log('[SQLite] getDb: returning existing db');
-    return db;
+    return state.db;
   }
 
   // If initialization is already in progress, wait for it with timeout
-  if (initPromise) {
+  if (state.initPromise) {
     console.log('[SQLite] getDb: Init already in progress, waiting for initPromise...');
     try {
       await Promise.race([
-        initPromise,
+        state.initPromise,
         new Promise((_, reject) => setTimeout(() => reject(new Error('getDb wait timeout')), 15000))
       ]);
     } catch (e) {
       console.warn('[SQLite] getDb: Wait for init failed:', e);
     }
-    if (db) {
+    if (state.db) {
       console.log('[SQLite] getDb: db available after waiting');
-      return db;
+      return state.db;
     }
     // If we were waiting and still no db, throw (don't start another init)
     console.error('[SQLite] getDb: Init was in progress but still no db');
@@ -399,27 +439,27 @@ export async function getDb(): Promise<SQLiteDBConnection> {
   }
 
   // Prevent race conditions - if init started but no promise, wait a bit
-  if (initStarted && !db) {
+  if (state.initStarted && !state.db) {
     console.log('[SQLite] getDb: Init started but not complete (no promise), waiting...');
     for (let i = 0; i < 50; i++) {  // Wait up to 5 seconds
       await new Promise(resolve => setTimeout(resolve, 100));
-      if (db) {
+      if (state.db) {
         console.log('[SQLite] getDb: db became available after waiting');
-        return db;
+        return state.db;
       }
-      if (initPromise) {
+      if (state.initPromise) {
         // Promise appeared, wait for it
         console.log('[SQLite] getDb: initPromise appeared, waiting for it');
         try {
-          await initPromise;
+          await state.initPromise;
         } catch (e) {
           console.warn('[SQLite] getDb: initPromise failed:', e);
         }
-        if (db) return db;
+        if (state.db) return state.db;
       }
-      if (!initStarted) break;  // Init failed, try again
+      if (!state.initStarted) break;  // Init failed, try again
     }
-    if (initStarted && !db) {
+    if (state.initStarted && !state.db) {
       console.error('[SQLite] getDb: Init still in progress after 5s, throwing');
       throw new Error('Database initialization timeout');
     }
@@ -427,45 +467,47 @@ export async function getDb(): Promise<SQLiteDBConnection> {
 
   // Start initialization with mutex
   console.log('[SQLite] getDb: Starting new initialization...');
-  initStarted = true;
-  initPromise = initDatabase();
+  state.initStarted = true;
+  state.initPromise = initDatabase();
   console.log('[SQLite] getDb: initPromise created');
 
   try {
-    await initPromise;
+    await state.initPromise;
     console.log('[SQLite] getDb: initPromise resolved');
   } catch (initError) {
     console.error('[SQLite] getDb: initDatabase failed:', initError);
-    initStarted = false;
-    initPromise = null;
+    state.initStarted = false;
+    state.initPromise = null;
     throw initError;
   }
 
-  initPromise = null;  // Clear promise but keep initStarted true
+  state.initPromise = null;  // Clear promise but keep initStarted true
 
-  if (!db) {
+  if (!state.db) {
     console.error('[SQLite] getDb: db is still null after init');
-    initStarted = false;
+    state.initStarted = false;
     throw new Error('Failed to initialize database');
   }
 
   console.log('[SQLite] getDb: initialization complete, returning db');
-  return db;
+  return state.db;
 }
 
 /**
  * Close the database connection
  */
 export async function closeDatabase(): Promise<void> {
-  if (db) {
+  const state = getState();
+  if (state.db) {
     try {
+      const sqlite = getSqlite();
       await sqlite.closeConnection(DB_NAME, false);
     } catch (e) {
       console.warn('[SQLite] Error closing connection:', e);
     }
-    db = null;
-    initStarted = false;
-    initPromise = null;
+    state.db = null;
+    state.initStarted = false;
+    state.initPromise = null;
     console.log('[SQLite] Database closed');
   }
 }
