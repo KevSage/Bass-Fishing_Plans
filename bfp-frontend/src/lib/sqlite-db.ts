@@ -221,7 +221,9 @@ async function runMigrations(database: SQLiteDBConnection): Promise<void> {
     if (!columns.includes('bbox')) {
       console.log('[SQLite] Running migration: Adding bbox column to lakes');
       await database.execute('ALTER TABLE lakes ADD COLUMN bbox TEXT');
-      console.log('[SQLite] Migration complete: bbox column added');
+      // Clear last sync timestamp to force re-sync of all lakes with bbox data
+      await database.run("DELETE FROM sync_metadata WHERE key = 'last_lake_sync_at'");
+      console.log('[SQLite] Migration complete: bbox column added, will re-sync lakes');
     }
   } catch (error) {
     console.warn('[SQLite] Migration warning:', error);
