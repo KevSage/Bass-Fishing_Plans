@@ -951,23 +951,27 @@ export async function resolveLakeLocal(
   userEmail?: string,
   radiusKm: number = 1.0
 ): Promise<LakeResolutionResult> {
-  const database = await getDb();
+  try {
+    console.log(`[SQLite] resolveLakeLocal called: (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
 
-  // Debug: Check how many lakes we have
-  const countResult = await database.query("SELECT COUNT(*) as count FROM lakes");
-  const lakeCount = countResult.values?.[0]?.count || 0;
-  console.log(`[SQLite] resolveLakeLocal: ${lakeCount} lakes in database, searching near (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+    const database = await getDb();
+    console.log('[SQLite] Database connection obtained');
 
-  if (lakeCount === 0) {
-    console.log('[SQLite] No lakes in database - sync may have failed');
-    return {
-      resolved: false,
-      lake_id: null,
-      lake_name: null,
-      lake_type: 'unresolved',
-      distance_km: null,
-    };
-  }
+    // Debug: Check how many lakes we have
+    const countResult = await database.query("SELECT COUNT(*) as count FROM lakes");
+    const lakeCount = countResult.values?.[0]?.count || 0;
+    console.log(`[SQLite] ${lakeCount} lakes in database`);
+
+    if (lakeCount === 0) {
+      console.log('[SQLite] No lakes in database - sync may have failed');
+      return {
+        resolved: false,
+        lake_id: null,
+        lake_name: null,
+        lake_type: 'unresolved',
+        distance_km: null,
+      };
+    }
 
   // Buffer for bank anglers (~0.5km in degrees)
   const BANK_BUFFER_DEG = 0.005;
@@ -1060,6 +1064,18 @@ export async function resolveLakeLocal(
     lake_type: 'unresolved',
     distance_km: null,
   };
+
+  } catch (error) {
+    console.error('[SQLite] resolveLakeLocal ERROR:', error);
+    // Return unresolved on error - caller will fall back to API
+    return {
+      resolved: false,
+      lake_id: null,
+      lake_name: null,
+      lake_type: 'unresolved',
+      distance_km: null,
+    };
+  }
 }
 
 /**

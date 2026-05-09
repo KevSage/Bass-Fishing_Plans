@@ -855,15 +855,22 @@ export function useCatchLog(
           setSqliteReady(true);
           startNetworkListener(nativeAuth.userEmail!, nativeAuth.userId!);
 
-          // Try to refresh from server
-          console.log('[CatchLog] Refreshing from server...');
+          // Sync lakes FIRST (independent of catch sync) - critical for lake resolution
+          console.log('[CatchLog] Syncing lakes...');
           try {
-            const syncResult = await refreshFromServer(nativeAuth.userEmail!, nativeAuth.userId!);
-            console.log(`[CatchLog] Refresh result:`, syncResult);
             const lakeSyncResult = await syncLakes(nativeAuth.userEmail!, nativeAuth.userId!);
             console.log(`[CatchLog] Lake sync result:`, lakeSyncResult);
+          } catch (lakeErr) {
+            console.warn('[CatchLog] Lake sync failed:', lakeErr);
+          }
+
+          // Then try to refresh catches from server
+          console.log('[CatchLog] Refreshing catches from server...');
+          try {
+            const syncResult = await refreshFromServer(nativeAuth.userEmail!, nativeAuth.userId!);
+            console.log(`[CatchLog] Catch refresh result:`, syncResult);
           } catch (syncErr) {
-            console.warn('[CatchLog] Server refresh failed:', syncErr);
+            console.warn('[CatchLog] Catch refresh failed:', syncErr);
           }
 
           // Reload from SQLite after sync
@@ -2638,9 +2645,12 @@ export function CatchFormView({
       // =====================================================
       // FALLBACK: Use API (requires network)
       // =====================================================
+      console.log('[CatchLog] Trying API fallback for lake resolution...');
       if (isNativePlatform() && nativeAuth.userEmail && nativeAuth.userId) {
         // Use mobile endpoint
+        console.log('[CatchLog] Using mobile endpoint for lake resolution');
         resolution = await resolveLakeMobile(lat, lng, nativeAuth.userEmail, nativeAuth.userId);
+        console.log('[CatchLog] Mobile API resolution result:', resolution);
       } else {
         // Use web endpoint with JWT
         const token = await getToken();
