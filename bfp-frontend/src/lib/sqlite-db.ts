@@ -95,6 +95,7 @@ export interface LocalLake {
   state: string | null;
   updated_at: string;
   is_synced: boolean;
+  bbox: [number, number, number, number] | null;  // [min_lng, min_lat, max_lng, max_lat]
 }
 
 export interface LakeResolutionResult {
@@ -171,7 +172,8 @@ CREATE TABLE IF NOT EXISTS lakes (
   city TEXT,
   state TEXT,
   updated_at TEXT NOT NULL,
-  is_synced INTEGER DEFAULT 1
+  is_synced INTEGER DEFAULT 1,
+  bbox TEXT  -- JSON: [min_lng, min_lat, max_lng, max_lat] for polygon matching
 );
 
 -- Sync metadata table
@@ -207,6 +209,27 @@ CREATE INDEX IF NOT EXISTS idx_lakes_user ON lakes(user_email);
 `;
 
 /**
+ * Run database migrations for schema updates
+ */
+async function runMigrations(database: SQLiteDBConnection): Promise<void> {
+  try {
+    // Migration 1: Add bbox column to lakes table if it doesn't exist
+    // SQLite doesn't support ADD COLUMN IF NOT EXISTS, so we check first
+    const tableInfo = await database.query("PRAGMA table_info(lakes)");
+    const columns = tableInfo.values?.map((row: any) => row.name) || [];
+
+    if (!columns.includes('bbox')) {
+      console.log('[SQLite] Running migration: Adding bbox column to lakes');
+      await database.execute('ALTER TABLE lakes ADD COLUMN bbox TEXT');
+      console.log('[SQLite] Migration complete: bbox column added');
+    }
+  } catch (error) {
+    console.warn('[SQLite] Migration warning:', error);
+    // Non-fatal - migrations are best-effort
+  }
+}
+
+/**
  * Initialize the SQLite database
  */
 export async function initDatabase(): Promise<void> {
@@ -234,6 +257,9 @@ export async function initDatabase(): Promise<void> {
     // Execute schema
     await db.execute(SCHEMA);
     console.log('[SQLite] Schema created/verified');
+
+    // Run migrations for existing databases
+    await runMigrations(db);
 
     // Mark as initialized
     await Preferences.set({ key: 'sqlite_initialized', value: 'true' });
@@ -813,6 +839,14 @@ export function isSQLiteAvailable(): boolean {
  * Convert database row to LocalLake
  */
 function rowToLake(row: any): LocalLake {
+  let bbox: [number, number, number, number] | null = null;
+  if (row.bbox) {
+    try {
+      bbox = JSON.parse(row.bbox);
+    } catch (e) {
+      // Invalid bbox JSON, ignore
+    }
+  }
   return {
     id: row.id,
     name: row.name,
@@ -825,6 +859,7 @@ function rowToLake(row: any): LocalLake {
     state: row.state,
     updated_at: row.updated_at,
     is_synced: row.is_synced === 1,
+    bbox,
   };
 }
 
@@ -835,8 +870,8 @@ export async function upsertLake(lake: LocalLake): Promise<void> {
   const database = await getDb();
 
   const sql = `
-    INSERT INTO lakes (id, name, lat, lng, radius_km, lake_type, user_email, city, state, updated_at, is_synced)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO lakes (id, name, lat, lng, radius_km, lake_type, user_email, city, state, updated_at, is_synced, bbox)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       name = excluded.name,
       lat = excluded.lat,
@@ -847,7 +882,8 @@ export async function upsertLake(lake: LocalLake): Promise<void> {
       city = excluded.city,
       state = excluded.state,
       updated_at = excluded.updated_at,
-      is_synced = excluded.is_synced
+      is_synced = excluded.is_synced,
+      bbox = excluded.bbox
   `;
 
   await database.run(sql, [
@@ -862,6 +898,7 @@ export async function upsertLake(lake: LocalLake): Promise<void> {
     lake.state,
     lake.updated_at,
     lake.is_synced ? 1 : 0,
+    lake.bbox ? JSON.stringify(lake.bbox) : null,
   ]);
 }
 
@@ -902,7 +939,9 @@ export async function getLakesForUser(userEmail: string): Promise<LocalLake[]> {
 
 /**
  * Resolve lake from GPS coordinates (local query)
- * Uses Haversine-approximation for distance calculation
+ * Matching priority (same as backend):
+ * 1. Inside bbox (with buffer for bank anglers)
+ * 2. Within radius_km of lake center
  */
 export async function resolveLakeLocal(
   lat: number,
@@ -912,37 +951,49 @@ export async function resolveLakeLocal(
 ): Promise<LakeResolutionResult> {
   const database = await getDb();
 
-  // Approximate degrees per km (at equator, adjust for latitude)
-  const kmPerDegreeLat = 111.0;
-  const kmPerDegreeLng = 111.0 * Math.cos(lat * Math.PI / 180);
+  // Debug: Check how many lakes we have
+  const countResult = await database.query("SELECT COUNT(*) as count FROM lakes");
+  const lakeCount = countResult.values?.[0]?.count || 0;
+  console.log(`[SQLite] resolveLakeLocal: ${lakeCount} lakes in database, searching near (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
 
-  // Convert radius to degrees for bounding box filter
-  const latDelta = radiusKm / kmPerDegreeLat;
-  const lngDelta = radiusKm / kmPerDegreeLng;
+  if (lakeCount === 0) {
+    console.log('[SQLite] No lakes in database - sync may have failed');
+    return {
+      resolved: false,
+      lake_id: null,
+      lake_name: null,
+      lake_type: 'unresolved',
+      distance_km: null,
+    };
+  }
 
-  // Query lakes within bounding box, then calculate actual distance
-  // Include known lakes and user's custom lakes
+  // Buffer for bank anglers (~0.5km in degrees)
+  const BANK_BUFFER_DEG = 0.005;
+
+  // Helper: Check if point is inside bbox with bank buffer
+  const pointInBboxWithBuffer = (bbox: [number, number, number, number]): boolean => {
+    const [minLng, minLat, maxLng, maxLat] = bbox;
+    return (
+      lat >= (minLat - BANK_BUFFER_DEG) && lat <= (maxLat + BANK_BUFFER_DEG) &&
+      lng >= (minLng - BANK_BUFFER_DEG) && lng <= (maxLng + BANK_BUFFER_DEG)
+    );
+  };
+
+  // Helper: Calculate Haversine distance in km
+  const haversine = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const toRad = (x: number) => x * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2) ** 2;
+    return 2 * 6371 * Math.asin(Math.sqrt(a));
+  };
+
+  // Get all lakes (known + user's custom)
   const sql = `
-    SELECT *,
-      (
-        (lat - ?) * (lat - ?) * ? * ? +
-        (lng - ?) * (lng - ?) * ? * ?
-      ) as distance_sq
-    FROM lakes
-    WHERE lat BETWEEN ? AND ?
-      AND lng BETWEEN ? AND ?
-      AND (lake_type = 'known' OR user_email = ?)
-    ORDER BY distance_sq ASC
-    LIMIT 1
+    SELECT * FROM lakes
+    WHERE lake_type = 'known' OR user_email = ?
   `;
-
-  const result = await database.query(sql, [
-    lat, lat, kmPerDegreeLat, kmPerDegreeLat,
-    lng, lng, kmPerDegreeLng, kmPerDegreeLng,
-    lat - latDelta, lat + latDelta,
-    lng - lngDelta, lng + lngDelta,
-    userEmail?.toLowerCase() || '',
-  ]);
+  const result = await database.query(sql, [userEmail?.toLowerCase() || '']);
 
   if (!result.values || result.values.length === 0) {
     return {
@@ -954,27 +1005,58 @@ export async function resolveLakeLocal(
     };
   }
 
-  const row = result.values[0];
-  const distanceKm = Math.sqrt(row.distance_sq);
+  // PASS 1: Check bbox matches (most accurate for large/irregular lakes)
+  for (const row of result.values) {
+    if (row.bbox) {
+      try {
+        const bbox = JSON.parse(row.bbox) as [number, number, number, number];
+        if (pointInBboxWithBuffer(bbox)) {
+          const dist = haversine(lat, lng, row.lat, row.lng);
+          console.log(`[SQLite] BBOX MATCH: "${row.name}" (${row.lake_type}), dist=${dist.toFixed(3)}km`);
+          return {
+            resolved: true,
+            lake_id: row.id,
+            lake_name: row.name,
+            lake_type: row.lake_type,
+            distance_km: dist,
+          };
+        }
+      } catch (e) {
+        // Invalid bbox JSON, skip
+      }
+    }
+  }
 
-  // Check if within the lake's radius or the search radius
-  const effectiveRadius = Math.max(row.radius_km || 0.5, radiusKm);
-  if (distanceKm > effectiveRadius) {
+  // PASS 2: Center-point distance for lakes without bbox or edge cases
+  let nearestLake: any = null;
+  let nearestDist = Infinity;
+
+  for (const row of result.values) {
+    const dist = haversine(lat, lng, row.lat, row.lng);
+    if (dist <= radiusKm && dist < nearestDist) {
+      nearestLake = row;
+      nearestDist = dist;
+    }
+  }
+
+  if (nearestLake) {
+    console.log(`[SQLite] CENTER MATCH: "${nearestLake.name}" at ${nearestDist.toFixed(3)}km`);
     return {
-      resolved: false,
-      lake_id: null,
-      lake_name: null,
-      lake_type: 'unresolved',
-      distance_km: distanceKm,
+      resolved: true,
+      lake_id: nearestLake.id,
+      lake_name: nearestLake.name,
+      lake_type: nearestLake.lake_type,
+      distance_km: nearestDist,
     };
   }
 
+  console.log(`[SQLite] No lake found within ${radiusKm}km`);
   return {
-    resolved: true,
-    lake_id: row.id,
-    lake_name: row.name,
-    lake_type: row.lake_type,
-    distance_km: distanceKm,
+    resolved: false,
+    lake_id: null,
+    lake_name: null,
+    lake_type: 'unresolved',
+    distance_km: null,
   };
 }
 
@@ -1004,6 +1086,7 @@ export async function createCustomLake(
     state: state || null,
     updated_at: now,
     is_synced: false,
+    bbox: null,  // Custom lakes don't have bbox
   };
 
   await upsertLake(lake);

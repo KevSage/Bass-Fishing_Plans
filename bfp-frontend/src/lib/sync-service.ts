@@ -712,6 +712,7 @@ export async function syncLakes(
       ? `${apiBase}/mobile-auth/lakes?updated_since=${encodeURIComponent(lastSyncAt)}`
       : `${apiBase}/mobile-auth/lakes`;
 
+    console.log(`[Sync] Fetching lakes from: ${url}`);
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -719,6 +720,8 @@ export async function syncLakes(
     });
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error(`[Sync] Lake sync HTTP error: ${response.status} - ${errorText}`);
       throw new Error(`Lake sync failed: ${response.status}`);
     }
 
@@ -741,6 +744,7 @@ export async function syncLakes(
         state: lake.state || null,
         updated_at: lake.updated_at || new Date().toISOString(),
         is_synced: true,
+        bbox: lake.bbox || null,  // Include bbox for polygon matching
       }));
 
       await upsertLakes(localLakes);

@@ -1044,6 +1044,7 @@ async def mobile_sync_lakes(request: MobileLakesSyncRequest):
                 "city": lake.get("city"),
                 "state": lake.get("state"),
                 "updated_at": lake.get("updated_at") or "2024-01-01T00:00:00Z",
+                "bbox": lake.get("bbox"),  # Include bbox for polygon matching
             }
 
             # Apply updated_since filter if provided

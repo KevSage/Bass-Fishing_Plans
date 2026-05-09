@@ -860,7 +860,8 @@ export function useCatchLog(
           try {
             const syncResult = await refreshFromServer(nativeAuth.userEmail!, nativeAuth.userId!);
             console.log(`[CatchLog] Refresh result:`, syncResult);
-            await syncLakes(nativeAuth.userEmail!, nativeAuth.userId!);
+            const lakeSyncResult = await syncLakes(nativeAuth.userEmail!, nativeAuth.userId!);
+            console.log(`[CatchLog] Lake sync result:`, lakeSyncResult);
           } catch (syncErr) {
             console.warn('[CatchLog] Server refresh failed:', syncErr);
           }
