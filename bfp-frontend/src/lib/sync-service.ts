@@ -175,7 +175,11 @@ export async function performInitialSync(
         wind_direction: serverCatch.wind_direction || null,
         pressure: serverCatch.pressure || null,
         sky_condition: serverCatch.sky_condition || null,
-        caught_at: `${serverCatch.date}T${serverCatch.time || '12:00'}:00`,
+        caught_at: (() => {
+          const timeStr = serverCatch.time || '12:00:00';
+          const fullTime = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+          return `${serverCatch.date}T${fullTime}`;
+        })(),
         source: serverCatch.source as any,
       });
 
@@ -201,6 +205,15 @@ export async function performInitialSync(
 
     isSyncing = false;
     await notifySyncStatusChange(userEmail);
+
+    // Download photos in background (don't block)
+    downloadAllPhotos(userEmail).then((photoCount) => {
+      if (photoCount > 0) {
+        console.log(`[Sync] Downloaded ${photoCount} photos for offline use`);
+      }
+    }).catch((err) => {
+      console.warn('[Sync] Photo download failed:', err);
+    });
 
     return { success: true, downloaded };
 
@@ -281,7 +294,11 @@ export async function refreshFromServer(
         wind_direction: serverCatch.wind_direction || null,
         pressure: serverCatch.pressure || null,
         sky_condition: serverCatch.sky_condition || null,
-        caught_at: `${serverCatch.date}T${serverCatch.time || '12:00'}:00`,
+        caught_at: (() => {
+          const timeStr = serverCatch.time || '12:00:00';
+          const fullTime = timeStr.length === 5 ? `${timeStr}:00` : timeStr;
+          return `${serverCatch.date}T${fullTime}`;
+        })(),
         source: serverCatch.source as any,
       });
 
@@ -301,6 +318,17 @@ export async function refreshFromServer(
 
     isSyncing = false;
     await notifySyncStatusChange(userEmail);
+
+    // Download photos in background (don't block)
+    if (downloaded > 0) {
+      downloadAllPhotos(userEmail).then((photoCount) => {
+        if (photoCount > 0) {
+          console.log(`[Sync] Downloaded ${photoCount} photos for offline use`);
+        }
+      }).catch((err) => {
+        console.warn('[Sync] Photo download failed:', err);
+      });
+    }
 
     return { success: true, downloaded };
 

@@ -15,7 +15,7 @@ const sqlitePath = path.join(__dirname, '..', 'node_modules', '@capacitor-commun
 const packageSwiftPath = path.join(sqlitePath, 'Package.swift');
 const pluginSwiftPath = path.join(sqlitePath, 'ios', 'Plugin', 'CapacitorSQLitePlugin.swift');
 
-// Simple Package.swift with just the Swift target (no ObjC needed with CAPBridgedPlugin)
+// Package.swift with ZIPFoundation (uses system SQLite3 instead of SQLCipher)
 const packageSwiftContent = `// swift-tools-version: 5.9
 import PackageDescription
 
@@ -28,14 +28,16 @@ let package = Package(
             targets: ["CapacitorCommunitySqlitePlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", branch: "main")
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "7.0.0"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", from: "0.9.0")
     ],
     targets: [
         .target(
             name: "CapacitorCommunitySqlitePlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
-                .product(name: "Cordova", package: "capacitor-swift-pm")
+                .product(name: "Cordova", package: "capacitor-swift-pm"),
+                .product(name: "ZIPFoundation", package: "ZIPFoundation")
             ],
             path: "ios/Plugin",
             exclude: ["Info.plist", "CapacitorSQLitePlugin.m", "CapacitorSQLitePlugin.h"]
@@ -102,11 +104,35 @@ const bridgedPluginCode = `
     ]
 `;
 
+// Function to replace SQLCipher imports with SQLite3 in all Swift files
+function patchSQLCipherImports(dir) {
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+  for (const file of files) {
+    const fullPath = path.join(dir, file.name);
+    if (file.isDirectory()) {
+      patchSQLCipherImports(fullPath);
+    } else if (file.name.endsWith('.swift')) {
+      let content = fs.readFileSync(fullPath, 'utf8');
+      if (content.includes('import SQLCipher')) {
+        content = content.replace(/import SQLCipher/g, 'import SQLite3');
+        fs.writeFileSync(fullPath, content);
+        console.log(`[fix-sqlite-spm] Replaced SQLCipher with SQLite3 in ${file.name}`);
+      }
+    }
+  }
+}
+
 // Only run if the sqlite package exists
 if (fs.existsSync(sqlitePath)) {
   // Create Package.swift
   fs.writeFileSync(packageSwiftPath, packageSwiftContent);
   console.log('[fix-sqlite-spm] Created Package.swift for @capacitor-community/sqlite');
+
+  // Patch SQLCipher imports to use SQLite3 (no encryption needed)
+  const pluginDir = path.join(sqlitePath, 'ios', 'Plugin');
+  if (fs.existsSync(pluginDir)) {
+    patchSQLCipherImports(pluginDir);
+  }
 
   // Patch the Swift plugin file to add CAPBridgedPlugin conformance
   if (fs.existsSync(pluginSwiftPath)) {

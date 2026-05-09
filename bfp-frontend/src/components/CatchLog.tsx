@@ -82,6 +82,8 @@ import {
   resolveLakeLocal,
   type LocalCatch,
 } from "@/lib/sqlite-db";
+// IMPORT FILESYSTEM FOR LOCAL PHOTO STORAGE
+import { Filesystem, Directory } from "@capacitor/filesystem";
 import {
   performInitialSync,
   refreshFromServer,
@@ -256,6 +258,42 @@ export function apiRecordToEntry(record: CatchRecord): CatchEntry {
 // =============================================================================
 
 /**
+ * Normalize a date string that might be malformed.
+ * Fixes cases like "2024-05-15T14:30:00:00" (extra :00) by removing it.
+ * Returns a valid ISO-like string or falls back to current date.
+ */
+function normalizeDateString(dateStr: string | null | undefined): string {
+  if (!dateStr) return new Date().toISOString();
+
+  // Check if the date parses correctly
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) {
+    return dateStr; // Already valid
+  }
+
+  // Try to fix common issues:
+  // Pattern: "2024-05-15T14:30:00:00" - extra :00 at end
+  const extraColonMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}):\d{2}$/);
+  if (extraColonMatch) {
+    const fixed = extraColonMatch[1];
+    const fixedParsed = new Date(fixed);
+    if (!isNaN(fixedParsed.getTime())) {
+      return fixed;
+    }
+  }
+
+  // If still invalid, try to extract just the date portion
+  const dateMatch = dateStr.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (dateMatch) {
+    return `${dateMatch[1]}T12:00:00`;
+  }
+
+  // Last resort: return current date
+  console.warn('[CatchLog] Could not parse date:', dateStr);
+  return new Date().toISOString();
+}
+
+/**
  * Convert LocalCatch (SQLite) to CatchEntry (UI)
  */
 function localCatchToEntry(c: LocalCatch): CatchEntry {
@@ -275,7 +313,7 @@ function localCatchToEntry(c: LocalCatch): CatchEntry {
     length: c.length || undefined,
     notes: c.notes || undefined,
     photoUrl: c.photo_local_path || c.photo_url || undefined,
-    caughtAt: c.caught_at,
+    caughtAt: normalizeDateString(c.caught_at),
     createdAt: c.created_at,
     source: c.source,
     isOffline: !c.is_synced,
@@ -361,6 +399,42 @@ function entryToApiInput(
     pressure: entry.pressure,
     sky_condition: entry.skyCondition,
   };
+}
+
+// =============================================================================
+// LOCAL PHOTO STORAGE
+// =============================================================================
+
+/**
+ * Save a photo (base64 or data URL) to local filesystem
+ * Returns the file URI or null if failed
+ */
+async function savePhotoLocally(
+  photoData: string | undefined,
+  localId: string
+): Promise<string | null> {
+  if (!photoData) return null;
+
+  try {
+    // Extract base64 data (remove data URL prefix if present)
+    const base64Data = photoData.includes(',')
+      ? photoData.split(',')[1]
+      : photoData;
+
+    const fileName = `catch_${localId}_${Date.now()}.jpg`;
+    const result = await Filesystem.writeFile({
+      path: `catches/${fileName}`,
+      data: base64Data,
+      directory: Directory.Data,
+      recursive: true,
+    });
+
+    console.log('[CatchLog] Photo saved locally:', result.uri);
+    return result.uri;
+  } catch (error) {
+    console.error('[CatchLog] Failed to save photo locally:', error);
+    return null;
+  }
 }
 
 // =============================================================================
@@ -1396,7 +1470,24 @@ export function useCatchLog(
         try {
           console.log('[CatchLog] Saving catch to SQLite...');
 
+          // Generate a temp ID for photo filename
+          const tempId = `local_${Date.now()}`;
+
+          // Save photo locally if present (from imageData or pendingPhotoBase64)
+          const photoData = catchData.imageData || catchData.pendingPhotoBase64;
+          let photoLocalPath: string | null = null;
+          if (photoData) {
+            console.log('[CatchLog] Saving photo locally...');
+            photoLocalPath = await savePhotoLocally(photoData, tempId);
+          }
+
           const localCatchData = entryToLocalCatch(catchData, nativeAuth.userEmail!, activeLake);
+          // Override photo fields with local path
+          if (photoLocalPath) {
+            localCatchData.photo_local_path = photoLocalPath;
+            localCatchData.photo_pending = true; // Mark for upload when online
+          }
+
           const savedCatch = await createLocalCatch(localCatchData);
           const savedEntry = localCatchToEntry(savedCatch);
 

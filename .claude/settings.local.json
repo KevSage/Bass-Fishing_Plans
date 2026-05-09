@@ -60,7 +60,9 @@
       "WebFetch(domain:dev.to)",
       "Bash(npm info:*)",
       "Bash(node scripts/fix-sqlite-spm.js:*)",
-      "Bash(node scripts/fix-sqlite-spm.cjs:*)"
+      "Bash(node scripts/fix-sqlite-spm.cjs:*)",
+      "Bash(gunzip:*)",
+      "Bash(xcodebuild:*)"
     ]
   }
 }

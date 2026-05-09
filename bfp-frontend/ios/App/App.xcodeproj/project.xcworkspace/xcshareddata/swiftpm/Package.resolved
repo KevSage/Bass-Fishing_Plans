@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ionic-team/capacitor-swift-pm.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "13a67f0c53952651ccbfc52208225bc3a6580888"
+        "revision" : "abbe3387892339dbb29a0022a5d802ebb693ac72",
+        "version" : "7.5.0"
       }
     },
     {
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "aa1ff949ea4b3228e58c5b15e56ded4f155f4bc6",
         "version" : "1.0.2"
+      }
+    },
+    {
+      "identity" : "zipfoundation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/weichsel/ZIPFoundation.git",
+      "state" : {
+        "revision" : "22787ffb59de99e5dc1fbfe80b19c97a904ad48d",
+        "version" : "0.9.20"
       }
     }
   ],
