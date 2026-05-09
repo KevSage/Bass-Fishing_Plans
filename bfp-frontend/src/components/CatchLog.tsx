@@ -1521,9 +1521,14 @@ export function useCatchLog(
           }
 
           const savedCatch = await createLocalCatch(localCatchData);
-          const savedEntry = localCatchToEntry(savedCatch);
 
-          console.log('[CatchLog] Catch saved to SQLite:', savedCatch.local_id);
+          // Debug: verify photo_local_path was saved
+          console.log('[CatchLog] Catch saved to SQLite:', savedCatch.local_id, {
+            photo_local_path: savedCatch.photo_local_path,
+            photo_url: savedCatch.photo_url,
+          });
+
+          const savedEntry = localCatchToEntry(savedCatch);
 
           const newEntries = [savedEntry, ...state.entries];
           globalEntriesCache = newEntries;

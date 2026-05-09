@@ -648,8 +648,15 @@ export async function stopNetworkListener(): Promise<void> {
  * Convert LocalCatch to API input format
  */
 function localCatchToApiInput(c: LocalCatch): any {
-  // Parse caught_at to get date and time
-  const caughtAt = new Date(c.caught_at);
+  // Parse caught_at to get date and time, with fallback for invalid dates
+  let caughtAt = new Date(c.caught_at);
+
+  // If invalid date, use current time as fallback
+  if (isNaN(caughtAt.getTime())) {
+    console.warn('[Sync] Invalid caught_at for catch:', c.local_id, c.caught_at);
+    caughtAt = new Date();
+  }
+
   const date = caughtAt.toISOString().split('T')[0];
   const time = caughtAt.toTimeString().slice(0, 5);
 
