@@ -298,10 +298,12 @@ export async function createLocalCatch(
   const newCatch: LocalCatch = {
     ...catchData,
     local_id: localId,
-    server_id: null,
+    // Preserve server_id if provided (for catches downloaded from server)
+    server_id: catchData.server_id || null,
     created_at: now,
     updated_at: now,
-    is_synced: false,
+    // If server_id is provided, it's already synced
+    is_synced: !!catchData.server_id,
     is_deleted: false,
     sync_error: null,
   };
@@ -362,10 +364,13 @@ export async function createLocalCatch(
     newCatch.sync_error,
   ]);
 
-  // Add to sync queue
-  await addToSyncQueue(localId, 'create');
+  // Only add to sync queue if this is a new local catch (no server_id)
+  // Catches downloaded from server already have server_id and don't need to sync up
+  if (!newCatch.server_id) {
+    await addToSyncQueue(localId, 'create');
+  }
 
-  console.log('[SQLite] Created catch:', localId);
+  console.log('[SQLite] Created catch:', localId, newCatch.server_id ? '(from server)' : '(local)');
   return newCatch;
 }
 
