@@ -475,13 +475,15 @@ export async function getDb(): Promise<SQLiteDBConnection> {
   console.log('[SQLite] getDb: Starting new initialization...');
   state.initStarted = true;
   state.initPromise = initDatabase();
-  console.log('[SQLite] getDb: initPromise created');
+  console.log('[SQLite] getDb: initPromise created, awaiting...');
 
   try {
+    console.log('[SQLite] getDb: About to await initPromise');
     await state.initPromise;
-    console.log('[SQLite] getDb: initPromise resolved');
-  } catch (initError) {
-    console.error('[SQLite] getDb: initDatabase failed:', initError);
+    console.log('[SQLite] getDb: initPromise resolved successfully');
+  } catch (initError: any) {
+    console.error('[SQLite] getDb: initDatabase FAILED:', initError?.message || initError);
+    console.error('[SQLite] getDb: Full error:', JSON.stringify(initError, Object.getOwnPropertyNames(initError)));
     state.initStarted = false;
     state.initPromise = null;
     throw initError;
@@ -1289,8 +1291,9 @@ export async function resolveLakeLocal(
     distance_km: null,
   };
 
-  } catch (error) {
-    console.error('[SQLite] resolveLakeLocal ERROR:', error);
+  } catch (error: any) {
+    console.error('[SQLite] resolveLakeLocal ERROR:', error?.message || error);
+    console.error('[SQLite] resolveLakeLocal Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error || {})));
     // Return unresolved on error - caller will fall back to API
     return {
       resolved: false,
