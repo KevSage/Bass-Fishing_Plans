@@ -760,8 +760,27 @@ export function Insights() {
     return () => clearInterval(interval);
   }, [isLoading]);
 
+  // Render modal OUTSIDE of loading check so it persists during loading transitions
+  // This prevents the modal from closing if background sync triggers a loading state
+  const catchLogModal = (
+    <CatchLogModal
+      {...catchLog}
+      disableListView={true}
+      galleryOnly={true}
+      onDraftDone={() => {
+        catchLog.close();
+      }}
+    />
+  );
+
   if (isLoading) {
-    return <InsightsLoadingScreen />;
+    return (
+      <>
+        <InsightsLoadingScreen />
+        {/* Keep modal rendered during loading so it doesn't close unexpectedly */}
+        {catchLogModal}
+      </>
+    );
   }
 
   return (
@@ -1051,16 +1070,8 @@ export function Insights() {
         </div>
       )}
 
-      {/* UPLOAD MODAL */}
-      <CatchLogModal
-        {...catchLog}
-        disableListView={true}
-        galleryOnly={true}
-        onDraftDone={() => {
-          catchLog.close();
-          // NO NEED TO RELOAD - Hook handles it
-        }}
-      />
+      {/* UPLOAD MODAL - rendered from variable defined above loading check */}
+      {catchLogModal}
 
       {/* EDIT / VIEW MODAL */}
       {viewingCatch && (

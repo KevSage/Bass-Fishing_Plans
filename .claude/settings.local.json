@@ -62,7 +62,8 @@
       "Bash(node scripts/fix-sqlite-spm.js:*)",
       "Bash(node scripts/fix-sqlite-spm.cjs:*)",
       "Bash(gunzip:*)",
-      "Bash(xcodebuild:*)"
+      "Bash(xcodebuild:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

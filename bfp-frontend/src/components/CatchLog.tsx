@@ -1498,17 +1498,31 @@ export function useCatchLog(
             imageDataLength: catchData.imageData?.length || 0,
             hasPendingPhoto: !!catchData.pendingPhotoBase64,
             pendingPhotoLength: catchData.pendingPhotoBase64?.length || 0,
+            source: catchData.source,
           });
 
           // Generate a temp ID for photo filename
           const tempId = `local_${Date.now()}`;
 
-          // Save photo locally if present (from imageData or pendingPhotoBase64)
-          const photoData = catchData.imageData || catchData.pendingPhotoBase64;
+          // Save photo locally if present - check multiple sources
+          // Priority: imageData (base64 preview) > pendingPhotoBase64 (offline fallback)
+          let photoData = catchData.imageData || catchData.pendingPhotoBase64;
+
+          // If no photoData but we have a photoUrl that's a base64 data URL, use that
+          if (!photoData && catchData.photoUrl?.startsWith('data:')) {
+            console.log('[CatchLog] Using photoUrl as base64 source');
+            photoData = catchData.photoUrl;
+          }
+
           let photoLocalPath: string | null = null;
           if (photoData) {
             console.log('[CatchLog] Saving photo locally, data length:', photoData.length);
             photoLocalPath = await savePhotoLocally(photoData, tempId);
+            if (photoLocalPath) {
+              console.log('[CatchLog] Photo saved successfully:', photoLocalPath);
+            } else {
+              console.warn('[CatchLog] savePhotoLocally returned null');
+            }
           } else {
             console.log('[CatchLog] No photo data to save locally');
           }
@@ -1526,7 +1540,21 @@ export function useCatchLog(
           console.log('[CatchLog] Catch saved to SQLite:', savedCatch.local_id, {
             photo_local_path: savedCatch.photo_local_path,
             photo_url: savedCatch.photo_url,
+            photo_pending: savedCatch.photo_pending,
+            source: savedCatch.source,
           });
+
+          // IMPORTANT: Verify the photo path is preserved in the returned catch
+          if (photoLocalPath && !savedCatch.photo_local_path) {
+            console.error('[CatchLog] BUG: photo_local_path was not saved! Attempting to fix...');
+            // Try to update the catch with the correct photo path
+            await updateLocalCatch(savedCatch.local_id, {
+              photo_local_path: photoLocalPath,
+              photo_pending: true,
+            });
+            savedCatch.photo_local_path = photoLocalPath;
+            savedCatch.photo_pending = true;
+          }
 
           const savedEntry = localCatchToEntry(savedCatch);
 
@@ -3314,13 +3342,19 @@ export function CatchFormView({
         pressure: pressure ? parseFloat(pressure) : undefined,
         skyCondition: sky || undefined,
       };
-      // DEBUG: Log exact coordinates being saved
-      console.log('[CatchForm] SAVING with coordinates:', {
+      // DEBUG: Log what we're saving
+      console.log('[CatchForm] SAVING catch data:', {
         catchLat: data.catchLat,
         catchLng: data.catchLng,
         lakeLat: data.lakeLat,
         lakeLng: data.lakeLng,
         isCentroid: data.catchLat === activeLake.lat && data.catchLng === activeLake.lng,
+        hasPhotoUrl: !!data.photoUrl,
+        photoUrlLength: data.photoUrl?.length || 0,
+        hasImageData: !!data.imageData,
+        imageDataLength: data.imageData?.length || 0,
+        hasPendingPhoto: !!data.pendingPhotoBase64,
+        source: data.source,
       });
 
       // Save last used lure/color/species for next catch auto-population
